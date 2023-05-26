@@ -1,0 +1,21 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pickle
+*.egg-info/
+
+.idea/
+.vscode/
+
+data/mimiciii_query_results/*.csv
+
+data/output_feature_finalizer/*
+!data/output_feature_finalizer/.gitkeep
+
+data/mimiciii_raw/csv/*
+data/mimiciii_raw/gz/*
+!data/mimiciii_raw/csv/.gitkeep
+!data/mimiciii_raw/gz/.gitkeep
+
+
+

@@ -1,0 +1,30 @@
+name: null
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - black
+  - docker-py
+  - dill
+  - gensim
+  - isort
+  - matplotlib
+  - numpy
+  - pandas
+  - pip
+  - psycopg2
+  - python=3.10.9
+  - python-dotenv
+  - scikit-learn
+  - seaborn
+  - setuptools
+  - pip:
+    - git+https://github.com/duanegoodner/pygetfacl@0.0.5
+    - jupyter
+    - optuna
+    - pyhealth
+    - tensorboard
+    - torch
+    - torchvision

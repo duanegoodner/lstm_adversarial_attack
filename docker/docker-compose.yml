@@ -1,0 +1,80 @@
+version: "3.8"
+
+secrets:
+  jetbrains_user_pubkey:
+    file: ${JETBRAINS_USER_PUBKEY}
+
+services:
+  ehr_aa_app:
+    env_file:
+      - .env
+    image: ehr_aa_app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    secrets:
+      - jetbrains_user_pubkey
+    build:
+      context: .
+      dockerfile: ./Dockerfile.app
+      args:
+        - PRIMARY_USER=${PRIMARY_USER}
+        - JETBRAINS_USER=${JETBRAINS_USER}
+        - WORK_GROUP=${WORK_GROUP}
+        - CONTAINER_DEVSPACE=${CONTAINER_DEVSPACE}
+        - CONTAINER_PROJECT_ROOT=${CONTAINER_PROJECT_ROOT}
+      secrets:
+        - jetbrains_user_pubkey
+
+    container_name: ehr_aa_app
+    entrypoint:
+      [
+        "/bin/bash",
+        "/usr/local/entrypoints/jbs/main.sh"
+      ]
+    volumes:
+      - ${LOCAL_PROJECT_ROOT}:${CONTAINER_PROJECT_ROOT}
+      - /etc/localtime:/etc/localtime:ro
+
+    ports:
+      - "127.0.0.1:${CONTAINER_SSH_PORT}:22"
+    init: true
+    stdin_open: true
+    tty: true
+    depends_on:
+      - postgres_mimiciii
+
+  postgres_mimiciii:
+    image: postgres_mimiciii
+    build:
+      context: .
+      dockerfile: ./Dockerfile.postgres_mimiciii
+      args:
+        - PRIMARY_USER=${PRIMARY_USER}
+        - LOCAL_MIMICIII_BUILD_TOOLS=./mimic-code-fork/mimic-iii/buildmimic
+        - POSTGRES_ENTRYPOINT=/docker-entrypoint-initdb.d
+    environment:
+      - MIMIC_PASSWORD=mimic
+      - BUILD_MIMIC=1
+      - POSTGRES_PASSWORD=postgres
+      - PGDATA=/var/lib/postgresql/data
+    container_name: postgres_mimiciii
+    volumes:
+      - postgres_mimiciii_data:/var/lib/postgresql/data
+    ports:
+      - 5555:5432
+    init: true
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_mimiciii_data:
+
+
+
+
+
