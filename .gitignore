@@ -1,16 +1,26 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-*.pickle
+#*.pickle
 *.egg-info/
 
 .idea/
 .vscode/
 
+
 data/mimiciii_query_results/*.csv
 
 data/output_feature_finalizer/*
 !data/output_feature_finalizer/.gitkeep
+
+data/output_preprocess_checkpoints/1_prefilter/*
+!data/output_preprocess_checkpoints/1_prefilter/.gitkeep
+data/output_preprocess_checkpoints/2_merged_stay_measurements/*
+!data/output_preprocess_checkpoints/2_merged_stay_measurements/.gitkeep
+data/output_preprocess_checkpoints/3_full_admission_list/*
+!data/output_preprocess_checkpoints/3_full_admission_list/.gitkeep
+data/output_preprocess_checkpoints/4_feature_builder/*
+!data/output_preprocess_checkpoints/4_feature_builder/.gitkeep
 
 data/mimiciii_raw/csv/*
 data/mimiciii_raw/gz/*

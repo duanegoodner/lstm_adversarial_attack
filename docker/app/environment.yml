@@ -10,6 +10,8 @@ dependencies:
   - dill
   - gensim
   - isort
+  - jupyter
+  - jupyterlab
   - matplotlib
   - numpy
   - pandas
@@ -22,7 +24,6 @@ dependencies:
   - setuptools
   - pip:
     - git+https://github.com/duanegoodner/pygetfacl@0.0.5
-    - jupyter
     - optuna
     - pyhealth
     - tensorboard

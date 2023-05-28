@@ -1,4 +1,4 @@
-from src.ehr_adversarial_attack.resource_io import ResourceImporter
+from src.lstm_adversarial_attack.resource_io import ResourceImporter
 
 from preprocess.preprocess import \
     preprocess_input_classes as pic

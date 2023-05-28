@@ -23,23 +23,44 @@ The repository for this paper is available at: https://github.com/illidanlab/urg
 
 
 
-## Dependencies
+## How to run this project
 
+### 1. Requirements
+
+* git
+* Docker
 * Python 3.9+
+* Jupyter
 
-* dill
 
-* gensim
 
-* matplotlib
+### 2. Build a  PostgreSQL MIMIC-III database inside a Docker container
 
-* numpy
+> **Note**  ~ 60 GB storage is needed to build the database, and the entire process may take 1.5 - 2.0 hours.
 
-* pandas
+Go to https://github.com/duanegoodner/docker_postgres_mimiciii, and follow that repository's Getting Started steps 1 through 6 to build a PostgreSQL MIMIC-III database in a named Docker volume, and a Docker image with a PostgreSQL database that can access the named volume.
 
-* scikit-learn
 
-* seaborn
+
+### 3. Clone the lstm_adversarial_attack repository to your machine:
+
+```
+$ git clone https://github.com/duanegoodner/lstm_adversarial_attack
+```
+
+
+
+### 4. Build the `lstm_aa_app` Docker image
+
+> **Note** The size of the `lstm_aa_app` image will be ~10 GB.
+
+`cd` into directory `lstm_adversarial_attack/docker`, and run:
+
+```
+$ docker compose build
+```
+
+
 
 
 

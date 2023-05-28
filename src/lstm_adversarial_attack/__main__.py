@@ -1,7 +1,14 @@
+import sys
 from pathlib import Path
 import project_config as pc
 from mimiciii_database import MimiciiiDatabaseAccess
+
+sys.path.append(str(Path(__file__).parent))
+sys.path.append(str(Path(__file__).parent / "preprocess"))
+
 from preprocess.preprocess import ImplementedPreprocessor
+
+
 
 
 if __name__ == "__main__":
@@ -14,8 +21,8 @@ if __name__ == "__main__":
     )
     db_access.close_connection()
 
-    preprocessor = ImplementedPreprocessor()
-    preprocessed_files = preprocessor.preprocess()
+    # preprocessor = ImplementedPreprocessor()
+    # preprocessed_files = preprocessor.preprocess()
 
 
 

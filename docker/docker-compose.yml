@@ -42,6 +42,7 @@ services:
 
     ports:
       - "127.0.0.1:${CONTAINER_SSH_PORT}:22"
+      - "127.0.0.1:8888:8888"
     init: true
     stdin_open: true
     tty: true
@@ -50,7 +51,7 @@ services:
 
   postgres_mimiciii:
     image: postgres_mimiciii
-    container_name: postgres_mimiciii_initialize
+    container_name: postgres_mimiciii
     volumes:
       - postgres_mimiciii_db:/var/lib/postgresql/data
     ports:

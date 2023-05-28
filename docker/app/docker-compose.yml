@@ -39,6 +39,7 @@ services:
       - ${LOCAL_PROJECT_ROOT}:${CONTAINER_PROJECT_ROOT}
       - /etc/localtime:/etc/localtime:ro
     ports:
+      - "127.0.0.1:8888:8888"
       - "127.0.0.1:${CONTAINER_SSH_PORT}:22"
     init: true
     stdin_open: true
