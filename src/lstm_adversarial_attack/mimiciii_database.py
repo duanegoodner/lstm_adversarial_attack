@@ -4,7 +4,7 @@ import psycopg2
 import time
 from dotenv import load_dotenv
 from pathlib import Path
-from ehr_adv_attack_project import MimiciiiDatabaseInterface
+from  ehr_adv_attack_project import MimiciiiDatabaseInterface
 
 
 class MimiciiiDatabaseAccess(MimiciiiDatabaseInterface):

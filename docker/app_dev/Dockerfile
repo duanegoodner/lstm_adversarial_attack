@@ -70,18 +70,19 @@ RUN sudo chown -R ${PRIMARY_USER}:${PRIMARY_USER} ${BUILD_DIR}/accessjd \
 # Done installing things in container
 # #####################################################
 
-WORKDIR ${PRIMARY_USER_HOME}
+RUN sudo mkdir ${CONTAINER_PROJECT_ROOT}
+WORKDIR ${CONTAINER_PROJECT_ROOT}
 RUN sudo rm -rf ${BUILD_DIR}
 
 # Create rest of directory structure expected of local project
 # ARG CONTAINER_PROJECT_ROOT=${CONTAINER_DEVSPACE}/project
 # ARG CONTAINER_WORK_DIR=${CONTAINER_PROJECT_ROOT}/work
 
-RUN sudo mkdir ${CONTAINER_PROJECT_ROOT} \
+# RUN sudo mkdir ${CONTAINER_PROJECT_ROOT} \
     # && sudo mkdir ${CONTAINER_SRC_DIR} ${CONTAINER_DATA_DIR} \
-    && sudo groupadd ${WORK_GROUP} \
+RUN sudo groupadd ${WORK_GROUP} \
     && sudo usermod -a -G ${WORK_GROUP} ${PRIMARY_USER} \
     && sudo chown ${PRIMARY_USER}:${WORK_GROUP} ${CONTAINER_PROJECT_ROOT}
 
-RUN sudo mkdir -p /usr/local/entrypoints/jbs_jupyter_lab
-COPY ./app_resources/entrypoints/jbs_jupyter_lab /usr/local/entrypoints/jbs_jupyter_lab
+RUN sudo mkdir -p /usr/local/entrypoints/jbs
+COPY ./app_resources/entrypoints/jbs /usr/local/entrypoints/jbs

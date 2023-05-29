@@ -34,7 +34,7 @@ services:
     entrypoint:
       [
         "/bin/bash",
-        "/usr/local/entrypoints/jbs_jupyter_lab/main.sh"
+        "/usr/local/entrypoints/jbs/main.sh"
       ]
     volumes:
       - ${LOCAL_PROJECT_ROOT}:${CONTAINER_PROJECT_ROOT}

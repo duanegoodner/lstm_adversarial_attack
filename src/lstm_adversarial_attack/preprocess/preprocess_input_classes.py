@@ -7,7 +7,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 import project_config as pc
 
-# from project_config import DATA_DIR, DB_OUTPUT
+# from project_config import DATA_DIR, DB_OUTPUT_DIR
 
 
 # PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -38,10 +38,10 @@ VITAL_DATA_COLS = [
 
 @dataclass
 class PrefilterResourceRefs:
-    icustay: Path = pc.DB_OUTPUT / "icustay_detail.csv"
-    bg: Path = pc.DB_OUTPUT / "pivoted_bg.csv"
-    vital: Path = pc.DB_OUTPUT / "pivoted_vital.csv"
-    lab: Path = pc.DB_OUTPUT / "pivoted_lab.csv"
+    icustay: Path = pc.DB_OUTPUT_DIR / "icustay_detail.csv"
+    bg: Path = pc.DB_OUTPUT_DIR / "pivoted_bg.csv"
+    vital: Path = pc.DB_OUTPUT_DIR / "pivoted_vital.csv"
+    lab: Path = pc.DB_OUTPUT_DIR / "pivoted_lab.csv"
 
 
 @dataclass
