@@ -38,3 +38,5 @@ PREPROCESS_OUTPUT_FILES = {
     "measurement_data_list": "measurement_data_list.pickle",
     "in_hospital_mortality_list": "in_hospital_mortality_list.pickle",
 }
+
+HYPERPARAMETER_OUTPUT_DIR = DATA_DIR / "hyperparameter_tuning"

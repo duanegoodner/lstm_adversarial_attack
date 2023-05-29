@@ -3,7 +3,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
-HYPERPARAMETER_TUNING_OUT_DIR = DATA_DIR / "hyperparameter_tuning"
+HYPERPARAMETER_OUTPUT_DIR = DATA_DIR / "hyperparameter_tuning"
 
 
 # DATABASE

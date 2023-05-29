@@ -1,7 +1,15 @@
+import sys
 import time
 import torch
 from optuna.pruners import MedianPruner
-from x19_mort_general_dataset import x19m_collate_fn, X19MGeneralDataset
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+from lstm_adversarial_attack.x19_mort_general_dataset import (
+    x19m_collate_fn,
+    X19MGeneralDataset,
+)
 from hyperparameter_tuner import (
     HyperParameterTuner,
     X19MLSTMTuningRanges,
@@ -34,7 +42,7 @@ def main():
         num_cv_epochs=20,
         epochs_per_fold=5,
         tuning_ranges=my_tuning_ranges,
-        pruner=MedianPruner(n_startup_trials=5, n_warmup_steps=3)
+        pruner=MedianPruner(n_startup_trials=5, n_warmup_steps=3),
     )
 
     completed_study = tuner.tune(num_trials=30)
@@ -47,5 +55,3 @@ if __name__ == "__main__":
     my_tuner, my_completed_study = main()
     end = time.time()
     print(f"total time = {end - start}")
-
-

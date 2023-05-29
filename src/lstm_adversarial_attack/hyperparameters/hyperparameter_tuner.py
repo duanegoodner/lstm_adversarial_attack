@@ -1,19 +1,22 @@
 import optuna
+import sys
 import torch
 import torch.nn as nn
 from dataclasses import dataclass
 from datetime import datetime
-from early_stopping import PerformanceSelector
 from optuna.pruners import BasePruner, MedianPruner
 from optuna.samplers import BaseSampler, TPESampler
 from optuna.trial import TrialState
 from pathlib import Path
 from sklearn.model_selection import StratifiedKFold
 from torch.utils.data import DataLoader, Dataset, Subset
+from torch.utils.tensorboard import SummaryWriter
 from typing import Callable
-import project_config_old as pc
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
 import resource_io as rio
-from data_structures import (
+from lstm_adversarial_attack.data_structures import (
     CVTrialLogs,
     EvalEpochResult,
     EvalLogEntry,
@@ -21,10 +24,11 @@ from data_structures import (
     OptimizeDirection,
     TrainEvalLogPair,
 )
-from lstm_model_stc import BidirectionalX19LSTM
-from standard_model_trainer import StandardModelTrainer
-from torch.utils.tensorboard import SummaryWriter
-from weighted_dataloader_builder import (
+from lstm_adversarial_attack.config_paths import HYPERPARAMETER_OUTPUT_DIR
+from lstm_adversarial_attack.early_stopping import PerformanceSelector
+from lstm_adversarial_attack.lstm_model_stc import BidirectionalX19LSTM
+from lstm_adversarial_attack.standard_model_trainer import StandardModelTrainer
+from lstm_adversarial_attack.weighted_dataloader_builder import (
     WeightedDataLoaderBuilder,
 )
 
@@ -157,7 +161,7 @@ class HyperParameterTuner:
     def initialize_output_dir(output_dir: Path = None) -> Path:
         if output_dir is None:
             dirname = f"{datetime.now()}".replace(" ", "_")
-            output_dir = pc.HYPERPARAMETER_TUNING_OUT_DIR / dirname
+            output_dir = HYPERPARAMETER_OUTPUT_DIR / dirname
         assert not output_dir.exists()
         output_dir.mkdir()
         return output_dir
