@@ -8,7 +8,7 @@ dependencies:
   - black
   - docker-py
   - dill
-  # - gensim
+  - gensim
   - isort
   - jupyter
   - jupyterlab

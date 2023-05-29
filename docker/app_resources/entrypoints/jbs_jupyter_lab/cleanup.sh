@@ -1,6 +1,10 @@
 #!/bin/bash
 
 
+stop_jupyter_lab() {
+  $CONDA_BIN_DIR/jupyter lab stop
+}
+
 reset_permissions() {
   # ensure permissions in a safe state (in case of container restart)
   sudo gpasswd trusted -M ''

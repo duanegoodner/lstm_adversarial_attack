@@ -1,46 +1,70 @@
-version: '3.8'
+version: "3.8"
 
 secrets:
   jetbrains_user_pubkey:
     file: ${JETBRAINS_USER_PUBKEY}
 
 services:
-  ehr_adversarial_attack:
+  lstm_aa_app:
     env_file:
       - .env
-    image: duanegoodner/dev_envs:ehr_aa_app
+    image: lstm_aa_app
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
     secrets:
       - jetbrains_user_pubkey
     build:
-      context: .
-      dockerfile: ./Dockerfile
+      context: ../
+      dockerfile: ./app/Dockerfile.app
       args:
-        - PRIMARY_USER=${PRIMARY_USER}
+        - PRIMARY_USER=gen_user
         - JETBRAINS_USER=${JETBRAINS_USER}
         - WORK_GROUP=${WORK_GROUP}
         - CONTAINER_DEVSPACE=${CONTAINER_DEVSPACE}
         - CONTAINER_PROJECT_ROOT=${CONTAINER_PROJECT_ROOT}
       secrets:
         - jetbrains_user_pubkey
-    container_name: ehr_aa_app
+
+    container_name: lstm_aa_app
     entrypoint:
-       [
+      [
         "/bin/bash",
-        "/usr/local/entrypoints/jbs/main.sh"
+        "/usr/local/entrypoints/jupyter_lab/main.sh"
       ]
     volumes:
       - ${LOCAL_PROJECT_ROOT}:${CONTAINER_PROJECT_ROOT}
       - /etc/localtime:/etc/localtime:ro
+
     ports:
-      - "127.0.0.1:8888:8888"
       - "127.0.0.1:${CONTAINER_SSH_PORT}:22"
+      - "127.0.0.1:8888:8888"
     init: true
     stdin_open: true
     tty: true
+    depends_on:
+      - postgres_mimiciii
+
+  postgres_mimiciii:
+    image: postgres_mimiciii
+    container_name: postgres_mimiciii
+    volumes:
+      - postgres_mimiciii_db:/var/lib/postgresql/data
+    ports:
+      - 5555:5432
+    init: true
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_mimiciii_db:
+    external: true
+
+
+
+
+

@@ -10,7 +10,7 @@ ARG CONTAINER_DEVSPACE
 ARG CONTAINER_PROJECT_ROOT
 ARG CONTAINER_SRC_DIR
 ARG CONTAINER_DATA_DIR
-ARG COMPONENTS=./app/_build_resources/components
+ARG COMPONENTS=./app_resources/components
 
 SHELL [ "/bin/bash", "--login", "-c" ]
 
@@ -23,7 +23,7 @@ ARG BUILD_DIR=${PRIMARY_USER_HOME}/docker_build
 WORKDIR ${BUILD_DIR}
 
 COPY ${COMPONENTS}/install_apt_pkgs ${BUILD_DIR}/install_apt_pkgs
-COPY ./app/pkglist ${BUILD_DIR}/pkglist
+COPY ./app_dev/pkglist ${BUILD_DIR}/pkglist
 RUN ${BUILD_DIR}/install_apt_pkgs/main.sh ${BUILD_DIR}/pkglist \
     && sudo rm -rf ${BUILD_DIR}/*
 
@@ -52,7 +52,7 @@ RUN ${BUILD_DIR}/install_miniconda/main.sh \
     ${PRIMARY_USER} \
     && sudo rm -rf ${BUILD_DIR}/install_miniconda
 
-COPY ./app/environment.yml ${BUILD_DIR}/environment.yml
+COPY ./app_dev/environment.yml ${BUILD_DIR}/environment.yml
 COPY ${COMPONENTS}/create_conda_env ${BUILD_DIR}/create_conda_env
 RUN ${BUILD_DIR}/create_conda_env/main.sh \
     ${BUILD_DIR}/environment.yml \
@@ -60,8 +60,9 @@ RUN ${BUILD_DIR}/create_conda_env/main.sh \
     ${PRIMARY_USER} \
     ${CONDA_INSTALL_DIR} \
     && sudo rm -rf ${BUILD_DIR}/*
+ENV CONDA_BIN_DIR=${CONTAINER_DEVSPACE}/env/bin
 
-COPY ./app/_build_resources/local_python_packages/accessjd ${BUILD_DIR}/accessjd
+COPY ./app_resources/local_python_packages/accessjd ${BUILD_DIR}/accessjd
 RUN sudo chown -R ${PRIMARY_USER}:${PRIMARY_USER} ${BUILD_DIR}/accessjd \
     && ${CONTAINER_DEVSPACE}/env/bin/python -m pip install ${BUILD_DIR}/accessjd
 
@@ -82,5 +83,5 @@ RUN sudo mkdir ${CONTAINER_PROJECT_ROOT} \
     && sudo usermod -a -G ${WORK_GROUP} ${PRIMARY_USER} \
     && sudo chown ${PRIMARY_USER}:${WORK_GROUP} ${CONTAINER_PROJECT_ROOT}
 
-RUN sudo mkdir -p /usr/local/entrypoints/jbs
-COPY ./app/_build_resources/entrypoints/jbs /usr/local/entrypoints/jbs
+RUN sudo mkdir -p /usr/local/entrypoints/jbs_jupyter_lab
+COPY ./app_resources/entrypoints/jbs_jupyter_lab /usr/local/entrypoints/jbs_jupyter_lab

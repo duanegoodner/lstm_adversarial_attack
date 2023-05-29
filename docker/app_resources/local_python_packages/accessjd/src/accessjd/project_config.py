@@ -9,7 +9,7 @@ class DotEnvNotFound(Exception):
 
 
 class DotEnvFinder:
-    _default_env_dirnames = ["docker_dev_env", "docker"]
+    _default_env_dirs = ["docker/app_dev"]
 
     def __init__(
         self,
@@ -20,8 +20,8 @@ class DotEnvFinder:
         self._project_root = project_root
         if expected_dotenv_paths is None:
             self._expected_dot_env_paths = [
-                self._project_root / path / ".env"
-                for path in self._default_env_dirnames
+                self._project_root / Path(env_dir) / ".env"
+                for env_dir in self._default_env_dirs
             ]
 
     @property

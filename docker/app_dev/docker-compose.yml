@@ -5,10 +5,10 @@ secrets:
     file: ${JETBRAINS_USER_PUBKEY}
 
 services:
-  lstm_aa_app:
+  lstm_aa_app_dev:
     env_file:
       - .env
-    image: lstm_aa_app
+    image: lstm_aa_app_dev
     deploy:
       resources:
         reservations:
@@ -19,10 +19,10 @@ services:
     secrets:
       - jetbrains_user_pubkey
     build:
-      context: .
-      dockerfile: ./Dockerfile.app
+      context: ../
+      dockerfile: ./app_dev/Dockerfile
       args:
-        - PRIMARY_USER=${PRIMARY_USER}
+        - PRIMARY_USER=gen_user
         - JETBRAINS_USER=${JETBRAINS_USER}
         - WORK_GROUP=${WORK_GROUP}
         - CONTAINER_DEVSPACE=${CONTAINER_DEVSPACE}
@@ -30,11 +30,11 @@ services:
       secrets:
         - jetbrains_user_pubkey
 
-    container_name: lstm_aa_app
+    container_name: lstm_aa_app_dev
     entrypoint:
       [
         "/bin/bash",
-        "/usr/local/entrypoints/jbs/main.sh"
+        "/usr/local/entrypoints/jbs_jupyter_lab/main.sh"
       ]
     volumes:
       - ${LOCAL_PROJECT_ROOT}:${CONTAINER_PROJECT_ROOT}
@@ -51,7 +51,7 @@ services:
 
   postgres_mimiciii:
     image: postgres_mimiciii
-    container_name: postgres_mimiciii
+    container_name: postgres_mimiciii_dev
     volumes:
       - postgres_mimiciii_db:/var/lib/postgresql/data
     ports:
