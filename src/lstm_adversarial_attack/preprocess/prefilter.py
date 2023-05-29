@@ -3,8 +3,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).parent.parent))
-import project_config as pc
+sys.path.append(str(Path(__file__).parent.parent.parent))
+from lstm_adversarial_attack.config_paths import PREFILTER_OUTPUT_FILES
 from preprocess_module import PreprocessModule
 from preprocess_input_classes import PrefilterSettings, PrefilterResourceRefs
 
@@ -145,9 +145,7 @@ class Prefilter(PreprocessModule):
             self.export_resource(
                 key=key,
                 resource=val,
-                # path=self.settings.output_dir / f"{key}.pickle",
-                path=self.settings.output_dir
-                / pc.PREFILTER_OUTPUT_FILES[key],
+                path=self.settings.output_dir / PREFILTER_OUTPUT_FILES[key],
             )
 
 

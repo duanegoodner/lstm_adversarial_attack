@@ -1,15 +1,10 @@
 import sys
 from pathlib import Path
 import project_config as pc
-from mimiciii_database import MimiciiiDatabaseAccess
+from query_db.mimiciii_database import MimiciiiDatabaseAccess
 
-sys.path.append(str(Path(__file__).parent))
-sys.path.append(str(Path(__file__).parent / "preprocess"))
-
-from preprocess.preprocess import ImplementedPreprocessor
-
-
-
+# sys.path.append(str(Path(__file__).parent))
+# sys.path.append(str(Path(__file__).parent / "preprocess"))
 
 if __name__ == "__main__":
     db_access = MimiciiiDatabaseAccess(
@@ -17,7 +12,7 @@ if __name__ == "__main__":
     )
     db_access.connect()
     db_query_results = db_access.run_sql_queries(
-        sql_query_paths=pc.DB_QUERIES_DIR
+        sql_query_paths=pc.DB_QUERIES
     )
     db_access.close_connection()
 

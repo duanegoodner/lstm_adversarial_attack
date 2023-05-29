@@ -11,7 +11,7 @@ from pathlib import Path
 from sklearn.model_selection import StratifiedKFold
 from torch.utils.data import DataLoader, Dataset, Subset
 from typing import Callable
-import project_config as pc
+import project_config_old as pc
 import resource_io as rio
 from data_structures import (
     CVTrialLogs,

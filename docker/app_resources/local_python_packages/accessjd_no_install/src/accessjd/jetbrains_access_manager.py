@@ -2,7 +2,7 @@ import subprocess
 
 import simple_access_manager as sam
 import xml_data_container as xdc
-from project_config import JBDockerProjectConfig, DotEnvFinder
+from project_config_old import JBDockerProjectConfig, DotEnvFinder
 from pathlib import Path
 
 

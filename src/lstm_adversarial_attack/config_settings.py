@@ -1,0 +1,18 @@
+from lstm_adversarial_attack.config_paths import DB_DEFAULT_QUERY_DIR
+
+DB_QUERIES = [
+    DB_DEFAULT_QUERY_DIR / "icustay_detail.sql",
+    DB_DEFAULT_QUERY_DIR / "pivoted_bg.sql",
+    DB_DEFAULT_QUERY_DIR / "pivoted_lab.sql",
+    DB_DEFAULT_QUERY_DIR / "pivoted_vital.sql",
+]
+
+DEFAULT_WINSORIZE_LOW="5%"
+DEFAULT_WINSORIZE_HIGH="95%"
+DEFAULT_RESAMPLE_INTERPOLATION="linear"
+DEFAULT_RESAMPLE_LIMIT_DIRECTION="both"
+
+MIN_OBSERVATION_HOURS = 1
+MAX_OBSERVATION_HOURS = 48
+REQUIRE_EXACT_NUM_HOURS = False
+OBSERVATION_WINDOW_START = "intime"

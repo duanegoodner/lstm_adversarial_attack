@@ -5,10 +5,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent))
 import preprocess_module as pm
 import preprocess_input_classes as pic
-import project_config as pc
+from lstm_adversarial_attack.config_paths import PREPROCESS_OUTPUT_FILES
+# import project_config_old as pc
 
 
 @dataclass
@@ -121,14 +122,14 @@ class FeatureFinalizer(pm.PreprocessModule):
             key="measurement_data_list",
             resource=measurement_data_list,
             path=self.settings.output_dir
-            / pc.PREPROCESS_OUTPUT_FILES["measurement_data_list"],
+            / PREPROCESS_OUTPUT_FILES["measurement_data_list"],
         )
 
         self.export_resource(
             key="in_hospital_mortality_list",
             resource=in_hospital_mortality_list,
             path=self.settings.output_dir
-            / pc.PREPROCESS_OUTPUT_FILES["in_hospital_mortality_list"],
+            / PREPROCESS_OUTPUT_FILES["in_hospital_mortality_list"],
         )
 
 

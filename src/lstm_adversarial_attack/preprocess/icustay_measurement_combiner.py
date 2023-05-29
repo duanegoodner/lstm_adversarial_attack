@@ -2,10 +2,10 @@ import pandas as pd
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent))
+from lstm_adversarial_attack.config_paths import STAY_MEASUREMENT_OUTPUT_FILES
 import preprocess_module as pm
 import preprocess_input_classes as pic
-import project_config as pc
 
 
 @dataclass
@@ -153,14 +153,14 @@ class ICUStayMeasurementCombiner(pm.PreprocessModule):
             key="icustay_bg_lab_vital",
             resource=icustay_bg_lab_vital,
             path=self.settings.output_dir
-            / pc.STAY_MEASUREMENT_OUTPUT_FILES["icustay_bg_lab_vital"],
+            / STAY_MEASUREMENT_OUTPUT_FILES["icustay_bg_lab_vital"],
         )
 
         self.export_resource(
             key="bg_lab_vital_summary_stats",
             resource=summary_stats,
             path=self.settings.output_dir
-            / pc.STAY_MEASUREMENT_OUTPUT_FILES["bg_lab_vital_summary_stats"],
+            / STAY_MEASUREMENT_OUTPUT_FILES["bg_lab_vital_summary_stats"],
         )
 
 

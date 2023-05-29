@@ -7,7 +7,7 @@ from torch.nn.utils.rnn import (
 )
 from torch.utils.data import Dataset
 from data_structures import VariableLengthFeatures
-import project_config as pc
+import project_config_old as pc
 import resource_io as rio
 
 

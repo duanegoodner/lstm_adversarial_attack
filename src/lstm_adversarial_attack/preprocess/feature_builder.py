@@ -1,8 +1,7 @@
 import pandas as pd
 from dataclasses import dataclass
 import preprocess_module as pm
-import \
-    preprocess_input_classes as pic
+import preprocess_input_classes as pic
 
 
 @dataclass

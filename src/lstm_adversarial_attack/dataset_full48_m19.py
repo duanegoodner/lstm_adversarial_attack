@@ -4,7 +4,7 @@ from dataset_with_index import DatasetWithIndex
 from pathlib import Path
 from torch.utils.data import Dataset
 import preprocess.preprocess_input_classes as pic
-import project_config as pc
+import project_config_old as pc
 import resource_io as rio
 
 

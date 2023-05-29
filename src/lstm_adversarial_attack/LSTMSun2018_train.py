@@ -4,8 +4,8 @@ from pathlib import Path
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import random_split
 from torch.utils.tensorboard import SummaryWriter
-import project_config as pc
-from lstm_model_stc import (
+import project_config_old as pc
+from lstm_model_stc_old import (
     BidirectionalX19LSTM,
 )
 from standard_model_trainer import StandardModelTrainer

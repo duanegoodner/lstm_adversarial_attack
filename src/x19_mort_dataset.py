@@ -3,7 +3,7 @@ import torch
 from dataset_with_index import DatasetWithIndex
 from pathlib import Path
 from torch.utils.data import Dataset
-import project_config as pc
+import project_config_old as pc
 
 
 def get_pickle_data(file: Path):

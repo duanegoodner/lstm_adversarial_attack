@@ -1,9 +1,17 @@
 import numpy as np
 import pandas as pd
+import sys
 from dataclasses import dataclass
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
 import preprocess_module as pm
 import preprocess_input_classes as pic
-import project_config as pc
+from lstm_adversarial_attack.config_paths import (
+    FULL_ADMISSION_LIST_OUTPUT_FILES,
+)
+
+# import project_config_old as pc
 
 
 @dataclass
@@ -65,7 +73,7 @@ class FullAdmissionListBuilder(pm.PreprocessModule):
 
         output_path = (
             self.settings.output_dir
-            / pc.FULL_ADMISSION_LIST_OUTPUT_FILES["full_admission_list"]
+            / FULL_ADMISSION_LIST_OUTPUT_FILES["full_admission_list"]
         )
         self.export_resource(
             key="full_admission_list",

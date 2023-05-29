@@ -1,10 +1,13 @@
 import csv
 import os
 import psycopg2
+import sys
 import time
 from dotenv import load_dotenv
 from pathlib import Path
-from  ehr_adv_attack_project import MimiciiiDatabaseInterface
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
+from lstm_adversarial_attack.interfaces import MimiciiiDatabaseInterface
 
 
 class MimiciiiDatabaseAccess(MimiciiiDatabaseInterface):

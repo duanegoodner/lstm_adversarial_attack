@@ -4,7 +4,7 @@ import torch
 from pathlib import Path
 from torch.utils.data import Subset
 from adv_attack import AdversarialAttacker, AdversarialAttackTrainer
-from lstm_model_stc import LSTMSun2018
+from lstm_model_stc_old import LSTMSun2018
 from lstm_sun_2018_logit_out import LSTMSun2018Logit
 from single_sample_feature_perturber import SingleSampleFeaturePerturber
 from standard_model_inferrer import StandardModelInferrer
