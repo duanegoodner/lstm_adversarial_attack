@@ -1,12 +1,13 @@
 import sklearn.metrics as skm
+import sys
 import torch.nn as nn
 import torch.optim
 import torch.utils.data as ud
 from datetime import datetime
 from pathlib import Path
 from torch.utils.tensorboard import SummaryWriter
-from data_structures import (
-    EvalEpochResult,
+sys.path.append(str(Path(__file__).parent.parent))
+from lstm_adversarial_attack.data_structures import (
     ClassificationScores,
     TrainEpochResult,
     TrainLogEntry,

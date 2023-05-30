@@ -1,15 +1,21 @@
-from enum import Enum, auto
-from data_structures import EvalEpochResult, OptimizeDirection
 from typing import Iterable, TypeVar
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent))
+from lstm_adversarial_attack.data_structures import (
+    EvalEpochResult,
+    OptimizeDirection,
+)
+
 
 _T = TypeVar("_T")
 
 
 class PerformanceSelector:
-
     _selection_dispatch = {
         OptimizeDirection.MIN: min,
-        OptimizeDirection.MAX: max
+        OptimizeDirection.MAX: max,
     }
 
     def __init__(self, optimize_direction: OptimizeDirection):
@@ -35,11 +41,17 @@ class EarlyStopper:
         if optimize_direction == OptimizeDirection.MAX:
             self._previous_result = float("-inf")
 
-    def _is_greater_than_previous_result(self, result: EvalEpochResult) -> bool:
-        return getattr(result, self._performance_metric) > self._previous_result
+    def _is_greater_than_previous_result(
+        self, result: EvalEpochResult
+    ) -> bool:
+        return (
+            getattr(result, self._performance_metric) > self._previous_result
+        )
 
     def _is_less_than_previous_result(self, result: EvalEpochResult) -> bool:
-        return getattr(result, self._performance_metric) < self._previous_result
+        return (
+            getattr(result, self._performance_metric) < self._previous_result
+        )
 
     def _reset_num_deteriorations(self):
         self._num_deteriorations = 0
@@ -48,10 +60,9 @@ class EarlyStopper:
         self._previous_result = getattr(result, self._performance_metric)
 
     def _is_worse_than_best_result(self, result: EvalEpochResult) -> bool:
-
         dispatch_table = {
             OptimizeDirection.MIN: self._is_greater_than_previous_result,
-            OptimizeDirection.MAX: self._is_less_than_previous_result
+            OptimizeDirection.MAX: self._is_less_than_previous_result,
         }
 
         return dispatch_table[self._optimize_direction](result)
@@ -66,7 +77,3 @@ class EarlyStopper:
     def indicates_early_stop(self, result: EvalEpochResult):
         self._check_and_update(result=result)
         return self._num_deteriorations > self._patience
-
-
-
-

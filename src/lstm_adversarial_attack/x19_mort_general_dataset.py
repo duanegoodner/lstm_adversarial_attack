@@ -1,3 +1,4 @@
+import sys
 import torch
 from dataclasses import dataclass
 from dataset_with_index import DatasetWithIndex
@@ -6,9 +7,13 @@ from torch.nn.utils.rnn import (
     pad_sequence,
 )
 from torch.utils.data import Dataset
-from data_structures import VariableLengthFeatures
-import project_config_old as pc
-import resource_io as rio
+
+sys.path.append(str(Path(__file__).parent.parent))
+from lstm_adversarial_attack.config_paths import PREPROCESS_OUTPUT_DIR, PREPROCESS_OUTPUT_FILES
+from lstm_adversarial_attack.data_structures import VariableLengthFeatures
+
+# import project_config_old as pc
+import lstm_adversarial_attack.resource_io as rio
 
 
 class X19MGeneralDataset(Dataset):
@@ -27,10 +32,10 @@ class X19MGeneralDataset(Dataset):
     @classmethod
     def from_feaure_finalizer_output(
         cls,
-        measurements_path: Path = pc.PREPROCESS_OUTPUT_DIR
-        / pc.PREPROCESS_OUTPUT_FILES["measurement_data_list"],
-        in_hospital_mort_path: Path = pc.PREPROCESS_OUTPUT_DIR
-        / pc.PREPROCESS_OUTPUT_FILES["in_hospital_mortality_list"],
+        measurements_path: Path = PREPROCESS_OUTPUT_DIR
+        / PREPROCESS_OUTPUT_FILES["measurement_data_list"],
+        in_hospital_mort_path: Path = PREPROCESS_OUTPUT_DIR
+        / PREPROCESS_OUTPUT_FILES["in_hospital_mortality_list"],
     ):
         importer = rio.ResourceImporter()
         measurements_np_list = importer.import_pickle_to_object(

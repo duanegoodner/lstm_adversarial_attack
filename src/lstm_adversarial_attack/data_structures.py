@@ -1,5 +1,4 @@
 import numpy as np
-import optuna
 import torch
 from abc import ABC
 from dataclasses import dataclass

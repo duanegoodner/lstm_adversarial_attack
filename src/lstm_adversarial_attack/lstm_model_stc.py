@@ -1,10 +1,13 @@
+import sys
 import torch
 import torch.nn as nn
+from pathlib import Path
 from torch.nn.utils.rnn import (
     pack_padded_sequence,
     pad_packed_sequence,
 )
-from data_structures import VariableLengthFeatures
+sys.path.append(str(Path(__file__).parent.parent))
+from lstm_adversarial_attack.data_structures import VariableLengthFeatures
 
 
 
