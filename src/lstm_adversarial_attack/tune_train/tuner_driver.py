@@ -1,7 +1,6 @@
 import sys
 import time
 import torch
-from optuna.pruners import MedianPruner
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -45,11 +44,7 @@ def main():
         device=cur_device,
         dataset=X19MGeneralDataset.from_feaure_finalizer_output(),
         collate_fn=x19m_collate_fn,
-        num_folds=5,
-        num_cv_epochs=20,
-        epochs_per_fold=5,
         tuning_ranges=tuning_ranges,
-        pruner=MedianPruner(n_startup_trials=5, n_warmup_steps=3),
     )
     start = time.time()
     completed_study = tuner.tune(num_trials=30)

@@ -1,16 +1,21 @@
 import numpy as np
+import sys
 import torch
 import torch.nn as nn
 import torch.utils.data as ud
 from dataclasses import dataclass
-from dataset_with_index_old import DatasetWithIndex
+from pathlib import Path
+from typing import Callable
+
+
+from dataset_with_index import DatasetWithIndex
 
 
 @dataclass
 class StandardInferenceResults:
     y_pred: torch.tensor
     y_score: torch.tensor
-    y_true: torch.tensor = None
+    y_true: torch.tensor
 
     @property
     def correct_prediction_indices(self) -> np.ndarray:
@@ -22,13 +27,18 @@ class StandardModelInferrer:
         self,
         model: nn.Module,
         dataset: DatasetWithIndex,
+        collate_fn: Callable,
         batch_size: int = 128,
     ):
         self.model = model
         self.dataset = dataset
         self.batch_size = batch_size
+        self.collate_fn = collate_fn
         self.data_loader = ud.DataLoader(
-            dataset=dataset, batch_size=batch_size, shuffle=False
+            dataset=dataset,
+            batch_size=batch_size,
+            collate_fn=collate_fn,
+            shuffle=False,
         )
 
     # extract this from evaluate function so it can be easily overridden

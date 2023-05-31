@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from cross_validator import CrossValidator
 from lstm_model_stc_old import LSTMSun2018
-from standard_model_trainer import StandardModelTrainer
+from standard_model_trainer_old import StandardModelTrainer
 from x19_mort_dataset import X19MortalityDataset
 from dataset_full48_m19 import Full48M19Dataset
 

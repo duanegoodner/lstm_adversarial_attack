@@ -27,5 +27,7 @@ data/mimiciii_raw/gz/*
 !data/mimiciii_raw/csv/.gitkeep
 !data/mimiciii_raw/gz/.gitkeep
 
+data/*
+
 
 

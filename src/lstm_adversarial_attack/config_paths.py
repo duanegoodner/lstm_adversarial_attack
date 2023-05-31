@@ -15,13 +15,13 @@ PREFILTER_OUTPUT_FILES = {
     "icustay": "icustay.pickle",
     "bg": "bg.pickle",
     "lab": "lab.pickle",
-    "vital": "vital.pickle"
+    "vital": "vital.pickle",
 }
 
 STAY_MEASUREMENT_OUTPUT = PREPROCESS_CHECKPOINTS / "2_merged_stay_measurements"
 STAY_MEASUREMENT_OUTPUT_FILES = {
     "icustay_bg_lab_vital": "icustay_bg_lab_vital.pickle",
-    "bg_lab_vital_summary_stats": "bg_lab_vital_summary_stats.pickle"
+    "bg_lab_vital_summary_stats": "bg_lab_vital_summary_stats.pickle",
 }
 
 FULL_ADMISSION_LIST_OUTPUT = PREPROCESS_CHECKPOINTS / "3_full_admission_list"
@@ -40,3 +40,8 @@ PREPROCESS_OUTPUT_FILES = {
 }
 
 HYPERPARAMETER_OUTPUT_DIR = DATA_DIR / "hyperparameter_tuning"
+BEST_TRIAL_RESULT_PATH = (
+    HYPERPARAMETER_OUTPUT_DIR / "best_trial" / "best_trial.pickle"
+)
+
+TRAINING_OUTPUT_DIR = DATA_DIR / "model_training"

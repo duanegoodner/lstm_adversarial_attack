@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from standard_model_trainer import ModuleWithDevice
+from standard_model_trainer_old import ModuleWithDevice
 
 class LSTMSun2018(ModuleWithDevice):
     def __init__(

@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from dataset_with_index import DatasetWithIndex
+from dataset_with_index_old import DatasetWithIndex
 from pathlib import Path
 from torch.utils.data import Dataset
 import preprocess.prefilter_input_classes as pfin

@@ -1,6 +1,6 @@
 import pickle
 import torch
-from dataset_with_index import DatasetWithIndex
+from dataset_with_index_old import DatasetWithIndex
 from pathlib import Path
 from torch.utils.data import Dataset
 import project_config_old as pc

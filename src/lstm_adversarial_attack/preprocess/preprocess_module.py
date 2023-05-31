@@ -6,7 +6,10 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 import preprocess_resource as pr
-from resource_io import ResourceImporter, ResourceExporter
+from lstm_adversarial_attack.resource_io import (
+    ResourceImporter,
+    ResourceExporter,
+)
 
 
 class PreprocessModule(ABC):

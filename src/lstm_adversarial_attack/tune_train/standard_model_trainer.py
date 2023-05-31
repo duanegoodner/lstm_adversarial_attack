@@ -29,7 +29,7 @@ class StandardModelTrainer:
         optimizer: torch.optim.Optimizer,
         train_loader: ud.DataLoader,
         test_loader: ud.DataLoader,
-        checkpoint_dir: Path = None,
+        checkpoint_dir: Path,
         epoch_start_count: int = 0,
         train_log: TrainLog = TrainLog(),
         eval_log: EvalLog = EvalLog(),

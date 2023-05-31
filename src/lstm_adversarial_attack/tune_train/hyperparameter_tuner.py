@@ -14,7 +14,8 @@ from typing import Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-import resource_io as rio
+import lstm_adversarial_attack.config_settings as cs
+import lstm_adversarial_attack.resource_io as rio
 from lstm_adversarial_attack.data_structures import (
     CVTrialLogs,
     EvalEpochResult,
@@ -24,11 +25,14 @@ from lstm_adversarial_attack.data_structures import (
     TrainEvalLogPair,
 )
 from lstm_adversarial_attack.config_paths import HYPERPARAMETER_OUTPUT_DIR
+
 # from lstm_adversarial_attack.early_stopping import PerformanceSelector
-from lstm_adversarial_attack.lstm_model_stc import (
-    BidirectionalX19LSTM,
+# from lstm_adversarial_attack.lstm_model_stc import (
+#     BidirectionalX19LSTM,
+# )
+from lstm_adversarial_attack.tune_train.standard_model_trainer import (
+    StandardModelTrainer,
 )
-from lstm_adversarial_attack.tune_train.standard_model_trainer import StandardModelTrainer
 from lstm_adversarial_attack.weighted_dataloader_builder import (
     WeightedDataLoaderBuilder,
 )
@@ -36,6 +40,7 @@ from tuner_helpers import (
     ObjectiveFunctionTools,
     PerformanceSelector,
     TrainEvalDatasetPair,
+    X19LSTMBuilder,
     X19LSTMHyperParameterSettings,
     X19MLSTMTuningRanges,
 )
@@ -47,20 +52,23 @@ class HyperParameterTuner:
         device: torch.device,
         dataset: Dataset,
         collate_fn: Callable,
-        num_folds: int,
-        num_cv_epochs: int,
-        epochs_per_fold: int,
         tuning_ranges: X19MLSTMTuningRanges,
+        num_folds: int = cs.TUNER_NUM_FOLDS,
+        num_cv_epochs: int = cs.TUNER_NUM_CV_EPOCHS,
+        epochs_per_fold: int = cs.TUNER_EPOCHS_PER_FOLD,
         fold_class: Callable = StratifiedKFold,
         train_loader_builder=WeightedDataLoaderBuilder(),
-        kfold_random_seed: int = 1234,
+        kfold_random_seed: int = cs.TUNER_KFOLD_RANDOM_SEED,
         loss_fn: nn.Module = nn.CrossEntropyLoss(),
-        cv_mean_metrics_of_interest: tuple[str] = ("AUC", "validation_loss"),
-        performance_metric: str = "validation_loss",
-        optimization_direction: OptimizeDirection = OptimizeDirection.MIN,
-        performance_metric_selector: Callable = min,
+        cv_mean_metrics_of_interest: tuple[
+            str
+        ] = cs.TUNER_CV_MEAN_METRICS_OF_INTEREST,
+        performance_metric: str = cs.TUNER_PERFORMANCE_METRIC,
+        optimization_direction: str = cs.TUNER_OPTIMIZATION_DIRECTION,
+        # performance_metric_selector: Callable = min,
         pruner: BasePruner = MedianPruner(
-            n_startup_trials=2, n_warmup_steps=5
+            n_startup_trials=cs.TUNER_PRUNER_NUM_STARTUP_TRIALS,
+            n_warmup_steps=cs.TUNER_PRUNER_NUM_WARMUP_STEPS,
         ),
         hyperparameter_sampler: BaseSampler = TPESampler(),
         output_dir: Path = None,
@@ -80,7 +88,7 @@ class HyperParameterTuner:
         self.train_loader_builder = train_loader_builder
         self.loss_fn = loss_fn
         self.performance_metric = performance_metric
-        self.performance_metric_selector = performance_metric_selector
+        # self.performance_metric_selector = performance_metric_selector
         self.optimization_direction = optimization_direction
         self.optimization_direction_label = (
             "minimize"
@@ -135,25 +143,25 @@ class HyperParameterTuner:
 
         return all_train_eval_pairs
 
-    @staticmethod
-    def define_model(settings: X19LSTMHyperParameterSettings):
-        return nn.Sequential(
-            BidirectionalX19LSTM(
-                input_size=19,
-                lstm_hidden_size=2**settings.log_lstm_hidden_size,
-            ),
-            getattr(nn, settings.lstm_act_name)(),
-            nn.Dropout(p=settings.dropout),
-            nn.Linear(
-                in_features=2 * (2**settings.log_lstm_hidden_size),
-                out_features=2**settings.log_fc_hidden_size,
-            ),
-            getattr(nn, settings.fc_act_name)(),
-            nn.Linear(
-                in_features=2**settings.log_fc_hidden_size, out_features=2
-            ),
-            nn.Softmax(dim=1),
-        )
+    # @staticmethod
+    # def define_model(settings: X19LSTMHyperParameterSettings):
+    #     return nn.Sequential(
+    #         BidirectionalX19LSTM(
+    #             input_size=19,
+    #             lstm_hidden_size=2**settings.log_lstm_hidden_size,
+    #         ),
+    #         getattr(nn, settings.lstm_act_name)(),
+    #         nn.Dropout(p=settings.dropout),
+    #         nn.Linear(
+    #             in_features=2 * (2**settings.log_lstm_hidden_size),
+    #             out_features=2**settings.log_fc_hidden_size,
+    #         ),
+    #         getattr(nn, settings.fc_act_name)(),
+    #         nn.Linear(
+    #             in_features=2**settings.log_fc_hidden_size, out_features=2
+    #         ),
+    #         nn.Softmax(dim=1),
+    #     )
 
     @staticmethod
     def initialize_model(model: nn.Module):
@@ -171,7 +179,8 @@ class HyperParameterTuner:
     ):
         trainers = []
         for fold_idx, dataset_pair in enumerate(self.cv_datasets):
-            model = self.define_model(settings=settings)
+            # model = self.define_model(settings=settings)
+            model = X19LSTMBuilder(settings=settings).build()
             train_loader = self.train_loader_builder.build(
                 dataset=dataset_pair.train,
                 batch_size=2**settings.log_batch_size,
@@ -244,7 +253,7 @@ class HyperParameterTuner:
             )
 
     def build_objective_function_tools(self, trial: optuna.Trial):
-        settings = X19LSTMHyperParameterSettings.from_optuna(
+        settings = X19LSTMHyperParameterSettings.from_optuna_active_trial(
             trial=trial, tuning_ranges=self.tuning_ranges
         )
         summary_writer_path = (

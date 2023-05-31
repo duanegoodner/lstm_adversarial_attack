@@ -4,7 +4,7 @@ from pathlib import Path
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import random_split
 from lstm_model_stc_old import LSTMSun2018
-from standard_model_trainer import StandardModelTrainer
+from standard_model_trainer_old import StandardModelTrainer
 from weighted_dataloader_builder import WeightedDataLoaderBuilder
 from dataset_full48_m19 import Full48M19Dataset
 

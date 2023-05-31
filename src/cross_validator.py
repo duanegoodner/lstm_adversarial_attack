@@ -4,7 +4,7 @@ import torch.optim
 from pathlib import Path
 from sklearn.model_selection import KFold
 from torch.utils.data import Subset, DataLoader, Dataset
-import standard_model_trainer as smt
+import standard_model_trainer_old as smt
 import standard_trainable_classifier as stc
 from weighted_dataloader_builder import (
     DataLoaderBuilder,

@@ -1,7 +1,7 @@
 import sys
 import torch
 from dataclasses import dataclass
-from dataset_with_index import DatasetWithIndex
+from dataset_with_index_old import DatasetWithIndex
 from pathlib import Path
 from torch.nn.utils.rnn import (
     pad_sequence,
@@ -58,11 +58,6 @@ class X19MGeneralDataset(Dataset):
         )
 
 
-class X19MGeneralDatasetWithIndex(X19MGeneralDataset, DatasetWithIndex):
-    def __getitem__(self, idx: int):
-        return idx, self.measurements[idx], self.in_hosp_mort[idx]
-
-
 def x19m_collate_fn(batch):
     features, labels = zip(*batch)
     padded_features = pad_sequence(sequences=features, batch_first=True)
@@ -73,6 +68,22 @@ def x19m_collate_fn(batch):
         features=padded_features, lengths=lengths
     ), torch.tensor(labels, dtype=torch.long)
     # return padded_features, torch.tensor(labels, dtype=torch.long), lengths
+
+
+class X19MGeneralDatasetWithIndex(X19MGeneralDataset, DatasetWithIndex):
+    def __getitem__(self, idx: int):
+        return idx, self.measurements[idx], self.in_hosp_mort[idx]
+
+
+def x19m_with_index_collate_fn(batch):
+    indices, features, labels = zip(*batch)
+    padded_features = pad_sequence(sequences=features, batch_first=True)
+    lengths = torch.tensor(
+        [item.shape[0] for item in features], dtype=torch.long
+    )
+    return torch.tensor(indices, dtype=torch.long), VariableLengthFeatures(
+        features=padded_features, lengths=lengths
+    ), torch.tensor(labels, dtype=torch.long)
 
 
 if __name__ == "__main__":

@@ -43,6 +43,7 @@ services:
     ports:
       - "127.0.0.1:${CONTAINER_SSH_PORT}:22"
       - "127.0.0.1:8888:8888"
+      - "127.0.0.1:6006:6006"
     init: true
     stdin_open: true
     tty: true

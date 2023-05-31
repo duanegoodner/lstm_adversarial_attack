@@ -6,9 +6,9 @@ import torch.nn as nn
 from dataclasses import dataclass
 from pathlib import Path
 from torch.utils.data import DataLoader
-from dataset_with_index import DatasetWithIndex
+from dataset_with_index_old import DatasetWithIndex
 from lstm_sun_2018_logit_out import LSTMSun2018Logit
-import resource_io as rio
+import resource_io_old as rio
 from single_sample_feature_perturber import SingleSampleFeaturePerturber
 from weighted_dataloader_builder import WeightedDataLoaderBuilder
 
