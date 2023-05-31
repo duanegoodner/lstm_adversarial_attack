@@ -7,8 +7,19 @@ __pycache__/
 .idea/
 .vscode/
 
+data/attack/*
+!data/attack/.gitkeep
 
-data/mimiciii_query_results/*.csv
+data/hyperparameter_tuning/*
+!data/hyperparameter_tuning/.gitkeep
+!data/hyperparameter_tuning/2023-05-25_16_trials
+!data/hyperparameter_tuning/best_trial
+
+data/mimiciii_query_results/*
+!data/mimiciii_query_results/.gitkeep
+
+data/model_training/*
+!data/model_training/.gitkeep
 
 data/output_feature_finalizer/*
 !data/output_feature_finalizer/.gitkeep
@@ -22,12 +33,8 @@ data/preprocess_checkpoints/3_full_admission_list/*
 data/preprocess_checkpoints/4_feature_builder/*
 !data/preprocess_checkpoints/4_feature_builder/.gitkeep
 
-data/mimiciii_raw/csv/*
-data/mimiciii_raw/gz/*
-!data/mimiciii_raw/csv/.gitkeep
-!data/mimiciii_raw/gz/.gitkeep
 
-data/*
+
 
 
 
