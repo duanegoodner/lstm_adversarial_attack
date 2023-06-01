@@ -17,6 +17,7 @@ from lstm_adversarial_attack.data_structures import (
     EvalEpochResult,
     EvalLogEntry,
     EvalLog,
+    FullEvalResult,
     TrainEvalLogPair,
 )
 
@@ -93,9 +94,9 @@ class StandardModelTrainer:
             "optimizer_state_dict": self.optimizer.state_dict(),
         }
         torch.save(obj=output_object, f=output_path)
-        rio.ResourceExporter().export(
-            resource=self, path=self.checkpoint_dir / "trainer.pickle"
-        )
+        # rio.ResourceExporter().export(
+        #     resource=self, path=self.checkpoint_dir / "trainer.pickle"
+        # )
         return output_path
 
     def train_model(
@@ -146,7 +147,7 @@ class StandardModelTrainer:
             )
 
     @torch.no_grad()
-    def evaluate_model(self):
+    def evaluate_model(self, return_results: bool = False):
         running_loss = 0.0
         self.model.to(self.eval_device)
         self.model.eval()
@@ -178,7 +179,14 @@ class StandardModelTrainer:
         self.report_eval_results(
             eval_results=eval_results,
         )
-        # return self.eval_log
+        if return_results:
+            return FullEvalResult(
+                metrics=eval_results,
+                y_pred=all_y_true,
+                y_score=all_y_score,
+                y_true=all_y_true
+            )
+
 
     def report_eval_results(
         self,
@@ -208,13 +216,17 @@ class StandardModelTrainer:
     def run_train_eval_cycles(
         self,
         num_cycles: int,
-        epochs_per_cycle: int,
+        epochs_per_cycle: int = 1,
         save_checkpoints: bool = False,
+        num_cycles_per_checkpoint: int = 10,
     ):
         for cycle_num in range(num_cycles):
             self.train_model(num_epochs=epochs_per_cycle)
             self.evaluate_model()
-            if save_checkpoints:
+            if (
+                save_checkpoints
+                and ((cycle_num + 1) % num_cycles_per_checkpoint) == 0
+            ):
                 self.save_checkpoint()
 
         return TrainEvalLogPair(train=self.train_log, eval=self.eval_log)

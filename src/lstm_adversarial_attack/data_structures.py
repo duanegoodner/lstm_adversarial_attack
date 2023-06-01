@@ -145,3 +145,11 @@ class CVTrialLogs:
 class OptimizeDirection(Enum):
     MIN = auto()
     MAX = auto()
+
+
+@dataclass
+class FullEvalResult:
+    metrics: EvalEpochResult
+    y_pred: torch.tensor
+    y_score: torch.tensor
+    y_true: torch.tensor

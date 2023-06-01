@@ -8,14 +8,14 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 from lstm_adversarial_attack.data_structures import VariableLengthFeatures
 
 
-class VariableLengthFeaturePerturber(nn.Module):
+class FeaturePerturber(nn.Module):
     def __init__(
         self,
         batch_size: int = 2,
         input_size: int = 3,
-        max_sequence_length: int = 4
+        max_sequence_length: int = 4,
     ):
-        super(VariableLengthFeaturePerturber, self).__init__()
+        super(FeaturePerturber, self).__init__()
         self.batch_size = batch_size
         self.input_size = input_size
         self.max_sequence_length = max_sequence_length
@@ -28,4 +28,11 @@ class VariableLengthFeaturePerturber(nn.Module):
             self.perturbation.grad.zero_()
         nn.init.zeros_(self.perturbation)
 
-    def forward(self, inputs: VariableLengthFeatures) -> VariableLengthFeatures:
+    def forward(
+        self, inputs: VariableLengthFeatures
+    ) -> VariableLengthFeatures:
+
+        return VariableLengthFeatures(
+            features=inputs.features + self.perturbation,
+            lengths=inputs.lengths,
+        )

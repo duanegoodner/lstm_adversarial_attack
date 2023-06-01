@@ -45,3 +45,5 @@ BEST_TRIAL_RESULT_PATH = (
 )
 
 TRAINING_OUTPUT_DIR = DATA_DIR / "model_training"
+
+ATTACK_OUTPUT_DIR = DATA_DIR / "attack"
