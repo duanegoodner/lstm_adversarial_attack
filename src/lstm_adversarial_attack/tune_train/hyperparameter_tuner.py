@@ -280,8 +280,8 @@ class HyperParameterTuner:
             eval_epoch_results = []
             for fold_idx, trainer in enumerate(objective_tools.trainers):
                 trainer.train_model(num_epochs=self.epochs_per_fold)
-                eval_log = trainer.evaluate_model()
-                eval_epoch_results.append(eval_log.latest_entry)
+                trainer.evaluate_model()
+                eval_epoch_results.append(trainer.eval_log.latest_entry)
                 trainer.model.to("cpu")
             mean_validation_vals = EvalEpochResult.mean(
                 [item.result for item in eval_epoch_results]

@@ -6,7 +6,9 @@ import torch.utils.data as ud
 from datetime import datetime
 from pathlib import Path
 from torch.utils.tensorboard import SummaryWriter
+
 sys.path.append(str(Path(__file__).parent.parent))
+import lstm_adversarial_attack.resource_io as rio
 from lstm_adversarial_attack.data_structures import (
     ClassificationScores,
     TrainEpochResult,
@@ -51,11 +53,11 @@ class StandardModelTrainer:
         self.summary_writer = summary_writer
         self.summary_writer_group = summary_writer_group
         self.summary_writer_subgroup = summary_writer_subgroup
-        if train_log is None:
-            train_log = []
+        # if train_log is None:
+        #     train_log = []
         self.train_log = train_log
-        if eval_log is None:
-            eval_log = []
+        # if eval_log is None:
+        #     eval_log = []
         self.eval_log = eval_log
 
     @staticmethod
@@ -91,6 +93,9 @@ class StandardModelTrainer:
             "optimizer_state_dict": self.optimizer.state_dict(),
         }
         torch.save(obj=output_object, f=output_path)
+        rio.ResourceExporter().export(
+            resource=self, path=self.checkpoint_dir / "trainer.pickle"
+        )
         return output_path
 
     def train_model(
@@ -123,7 +128,7 @@ class StandardModelTrainer:
             )
             self.completed_epochs += 1
             self.report_epoch_loss(epoch_loss=epoch_loss)
-        return self.train_log
+        # return self.train_log
 
     def report_epoch_loss(self, epoch_loss: float):
         print(
@@ -173,7 +178,7 @@ class StandardModelTrainer:
         self.report_eval_results(
             eval_results=eval_results,
         )
-        return self.eval_log
+        # return self.eval_log
 
     def report_eval_results(
         self,
