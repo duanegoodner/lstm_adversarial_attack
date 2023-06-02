@@ -57,7 +57,6 @@ class LogitNoDropoutModelBuilder:
         return logit_no_dropout_model
 
 
-
 class TargetDatasetBuilder:
     def __init__(
         self,
