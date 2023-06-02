@@ -62,16 +62,30 @@ class AdversarialAttackTrainer:
                 collate_fn=self.collate_fn,
             )
 
-    def get_successful_examples(
-        self,
-        dataset_indices: torch.tensor,
-        orig_features: torch.tensor,
-        logits: torch.tensor,
-        orig_labels: torch.tensor,
-    ):
-        in_batch_success_indices = (
-            torch.argmax(input=logits, dim=1) != orig_labels
-        )
+    # @staticmethod
+    # def get_successful_examples(
+    #     dataset_indices: torch.tensor,
+    #     orig_features: VariableLengthFeatures,
+    #     logits: torch.tensor,
+    #     orig_labels: torch.tensor,
+    # ) -> tuple[torch.tensor, torch.tensor, torch.tensor]:
+    #     in_batch_success_indices = (
+    #         torch.argmax(input=logits, dim=1) != orig_labels
+    #     )
+
+        # success_dataset_indices = torch.masked_select(
+        #     dataset_indices, in_batch_success_indices
+        # )
+        #
+        # success_features = torch.masked_select(
+        #     orig_features.features, in_batch_success_indices
+        # )
+        #
+        # success_lengths = torch.masked_select(
+        #     orig_features.lengths, in_batch_success_indices
+        # )
+
+        # return success_dataset_indices, success_features, success_lengths
 
     def attack_batch(
         self,
@@ -87,6 +101,10 @@ class AdversarialAttackTrainer:
         attempt_counts = 0
         success_counts = torch.zeros(orig_labels.shape[0], dtype=torch.long)
 
+        success_dataset_indices = torch.LongTensor()
+        success_padded_perturbations = torch.FloatTensor()
+        success_input_lengths = torch.LongTensor()
+
         # TODO fill in details to record successes
         for epoch in range(max_num_attempts):
             self.optimizer.zero_grad()
@@ -95,9 +113,32 @@ class AdversarialAttackTrainer:
                 self.loss_fn(logits=logits, original_labels=orig_labels)
                 + self.lambda_1 * self.attacker.feature_perturber.l1_loss()
             )
-            # regularized_loss = loss + torch.linalg.matrix_norm(
-            #     self.attacker.feature_perturber.perturbation
-            # )
+            in_batch_success_indices = (
+                torch.argmax(input=logits, dim=1) != orig_labels
+            )
+            success_dataset_indices = torch.cat(
+                (
+                    success_dataset_indices,
+                    torch.masked_select(
+                        input=indices, mask=in_batch_success_indices.to("cpu")
+                    ),
+                ),
+                dim=0,
+            )
+
+            success_padded_perturbations = torch.cat(
+                (success_padded_perturbations,
+                self.attacker.feature_perturber.perturbation[
+                    torch.where(in_batch_success_indices)[0], :, :
+                ].to("cpu")), dim=0
+            )
+
+            success_input_lengths = torch.cat(
+                (success_input_lengths, torch.masked_select(
+                    input=orig_features.lengths, mask=in_batch_success_indices.to("cpu")
+                )), dim=0
+            )
+
             loss.backward()
             self.optimizer.step()
 

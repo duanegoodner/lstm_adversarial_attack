@@ -1,7 +1,6 @@
 import sys
 import torch
-from dataclasses import dataclass
-from dataset_with_index_old import DatasetWithIndex
+from dataset_with_index import DatasetWithIndex
 from pathlib import Path
 from torch.nn.utils.rnn import (
     pad_sequence,
@@ -88,3 +87,4 @@ def x19m_with_index_collate_fn(batch):
 
 if __name__ == "__main__":
     x19_general_dataset = X19MGeneralDataset.from_feaure_finalizer_output()
+    x19_with_index = X19MGeneralDatasetWithIndex.from_feaure_finalizer_output()
