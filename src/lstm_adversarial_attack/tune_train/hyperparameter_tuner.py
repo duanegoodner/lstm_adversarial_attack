@@ -57,7 +57,7 @@ class HyperParameterTuner:
         num_cv_epochs: int = cs.TUNER_NUM_CV_EPOCHS,
         epochs_per_fold: int = cs.TUNER_EPOCHS_PER_FOLD,
         fold_class: Callable = StratifiedKFold,
-        train_loader_builder=WeightedDataLoaderBuilder(),
+        # train_loader_builder=WeightedDataLoaderBuilder(),
         kfold_random_seed: int = cs.TUNER_KFOLD_RANDOM_SEED,
         loss_fn: nn.Module = nn.CrossEntropyLoss(),
         cv_mean_metrics_of_interest: tuple[
@@ -85,7 +85,7 @@ class HyperParameterTuner:
         # use seed to keep same fold indices for all trials
         self.kfold_random_seed = kfold_random_seed
         self.cv_datasets = self.create_datasets()
-        self.train_loader_builder = train_loader_builder
+        # self.train_loader_builder = train_loader_builder
         self.loss_fn = loss_fn
         self.performance_metric = performance_metric
         # self.performance_metric_selector = performance_metric_selector
@@ -181,11 +181,16 @@ class HyperParameterTuner:
         for fold_idx, dataset_pair in enumerate(self.cv_datasets):
             # model = self.define_model(settings=settings)
             model = X19LSTMBuilder(settings=settings).build()
-            train_loader = self.train_loader_builder.build(
+            train_loader = WeightedDataLoaderBuilder(
                 dataset=dataset_pair.train,
                 batch_size=2**settings.log_batch_size,
-                collate_fn=self.collate_fn,
-            )
+                collate_fn=self.collate_fn
+            ).build()
+            # train_loader = self.train_loader_builder.build(
+            #     dataset=dataset_pair.train,
+            #     batch_size=2**settings.log_batch_size,
+            #     collate_fn=self.collate_fn,
+            # )
             validation_loader = DataLoader(
                 dataset=dataset_pair.validation,
                 batch_size=128,

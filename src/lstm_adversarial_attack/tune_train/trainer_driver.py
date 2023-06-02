@@ -42,7 +42,7 @@ class TrainerDriver:
         collate_fn: Callable = x19m_collate_fn,
         loss_fn: nn.Module = nn.CrossEntropyLoss(),
         output_dir: Path = None,
-        train_loader_builder=WeightedDataLoaderBuilder(),
+        # train_loader_builder=WeightedDataLoaderBuilder(),
         train_dataset_fraction: float = 0.8,
         random_seed: int = None,
     ):
@@ -54,7 +54,7 @@ class TrainerDriver:
         self.batch_size = batch_size
         self.loss_fn = loss_fn
         self.optimizer = optimizer
-        self.train_loader_builder = train_loader_builder
+        # self.train_loader_builder = train_loader_builder
         self.train_dataset_fraction = train_dataset_fraction
         self.random_seed = random_seed
         if random_seed is not None:
@@ -129,11 +129,16 @@ class TrainerDriver:
         )
 
     def build_data_loaders(self) -> TrainEvalDataLoaderPair:
-        train_loader = self.train_loader_builder.build(
+        # train_loader = self.train_loader_builder.build(
+        #     dataset=self.dataset_pair.train,
+        #     batch_size=self.batch_size,
+        #     collate_fn=self.collate_fn,
+        # )
+        train_loader = WeightedDataLoaderBuilder(
             dataset=self.dataset_pair.train,
             batch_size=self.batch_size,
-            collate_fn=self.collate_fn,
-        )
+            collate_fn=self.collate_fn
+        ).build()
         test_loader = DataLoader(
             dataset=self.dataset_pair.validation,
             batch_size=128,

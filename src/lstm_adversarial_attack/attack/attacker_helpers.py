@@ -1,7 +1,13 @@
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader, Dataset
+from typing import Callable
 from adversarial_attacker import AdversarialAttacker
 from feature_perturber import FeaturePerturber
+
+from lstm_adversarial_attack.weighted_dataloader_builder import (
+    WeightedDataLoaderBuilder,
+)
 
 
 class AdversarialAttackerBuilder:
@@ -9,15 +15,19 @@ class AdversarialAttackerBuilder:
         self,
         full_model: nn.Module,
         state_dict: dict,
+        dataset: Dataset,
         batch_size: int,
         input_size: int,
         max_sequence_length: int,
+        use_weighted_data_loader: bool = False,
     ):
         self.full_model = full_model
         self.state_dict = state_dict
+        self.dataset = dataset
         self.batch_size = batch_size
         self.input_size = input_size
         self.max_sequence_length = max_sequence_length
+        self.use_weighted_data_loader = use_weighted_data_loader
 
     # TODO try to use public full_model.modules() instead of ._modules (but
     #  need to figure out details of modules() return value)
@@ -35,15 +45,14 @@ class AdversarialAttackerBuilder:
         feature_perturber = FeaturePerturber(
             batch_size=self.batch_size,
             input_size=self.input_size,
-            max_sequence_length=self.max_sequence_length
+            max_sequence_length=self.max_sequence_length,
         )
         attacker = AdversarialAttacker(
             feature_perturber=feature_perturber,
-            logitout_model=logit_no_dropout_model
+            logitout_model=logit_no_dropout_model,
         )
 
         return attacker
-
 
 
 class AdversarialLoss(nn.Module):
@@ -66,4 +75,3 @@ class AdversarialLoss(nn.Module):
 # my_original_labels = torch.tensor([0, 1], dtype=torch.long)
 #
 # result = loss_fn(my_logits, my_original_labels)
-

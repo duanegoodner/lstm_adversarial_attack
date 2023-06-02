@@ -3,7 +3,7 @@ import torch.nn as nn
 from feature_perturber import FeaturePerturber
 
 
-class AdversarialAttacker(nn.Module):
+class  AdversarialAttacker(nn.Module):
     def __init__(
         self,
         feature_perturber: FeaturePerturber,

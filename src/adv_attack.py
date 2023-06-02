@@ -81,7 +81,7 @@ class AdversarialExamplesSummary:
         index: torch.tensor,
         loss: torch.tensor,
         perturbation: torch.tensor,
-        orig_label: torch.tensor
+        orig_label: torch.tensor,
     ):
         self.indices = torch.cat(
             (self.indices, index.detach().to("cpu")), dim=0
@@ -101,7 +101,6 @@ class AdversarialExamplesSummary:
             (self.perturbations, perturbation.detach().detach().to("cpu")),
             dim=0,
         )
-
 
     def record_success_rate(
         self, num_attempts: int, num_successes: int, success_rate: float
@@ -256,7 +255,7 @@ class AdversarialAttackTrainer:
                     perturbation=self._attacker.feature_perturber.perturbation.detach().to(
                         "cpu"
                     ),
-                    orig_label=orig_label
+                    orig_label=orig_label,
                 )
             num_attempts += 1
             loss.backward()

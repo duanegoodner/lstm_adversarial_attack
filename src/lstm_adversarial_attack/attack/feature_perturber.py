@@ -11,16 +11,16 @@ from lstm_adversarial_attack.data_structures import VariableLengthFeatures
 class FeaturePerturber(nn.Module):
     def __init__(
         self,
-        batch_size: int = 2,
-        input_size: int = 3,
-        max_sequence_length: int = 4,
+        batch_size: int,
+        input_size: int,
+        max_sequence_length: int,
     ):
         super(FeaturePerturber, self).__init__()
         self.batch_size = batch_size
         self.input_size = input_size
         self.max_sequence_length = max_sequence_length
         self.perturbation = nn.Parameter(
-            torch.zeros((max_sequence_length, input_size))
+            torch.zeros((batch_size, max_sequence_length, input_size))
         )
 
     def reset_parameters(self):
@@ -36,3 +36,6 @@ class FeaturePerturber(nn.Module):
             features=inputs.features + self.perturbation,
             lengths=inputs.lengths,
         )
+
+    def l1_loss(self) -> torch.tensor:
+        return torch.mean(torch.linalg.matrix_norm(self.perturbation))

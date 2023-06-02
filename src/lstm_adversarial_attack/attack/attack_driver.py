@@ -26,7 +26,8 @@ checkpoint = torch.load(checkpoint_path)
 attacker_builder = AdversarialAttackerBuilder(
     full_model=model,
     state_dict=checkpoint["state_dict"],
-    batch_size=4,
+    dataset=X19MGeneralDatasetWithIndex.from_feaure_finalizer_output(),
+    batch_size=128,
     input_size=19,
     max_sequence_length=48,
 )
@@ -49,10 +50,12 @@ attack_trainer = AdversarialAttackTrainer(
     device=cur_device,
     attacker=attacker,
     loss_fn=AdversarialLoss(kappa=0.0),
+    lambda_1=1e-4,
     optimizer=torch.optim.Adam(
         params=attacker.parameters(), lr=1e-4
     ),
-    data_loader=data_loader,
+    dataset=X19MGeneralDatasetWithIndex.from_feaure_finalizer_output(),
+    collate_fn=x19m_with_index_collate_fn,
     output_dir=ATTACK_OUTPUT_DIR
 )
 
