@@ -1,6 +1,6 @@
 import sys
 import torch
-from dataset_with_index import DatasetWithIndex
+from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
 from pathlib import Path
 from torch.nn.utils.rnn import (
     pad_sequence,

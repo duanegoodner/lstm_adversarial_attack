@@ -1,37 +1,31 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Dataset
+from dataclasses import dataclass
+from torch.utils.data import Dataset, Subset
 from typing import Callable
-from adversarial_attacker import AdversarialAttacker
-from feature_perturber import FeaturePerturber
 
-from lstm_adversarial_attack.weighted_dataloader_builder import (
-    WeightedDataLoaderBuilder,
+from inferrer import StandardInferenceResults, StandardModelInferrer
+from lstm_adversarial_attack.x19_mort_general_dataset import (
+    X19MGeneralDatasetWithIndex,
+    DatasetWithIndex,
 )
 
 
-class AdversarialAttackerBuilder:
-    def __init__(
-        self,
-        full_model: nn.Module,
-        state_dict: dict,
-        dataset: Dataset,
-        batch_size: int,
-        input_size: int,
-        max_sequence_length: int,
-        use_weighted_data_loader: bool = False,
-    ):
+@dataclass
+class TargetModel:
+    full_model: nn.Module
+    full_model_state_dict: dict
+    logit_out_no_dropout: nn.Module
+
+
+# TODO Is it necessary to include state_dict? Or can we guarantee it gets
+#  loaded into model and just use model?
+class TargetModelBuilder:
+    def __init__(self, full_model: nn.Module, state_dict: dict):
         self.full_model = full_model
         self.state_dict = state_dict
-        self.dataset = dataset
-        self.batch_size = batch_size
-        self.input_size = input_size
-        self.max_sequence_length = max_sequence_length
-        self.use_weighted_data_loader = use_weighted_data_loader
 
-    # TODO try to use public full_model.modules() instead of ._modules (but
-    #  need to figure out details of modules() return value)
-    def create_logit_no_dropout_model(self) -> nn.Sequential:
+    def build_logit_out_no_dropout(self) -> nn.Module:
         new_module_list = [
             val if type(val) != nn.Dropout else nn.Dropout(0)
             for key, val in list(self.full_model._modules.items())[:-1]
@@ -40,19 +34,70 @@ class AdversarialAttackerBuilder:
         logit_no_dropout_model.load_state_dict(self.state_dict, strict=False)
         return logit_no_dropout_model
 
-    def build(self) -> AdversarialAttacker:
-        logit_no_dropout_model = self.create_logit_no_dropout_model()
-        feature_perturber = FeaturePerturber(
-            batch_size=self.batch_size,
-            input_size=self.input_size,
-            max_sequence_length=self.max_sequence_length,
-        )
-        attacker = AdversarialAttacker(
-            feature_perturber=feature_perturber,
-            logitout_model=logit_no_dropout_model,
+    def build(self) -> TargetModel:
+        return TargetModel(
+            full_model=self.full_model,
+            full_model_state_dict=self.state_dict,
+            logit_out_no_dropout=self.build_logit_out_no_dropout(),
         )
 
-        return attacker
+
+class LogitNoDropoutModelBuilder:
+    def __init__(self, full_model: nn.Module, state_dict: dict):
+        self.full_model = full_model
+        self.state_dict = state_dict
+
+    def build(self) -> nn.Module:
+        new_module_list = [
+            val if type(val) != nn.Dropout else nn.Dropout(0)
+            for key, val in list(self.full_model._modules.items())[:-1]
+        ]
+        logit_no_dropout_model = nn.Sequential(*new_module_list)
+        logit_no_dropout_model.load_state_dict(self.state_dict, strict=False)
+        return logit_no_dropout_model
+
+
+
+class TargetDatasetBuilder:
+    def __init__(
+        self,
+        device: torch.device,
+        model: nn.Module,
+        orig_dataset: DatasetWithIndex | X19MGeneralDatasetWithIndex,
+        collate_fn: Callable,
+        batch_size: int = 128,
+        include_misclassified_examples: bool = False,
+    ):
+        self.device = device
+        self.model = model
+        self.orig_dataset = orig_dataset
+        self.collate_fn = collate_fn
+        self.batch_size = batch_size
+        self.include_misclassified_examples = include_misclassified_examples
+
+    def get_orig_predictions(self) -> StandardInferenceResults:
+        inferrer = StandardModelInferrer(
+            device=self.device,
+            model=self.model,
+            dataset=self.orig_dataset,
+            collate_fn=self.collate_fn,
+            batch_size=self.batch_size,
+        )
+        return inferrer.infer()
+
+    def build(self) -> DatasetWithIndex | Subset:
+        orig_predictions = self.get_orig_predictions()
+        full_target_dataset = X19MGeneralDatasetWithIndex(
+            measurements=self.orig_dataset.measurements,
+            in_hosp_mort=orig_predictions.y_pred,
+        )
+        if not self.include_misclassified_examples:
+            return Subset(
+                dataset=full_target_dataset,
+                indices=orig_predictions.correct_prediction_indices,
+            )
+        else:
+            return full_target_dataset
 
 
 class AdversarialLoss(nn.Module):
