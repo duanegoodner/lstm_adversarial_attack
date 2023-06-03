@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from dataclasses import dataclass
 from pathlib import Path
 from torch.utils.data import DataLoader, Dataset, Subset
 from typing import Callable
@@ -8,83 +7,15 @@ from typing import Callable
 from adversarial_attacker import AdversarialAttacker
 from attack_result_data_structs import (
     EpochSuccesses,
-    RecordedTrainerExamples,
     BatchResult,
-    RecordedBatchExamples,
+    TrainerResult
 )
 from attacker_helpers import TargetDatasetBuilder
-from inferrer import StandardModelInferrer, StandardInferenceResults
 from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
 from lstm_adversarial_attack.data_structures import VariableLengthFeatures
 from lstm_adversarial_attack.weighted_dataloader_builder import (
     WeightedDataLoaderBuilder,
 )
-
-
-# @dataclass
-# class EpochSuccesses:
-#     batch_indices: torch.tensor
-#     success_loss_vals: torch.tensor
-#     success_perturbations: torch.tensor
-#
-#
-# class BatchResult:
-#     def __init__(
-#         self,
-#         dataset_indices: torch.tensor,
-#         max_seq_length: int,
-#         input_size: int,
-#     ):
-#         batch_size_actual = dataset_indices.shape[0]
-#
-#         self.dataset_indices = dataset_indices
-#
-#         self.first_ex_epoch = torch.empty(
-#             batch_size_actual, dtype=torch.long
-#         ).fill_(-1)
-#         self.best_ex_epoch = torch.clone(self.first_ex_epoch)
-#
-#         self.first_ex_loss = torch.empty(batch_size_actual).fill_(float("inf"))
-#         self.best_ex_loss = torch.clone(self.first_ex_loss)
-#
-#         self.first_ex_perturbation = torch.zeros(
-#             size=(batch_size_actual, max_seq_length, input_size)
-#         )
-#         self.best_ex_perturbation = torch.clone(self.first_ex_perturbation)
-
-
-# @dataclass
-# class TrainerResult:
-#     indices: torch.tensor = torch.LongTensor()
-#     first_ex_loss: torch.tensor = torch.FloatTensor()
-#     best_ex_loss: torch.tensor = torch.FloatTensor()
-#     first_ex_epoch: torch.tensor = torch.LongTensor()
-#     best_ex_epoch: torch.tensor = torch.FloatTensor()
-#     first_ex_perturbation: torch.tensor = torch.FloatTensor()
-#     best_ex_perturbation: torch.tensor = torch.FloatTensor()
-#
-#     def update(self, batch_result: BatchResult):
-#         self.indices = torch.cat((self.indices, batch_result.indices), dim=0)
-#         self.first_ex_loss = torch.cat(
-#             (self.first_ex_loss, batch_result.first_ex_loss), dim=0
-#         )
-#         self.best_ex_loss = torch.cat(
-#             (self.best_ex_loss, batch_result.best_ex_loss), dim=0
-#         )
-#         self.first_ex_epoch = torch.cat(
-#             (self.first_ex_epoch, batch_result.first_ex_epoch), dim=0
-#         )
-#         self.best_ex_epoch = torch.cat(
-#             (self.best_ex_epoch, batch_result.best_ex_epoch), dim=0
-#         )
-#         self.first_ex_perturbation = torch.cat(
-#             (self.first_ex_perturbation, batch_result.first_ex_perturbation),
-#             dim=0,
-#         )
-#         self.best_ex_perturbation = torch.cat(
-#             (self.best_ex_perturbation, batch_result.best_ex_perturbation),
-#             dim=0,
-#         )
 
 
 class AdversarialAttackTrainer:
@@ -212,44 +143,40 @@ class AdversarialAttackTrainer:
                 original_labels=orig_labels,
             )
 
+            # Run this BEFORE optimizer.step() which changes perturbations
             epoch_successes = self.get_epoch_successes(
                 epoch_num=epoch,
                 logits=logits,
                 orig_labels=orig_labels,
                 sample_losses=sample_losses
             )
-
-            attack_is_successful = (
-                torch.argmax(input=logits, dim=1) != orig_labels
-            )
-            # in-batch indices of samples w/ successful attack
-            successful_attack_indices = torch.where(attack_is_successful)[0]
-            epoch_success_losses = sample_losses[successful_attack_indices]
-            epoch_success_perturbations = self.perturbation[
-                successful_attack_indices
-            ]
-
-            # epoch_successes = EpochSuccesses(
-            #     epoch_num=epoch,
-            #     batch_indices=successful_attack_indices,
-            #     losses=epoch_success_losses,
-            #     perturbations=epoch_success_perturbations,
-            # )
+            batch_result.update(epoch_successes=epoch_successes)
 
             mean_loss.backward()
             self.optimizer.step()
-            batch_result.update(epoch_successes=epoch_successes)
+
+        return batch_result
+
 
     def train_attacker(self):
         data_loader = self.build_data_loader()
         self.attacker.to(self.device)
         self.set_attacker_train_mode()
+        trainer_result = TrainerResult()
+
         for num_batches, (indices, orig_features, orig_labels) in enumerate(
             data_loader
         ):
-            self.attack_batch(
+            print(f"Running batch {num_batches}")
+            batch_result = self.attack_batch(
                 indices=indices,
                 orig_features=orig_features,
                 orig_labels=orig_labels,
                 max_num_attempts=100,
             )
+
+            trainer_result.update(batch_result=batch_result.to("cpu"))
+
+        return trainer_result
+
+

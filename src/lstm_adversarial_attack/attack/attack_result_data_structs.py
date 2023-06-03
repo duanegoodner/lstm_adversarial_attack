@@ -93,6 +93,7 @@ class BatchResult:
         self.dataset_indices = self.dataset_indices.to(device)
         self.first_examples = self.first_examples.to(device)
         self.best_examples = self.best_examples.to(device)
+        return self
 
     def update(self, epoch_successes: EpochSuccesses):
         self.first_examples.update(epoch_successes=epoch_successes)
@@ -120,14 +121,28 @@ class TrainerResult:
     first_examples: RecordedTrainerExamples = RecordedTrainerExamples()
     best_examples: RecordedTrainerExamples = RecordedTrainerExamples()
 
+    def update(self, batch_result: BatchResult):
+        self.first_examples.update(
+            batch_examples=batch_result.first_examples
+        )
+        self.best_examples.update(
+            batch_examples=batch_result.best_examples
+        )
+        self.dataset_indices = torch.cat(
+            (self.dataset_indices, batch_result.dataset_indices)
+        )
+
+
 
 def run_batch(
+    device: torch.device,
     dataset_start_idx: int,
     batch_size: int = 10,
     epochs_per_batch: int = 50,
     successes_per_batch: int = 3,
 ):
     batch_result = BatchResult(
+        initial_device=device,
         dataset_indices=torch.arange(
             start=dataset_start_idx, end=dataset_start_idx + batch_size
         ),
@@ -144,9 +159,9 @@ def run_batch(
                     size=successes_per_batch,
                     replace=False,
                 )
-            ),
-            losses=5 * torch.abs(torch.randn(3)),
-            perturbations=torch.randn(successes_per_batch, 5, 7),
+            ).to(device),
+            losses=5 * torch.abs(torch.randn(3)).to(device),
+            perturbations=torch.randn(successes_per_batch, 5, 7).to(device),
         )
         batch_result.update(epoch_successes=epoch_successes)
 
@@ -154,17 +169,16 @@ def run_batch(
 
 
 if __name__ == "__main__":
+
+    if torch.cuda.is_available():
+        cur_device = torch.device("cuda:0")
+    else:
+        cur_device = torch.device("cpu")
+
     my_trainer_result = TrainerResult()
 
     my_batch_size = 10
     for batch_idx in range(5):
-        batch_result = run_batch(dataset_start_idx=batch_idx * my_batch_size)
-        my_trainer_result.first_examples.update(
-            batch_examples=batch_result.first_examples
-        )
-        my_trainer_result.best_examples.update(
-            batch_examples=batch_result.best_examples
-        )
-        my_trainer_result.dataset_indices = torch.cat(
-            (my_trainer_result.dataset_indices, batch_result.dataset_indices)
-        )
+        my_batch_result = run_batch(device=cur_device, dataset_start_idx=batch_idx * my_batch_size)
+        my_batch_result = my_batch_result.to("cpu")
+        my_trainer_result.update(batch_result=my_batch_result)

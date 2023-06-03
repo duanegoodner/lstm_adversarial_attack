@@ -65,4 +65,4 @@ attack_trainer = AdversarialAttackTrainer(
 
 # orig_predictions = attack_trainer.get_orig_predictions()
 
-attack_trainer.train_attacker()
+trainer_result = attack_trainer.train_attacker()
