@@ -54,7 +54,7 @@ attack_trainer = AdversarialAttackTrainer(
     device=cur_device,
     attacker=attacker,
     loss_fn=AdversarialLoss(kappa=0.0),
-    lambda_1=1e-4,
+    lambda_1=0,
     optimizer=torch.optim.Adam(params=attacker.parameters(), lr=1e-4),
     dataset=X19MGeneralDatasetWithIndex.from_feaure_finalizer_output(),
     collate_fn=x19m_with_index_collate_fn,

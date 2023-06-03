@@ -105,13 +105,21 @@ class AdversarialLoss(nn.Module):
         self.kappa = kappa
 
     def forward(
-        self, logits: torch.tensor, original_labels: torch.tensor
+        self,
+        logits: torch.tensor,
+        perturbations: torch.tensor,
+        original_labels: torch.tensor,
     ) -> torch.tensor:
         logit_deltas = logits.gather(
             1, original_labels.view(-1, 1)
         ) - logits.gather(1, (~original_labels.view(-1, 1).bool()).long())
-        max_elements = torch.max(logit_deltas, -1 * torch.tensor(self.kappa))
-        return torch.mean(max_elements)
+        logit_losses = torch.max(logit_deltas, -1 * torch.tensor(self.kappa))
+        l1_losses = torch.linalg.matrix_norm(perturbations, ord=1)
+        sample_net_losses = torch.squeeze(logit_losses) + l1_losses
+        mean_loss = torch.mean(sample_net_losses)
+        return mean_loss, sample_net_losses
+        # max_elements = torch.max(logit_deltas, -1 * torch.tensor(self.kappa))
+        # return torch.mean(max_elements)
 
 
 # loss_fn = AdversarialLoss(kappa=0.0)

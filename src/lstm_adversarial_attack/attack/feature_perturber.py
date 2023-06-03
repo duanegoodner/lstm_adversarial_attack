@@ -37,5 +37,5 @@ class FeaturePerturber(nn.Module):
             lengths=inputs.lengths,
         )
 
-    def l1_loss(self) -> torch.tensor:
-        return torch.mean(torch.linalg.matrix_norm(self.perturbation))
+    # def l1_loss(self) -> torch.tensor:
+    #     return torch.mean(torch.linalg.matrix_norm(self.perturbation))
