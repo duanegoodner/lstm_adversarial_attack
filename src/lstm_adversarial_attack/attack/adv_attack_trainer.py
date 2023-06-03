@@ -6,6 +6,12 @@ from torch.utils.data import DataLoader, Dataset, Subset
 from typing import Callable
 
 from adversarial_attacker import AdversarialAttacker
+from attack_result_data_structs import (
+    EpochSuccesses,
+    RecordedTrainerExamples,
+    BatchResult,
+    RecordedBatchExamples,
+)
 from attacker_helpers import TargetDatasetBuilder
 from inferrer import StandardModelInferrer, StandardInferenceResults
 from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
@@ -15,73 +21,70 @@ from lstm_adversarial_attack.weighted_dataloader_builder import (
 )
 
 
-@dataclass
-class EpochSuccesses:
-    batch_indices: torch.tensor
-    success_loss_vals: torch.tensor
-    success_perturbations: torch.tensor
+# @dataclass
+# class EpochSuccesses:
+#     batch_indices: torch.tensor
+#     success_loss_vals: torch.tensor
+#     success_perturbations: torch.tensor
+#
+#
+# class BatchResult:
+#     def __init__(
+#         self,
+#         dataset_indices: torch.tensor,
+#         max_seq_length: int,
+#         input_size: int,
+#     ):
+#         batch_size_actual = dataset_indices.shape[0]
+#
+#         self.dataset_indices = dataset_indices
+#
+#         self.first_ex_epoch = torch.empty(
+#             batch_size_actual, dtype=torch.long
+#         ).fill_(-1)
+#         self.best_ex_epoch = torch.clone(self.first_ex_epoch)
+#
+#         self.first_ex_loss = torch.empty(batch_size_actual).fill_(float("inf"))
+#         self.best_ex_loss = torch.clone(self.first_ex_loss)
+#
+#         self.first_ex_perturbation = torch.zeros(
+#             size=(batch_size_actual, max_seq_length, input_size)
+#         )
+#         self.best_ex_perturbation = torch.clone(self.first_ex_perturbation)
 
 
-class BatchResult:
-    def __init__(
-        self,
-        dataset_indices: torch.tensor,
-        max_seq_length: int,
-        input_size: int,
-    ):
-        batch_size_actual = dataset_indices.shape[0]
-
-        self.dataset_indices = dataset_indices
-
-        self.first_ex_epoch = torch.empty(
-            batch_size_actual, dtype=torch.long
-        ).fill_(-1)
-        self.best_ex_epoch = torch.clone(self.first_ex_epoch)
-
-        self.first_ex_loss = torch.empty(batch_size_actual).fill_(float("inf"))
-        self.best_ex_loss = torch.clone(self.first_ex_loss)
-
-        self.first_ex_perturbation = torch.zeros(
-            size=(batch_size_actual, max_seq_length, input_size)
-        )
-        self.best_ex_perturbation = torch.clone(self.first_ex_perturbation)
-
-
-
-
-
-@dataclass
-class TrainerResult:
-    indices: torch.tensor = torch.LongTensor()
-    first_ex_loss: torch.tensor = torch.FloatTensor()
-    best_ex_loss: torch.tensor = torch.FloatTensor()
-    first_ex_epoch: torch.tensor = torch.LongTensor()
-    best_ex_epoch: torch.tensor = torch.FloatTensor()
-    first_ex_perturbation: torch.tensor = torch.FloatTensor()
-    best_ex_perturbation: torch.tensor = torch.FloatTensor()
-
-    def update(self, batch_result: BatchResult):
-        self.indices = torch.cat((self.indices, batch_result.indices), dim=0)
-        self.first_ex_loss = torch.cat(
-            (self.first_ex_loss, batch_result.first_ex_loss), dim=0
-        )
-        self.best_ex_loss = torch.cat(
-            (self.best_ex_loss, batch_result.best_ex_loss), dim=0
-        )
-        self.first_ex_epoch = torch.cat(
-            (self.first_ex_epoch, batch_result.first_ex_epoch), dim=0
-        )
-        self.best_ex_epoch = torch.cat(
-            (self.best_ex_epoch, batch_result.best_ex_epoch), dim=0
-        )
-        self.first_ex_perturbation = torch.cat(
-            (self.first_ex_perturbation, batch_result.first_ex_perturbation),
-            dim=0,
-        )
-        self.best_ex_perturbation = torch.cat(
-            (self.best_ex_perturbation, batch_result.best_ex_perturbation),
-            dim=0,
-        )
+# @dataclass
+# class TrainerResult:
+#     indices: torch.tensor = torch.LongTensor()
+#     first_ex_loss: torch.tensor = torch.FloatTensor()
+#     best_ex_loss: torch.tensor = torch.FloatTensor()
+#     first_ex_epoch: torch.tensor = torch.LongTensor()
+#     best_ex_epoch: torch.tensor = torch.FloatTensor()
+#     first_ex_perturbation: torch.tensor = torch.FloatTensor()
+#     best_ex_perturbation: torch.tensor = torch.FloatTensor()
+#
+#     def update(self, batch_result: BatchResult):
+#         self.indices = torch.cat((self.indices, batch_result.indices), dim=0)
+#         self.first_ex_loss = torch.cat(
+#             (self.first_ex_loss, batch_result.first_ex_loss), dim=0
+#         )
+#         self.best_ex_loss = torch.cat(
+#             (self.best_ex_loss, batch_result.best_ex_loss), dim=0
+#         )
+#         self.first_ex_epoch = torch.cat(
+#             (self.first_ex_epoch, batch_result.first_ex_epoch), dim=0
+#         )
+#         self.best_ex_epoch = torch.cat(
+#             (self.best_ex_epoch, batch_result.best_ex_epoch), dim=0
+#         )
+#         self.first_ex_perturbation = torch.cat(
+#             (self.first_ex_perturbation, batch_result.first_ex_perturbation),
+#             dim=0,
+#         )
+#         self.best_ex_perturbation = torch.cat(
+#             (self.best_ex_perturbation, batch_result.best_ex_perturbation),
+#             dim=0,
+#         )
 
 
 class AdversarialAttackTrainer:
@@ -123,6 +126,13 @@ class AdversarialAttackTrainer:
     def input_size(self) -> int:
         return self.attacker.feature_perturber.input_size
 
+    @property
+    def perturbation(self) -> torch.tensor:
+        return self.attacker.feature_perturber.perturbation
+
+    def reset_perturbation(self):
+        self.attacker.feature_perturber.reset_parameters()
+
     def set_attacker_train_mode(self):
         self.attacker.train()
         for param in self.attacker.logit_no_dropout_model.parameters():
@@ -149,7 +159,7 @@ class AdversarialAttackTrainer:
         else:
             return DataLoader(
                 dataset=target_dataset,
-                batch_size=self.attacker.feature_perturber.batch_size,
+                batch_size=self.batch_size,
                 collate_fn=self.collate_fn,
             )
 
@@ -160,7 +170,7 @@ class AdversarialAttackTrainer:
         orig_labels: torch.tensor,
         max_num_attempts: int,
     ):
-        self.attacker.feature_perturber.reset_parameters()
+        self.reset_perturbation()
         orig_features.features, orig_labels = orig_features.features.to(
             self.device
         ), orig_labels.to(self.device)
@@ -171,9 +181,15 @@ class AdversarialAttackTrainer:
         #     input_size=self.input_size,
         # )
 
-        success_dataset_indices = torch.LongTensor()
-        success_padded_perturbations = torch.FloatTensor()
-        success_sample_loss = torch.FloatTensor()
+        # success_dataset_indices = torch.LongTensor()
+        # success_padded_perturbations = torch.FloatTensor()
+        # success_sample_loss = torch.FloatTensor()
+        batch_result = BatchResult(
+            initial_device=self.device,
+            dataset_indices=indices,
+            max_seq_length=self.max_seq_length,
+            input_size=self.input_size,
+        )
 
         # TODO fill in details to record successes
         for epoch in range(max_num_attempts):
@@ -181,50 +197,65 @@ class AdversarialAttackTrainer:
             perturbed_features, logits = self.attacker(orig_features)
             mean_loss, sample_net_losses = self.loss_fn(
                 logits=logits,
-                perturbations=self.attacker.feature_perturber.perturbation,
+                perturbations=self.perturbation,
                 original_labels=orig_labels,
             )
-            in_batch_success_indices = (
+            # in_batch_success_indices = (
+            #     torch.argmax(input=logits, dim=1) != orig_labels
+            # )
+
+            attack_is_successful = (
                 torch.argmax(input=logits, dim=1) != orig_labels
             )
 
-            actual_in_batch_success_indices = torch.where(
-                in_batch_success_indices
+            # in-batch indices of samples w/ successful attack
+            successful_attack_indices = torch.where(attack_is_successful)[0]
+            epoch_success_losses = sample_net_losses[successful_attack_indices]
+            epoch_success_perturbations = self.perturbation[
+                successful_attack_indices
+            ]
+
+            epoch_successes = EpochSuccesses(
+                epoch_num=epoch,
+                batch_indices=successful_attack_indices,
+                losses=epoch_success_losses,
+                perturbations=epoch_success_perturbations
             )
 
-            success_dataset_indices = torch.cat(
-                (
-                    success_dataset_indices,
-                    torch.masked_select(
-                        input=indices, mask=in_batch_success_indices.to("cpu")
-                    ),
-                ),
-                dim=0,
-            )
-
-            success_padded_perturbations = torch.cat(
-                (
-                    success_padded_perturbations,
-                    self.attacker.feature_perturber.perturbation[
-                        torch.where(in_batch_success_indices)[0], :, :
-                    ].to("cpu"),
-                ),
-                dim=0,
-            )
-
-            success_sample_loss = torch.cat(
-                (
-                    success_sample_loss,
-                    torch.masked_select(
-                        input=sample_net_losses,
-                        mask=in_batch_success_indices,
-                    ).to("cpu"),
-                ),
-                dim=0,
-            )
+            # success_dataset_indices = torch.cat(
+            #     (
+            #         success_dataset_indices,
+            #         torch.masked_select(
+            #             input=indices, mask=in_batch_success_indices.to("cpu")
+            #         ),
+            #     ),
+            #     dim=0,
+            # )
+            #
+            # success_padded_perturbations = torch.cat(
+            #     (
+            #         success_padded_perturbations,
+            #         self.perturbation[
+            #             torch.where(in_batch_success_indices)[0], :, :
+            #         ].to("cpu"),
+            #     ),
+            #     dim=0,
+            # )
+            #
+            # success_sample_loss = torch.cat(
+            #     (
+            #         success_sample_loss,
+            #         torch.masked_select(
+            #             input=sample_net_losses,
+            #             mask=in_batch_success_indices,
+            #         ).to("cpu"),
+            #     ),
+            #     dim=0,
+            # )
 
             mean_loss.backward()
             self.optimizer.step()
+            batch_result.update(epoch_successes=epoch_successes)
 
     def train_attacker(self):
         data_loader = self.build_data_loader()
