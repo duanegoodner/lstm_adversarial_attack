@@ -163,6 +163,27 @@ class AdversarialAttackTrainer:
                 collate_fn=self.collate_fn,
             )
 
+    def get_epoch_successes(
+        self,
+        epoch_num: int,
+        logits: torch.tensor,
+        orig_labels: torch.tensor,
+        sample_losses: torch.tensor,
+    ) -> EpochSuccesses:
+        attack_is_successful = torch.argmax(input=logits, dim=1) != orig_labels
+        successful_attack_indices = torch.where(attack_is_successful)[0]
+        epoch_success_losses = sample_losses[successful_attack_indices]
+        epoch_success_perturbations = self.perturbation[
+            successful_attack_indices
+        ]
+
+        return EpochSuccesses(
+            epoch_num=epoch_num,
+            batch_indices=successful_attack_indices,
+            losses=epoch_success_losses,
+            perturbations=epoch_success_perturbations
+        )
+
     def attack_batch(
         self,
         indices: torch.tensor,
@@ -175,15 +196,6 @@ class AdversarialAttackTrainer:
             self.device
         ), orig_labels.to(self.device)
 
-        # batch_results = BatchResults(
-        #     actual_batch_size=indices.shape[0],
-        #     max_seq_length=self.max_seq_length,
-        #     input_size=self.input_size,
-        # )
-
-        # success_dataset_indices = torch.LongTensor()
-        # success_padded_perturbations = torch.FloatTensor()
-        # success_sample_loss = torch.FloatTensor()
         batch_result = BatchResult(
             initial_device=self.device,
             dataset_indices=indices,
@@ -191,66 +203,37 @@ class AdversarialAttackTrainer:
             input_size=self.input_size,
         )
 
-        # TODO fill in details to record successes
         for epoch in range(max_num_attempts):
             self.optimizer.zero_grad()
             perturbed_features, logits = self.attacker(orig_features)
-            mean_loss, sample_net_losses = self.loss_fn(
+            mean_loss, sample_losses = self.loss_fn(
                 logits=logits,
                 perturbations=self.perturbation,
                 original_labels=orig_labels,
             )
-            # in_batch_success_indices = (
-            #     torch.argmax(input=logits, dim=1) != orig_labels
-            # )
+
+            epoch_successes = self.get_epoch_successes(
+                epoch_num=epoch,
+                logits=logits,
+                orig_labels=orig_labels,
+                sample_losses=sample_losses
+            )
 
             attack_is_successful = (
                 torch.argmax(input=logits, dim=1) != orig_labels
             )
-
             # in-batch indices of samples w/ successful attack
             successful_attack_indices = torch.where(attack_is_successful)[0]
-            epoch_success_losses = sample_net_losses[successful_attack_indices]
+            epoch_success_losses = sample_losses[successful_attack_indices]
             epoch_success_perturbations = self.perturbation[
                 successful_attack_indices
             ]
 
-            epoch_successes = EpochSuccesses(
-                epoch_num=epoch,
-                batch_indices=successful_attack_indices,
-                losses=epoch_success_losses,
-                perturbations=epoch_success_perturbations
-            )
-
-            # success_dataset_indices = torch.cat(
-            #     (
-            #         success_dataset_indices,
-            #         torch.masked_select(
-            #             input=indices, mask=in_batch_success_indices.to("cpu")
-            #         ),
-            #     ),
-            #     dim=0,
-            # )
-            #
-            # success_padded_perturbations = torch.cat(
-            #     (
-            #         success_padded_perturbations,
-            #         self.perturbation[
-            #             torch.where(in_batch_success_indices)[0], :, :
-            #         ].to("cpu"),
-            #     ),
-            #     dim=0,
-            # )
-            #
-            # success_sample_loss = torch.cat(
-            #     (
-            #         success_sample_loss,
-            #         torch.masked_select(
-            #             input=sample_net_losses,
-            #             mask=in_batch_success_indices,
-            #         ).to("cpu"),
-            #     ),
-            #     dim=0,
+            # epoch_successes = EpochSuccesses(
+            #     epoch_num=epoch,
+            #     batch_indices=successful_attack_indices,
+            #     losses=epoch_success_losses,
+            #     perturbations=epoch_success_perturbations,
             # )
 
             mean_loss.backward()
