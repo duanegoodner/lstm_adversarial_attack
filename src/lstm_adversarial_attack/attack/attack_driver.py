@@ -57,7 +57,7 @@ attack_trainer = AdversarialAttackTrainer(
     state_dict=checkpoint["state_dict"],
     # attacker=attacker,
     loss_fn=AdversarialLoss(kappa=0.0),
-    lambda_1=0,
+    lambda_1=1e-2,
     # optimizer=torch.optim.Adam(params=attacker.parameters(), lr=1e-4),
     dataset=X19MGeneralDatasetWithIndex.from_feaure_finalizer_output(),
     collate_fn=x19m_with_index_collate_fn,

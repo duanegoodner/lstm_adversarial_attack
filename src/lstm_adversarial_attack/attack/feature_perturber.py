@@ -27,16 +27,6 @@ class FeaturePerturber(nn.Module):
     def batch_size(self) -> int:
         return self._batch_size
 
-    @batch_size.setter
-    def batch_size(self, new_batch_size: int):
-        orig_device = self.perturbation.device
-        self._batch_size = new_batch_size
-        self.perturbation = nn.Parameter(
-            torch.zeros(
-                (new_batch_size, self.max_sequence_length, self.input_size)
-            )
-        )
-
     def reset_parameters(self):
         if self.perturbation.grad is not None:
             self.perturbation.grad.zero_()

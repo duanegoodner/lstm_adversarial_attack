@@ -122,11 +122,12 @@ class AdversarialAttackTrainer:
             successful_attack_indices
         ]
 
+
         return EpochSuccesses(
             epoch_num=epoch_num,
             batch_indices=successful_attack_indices,
-            losses=epoch_success_losses,
-            perturbations=epoch_success_perturbations,
+            losses=epoch_success_losses.detach(),
+            perturbations=epoch_success_perturbations.detach(),
         )
 
     def attack_batch(
@@ -152,8 +153,9 @@ class AdversarialAttackTrainer:
         ), orig_labels.to(self.device)
 
         batch_result = BatchResult(
-            initial_device=self.device,
+            initial_device=torch.device("cpu"),
             dataset_indices=indices,
+            input_seq_lengths=orig_features.lengths,
             max_seq_length=self.max_seq_length,
             input_size=self.input_size,
         )

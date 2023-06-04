@@ -19,7 +19,7 @@ def has_no_entry(loss_vals: torch.tensor, *args, **kwargs) -> torch.tensor:
 def is_greater_than_new_val(
     loss_vals: torch.tensor, new_loss_vals: torch.tensor
 ) -> torch.tensor:
-    return loss_vals > new_loss_vals
+    return loss_vals > new_loss_vals.to("cpu")
 
 
 class RecordedBatchExamples:
@@ -31,10 +31,16 @@ class RecordedBatchExamples:
         input_size: int,
         comparison_funct: Callable[..., torch.tensor],
     ):
-        self.epochs = torch.empty(batch_size_actual, dtype=torch.long).fill_(
-            -1
-        ).to(initial_device)
-        self.losses = torch.empty(batch_size_actual).fill_(float("inf")).to(initial_device)
+        self.epochs = (
+            torch.empty(batch_size_actual, dtype=torch.long)
+            .fill_(-1)
+            .to(initial_device)
+        )
+        self.losses = (
+            torch.empty(batch_size_actual)
+            .fill_(float("inf"))
+            .to(initial_device)
+        )
         self.perturbations = self.perturbation_first_ex = torch.zeros(
             size=(batch_size_actual, max_seq_length, input_size)
         ).to(initial_device)
@@ -47,7 +53,7 @@ class RecordedBatchExamples:
         return self
 
     def update(self, epoch_successes: EpochSuccesses):
-        loss_values_to_check = self.losses[epoch_successes.batch_indices]
+        loss_values_to_check = self.losses[epoch_successes.batch_indices.to("cpu")]
 
         epoch_indices_to_copy_from = self.comparison_funct(
             loss_values_to_check, epoch_successes.losses
@@ -59,9 +65,9 @@ class RecordedBatchExamples:
         self.epochs[batch_indices_to_copy_to] = epoch_successes.epoch_num
         self.losses[batch_indices_to_copy_to] = epoch_successes.losses[
             epoch_indices_to_copy_from
-        ]
+        ].to("cpu")
         self.perturbations[batch_indices_to_copy_to, :, :] = (
-            epoch_successes.perturbations[epoch_indices_to_copy_from, :, :]
+            epoch_successes.perturbations[epoch_indices_to_copy_from, :, :].to("cpu")
         )
 
 
@@ -70,10 +76,12 @@ class BatchResult:
         self,
         initial_device: torch.device,
         dataset_indices: torch.tensor,
+        input_seq_lengths: torch.tensor,
         max_seq_length: int,
         input_size: int,
     ):
         self.dataset_indices = dataset_indices
+        self.input_seq_lengths = input_seq_lengths
         self.first_examples = RecordedBatchExamples(
             initial_device=initial_device,
             batch_size_actual=dataset_indices.shape[0],
@@ -118,20 +126,19 @@ class RecordedTrainerExamples:
 @dataclass
 class TrainerResult:
     dataset_indices: torch.tensor = torch.LongTensor()
+    input_seq_lengths: torch.tensor = torch.LongTensor()
     first_examples: RecordedTrainerExamples = RecordedTrainerExamples()
     best_examples: RecordedTrainerExamples = RecordedTrainerExamples()
 
     def update(self, batch_result: BatchResult):
-        self.first_examples.update(
-            batch_examples=batch_result.first_examples
-        )
-        self.best_examples.update(
-            batch_examples=batch_result.best_examples
-        )
+        self.first_examples.update(batch_examples=batch_result.first_examples)
+        self.best_examples.update(batch_examples=batch_result.best_examples)
         self.dataset_indices = torch.cat(
             (self.dataset_indices, batch_result.dataset_indices)
         )
-
+        self.input_seq_lengths = torch.cat(
+            (self.input_seq_lengths, batch_result.input_seq_lengths)
+        )
 
 
 def run_batch(
@@ -146,6 +153,7 @@ def run_batch(
         dataset_indices=torch.arange(
             start=dataset_start_idx, end=dataset_start_idx + batch_size
         ),
+        input_seq_lengths=torch.randint(low=2, high=6, size=(batch_size,)),
         max_seq_length=5,
         input_size=7,
     )
@@ -169,7 +177,6 @@ def run_batch(
 
 
 if __name__ == "__main__":
-
     if torch.cuda.is_available():
         cur_device = torch.device("cuda:0")
     else:
@@ -179,6 +186,8 @@ if __name__ == "__main__":
 
     my_batch_size = 10
     for batch_idx in range(5):
-        my_batch_result = run_batch(device=cur_device, dataset_start_idx=batch_idx * my_batch_size)
+        my_batch_result = run_batch(
+            device=cur_device, dataset_start_idx=batch_idx * my_batch_size
+        )
         my_batch_result = my_batch_result.to("cpu")
         my_trainer_result.update(batch_result=my_batch_result)
