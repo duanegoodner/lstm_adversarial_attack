@@ -1,6 +1,7 @@
 import sys
 import torch
 from pathlib import Path
+from torch.utils.data import Subset
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from adv_attack_trainer import AdversarialAttackTrainer
@@ -37,13 +38,12 @@ checkpoint = torch.load(checkpoint_path)
 # )
 # attacker = attacker_builder.build()
 
-attacker = AdversarialAttacker(
-    full_model=model,
-    state_dict=checkpoint["state_dict"],
-    input_size=19,
-    max_sequence_length=MAX_OBSERVATION_HOURS,
-    batch_size=128
-)
+# attacker = AdversarialAttacker(
+#     full_model=model,
+#     state_dict=checkpoint["state_dict"],
+#     input_size=19,
+#     max_sequence_length=MAX_OBSERVATION_HOURS
+# )
 
 if torch.cuda.is_available():
     cur_device = torch.device("cuda:0")
@@ -52,10 +52,13 @@ else:
 
 attack_trainer = AdversarialAttackTrainer(
     device=cur_device,
-    attacker=attacker,
+    model=model,
+    batch_size=128,
+    state_dict=checkpoint["state_dict"],
+    # attacker=attacker,
     loss_fn=AdversarialLoss(kappa=0.0),
     lambda_1=0,
-    optimizer=torch.optim.Adam(params=attacker.parameters(), lr=1e-4),
+    # optimizer=torch.optim.Adam(params=attacker.parameters(), lr=1e-4),
     dataset=X19MGeneralDatasetWithIndex.from_feaure_finalizer_output(),
     collate_fn=x19m_with_index_collate_fn,
     output_dir=ATTACK_OUTPUT_DIR,

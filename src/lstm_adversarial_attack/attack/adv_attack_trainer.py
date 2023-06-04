@@ -8,9 +8,10 @@ from adversarial_attacker import AdversarialAttacker
 from attack_result_data_structs import (
     EpochSuccesses,
     BatchResult,
-    TrainerResult
+    TrainerResult,
 )
 from attacker_helpers import TargetDatasetBuilder
+from lstm_adversarial_attack.config_settings import MAX_OBSERVATION_HOURS
 from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
 from lstm_adversarial_attack.data_structures import VariableLengthFeatures
 from lstm_adversarial_attack.weighted_dataloader_builder import (
@@ -22,10 +23,13 @@ class AdversarialAttackTrainer:
     def __init__(
         self,
         device: torch.device,
-        attacker: AdversarialAttacker,
+        model: nn.Module,
+        state_dict: dict,
+        batch_size: int,
+        # attacker: AdversarialAttacker,
         loss_fn: nn.Module,
         lambda_1: float,
-        optimizer: torch.optim.Optimizer,
+        # optimizer: torch.optim.Optimizer,
         dataset: DatasetWithIndex,
         output_dir: Path,
         collate_fn: Callable,
@@ -34,10 +38,20 @@ class AdversarialAttackTrainer:
         use_weighted_data_loader: bool = False,
     ):
         self.device = device
-        self.attacker = attacker
+        self.model = model
+        self.state_dict = state_dict
+        self.attacker = AdversarialAttacker(
+            full_model=model,
+            state_dict=state_dict,
+            input_size=19,
+            max_sequence_length=MAX_OBSERVATION_HOURS,
+            initial_batch_size=batch_size
+        )
         self.loss_fn = loss_fn
         self.lambda_1 = lambda_1
-        self.optimizer = optimizer
+        self.optimizer = torch.optim.Adam(
+            params=self.attacker.parameters(), lr=1e-4
+        )
         self.dataset = dataset
         self.output_dir = output_dir
         self.collate_fn = collate_fn
@@ -112,7 +126,7 @@ class AdversarialAttackTrainer:
             epoch_num=epoch_num,
             batch_indices=successful_attack_indices,
             losses=epoch_success_losses,
-            perturbations=epoch_success_perturbations
+            perturbations=epoch_success_perturbations,
         )
 
     def attack_batch(
@@ -122,6 +136,16 @@ class AdversarialAttackTrainer:
         orig_labels: torch.tensor,
         max_num_attempts: int,
     ):
+        if indices.shape[0] != self.attacker.batch_size:
+            self.attacker = AdversarialAttacker(
+                full_model=self.model,
+                state_dict=self.state_dict,
+                input_size=19,
+                max_sequence_length=MAX_OBSERVATION_HOURS,
+                initial_batch_size=indices.shape[0]
+            )
+            self.attacker.to(self.device)
+
         self.reset_perturbation()
         orig_features.features, orig_labels = orig_features.features.to(
             self.device
@@ -148,7 +172,7 @@ class AdversarialAttackTrainer:
                 epoch_num=epoch,
                 logits=logits,
                 orig_labels=orig_labels,
-                sample_losses=sample_losses
+                sample_losses=sample_losses,
             )
             batch_result.update(epoch_successes=epoch_successes)
 
@@ -156,7 +180,6 @@ class AdversarialAttackTrainer:
             self.optimizer.step()
 
         return batch_result
-
 
     def train_attacker(self):
         data_loader = self.build_data_loader()
@@ -178,5 +201,3 @@ class AdversarialAttackTrainer:
             trainer_result.update(batch_result=batch_result.to("cpu"))
 
         return trainer_result
-
-
