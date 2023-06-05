@@ -1,71 +1,84 @@
 import sys
 import torch
 from pathlib import Path
-from torch.utils.data import Subset
+from typing import Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from adv_attack_trainer import AdversarialAttackTrainer
-from adversarial_attacker import AdversarialAttacker
+from attack_result_data_structs import AttackSummary, TrainerResult
 import lstm_adversarial_attack.resource_io as rio
-from attacker_helpers import AdversarialLoss
-from lstm_adversarial_attack.config_paths import (
-    ATTACK_OUTPUT_DIR,
-    TRAINING_OUTPUT_DIR,
-)
-from lstm_adversarial_attack.config_settings import MAX_OBSERVATION_HOURS
+from lstm_adversarial_attack.config_paths import DEFAULT_ATTACK_TARGET_DIR
 from lstm_adversarial_attack.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex,
     x19m_with_index_collate_fn,
 )
 
 
-training_output_root = TRAINING_OUTPUT_DIR / "2023-05-30_22:02:07.515447"
-model_path = training_output_root / "model.pickle"
-checkpoint_path = (
-    training_output_root / "checkpoints" / "2023-05-30_22:19:03.666893.tar"
-)
+def run_adv_attack_trainer(
+    device: torch.device,
+    model_path: Path,
+    checkpoint_path: Path,
+    batch_size: int = 128,
+    kappa: float = 0.1,
+    lambda_1: float = 1e-2,
+    optimizer_constructor: Callable = torch.optim.Adam,
+    optimizer_constructor_kwargs: dict = None,
+    dataset: X19MGeneralDatasetWithIndex = X19MGeneralDatasetWithIndex.from_feaure_finalizer_output(),
+    collate_fn: Callable = x19m_with_index_collate_fn,
+    inference_batch_size: int = 128,
+    attack_misclassified_samples: bool = False,
+    use_weighted_data_loader: bool = False,
+    save_result: bool = False,
+    return_full_trainer: bool = False,
+) -> AdversarialAttackTrainer | TrainerResult:
+    if optimizer_constructor_kwargs is None:
+        optimizer_constructor_kwargs = {"lr": 1e-4}
 
-model = rio.ResourceImporter().import_pickle_to_object(path=model_path)
-checkpoint = torch.load(checkpoint_path)
+    model = rio.ResourceImporter().import_pickle_to_object(path=model_path)
+    checkpoint = torch.load(checkpoint_path)
 
-# attacker_builder = AdversarialAttackerBuilder(
-#     full_model=model,
-#     state_dict=checkpoint["state_dict"],
-#     dataset=X19MGeneralDatasetWithIndex.from_feaure_finalizer_output(),
-#     batch_size=128,
-#     input_size=19,
-#     max_sequence_length=48,
-# )
-# attacker = attacker_builder.build()
+    trainer = AdversarialAttackTrainer(
+        device=device,
+        model=model,
+        state_dict=checkpoint["state_dict"],
+        batch_size=batch_size,
+        kappa=kappa,
+        lambda_1=lambda_1,
+        optimizer_constructor=optimizer_constructor,
+        optimizer_constructor_kwargs=optimizer_constructor_kwargs,
+        dataset=dataset,
+        collate_fn=collate_fn,
+        inference_batch_size=inference_batch_size,
+        attack_misclassified_samples=attack_misclassified_samples,
+        use_weighted_data_loader=use_weighted_data_loader,
+        save_result=save_result,
+    )
 
-# attacker = AdversarialAttacker(
-#     full_model=model,
-#     state_dict=checkpoint["state_dict"],
-#     input_size=19,
-#     max_sequence_length=MAX_OBSERVATION_HOURS
-# )
+    train_result = trainer.train_attacker()
 
-if torch.cuda.is_available():
-    cur_device = torch.device("cuda:0")
-else:
-    cur_device = torch.device("cpu")
+    if return_full_trainer:
+        return trainer
+    else:
+        return train_result
 
-attack_trainer = AdversarialAttackTrainer(
-    device=cur_device,
-    model=model,
-    batch_size=128,
-    state_dict=checkpoint["state_dict"],
-    # attacker=attacker,
-    loss_fn=AdversarialLoss(kappa=0.0),
-    lambda_1=1e-2,
-    # optimizer=torch.optim.Adam(params=attacker.parameters(), lr=1e-4),
-    dataset=X19MGeneralDatasetWithIndex.from_feaure_finalizer_output(),
-    collate_fn=x19m_with_index_collate_fn,
-    output_dir=ATTACK_OUTPUT_DIR,
-    inference_batch_size=128,
-    use_weighted_data_loader=False
-)
 
-# orig_predictions = attack_trainer.get_orig_predictions()
+if __name__ == "__main__":
+    if torch.cuda.is_available():
+        cur_device = torch.device("cuda:0")
+    else:
+        cur_device = torch.device("cpu")
 
-trainer_result = attack_trainer.train_attacker()
+    checkpoint_files = list(DEFAULT_ATTACK_TARGET_DIR.glob("*.tar"))
+    assert len(checkpoint_files) == 1
+    checkpoint_path = checkpoint_files[0]
+
+    trainer_result = run_adv_attack_trainer(
+        device=cur_device,
+        model_path=DEFAULT_ATTACK_TARGET_DIR / "model.pickle",
+        checkpoint_path=checkpoint_path,
+        save_result=True,
+    )
+
+    attack_summary = AttackSummary.from_trainer_result(
+        trainer_result=trainer_result
+    )

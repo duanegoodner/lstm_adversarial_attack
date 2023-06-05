@@ -1,7 +1,6 @@
 import sys
 import torch
 import torch.nn as nn
-from datetime import datetime
 from pathlib import Path
 from torch.utils.data import DataLoader, Dataset, random_split
 from torch.utils.tensorboard import SummaryWriter
@@ -41,10 +40,7 @@ class TrainerDriver:
         dataset: Dataset = X19MGeneralDataset.from_feaure_finalizer_output(),
         collate_fn: Callable = x19m_collate_fn,
         loss_fn: nn.Module = nn.CrossEntropyLoss(),
-        output_dir: Path = None,
-        # train_loader_builder=WeightedDataLoaderBuilder(),
         train_dataset_fraction: float = 0.8,
-        random_seed: int = None,
     ):
         self.train_device = train_device
         self.eval_device = eval_device
@@ -54,13 +50,9 @@ class TrainerDriver:
         self.batch_size = batch_size
         self.loss_fn = loss_fn
         self.optimizer = optimizer
-        # self.train_loader_builder = train_loader_builder
         self.train_dataset_fraction = train_dataset_fraction
-        self.random_seed = random_seed
-        if random_seed is not None:
-            torch.manual_seed(random_seed)
         self.dataset_pair = self.split_dataset()
-        self.output_dir = self.initialize_output_dir(output_dir=output_dir)
+        self.output_dir = self.initialize_output_dir()
         self.tensorboard_output_dir = self.output_dir / "tensorboard"
         self.checkpoint_dir = self.output_dir / "checkpoints"
 
@@ -101,15 +93,13 @@ class TrainerDriver:
             settings=settings,
         )
 
-    def initialize_output_dir(self, output_dir: Path = None) -> Path:
+    def initialize_output_dir(self) -> Path:
         """
         Creates output dir and places saves pickle of model there
         """
-        if output_dir is None:
-            dirname = f"{datetime.now()}".replace(" ", "_")
-            output_dir = TRAINING_OUTPUT_DIR / dirname
-        assert not output_dir.exists()
-        output_dir.mkdir()
+        output_dir = rio.create_timestamped_dir(
+            parent_path=TRAINING_OUTPUT_DIR
+        )
         rio.ResourceExporter().export(
             resource=self.model, path=output_dir / "model.pickle"
         )
@@ -129,15 +119,10 @@ class TrainerDriver:
         )
 
     def build_data_loaders(self) -> TrainEvalDataLoaderPair:
-        # train_loader = self.train_loader_builder.build(
-        #     dataset=self.dataset_pair.train,
-        #     batch_size=self.batch_size,
-        #     collate_fn=self.collate_fn,
-        # )
         train_loader = WeightedDataLoaderBuilder(
             dataset=self.dataset_pair.train,
             batch_size=self.batch_size,
-            collate_fn=self.collate_fn
+            collate_fn=self.collate_fn,
         ).build()
         test_loader = DataLoader(
             dataset=self.dataset_pair.validation,

@@ -3,7 +3,6 @@ import sys
 import torch.nn as nn
 import torch.optim
 import torch.utils.data as ud
-from datetime import datetime
 from pathlib import Path
 from torch.utils.tensorboard import SummaryWriter
 
@@ -54,11 +53,7 @@ class StandardModelTrainer:
         self.summary_writer = summary_writer
         self.summary_writer_group = summary_writer_group
         self.summary_writer_subgroup = summary_writer_subgroup
-        # if train_log is None:
-        #     train_log = []
         self.train_log = train_log
-        # if eval_log is None:
-        #     eval_log = []
         self.eval_log = eval_log
 
     @staticmethod
@@ -84,8 +79,9 @@ class StandardModelTrainer:
     def save_checkpoint(
         self,
     ) -> Path:
-        filename = f"{datetime.now()}.tar".replace(" ", "_")
-        output_path = self.checkpoint_dir / filename
+        output_path = rio.create_timestamped_filepath(
+            parent_path=self.checkpoint_dir, file_extension="tar"
+        )
         output_object = {
             "epoch_num": self.completed_epochs,
             "train_log": self.train_log,
@@ -94,9 +90,6 @@ class StandardModelTrainer:
             "optimizer_state_dict": self.optimizer.state_dict(),
         }
         torch.save(obj=output_object, f=output_path)
-        # rio.ResourceExporter().export(
-        #     resource=self, path=self.checkpoint_dir / "trainer.pickle"
-        # )
         return output_path
 
     def train_model(
@@ -129,7 +122,6 @@ class StandardModelTrainer:
             )
             self.completed_epochs += 1
             self.report_epoch_loss(epoch_loss=epoch_loss)
-        # return self.train_log
 
     def report_epoch_loss(self, epoch_loss: float):
         print(
@@ -184,9 +176,8 @@ class StandardModelTrainer:
                 metrics=eval_results,
                 y_pred=all_y_true,
                 y_score=all_y_score,
-                y_true=all_y_true
+                y_true=all_y_true,
             )
-
 
     def report_eval_results(
         self,

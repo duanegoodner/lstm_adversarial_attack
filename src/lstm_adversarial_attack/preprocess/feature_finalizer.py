@@ -9,7 +9,6 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import preprocess_module as pm
 import preprocess_input_classes as pic
 from lstm_adversarial_attack.config_paths import PREPROCESS_OUTPUT_FILES
-# import project_config_old as pc
 
 
 @dataclass

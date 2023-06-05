@@ -100,9 +100,10 @@ class TargetDatasetBuilder:
 
 
 class AdversarialLoss(nn.Module):
-    def __init__(self, kappa: float):
+    def __init__(self, kappa: float, lambda_1: float):
         super(AdversarialLoss, self).__init__()
         self.kappa = kappa
+        self.lambda_1 = lambda_1
 
     def forward(
         self,
@@ -114,7 +115,9 @@ class AdversarialLoss(nn.Module):
             1, original_labels.view(-1, 1)
         ) - logits.gather(1, (~original_labels.view(-1, 1).bool()).long())
         logit_losses = torch.max(logit_deltas, -1 * torch.tensor(self.kappa))
-        l1_losses = torch.linalg.matrix_norm(perturbations, ord=1)
+        l1_losses = self.lambda_1 * torch.linalg.matrix_norm(
+            perturbations, ord=1
+        )
         sample_net_losses = torch.squeeze(logit_losses) + l1_losses
         mean_loss = torch.mean(sample_net_losses)
         return mean_loss, sample_net_losses

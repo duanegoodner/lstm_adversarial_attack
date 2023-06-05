@@ -2,7 +2,6 @@ import optuna
 import sys
 import torch
 import torch.nn as nn
-from datetime import datetime
 from optuna.pruners import BasePruner, MedianPruner
 from optuna.samplers import BaseSampler, TPESampler
 from optuna.trial import TrialState
@@ -25,11 +24,6 @@ from lstm_adversarial_attack.data_structures import (
     TrainEvalLogPair,
 )
 from lstm_adversarial_attack.config_paths import HYPERPARAMETER_OUTPUT_DIR
-
-# from lstm_adversarial_attack.early_stopping import PerformanceSelector
-# from lstm_adversarial_attack.lstm_model_stc import (
-#     BidirectionalX19LSTM,
-# )
 from lstm_adversarial_attack.tune_train.standard_model_trainer import (
     StandardModelTrainer,
 )
@@ -57,7 +51,6 @@ class HyperParameterTuner:
         num_cv_epochs: int = cs.TUNER_NUM_CV_EPOCHS,
         epochs_per_fold: int = cs.TUNER_EPOCHS_PER_FOLD,
         fold_class: Callable = StratifiedKFold,
-        # train_loader_builder=WeightedDataLoaderBuilder(),
         kfold_random_seed: int = cs.TUNER_KFOLD_RANDOM_SEED,
         loss_fn: nn.Module = nn.CrossEntropyLoss(),
         cv_mean_metrics_of_interest: tuple[
@@ -65,13 +58,12 @@ class HyperParameterTuner:
         ] = cs.TUNER_CV_MEAN_METRICS_OF_INTEREST,
         performance_metric: str = cs.TUNER_PERFORMANCE_METRIC,
         optimization_direction: str = cs.TUNER_OPTIMIZATION_DIRECTION,
-        # performance_metric_selector: Callable = min,
         pruner: BasePruner = MedianPruner(
             n_startup_trials=cs.TUNER_PRUNER_NUM_STARTUP_TRIALS,
             n_warmup_steps=cs.TUNER_PRUNER_NUM_WARMUP_STEPS,
         ),
         hyperparameter_sampler: BaseSampler = TPESampler(),
-        output_dir: Path = None,
+        # output_dir: Path = None,
         save_trial_info: bool = True,
         trial_prefix: str = "trial_",
     ):
@@ -85,10 +77,8 @@ class HyperParameterTuner:
         # use seed to keep same fold indices for all trials
         self.kfold_random_seed = kfold_random_seed
         self.cv_datasets = self.create_datasets()
-        # self.train_loader_builder = train_loader_builder
         self.loss_fn = loss_fn
         self.performance_metric = performance_metric
-        # self.performance_metric_selector = performance_metric_selector
         self.optimization_direction = optimization_direction
         self.optimization_direction_label = (
             "minimize"
@@ -99,22 +89,15 @@ class HyperParameterTuner:
         self.cv_mean_metrics_of_interest = cv_mean_metrics_of_interest
         self.tuning_ranges = tuning_ranges
         self.hyperparameter_sampler = hyperparameter_sampler
-        self.output_dir = self.initialize_output_dir(output_dir=output_dir)
+        self.output_dir = rio.create_timestamped_dir(
+            parent_path=HYPERPARAMETER_OUTPUT_DIR
+        )
         self.tensorboard_output_dir = self.output_dir / "tensorboard"
         self.trainer_checkpoint_dir = self.output_dir / "checkpoints_trainer"
         self.tuner_checkpoint_dir = self.output_dir / "checkpoints_tuner"
         self.exporter = rio.ResourceExporter()
         self.save_trial_info = save_trial_info
         self.trial_prefix = trial_prefix
-
-    @staticmethod
-    def initialize_output_dir(output_dir: Path = None) -> Path:
-        if output_dir is None:
-            dirname = f"{datetime.now()}".replace(" ", "_")
-            output_dir = HYPERPARAMETER_OUTPUT_DIR / dirname
-        assert not output_dir.exists()
-        output_dir.mkdir()
-        return output_dir
 
     def create_datasets(self) -> list[TrainEvalDatasetPair]:
         fold_generator_builder = self.fold_class(
@@ -143,26 +126,6 @@ class HyperParameterTuner:
 
         return all_train_eval_pairs
 
-    # @staticmethod
-    # def define_model(settings: X19LSTMHyperParameterSettings):
-    #     return nn.Sequential(
-    #         BidirectionalX19LSTM(
-    #             input_size=19,
-    #             lstm_hidden_size=2**settings.log_lstm_hidden_size,
-    #         ),
-    #         getattr(nn, settings.lstm_act_name)(),
-    #         nn.Dropout(p=settings.dropout),
-    #         nn.Linear(
-    #             in_features=2 * (2**settings.log_lstm_hidden_size),
-    #             out_features=2**settings.log_fc_hidden_size,
-    #         ),
-    #         getattr(nn, settings.fc_act_name)(),
-    #         nn.Linear(
-    #             in_features=2**settings.log_fc_hidden_size, out_features=2
-    #         ),
-    #         nn.Softmax(dim=1),
-    #     )
-
     @staticmethod
     def initialize_model(model: nn.Module):
         for name, param in model.named_parameters():
@@ -179,18 +142,12 @@ class HyperParameterTuner:
     ):
         trainers = []
         for fold_idx, dataset_pair in enumerate(self.cv_datasets):
-            # model = self.define_model(settings=settings)
             model = X19LSTMBuilder(settings=settings).build()
             train_loader = WeightedDataLoaderBuilder(
                 dataset=dataset_pair.train,
                 batch_size=2**settings.log_batch_size,
-                collate_fn=self.collate_fn
+                collate_fn=self.collate_fn,
             ).build()
-            # train_loader = self.train_loader_builder.build(
-            #     dataset=dataset_pair.train,
-            #     batch_size=2**settings.log_batch_size,
-            #     collate_fn=self.collate_fn,
-            # )
             validation_loader = DataLoader(
                 dataset=dataset_pair.validation,
                 batch_size=128,
@@ -228,7 +185,6 @@ class HyperParameterTuner:
             self.tuner_checkpoint_dir.mkdir()
 
         trial_summary = CVTrialLogs(
-            # trial=trial,
             trainer_logs=[
                 TrainEvalLogPair(
                     train=trainer.train_log, eval=trainer.eval_log

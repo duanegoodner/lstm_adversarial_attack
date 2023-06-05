@@ -2,9 +2,25 @@
 # TODO Consider removing this module. May be overkill.
 import dill
 import pandas as pd
+from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 from typing import Callable
+
+
+def create_timestamped_dir(parent_path: Path) -> Path:
+    dirname = f"{datetime.now()}".replace(" ", "_")
+    new_dir_path = parent_path / dirname
+    assert not new_dir_path.exists()
+    new_dir_path.mkdir()
+    return new_dir_path
+
+
+def create_timestamped_filepath(parent_path: Path, file_extension: str):
+    filename = f"{datetime.now()}.{file_extension}".replace(" ", "_").replace(
+        ":", "_"
+    )
+    return parent_path / filename
 
 
 class ResourceType(Enum):
@@ -32,7 +48,7 @@ class ResourceImporter:
         assert file_type == file_extension
 
     def import_csv(self, path: Path) -> pd.DataFrame:
-        self._validate_path(path=path, file_type=".csv" )
+        self._validate_path(path=path, file_type=".csv")
         return pd.read_csv(path)
 
     def import_pickle_to_df(self, path: Path) -> pd.DataFrame:
