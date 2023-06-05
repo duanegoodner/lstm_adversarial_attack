@@ -8,7 +8,7 @@ from adversarial_attacker import AdversarialAttacker
 from attacker_helpers import AdversarialLoss
 from attack_result_data_structs import (
     AttackSummary,
-    DatasetAttackSummary,
+    # DatasetAttackSummary,
     EpochSuccesses,
     BatchResult,
     TrainerResult,
@@ -32,9 +32,10 @@ class AdversarialAttackTrainer:
         batch_size: int,
         kappa: float,
         lambda_1: float,
+        epochs_per_batch: int,
         optimizer_constructor: Callable,
         optimizer_constructor_kwargs: dict,
-        dataset: DatasetWithIndex,
+        dataset: DatasetWithIndex | Subset,
         collate_fn: Callable,
         inference_batch_size: int,
         attack_misclassified_samples: bool,
@@ -53,6 +54,7 @@ class AdversarialAttackTrainer:
         )
         self.kappa = kappa
         self.lambda_1 = lambda_1
+        self.epochs_per_batch = epochs_per_batch
         self.loss_fn = AdversarialLoss(kappa=kappa, lambda_1=lambda_1)
         self.optimizer_constructor = optimizer_constructor
         self.optimizer_constructor_kwargs = optimizer_constructor_kwargs
@@ -157,7 +159,7 @@ class AdversarialAttackTrainer:
         indices: torch.tensor,
         orig_features: VariableLengthFeatures,
         orig_labels: torch.tensor,
-        max_num_attempts: int,
+        # max_num_attempts: int,
     ):
         if indices.shape[0] != self.attacker.batch_size:
             self.rebuild_attacker(batch_size=indices.shape[0])
@@ -174,7 +176,7 @@ class AdversarialAttackTrainer:
             input_size=self.input_size,
         )
 
-        for epoch in range(max_num_attempts):
+        for epoch in range(self.epochs_per_batch):
             self.optimizer.zero_grad()
             perturbed_features, logits = self.attacker(orig_features)
             mean_loss, sample_losses = self.loss_fn(
@@ -217,7 +219,7 @@ class AdversarialAttackTrainer:
                 indices=indices,
                 orig_features=orig_features,
                 orig_labels=orig_labels,
-                max_num_attempts=100,
+                # max_num_attempts=100,
             )
 
             trainer_result.update(batch_result=batch_result)
@@ -229,13 +231,13 @@ class AdversarialAttackTrainer:
 
         return trainer_result
 
-    def summarize_result(
-        self, trainer_result: TrainerResult
-    ) -> DatasetAttackSummary:
-        attack_summary = AttackSummary.from_trainer_result(
-            trainer_result=trainer_result
-        )
-
-        return DatasetAttackSummary(
-            dataset=self.dataset, attack_summary=attack_summary
-        )
+    # def summarize_result(
+    #     self, trainer_result: TrainerResult
+    # ) -> DatasetAttackSummary:
+    #     attack_summary = AttackSummary.from_trainer_result(
+    #         trainer_result=trainer_result
+    #     )
+    #
+    #     return DatasetAttackSummary(
+    #         dataset=self.dataset, attack_summary=attack_summary
+    #     )

@@ -140,6 +140,104 @@ class TrainerResult:
         )
 
 
+class PerturbationSummary:
+    def __init__(
+        self, padded_perts: torch.tensor, input_seq_lengths: torch.tensor
+    ):
+        self.padded_perts = padded_perts
+        self.input_seq_lengths = input_seq_lengths
+        self.actual_perts = [
+            padded_perts[i, : input_seq_lengths[i], :]
+            for i in range(input_seq_lengths.shape[0])
+        ]
+        self.abs_perts = [
+            torch.abs(item) for item in self.actual_perts
+        ]
+
+        self.mean_pert_magnitudes = torch.tensor(
+            [torch.mean(item) for item in self.abs_perts]
+        )
+        self.stdev_pert_magnitudes = torch.tensor(
+            [torch.std(item) for item in self.abs_perts]
+        )
+        self.min_pert_magnitudes = torch.tensor(
+            [torch.min(item) for item in self.abs_perts]
+        )
+        self.max_pert_magnitudes = torch.tensor(
+            [torch.max(item) for item in self.abs_perts]
+        )
+        self.mean_of_means = torch.mean(self.mean_pert_magnitudes)
+        self.num_actual_elements = input_seq_lengths * padded_perts.shape[2]
+        self.num_nonzero = torch.tensor(
+            [torch.count_nonzero(item) for item in self.actual_perts]
+        )
+        self.fraction_nonzero = (
+            self.num_nonzero.float() / self.num_actual_elements.float()
+        )
+        self.fraction_nonzero_mean = torch.mean(self.fraction_nonzero)
+        self.fraction_nonzero_stdev = torch.std(self.fraction_nonzero)
+        self.fraction_nonzero_min = torch.min(self.fraction_nonzero)
+
+    # @property
+    # def actual_perts(self) -> list[torch.tensor]:
+
+
+class TrainerSuccessSummary:
+    def __init__(self, trainer_result: TrainerResult):
+        best_success_trainer_indices = torch.where(
+            trainer_result.best_examples.epochs != -1
+        )[0]
+        first_success_trainer_indices = torch.where(
+            trainer_result.first_examples.epochs != -1
+        )[0]
+        assert (
+            (best_success_trainer_indices == first_success_trainer_indices)
+            .all()
+            .item()
+        )
+
+        self.dataset = trainer_result.dataset
+        self.attacked_dataset_indices = trainer_result.dataset_indices
+        self.success_dataset_indices = trainer_result.dataset_indices[
+            best_success_trainer_indices
+        ]
+        self.epochs_run = trainer_result.epochs_run[
+            best_success_trainer_indices
+        ]
+        self.input_seq_lengths = trainer_result.input_seq_lengths[
+            best_success_trainer_indices
+        ]
+        self.first_examples = RecordedTrainerExamples(
+            epochs=trainer_result.first_examples.epochs[
+                first_success_trainer_indices
+            ],
+            losses=trainer_result.first_examples.losses[
+                first_success_trainer_indices
+            ],
+            perturbations=trainer_result.first_examples.perturbations[
+                first_success_trainer_indices, :, :
+            ],
+        )
+        self.best_examples = RecordedTrainerExamples(
+            epochs=trainer_result.best_examples.epochs[
+                best_success_trainer_indices
+            ],
+            losses=trainer_result.best_examples.losses[
+                best_success_trainer_indices
+            ],
+            perturbations=trainer_result.best_examples.perturbations[
+                best_success_trainer_indices, :, :
+            ],
+        )
+        self.first_perts_summary = PerturbationSummary(
+            padded_perts=self.first_examples.perturbations,
+            input_seq_lengths=self.input_seq_lengths,
+        )
+        self.best_perts_summary = PerturbationSummary(
+            padded_perts=self.best_examples.perturbations,
+            input_seq_lengths=self.input_seq_lengths,
+        )
+
 @dataclass
 class AttackSummary:
     dataset: DatasetWithIndex
@@ -202,15 +300,70 @@ class AttackSummary:
             best_perturbation=success_best_perts_list,
         )
 
-    # @property
-    # def best_perturbation_sparsity(self) -> np.array:
-
-
 
 @dataclass
-class DatasetAttackSummary:
-    dataset: Dataset
-    attack_summary: AttackSummary
+class AttackSummary2:
+    dataset: DatasetWithIndex
+    epochs_run: torch.tensor
+    dataset_indices_attacked: torch.tensor
+    dataset_indices_success: torch.tensor
+    first_epoch: torch.tensor
+    first_loss: torch.tensor
+    first_perturbation: torch.tensor
+    best_epoch: torch.tensor
+    best_loss: torch.tensor
+    best_perturbation: torch.tensor
+
+    @classmethod
+    def from_trainer_result(cls, trainer_result: TrainerResult):
+        success_trainer_indices = torch.where(
+            trainer_result.first_examples.epochs != -1
+        )[0]
+
+        success_first_perts_list = [
+            np.array(
+                trainer_result.first_examples.perturbations[
+                    i, : trainer_result.input_seq_lengths[i], :
+                ]
+            )
+            for i in success_trainer_indices
+        ]
+
+        success_best_perts_list = [
+            np.array(
+                trainer_result.first_examples.perturbations[
+                    i, : trainer_result.input_seq_lengths[i], :
+                ]
+            )
+            for i in success_trainer_indices
+        ]
+
+        return cls(
+            dataset=trainer_result.dataset,
+            dataset_indices_attacked=trainer_result.dataset_indices,
+            epochs_run=trainer_result.epochs_run[success_trainer_indices],
+            dataset_indices_success=trainer_result.dataset_indices[
+                success_trainer_indices
+            ],
+            first_epoch=trainer_result.first_examples.epochs[
+                success_trainer_indices
+            ],
+            first_loss=trainer_result.first_examples.losses[
+                success_trainer_indices
+            ],
+            first_perturbation=trainer_result.first_examples.perturbations[
+                success_trainer_indices, :, :
+            ],
+            best_epoch=trainer_result.best_examples.epochs[
+                success_trainer_indices
+            ],
+            best_loss=trainer_result.best_examples.losses[
+                success_trainer_indices
+            ],
+            best_perturbation=trainer_result.best_examples.perturbations[
+                success_trainer_indices, :, :
+            ],
+        )
 
 
 # def run_batch(

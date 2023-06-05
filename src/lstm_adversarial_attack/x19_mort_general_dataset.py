@@ -1,3 +1,4 @@
+import numpy as np
 import sys
 import torch
 from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
@@ -8,7 +9,10 @@ from torch.nn.utils.rnn import (
 from torch.utils.data import Dataset
 
 sys.path.append(str(Path(__file__).parent.parent))
-from lstm_adversarial_attack.config_paths import PREPROCESS_OUTPUT_DIR, PREPROCESS_OUTPUT_FILES
+from lstm_adversarial_attack.config_paths import (
+    PREPROCESS_OUTPUT_DIR,
+    PREPROCESS_OUTPUT_FILES,
+)
 from lstm_adversarial_attack.data_structures import VariableLengthFeatures
 
 # import project_config_old as pc
@@ -17,8 +21,15 @@ import lstm_adversarial_attack.resource_io as rio
 
 class X19MGeneralDataset(Dataset):
     def __init__(
-        self, measurements: list[torch.tensor], in_hosp_mort: torch.tensor
+        self,
+        measurements: list[torch.tensor],
+        in_hosp_mort: list[torch.tensor],
+        max_num_samples: int = None,
     ):
+        if max_num_samples is not None and max_num_samples < len(in_hosp_mort):
+            measurements = measurements[:max_num_samples]
+            in_hosp_mort = in_hosp_mort[:max_num_samples]
+
         self.measurements = measurements
         self.in_hosp_mort = in_hosp_mort
 
@@ -35,6 +46,7 @@ class X19MGeneralDataset(Dataset):
         / PREPROCESS_OUTPUT_FILES["measurement_data_list"],
         in_hospital_mort_path: Path = PREPROCESS_OUTPUT_DIR
         / PREPROCESS_OUTPUT_FILES["in_hospital_mortality_list"],
+        max_num_samples: int = None,
     ):
         importer = rio.ResourceImporter()
         measurements_np_list = importer.import_pickle_to_object(
@@ -53,7 +65,9 @@ class X19MGeneralDataset(Dataset):
             torch.tensor(entry, dtype=torch.long) for entry in mort_int_list
         ]
         return cls(
-            measurements=features_tensor_list, in_hosp_mort=labels_tensor_list
+            measurements=features_tensor_list,
+            in_hosp_mort=labels_tensor_list,
+            max_num_samples=max_num_samples,
         )
 
 
@@ -80,11 +94,17 @@ def x19m_with_index_collate_fn(batch):
     lengths = torch.tensor(
         [item.shape[0] for item in features], dtype=torch.long
     )
-    return torch.tensor(indices, dtype=torch.long), VariableLengthFeatures(
-        features=padded_features, lengths=lengths
-    ), torch.tensor(labels, dtype=torch.long)
+    return (
+        torch.tensor(indices, dtype=torch.long),
+        VariableLengthFeatures(features=padded_features, lengths=lengths),
+        torch.tensor(labels, dtype=torch.long),
+    )
 
 
 if __name__ == "__main__":
-    x19_general_dataset = X19MGeneralDataset.from_feaure_finalizer_output()
-    x19_with_index = X19MGeneralDatasetWithIndex.from_feaure_finalizer_output()
+    x19_general_dataset = X19MGeneralDataset.from_feaure_finalizer_output(
+        max_num_samples=100
+    )
+    x19_with_index = X19MGeneralDatasetWithIndex.from_feaure_finalizer_output(
+        max_num_samples=100
+    )

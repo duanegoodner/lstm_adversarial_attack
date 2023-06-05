@@ -1,11 +1,16 @@
 import sys
 import torch
+from torch.utils.data import Subset
 from pathlib import Path
 from typing import Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from adv_attack_trainer import AdversarialAttackTrainer
-from attack_result_data_structs import AttackSummary, TrainerResult
+from attack_result_data_structs import (
+    AttackSummary,
+    TrainerResult,
+    TrainerSuccessSummary,
+)
 import lstm_adversarial_attack.resource_io as rio
 from lstm_adversarial_attack.config_paths import DEFAULT_ATTACK_TARGET_DIR
 from lstm_adversarial_attack.x19_mort_general_dataset import (
@@ -19,11 +24,12 @@ def run_adv_attack_trainer(
     model_path: Path,
     checkpoint_path: Path,
     batch_size: int = 128,
-    kappa: float = 0.1,
-    lambda_1: float = 1e-2,
+    kappa: float = 0.0,
+    lambda_1: float = 0.1,
+    epochs_per_batch: int = 1000,
     optimizer_constructor: Callable = torch.optim.Adam,
     optimizer_constructor_kwargs: dict = None,
-    dataset: X19MGeneralDatasetWithIndex = X19MGeneralDatasetWithIndex.from_feaure_finalizer_output(),
+    dataset: X19MGeneralDatasetWithIndex = X19MGeneralDatasetWithIndex.from_feaure_finalizer_output(max_num_samples=256),
     collate_fn: Callable = x19m_with_index_collate_fn,
     inference_batch_size: int = 128,
     attack_misclassified_samples: bool = False,
@@ -32,7 +38,7 @@ def run_adv_attack_trainer(
     return_full_trainer: bool = False,
 ) -> AdversarialAttackTrainer | TrainerResult:
     if optimizer_constructor_kwargs is None:
-        optimizer_constructor_kwargs = {"lr": 1e-4}
+        optimizer_constructor_kwargs = {"lr": 1e-2}
 
     model = rio.ResourceImporter().import_pickle_to_object(path=model_path)
     checkpoint = torch.load(checkpoint_path)
@@ -44,6 +50,7 @@ def run_adv_attack_trainer(
         batch_size=batch_size,
         kappa=kappa,
         lambda_1=lambda_1,
+        epochs_per_batch=epochs_per_batch,
         optimizer_constructor=optimizer_constructor,
         optimizer_constructor_kwargs=optimizer_constructor_kwargs,
         dataset=dataset,
@@ -76,9 +83,7 @@ if __name__ == "__main__":
         device=cur_device,
         model_path=DEFAULT_ATTACK_TARGET_DIR / "model.pickle",
         checkpoint_path=checkpoint_path,
-        save_result=True,
+        save_result=False,
     )
 
-    attack_summary = AttackSummary.from_trainer_result(
-        trainer_result=trainer_result
-    )
+    success_summary = TrainerSuccessSummary(trainer_result=trainer_result)
