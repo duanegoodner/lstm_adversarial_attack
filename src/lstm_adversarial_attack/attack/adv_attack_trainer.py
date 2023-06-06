@@ -154,6 +154,35 @@ class AdversarialAttackTrainer:
         )
         self.attacker.to(self.device)
 
+    def apply_soft_bounded_threshold(
+        self, orig_inputs: VariableLengthFeatures
+    ):
+        perturbation_min = -1 * orig_inputs.features
+        perturbation_max = (
+            torch.ones_like(orig_inputs.features) - orig_inputs.features
+        )
+
+        # TODO Create setter methods so trainer does not need to
+        #  directly access perturbations
+        zero_mask = torch.abs(
+            self.attacker.feature_perturber.perturbation <= self.lambda_1
+        )
+        self.attacker.feature_perturber.perturbation.data[zero_mask] = 0
+        pos_mask = self.attacker.feature_perturber.perturbation > self.lambda_1
+        self.attacker.feature_perturber.perturbation.data[pos_mask] -= self.lambda_1
+        neg_mask = (
+            self.attacker.feature_perturber.perturbation < -1 * self.lambda_1
+        )
+        self.attacker.feature_perturber.perturbation.data[neg_mask] += self.lambda_1
+        clamped_perturbation = torch.clamp(
+            input=self.attacker.feature_perturber.perturbation.data,
+            min=perturbation_min,
+            max=perturbation_max,
+        )
+        self.attacker.feature_perturber.perturbation.data.copy_(
+            clamped_perturbation
+        )
+
     def attack_batch(
         self,
         indices: torch.tensor,
@@ -196,6 +225,7 @@ class AdversarialAttackTrainer:
 
             mean_loss.backward()
             self.optimizer.step()
+            self.apply_soft_bounded_threshold(orig_inputs=orig_features)
 
         return batch_result
 
