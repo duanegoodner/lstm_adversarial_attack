@@ -150,9 +150,11 @@ class PerturbationSummary:
             padded_perts[i, : input_seq_lengths[i], :]
             for i in range(input_seq_lengths.shape[0])
         ]
-        self.abs_perts = [
-            torch.abs(item) for item in self.actual_perts
-        ]
+        self.abs_perts = [torch.abs(item) for item in self.actual_perts]
+
+        self.sum_abs_perts = torch.tensor(
+            [torch.sum(item) for item in self.abs_perts]
+        )
 
         self.mean_pert_magnitudes = torch.tensor(
             [torch.mean(item) for item in self.abs_perts]
@@ -174,9 +176,19 @@ class PerturbationSummary:
         self.fraction_nonzero = (
             self.num_nonzero.float() / self.num_actual_elements.float()
         )
+        if len(self.fraction_nonzero) == 0:
+            self.sparse_small_scores = torch.tensor([], dtype=torch.float32)
+        else:
+            self.sparse_small_scores = (
+                1 - self.fraction_nonzero
+            ) / self.sum_abs_perts
+
         self.fraction_nonzero_mean = torch.mean(self.fraction_nonzero)
         self.fraction_nonzero_stdev = torch.std(self.fraction_nonzero)
-        self.fraction_nonzero_min = torch.min(self.fraction_nonzero)
+        if len(self.fraction_nonzero) == 0:
+            self.fraction_nonzero_min = torch.tensor([], dtype=torch.float32)
+        else:
+            self.fraction_nonzero_min = torch.min(self.fraction_nonzero)
 
     # @property
     # def actual_perts(self) -> list[torch.tensor]:
@@ -237,179 +249,3 @@ class TrainerSuccessSummary:
             padded_perts=self.best_examples.perturbations,
             input_seq_lengths=self.input_seq_lengths,
         )
-
-@dataclass
-class AttackSummary:
-    dataset: DatasetWithIndex
-    epochs_run: np.ndarray
-    dataset_indices_attacked: np.ndarray
-    dataset_indices_success: np.ndarray
-    first_epoch: np.ndarray
-    first_loss: np.ndarray
-    first_perturbation: list[np.ndarray]
-    best_epoch: np.ndarray
-    best_loss: np.ndarray
-    best_perturbation: list[np.ndarray]
-
-    @classmethod
-    def from_trainer_result(cls, trainer_result: TrainerResult):
-        success_trainer_indices = torch.where(
-            trainer_result.first_examples.epochs != -1
-        )[0]
-
-        success_first_perts_list = [
-            np.array(
-                trainer_result.first_examples.perturbations[
-                    i, : trainer_result.input_seq_lengths[i], :
-                ]
-            )
-            for i in success_trainer_indices
-        ]
-
-        success_best_perts_list = [
-            np.array(
-                trainer_result.first_examples.perturbations[
-                    i, : trainer_result.input_seq_lengths[i], :
-                ]
-            )
-            for i in success_trainer_indices
-        ]
-
-        return cls(
-            dataset=trainer_result.dataset,
-            dataset_indices_attacked=np.array(trainer_result.dataset_indices),
-            epochs_run=np.array(
-                trainer_result.epochs_run[success_trainer_indices]
-            ),
-            dataset_indices_success=np.array(
-                trainer_result.dataset_indices[success_trainer_indices]
-            ),
-            first_epoch=np.array(
-                trainer_result.first_examples.epochs[success_trainer_indices]
-            ),
-            first_loss=np.array(
-                trainer_result.first_examples.losses[success_trainer_indices]
-            ),
-            first_perturbation=success_first_perts_list,
-            best_epoch=np.array(
-                trainer_result.best_examples.epochs[success_trainer_indices]
-            ),
-            best_loss=np.array(
-                trainer_result.best_examples.losses[success_trainer_indices]
-            ),
-            best_perturbation=success_best_perts_list,
-        )
-
-
-@dataclass
-class AttackSummary2:
-    dataset: DatasetWithIndex
-    epochs_run: torch.tensor
-    dataset_indices_attacked: torch.tensor
-    dataset_indices_success: torch.tensor
-    first_epoch: torch.tensor
-    first_loss: torch.tensor
-    first_perturbation: torch.tensor
-    best_epoch: torch.tensor
-    best_loss: torch.tensor
-    best_perturbation: torch.tensor
-
-    @classmethod
-    def from_trainer_result(cls, trainer_result: TrainerResult):
-        success_trainer_indices = torch.where(
-            trainer_result.first_examples.epochs != -1
-        )[0]
-
-        success_first_perts_list = [
-            np.array(
-                trainer_result.first_examples.perturbations[
-                    i, : trainer_result.input_seq_lengths[i], :
-                ]
-            )
-            for i in success_trainer_indices
-        ]
-
-        success_best_perts_list = [
-            np.array(
-                trainer_result.first_examples.perturbations[
-                    i, : trainer_result.input_seq_lengths[i], :
-                ]
-            )
-            for i in success_trainer_indices
-        ]
-
-        return cls(
-            dataset=trainer_result.dataset,
-            dataset_indices_attacked=trainer_result.dataset_indices,
-            epochs_run=trainer_result.epochs_run[success_trainer_indices],
-            dataset_indices_success=trainer_result.dataset_indices[
-                success_trainer_indices
-            ],
-            first_epoch=trainer_result.first_examples.epochs[
-                success_trainer_indices
-            ],
-            first_loss=trainer_result.first_examples.losses[
-                success_trainer_indices
-            ],
-            first_perturbation=trainer_result.first_examples.perturbations[
-                success_trainer_indices, :, :
-            ],
-            best_epoch=trainer_result.best_examples.epochs[
-                success_trainer_indices
-            ],
-            best_loss=trainer_result.best_examples.losses[
-                success_trainer_indices
-            ],
-            best_perturbation=trainer_result.best_examples.perturbations[
-                success_trainer_indices, :, :
-            ],
-        )
-
-
-# def run_batch(
-#     dataset_start_idx: int,
-#     batch_size: int = 10,
-#     epochs_per_batch: int = 50,
-#     successes_per_batch: int = 3,
-# ):
-#     batch_result = BatchResult(
-#         dataset_indices=torch.arange(
-#             start=dataset_start_idx, end=dataset_start_idx + batch_size
-#         ),
-#         input_seq_lengths=torch.randint(low=2, high=6, size=(batch_size,)),
-#         max_seq_length=5,
-#         input_size=7,
-#     )
-#
-#     for epoch_idx in range(epochs_per_batch):
-#         epoch_successes = EpochSuccesses(
-#             epoch_num=epoch_idx,
-#             batch_indices=torch.tensor(
-#                 np.random.choice(
-#                     np.arange(batch_size),
-#                     size=successes_per_batch,
-#                     replace=False,
-#                 )
-#             ),
-#             losses=5 * torch.abs(torch.randn(3)),
-#             perturbations=torch.randn(successes_per_batch, 5, 7),
-#         )
-#         batch_result.update(epoch_successes=epoch_successes)
-#
-#     return batch_result
-#
-#
-# if __name__ == "__main__":
-#     if torch.cuda.is_available():
-#         cur_device = torch.device("cuda:0")
-#     else:
-#         cur_device = torch.device("cpu")
-#
-#     my_trainer_result = TrainerResult()
-#
-#     my_batch_size = 10
-#     for batch_idx in range(5):
-#         my_batch_result = run_batch(
-#             dataset_start_idx=batch_idx * my_batch_size
-#         )
-#         my_trainer_result.update(batch_result=my_batch_result)

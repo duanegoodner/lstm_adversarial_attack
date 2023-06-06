@@ -3,18 +3,18 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
 from typing import Callable
 
-import lstm_adversarial_attack.resource_io as rio
+# import lstm_adversarial_attack.resource_io as rio
 from adversarial_attacker import AdversarialAttacker
 from attacker_helpers import AdversarialLoss
 from attack_result_data_structs import (
-    AttackSummary,
     # DatasetAttackSummary,
     EpochSuccesses,
     BatchResult,
     TrainerResult,
 )
 from attacker_helpers import TargetDatasetBuilder
-from lstm_adversarial_attack.config_paths import ATTACK_OUTPUT_DIR
+
+# from lstm_adversarial_attack.config_paths import ATTACK_OUTPUT_DIR
 from lstm_adversarial_attack.config_settings import MAX_OBSERVATION_HOURS
 from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
 from lstm_adversarial_attack.data_structures import VariableLengthFeatures
@@ -30,17 +30,16 @@ class AdversarialAttackTrainer:
         model: nn.Module,
         state_dict: dict,
         batch_size: int,
+        epochs_per_batch: int,
         kappa: float,
         lambda_1: float,
-        epochs_per_batch: int,
         optimizer_constructor: Callable,
         optimizer_constructor_kwargs: dict,
         dataset: DatasetWithIndex | Subset,
         collate_fn: Callable,
-        inference_batch_size: int,
         attack_misclassified_samples: bool,
-        use_weighted_data_loader: bool,
-        save_result: bool,
+        inference_batch_size: int = 128,
+        use_weighted_data_loader: bool = False,
     ):
         self.device = device
         self.model = model
@@ -62,13 +61,11 @@ class AdversarialAttackTrainer:
             params=self.attacker.parameters(), **optimizer_constructor_kwargs
         )
         self.dataset = dataset
-        # self.output_dir = output_dir
         self.collate_fn = collate_fn
         self.inference_batch_size = inference_batch_size
         self.attack_misclassified_samples = attack_misclassified_samples
         self.use_weighted_data_loader = use_weighted_data_loader
         self.latest_result = None
-        self.save_result = save_result
 
     @property
     def batch_size(self) -> int:
@@ -126,6 +123,8 @@ class AdversarialAttackTrainer:
         orig_labels: torch.tensor,
         sample_losses: torch.tensor,
     ) -> EpochSuccesses:
+        if logits.dim() == 1:
+            logits = logits[None, :]
         attack_is_successful = torch.argmax(input=logits, dim=1) != orig_labels
         successful_attack_indices = torch.where(attack_is_successful)[0]
         epoch_success_losses = sample_losses[successful_attack_indices]
@@ -169,11 +168,15 @@ class AdversarialAttackTrainer:
         )
         self.attacker.feature_perturber.perturbation.data[zero_mask] = 0
         pos_mask = self.attacker.feature_perturber.perturbation > self.lambda_1
-        self.attacker.feature_perturber.perturbation.data[pos_mask] -= self.lambda_1
+        self.attacker.feature_perturber.perturbation.data[
+            pos_mask
+        ] -= self.lambda_1
         neg_mask = (
             self.attacker.feature_perturber.perturbation < -1 * self.lambda_1
         )
-        self.attacker.feature_perturber.perturbation.data[neg_mask] += self.lambda_1
+        self.attacker.feature_perturber.perturbation.data[
+            neg_mask
+        ] += self.lambda_1
         clamped_perturbation = torch.clamp(
             input=self.attacker.feature_perturber.perturbation.data,
             min=perturbation_min,
@@ -188,10 +191,35 @@ class AdversarialAttackTrainer:
         indices: torch.tensor,
         orig_features: VariableLengthFeatures,
         orig_labels: torch.tensor,
-        # max_num_attempts: int,
     ):
+        # if batch size less than size of perturbations dim 1, re-build
+        # FeaturePerturber to match current batch size
         if indices.shape[0] != self.attacker.batch_size:
             self.rebuild_attacker(batch_size=indices.shape[0])
+
+        # if max sequence length in batch less than perturber's max sequence
+        # length, pad entire batch to match perturber
+        if (
+            orig_features.features.shape[1]
+            < self.attacker.feature_perturber.perturbation.shape[1]
+        ):
+            num_rows_to_add = (
+                self.attacker.feature_perturber.perturbation.shape[1]
+                - orig_features.features.shape[1]
+            )
+            orig_features.features = torch.cat(
+                (
+                    orig_features.features,
+                    torch.zeros(
+                        (
+                            orig_features.features.shape[0],
+                            num_rows_to_add,
+                            orig_features.features.shape[2],
+                        ),
+                        dtype=torch.float32,
+                    ),
+                ), dim=1
+            )
 
         self.reset_perturbation()
         orig_features.features, orig_labels = orig_features.features.to(
@@ -229,11 +257,11 @@ class AdversarialAttackTrainer:
 
         return batch_result
 
-    def export(self):
-        output_path = rio.create_timestamped_filepath(
-            parent_path=ATTACK_OUTPUT_DIR, file_extension="pickle"
-        )
-        rio.ResourceExporter().export(resource=self, path=output_path)
+    # def export(self):
+    #     output_path = rio.create_timestamped_filepath(
+    #         parent_path=ATTACK_OUTPUT_DIR, file_extension="pickle"
+    #     )
+    #     rio.ResourceExporter().export(resource=self, path=output_path)
 
     def train_attacker(self):
         data_loader = self.build_data_loader()
@@ -249,25 +277,10 @@ class AdversarialAttackTrainer:
                 indices=indices,
                 orig_features=orig_features,
                 orig_labels=orig_labels,
-                # max_num_attempts=100,
             )
 
             trainer_result.update(batch_result=batch_result)
 
         self.latest_result = trainer_result
 
-        if self.save_result:
-            self.export()
-
         return trainer_result
-
-    # def summarize_result(
-    #     self, trainer_result: TrainerResult
-    # ) -> DatasetAttackSummary:
-    #     attack_summary = AttackSummary.from_trainer_result(
-    #         trainer_result=trainer_result
-    #     )
-    #
-    #     return DatasetAttackSummary(
-    #         dataset=self.dataset, attack_summary=attack_summary
-    #     )

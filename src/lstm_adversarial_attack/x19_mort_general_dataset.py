@@ -25,10 +25,19 @@ class X19MGeneralDataset(Dataset):
         measurements: list[torch.tensor],
         in_hosp_mort: list[torch.tensor],
         max_num_samples: int = None,
+        random_seed: int = None,
     ):
         if max_num_samples is not None and max_num_samples < len(in_hosp_mort):
-            measurements = measurements[:max_num_samples]
-            in_hosp_mort = in_hosp_mort[:max_num_samples]
+            if random_seed:
+                np.random.seed(random_seed)
+            selected_indices = np.random.choice(
+                a=len(in_hosp_mort), size=max_num_samples, replace=False
+            )
+
+            # measurements = measurements[:max_num_samples]
+            measurements = [measurements[i] for i in selected_indices]
+            # in_hosp_mort = in_hosp_mort[:max_num_samples]
+            in_hosp_mort = [in_hosp_mort[i] for i in selected_indices]
 
         self.measurements = measurements
         self.in_hosp_mort = in_hosp_mort
@@ -47,6 +56,7 @@ class X19MGeneralDataset(Dataset):
         in_hospital_mort_path: Path = PREPROCESS_OUTPUT_DIR
         / PREPROCESS_OUTPUT_FILES["in_hospital_mortality_list"],
         max_num_samples: int = None,
+        random_seed: int = None
     ):
         importer = rio.ResourceImporter()
         measurements_np_list = importer.import_pickle_to_object(
@@ -68,6 +78,7 @@ class X19MGeneralDataset(Dataset):
             measurements=features_tensor_list,
             in_hosp_mort=labels_tensor_list,
             max_num_samples=max_num_samples,
+            random_seed=random_seed
         )
 
 
