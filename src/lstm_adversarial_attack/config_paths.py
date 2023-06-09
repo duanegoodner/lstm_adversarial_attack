@@ -48,3 +48,6 @@ TRAINING_OUTPUT_DIR = DATA_DIR / "model_training"
 DEFAULT_ATTACK_TARGET_DIR = TRAINING_OUTPUT_DIR / "default_attack_target"
 
 ATTACK_OUTPUT_DIR = DATA_DIR / "attack"
+ATTACK_HYPERPARAMETER_TUNING = (
+    ATTACK_OUTPUT_DIR / "attack_hyperparameter_tuning"
+)

@@ -36,6 +36,7 @@ class AttackDriver:
         sample_selection_seed=None,
         attack_misclassified_samples: bool = False,
         save_train_result: bool = False,
+        output_dir: Path = ATTACK_OUTPUT_DIR,
         save_full_trainer: bool = False,
         return_full_trainer: bool = False,
     ):
@@ -60,6 +61,7 @@ class AttackDriver:
         )
         self.collate_fn = x19m_with_index_collate_fn
         self.attack_misclassified_samples = attack_misclassified_samples
+        self.output_dir = output_dir
         self.save_train_result = save_train_result
         self.save_full_trainer = save_full_trainer
         self.return_full_trainer = return_full_trainer
@@ -88,7 +90,7 @@ class AttackDriver:
 
         if self.save_train_result or self.save_full_trainer:
             output_dir = rio.create_timestamped_dir(
-                parent_path=ATTACK_OUTPUT_DIR
+                parent_path=self.output_dir
             )
             if self.save_train_result:
                 train_result_output_path = output_dir / "train_result.pickle"
@@ -119,12 +121,16 @@ if __name__ == "__main__":
 
     attack_driver = AttackDriver(
         device=cur_device,
-        batch_size=1,
-        epochs_per_batch=100,
+        kappa=0.25555773805539084,
+        lambda_1=0.00016821459273891898,
+        optimizer_constructor=torch.optim.RMSprop,
+        optimizer_constructor_kwargs={"lr": 0.01340580859093695},
+        batch_size=16,
+        epochs_per_batch=500,
         model_path=DEFAULT_ATTACK_TARGET_DIR / "model.pickle",
         checkpoint_path=checkpoint_path,
-        max_num_samples=29,
-        sample_selection_seed=1357,
+        max_num_samples=500,
+        sample_selection_seed=13579,
         save_train_result=False,
     )
 

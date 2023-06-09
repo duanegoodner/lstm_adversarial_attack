@@ -1,8 +1,8 @@
 version: "3.8"
 
-secrets:
-  jetbrains_user_pubkey:
-    file: ${JETBRAINS_USER_PUBKEY}
+#secrets:
+#  jetbrains_user_pubkey:
+#    file: ${JETBRAINS_USER_PUBKEY}
 
 services:
   lstm_aa_app:
@@ -16,19 +16,19 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [ gpu ]
-    secrets:
-      - jetbrains_user_pubkey
+#    secrets:
+#      - jetbrains_user_pubkey
     build:
       context: ../
       dockerfile: ./app/Dockerfile.app
       args:
         - PRIMARY_USER=gen_user
-        - JETBRAINS_USER=${JETBRAINS_USER}
-        - WORK_GROUP=${WORK_GROUP}
+#        - JETBRAINS_USER=${JETBRAINS_USER}
+#        - WORK_GROUP=${WORK_GROUP}
         - CONTAINER_DEVSPACE=${CONTAINER_DEVSPACE}
         - CONTAINER_PROJECT_ROOT=${CONTAINER_PROJECT_ROOT}
-      secrets:
-        - jetbrains_user_pubkey
+#      secrets:
+#        - jetbrains_user_pubkey
 
     container_name: lstm_aa_app
     entrypoint:
@@ -41,7 +41,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
 
     ports:
-      - "127.0.0.1:${CONTAINER_SSH_PORT}:22"
+#      - "127.0.0.1:${CONTAINER_SSH_PORT}:22"
       - "127.0.0.1:8888:8888"
       - "127.0.0.1:6006:6006"
     init: true

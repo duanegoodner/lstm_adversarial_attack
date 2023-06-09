@@ -98,10 +98,18 @@ class BatchResult:
 
 @dataclass
 class RecordedTrainerExamples:
-    epochs: torch.tensor = torch.LongTensor()
-    losses: torch.tensor = torch.FloatTensor()
-    perturbations: torch.tensor = torch.FloatTensor()
+    epochs: torch.tensor = None
+    losses: torch.tensor = None
+    perturbations: torch.tensor = None
     device: torch.device = torch.device("cpu")
+
+    def __post_init__(self):
+        if self.epochs is None:
+            self.epochs = torch.LongTensor()
+        if self.losses is None:
+            self.losses = torch.FloatTensor()
+        if self.perturbations is None:
+            self.perturbations = torch.FloatTensor()
 
     def update(self, batch_examples: RecordedBatchExamples):
         self.epochs = torch.cat((self.epochs, batch_examples.epochs), dim=0)
@@ -114,11 +122,23 @@ class RecordedTrainerExamples:
 @dataclass
 class TrainerResult:
     dataset: DatasetWithIndex
-    dataset_indices: torch.tensor = torch.LongTensor()
-    epochs_run: torch.tensor = torch.LongTensor()
-    input_seq_lengths: torch.tensor = torch.LongTensor()
-    first_examples: RecordedTrainerExamples = RecordedTrainerExamples()
-    best_examples: RecordedTrainerExamples = RecordedTrainerExamples()
+    dataset_indices: torch.tensor = None
+    epochs_run: torch.tensor = None
+    input_seq_lengths: torch.tensor = None
+    first_examples: RecordedTrainerExamples = None
+    best_examples: RecordedTrainerExamples = None
+
+    def __post_init__(self):
+        if self.dataset_indices is None:
+            self.dataset_indices = torch.LongTensor()
+        if self.epochs_run is None:
+            self.epochs_run = torch.LongTensor()
+        if self.input_seq_lengths is None:
+            self.input_seq_lengths = torch.LongTensor()
+        if self.first_examples is None:
+            self.first_examples = RecordedTrainerExamples()
+        if self.best_examples is None:
+            self.best_examples = RecordedTrainerExamples()
 
     def update(self, batch_result: BatchResult):
         self.first_examples.update(batch_examples=batch_result.first_examples)
