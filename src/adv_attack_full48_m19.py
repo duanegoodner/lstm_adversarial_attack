@@ -22,7 +22,7 @@ if __name__ == "__main__":
         help=(
             "Filename (not full path) of .tar file containing model "
             "parameters for LSTMSun2018 model. File needs to be in directory"
-            "lstm_adversarial_attack/data/cross_validate_sun2018_full48m19_01."
+            "lstm_aa/data/cross_validate_sun2018_full48m19_01."
         ),
     )
     args_namespace = cur_parser.parse_args()

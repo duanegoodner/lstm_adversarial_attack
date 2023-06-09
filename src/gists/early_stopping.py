@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
-from lstm_adversarial_attack.data_structures import (
+from lstm_aa.data_structures import (
     EvalEpochResult,
     OptimizeDirection,
 )
