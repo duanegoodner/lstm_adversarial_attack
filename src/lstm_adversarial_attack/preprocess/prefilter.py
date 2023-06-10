@@ -24,6 +24,7 @@ class Prefilter(ppm.PreprocessModule):
         incoming_resource_refs=pic.PrefilterResourceRefs(),
     ):
         super().__init__(
+            name="Prefilter",
             settings=settings,
             incoming_resource_refs=incoming_resource_refs,
         )

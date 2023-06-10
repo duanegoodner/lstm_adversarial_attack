@@ -18,7 +18,9 @@ class FeatureBuilder(pm.PreprocessModule):
         incoming_resource_refs=pic.FeatureBuilderResourceRefs(),
     ):
         super().__init__(
-            settings=settings, incoming_resource_refs=incoming_resource_refs
+            name="Feature Builder",
+            settings=settings,
+            incoming_resource_refs=incoming_resource_refs,
         )
         # since stats_summary df is small, make it a data member
         # (we try to keep scope of big dfs limited to process() method)
@@ -102,10 +104,10 @@ class FeatureBuilder(pm.PreprocessModule):
             data.full_admission_list[idx].time_series = self._process_hadm_df(
                 df=data.full_admission_list[idx].time_series
             )
-            if idx % 5000 == 0:
+            if (idx + 1) % 5000 == 0:
                 print(
-                    "Done processing sample"
-                    f" {idx}/{len(data.full_admission_list)}"
+                    "Done building features for sample"
+                    f" {idx + 1}/{len(data.full_admission_list)}"
                 )
 
         self.export_resource(

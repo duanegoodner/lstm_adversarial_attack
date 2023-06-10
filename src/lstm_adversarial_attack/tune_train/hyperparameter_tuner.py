@@ -16,6 +16,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_settings as cs
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.data_structures as ds
+
 # import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.config_paths as lcp
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
@@ -299,6 +300,13 @@ class HyperParameterTuner:
     def tune(
         self, num_trials: int, timeout: int | None = None
     ) -> optuna.Study:
+        print(
+            f"Starting hyperparameter tuning.\n\n"
+            f"Data for Tensorboard will be written to:\n"
+            f"{self.tensorboard_output_dir}\n\n"
+            f"Optuna trial and study objects will be saved in:\n"
+            f"{self.tuner_checkpoint_dir}\n\n"
+        )
         study = optuna.create_study(
             direction=self.optimization_direction_label,
             sampler=self.hyperparameter_sampler,

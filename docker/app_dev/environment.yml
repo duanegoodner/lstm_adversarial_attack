@@ -12,6 +12,8 @@ dependencies:
   - isort
   - jupyter
   - jupyterlab
+  - jupyterlab_limit_output
+  - jupyterlab-variableinspector
   - matplotlib
   - numpy
   - pandas

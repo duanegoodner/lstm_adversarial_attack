@@ -12,3 +12,6 @@ class DataResource:
 class ExportedPreprocessResource:
     path: Path
     data_type: str
+
+    def __repr__(self):
+        return f"path: {self.path}, data_type: {self.data_type}"

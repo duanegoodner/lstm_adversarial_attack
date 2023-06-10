@@ -11,6 +11,8 @@ dependencies:
   # - gensim
   - isort
   - jupyter
+  - jupyterlab_limit_output
+  - jupyterlab-variableinspector
   - jupyterlab
   - matplotlib
   - numpy

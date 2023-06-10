@@ -12,10 +12,12 @@ import lstm_adversarial_attack.resource_io as rio
 class PreprocessModule(ABC):
     def __init__(
         self,
+        name: str,
         settings: dataclass,
         incoming_resource_refs: dataclass,
         exported_resources: dict[str, pr.ExportedPreprocessResource] = None,
     ):
+        self.name = name
         self.settings = settings
         self.incoming_resource_refs = incoming_resource_refs
         self._resource_exporter = rio.ResourceExporter()

@@ -22,6 +22,7 @@ class FullAdmissionListBuilder(pm.PreprocessModule):
         incoming_resource_refs=pic.FullAdmissionListBuilderResourceRefs(),
     ):
         super().__init__(
+            name="FullAdmission Object List Builder",
             settings=settings,
             incoming_resource_refs=incoming_resource_refs,
         )

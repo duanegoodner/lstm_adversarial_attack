@@ -24,6 +24,7 @@ class ICUStayMeasurementCombiner(pm.PreprocessModule):
         incoming_resource_refs=pic.ICUStayMeasurementCombinerResourceRefs(),
     ):
         super().__init__(
+            name="ICU Stay Data + Measurement Data Combiner",
             settings=settings,
             incoming_resource_refs=incoming_resource_refs,
         )

@@ -9,7 +9,6 @@ from typing import Callable
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.config_paths as lcp
-# import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.weighted_dataloader_builder as wdl
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt

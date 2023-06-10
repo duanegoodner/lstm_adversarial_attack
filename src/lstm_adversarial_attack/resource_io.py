@@ -9,7 +9,7 @@ from typing import Callable
 
 
 def create_timestamped_dir(parent_path: Path) -> Path:
-    dirname = f"{datetime.now()}".replace(" ", "_")
+    dirname = f"{datetime.now()}".replace(" ", "_").replace(":", "_")
     new_dir_path = parent_path / dirname
     assert not new_dir_path.exists()
     new_dir_path.mkdir()

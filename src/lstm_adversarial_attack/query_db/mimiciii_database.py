@@ -30,13 +30,13 @@ class MimiciiiDatabaseAccess:
         cur = self._connection.cursor()
         with sql_file_path.open(mode="r") as q:
             query = q.read()
-        print(f"Executing query: {sql_file_path.name}")
+        print(f"Executing: {sql_file_path}")
         start = time.time()
         cur.execute(query=query)
         result = cur.fetchall()
         headers = [i[0] for i in cur.description]
         end = time.time()
-        print(f"Done. Query time = {(end - start):.2f} seconds\n")
+        print(f"Done. Query time = {(end - start):.2f} seconds")
         cur.close()
         return headers, result
 
@@ -44,7 +44,7 @@ class MimiciiiDatabaseAccess:
         self, query_result: tuple[list, list], query_gen_name: str
     ):
         output_path = self._output_dir / f"{query_gen_name}.csv"
-        print(f"Writing result to csv: {output_path.name}")
+        print(f"Writing result to csv: {output_path}")
         start = time.time()
         with output_path.open(mode="w", newline="") as q_out_file:
             writer = csv.writer(q_out_file, delimiter=",")
@@ -73,7 +73,10 @@ class MimiciiiDatabaseAccess:
         self, sql_query_paths: list[Path]
     ) -> list[Path]:
         result_paths = []
-        for query_path in sql_query_paths:
+        for query_idx in range(len(sql_query_paths)):
+        # for query_path in sql_query_paths:
+            print(f"Query {query_idx + 1} of {len(sql_query_paths)}")
+            query_path = sql_query_paths[query_idx]
             self._run_query_and_save_to_csv(sql_file_path=query_path)
             assert query_path.exists()
             result_paths.append(query_path)

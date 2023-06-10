@@ -25,7 +25,9 @@ class FeatureFinalizer(pm.PreprocessModule):
         incoming_resource_refs=pic.FeatureFinalizerResourceRefs(),
     ):
         super().__init__(
-            settings=settings, incoming_resource_refs=incoming_resource_refs
+            name="Feature Finalizer",
+            settings=settings,
+            incoming_resource_refs=incoming_resource_refs,
         )
 
     def _import_resources(self) -> FeatureFinalizerResources:
