@@ -1,11 +1,7 @@
-import numpy as np
 import torch
-from torch.utils.data import Dataset
 from dataclasses import dataclass
 from typing import Callable
-import lstm_adversarial_attack.resource_io as rio
-from lstm_adversarial_attack.config_paths import ATTACK_OUTPUT_DIR
-from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
+import lstm_adversarial_attack.dataset_with_index as dsi
 
 
 @dataclass
@@ -121,7 +117,7 @@ class RecordedTrainerExamples:
 
 @dataclass
 class TrainerResult:
-    dataset: DatasetWithIndex
+    dataset: dsi.DatasetWithIndex
     dataset_indices: torch.tensor = None
     epochs_run: torch.tensor = None
     input_seq_lengths: torch.tensor = None

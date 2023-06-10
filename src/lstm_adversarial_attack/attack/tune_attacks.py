@@ -1,7 +1,10 @@
+import sys
 import torch
-import attack_hyperparameter_tuner as aht
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
+import lstm_adversarial_attack.attack.attack_hyperparameter_tuner as aht
 import lstm_adversarial_attack.config_paths as lcp
-# from lstm_adversarial_attack.config_paths import DEFAULT_ATTACK_TARGET_DIR
 
 
 if __name__ == "__main__":

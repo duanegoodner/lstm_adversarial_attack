@@ -3,24 +3,13 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
 from typing import Callable
 
-# import lstm_adversarial_attack.resource_io as rio
-from adversarial_attacker import AdversarialAttacker
-from attacker_helpers import AdversarialLoss
-from attack_result_data_structs import (
-    # DatasetAttackSummary,
-    EpochSuccesses,
-    BatchResult,
-    TrainerResult,
-)
-from attacker_helpers import TargetDatasetBuilder
-
-# from lstm_adversarial_attack.config_paths import ATTACK_OUTPUT_DIR
-from lstm_adversarial_attack.config_settings import MAX_OBSERVATION_HOURS
-from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
-from lstm_adversarial_attack.data_structures import VariableLengthFeatures
-from lstm_adversarial_attack.weighted_dataloader_builder import (
-    WeightedDataLoaderBuilder,
-)
+import lstm_adversarial_attack.attack.adversarial_attacker as aat
+import lstm_adversarial_attack.attack.attacker_helpers as ath
+import lstm_adversarial_attack.attack.attack_result_data_structs as ads
+import lstm_adversarial_attack.config_settings as lcs
+import lstm_adversarial_attack.dataset_with_index as dsi
+import lstm_adversarial_attack.data_structures as ds
+import lstm_adversarial_attack.weighted_dataloader_builder as wdb
 
 
 class AdversarialAttackTrainer:
@@ -35,7 +24,7 @@ class AdversarialAttackTrainer:
         lambda_1: float,
         optimizer_constructor: Callable,
         optimizer_constructor_kwargs: dict,
-        dataset: DatasetWithIndex | Subset,
+        dataset: dsi.DatasetWithIndex | Subset,
         collate_fn: Callable,
         attack_misclassified_samples: bool,
         inference_batch_size: int = 128,
@@ -44,17 +33,17 @@ class AdversarialAttackTrainer:
         self.device = device
         self.model = model
         self.state_dict = state_dict
-        self.attacker = AdversarialAttacker(
+        self.attacker = aat.AdversarialAttacker(
             full_model=model,
             state_dict=state_dict,
             input_size=19,
-            max_sequence_length=MAX_OBSERVATION_HOURS,
+            max_sequence_length=lcs.MAX_OBSERVATION_HOURS,
             batch_size=batch_size,
         )
         self.kappa = kappa
         self.lambda_1 = lambda_1
         self.epochs_per_batch = epochs_per_batch
-        self.loss_fn = AdversarialLoss(kappa=kappa, lambda_1=lambda_1)
+        self.loss_fn = ath.AdversarialLoss(kappa=kappa, lambda_1=lambda_1)
         self.optimizer_constructor = optimizer_constructor
         self.optimizer_constructor_kwargs = optimizer_constructor_kwargs
         self.optimizer = optimizer_constructor(
@@ -91,8 +80,8 @@ class AdversarialAttackTrainer:
         for param in self.attacker.logit_no_dropout_model.parameters():
             param.requires_grad = False
 
-    def get_target_dataset(self) -> DatasetWithIndex | Subset:
-        target_dataset_builder = TargetDatasetBuilder(
+    def get_target_dataset(self) -> dsi.DatasetWithIndex | Subset:
+        target_dataset_builder = ath.TargetDatasetBuilder(
             device=self.device,
             model=self.attacker.logit_no_dropout_model,
             orig_dataset=self.dataset,
@@ -104,7 +93,7 @@ class AdversarialAttackTrainer:
     def build_data_loader(self) -> DataLoader:
         target_dataset = self.get_target_dataset()
         if self.use_weighted_data_loader:
-            return WeightedDataLoaderBuilder(
+            return wdb.WeightedDataLoaderBuilder(
                 dataset=target_dataset,
                 batch_size=self.batch_size,
                 collate_fn=self.collate_fn,
@@ -122,7 +111,7 @@ class AdversarialAttackTrainer:
         logits: torch.tensor,
         orig_labels: torch.tensor,
         sample_losses: torch.tensor,
-    ) -> EpochSuccesses:
+    ) -> ads.EpochSuccesses:
         if logits.dim() == 1:
             logits = logits[None, :]
         attack_is_successful = torch.argmax(input=logits, dim=1) != orig_labels
@@ -132,7 +121,7 @@ class AdversarialAttackTrainer:
             successful_attack_indices
         ]
 
-        return EpochSuccesses(
+        return ads.EpochSuccesses(
             epoch_num=epoch_num,
             batch_indices=successful_attack_indices,
             losses=epoch_success_losses.detach(),
@@ -140,11 +129,11 @@ class AdversarialAttackTrainer:
         )
 
     def rebuild_attacker(self, batch_size: int):
-        self.attacker = AdversarialAttacker(
+        self.attacker = aat.AdversarialAttacker(
             full_model=self.model,
             state_dict=self.state_dict,
             input_size=19,
-            max_sequence_length=MAX_OBSERVATION_HOURS,
+            max_sequence_length=lcs.MAX_OBSERVATION_HOURS,
             batch_size=batch_size,
         )
         self.optimizer = self.optimizer_constructor(
@@ -154,7 +143,7 @@ class AdversarialAttackTrainer:
         self.attacker.to(self.device)
 
     def apply_soft_bounded_threshold(
-        self, orig_inputs: VariableLengthFeatures
+        self, orig_inputs: ds.VariableLengthFeatures
     ):
         perturbation_min = -1 * orig_inputs.features
         perturbation_max = (
@@ -189,7 +178,7 @@ class AdversarialAttackTrainer:
     def attack_batch(
         self,
         indices: torch.tensor,
-        orig_features: VariableLengthFeatures,
+        orig_features: ds.VariableLengthFeatures,
         orig_labels: torch.tensor,
     ):
         # if batch size less than size of perturbations dim 1, re-build
@@ -226,7 +215,7 @@ class AdversarialAttackTrainer:
             self.device
         ), orig_labels.to(self.device)
 
-        batch_result = BatchResult(
+        batch_result = ads.BatchResult(
             dataset_indices=indices,
             input_seq_lengths=orig_features.lengths,
             max_seq_length=self.max_seq_length,
@@ -267,7 +256,7 @@ class AdversarialAttackTrainer:
         data_loader = self.build_data_loader()
         self.attacker.to(self.device)
         self.set_attacker_train_mode()
-        trainer_result = TrainerResult(dataset=self.dataset)
+        trainer_result = ads.TrainerResult(dataset=self.dataset)
 
         for num_batches, (indices, orig_features, orig_labels) in enumerate(
             data_loader

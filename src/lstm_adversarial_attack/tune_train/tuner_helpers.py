@@ -1,6 +1,4 @@
 import sys
-
-import optuna.trial
 import torch.nn as nn
 from pathlib import Path
 from dataclasses import dataclass
@@ -9,14 +7,10 @@ from torch.utils.tensorboard import SummaryWriter
 from typing import Iterable, TypeVar
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from lstm_adversarial_attack.data_structures import (
-    EvalLog,
-    OptimizeDirection,
-)
-from lstm_adversarial_attack.lstm_model_stc import BidirectionalX19LSTM
-from lstm_adversarial_attack.tune_train.standard_model_trainer import (
-    StandardModelTrainer,
-)
+# import lstm_adversarial_attack.data_structures as ds
+import lstm_adversarial_attack.lstm_model_stc as lms
+import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
+import lstm_adversarial_attack.data_structures as ds
 
 
 @dataclass
@@ -98,7 +92,7 @@ class X19LSTMBuilder:
 
     def build(self) -> nn.Sequential:
         return nn.Sequential(
-            BidirectionalX19LSTM(
+            lms.BidirectionalX19LSTM(
                 input_size=19,
                 lstm_hidden_size=2**self.log_lstm_hidden_size,
             ),
@@ -121,8 +115,8 @@ class X19LSTMBuilder:
 class ObjectiveFunctionTools:
     settings: X19LSTMHyperParameterSettings
     summary_writer: SummaryWriter
-    cv_means_log: EvalLog
-    trainers: list[StandardModelTrainer]
+    cv_means_log: ds.EvalLog
+    trainers: list[smt.StandardModelTrainer]
 
 
 _T = TypeVar("_T")

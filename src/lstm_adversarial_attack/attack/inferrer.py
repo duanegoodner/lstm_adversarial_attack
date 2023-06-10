@@ -5,12 +5,13 @@ import torch.utils.data as ud
 from dataclasses import dataclass
 from sklearn.metrics import confusion_matrix
 from typing import Callable
-from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
+import lstm_adversarial_attack.dataset_with_index as dsi
+# from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
 
 
 @dataclass
 class StandardInferenceResults:
-    dataset: DatasetWithIndex
+    dataset: dsi.DatasetWithIndex
     y_pred: torch.tensor
     y_score: torch.tensor
     y_true: torch.tensor
@@ -39,7 +40,7 @@ class StandardModelInferrer:
         self,
         device: torch.device,
         model: nn.Module,
-        dataset: DatasetWithIndex,
+        dataset: dsi.DatasetWithIndex,
         collate_fn: Callable,
         batch_size: int = 128,
     ):

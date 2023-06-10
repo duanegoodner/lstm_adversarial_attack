@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
-from feature_perturber import FeaturePerturber
-from attacker_helpers import LogitNoDropoutModelBuilder
+import lstm_adversarial_attack.attack.attacker_helpers as ah
+import lstm_adversarial_attack.attack.feature_perturber as fp
 
 
 class AdversarialAttacker(nn.Module):
@@ -15,13 +15,13 @@ class AdversarialAttacker(nn.Module):
     ):
         super(AdversarialAttacker, self).__init__()
 
-        self.feature_perturber = FeaturePerturber(
+        self.feature_perturber = fp.FeaturePerturber(
             batch_size=batch_size,
             input_size=input_size,
             max_sequence_length=max_sequence_length
         )
 
-        self.logit_no_dropout_model = LogitNoDropoutModelBuilder(
+        self.logit_no_dropout_model = ah.LogitNoDropoutModelBuilder(
             full_model=full_model,
             state_dict=state_dict
         ).build()

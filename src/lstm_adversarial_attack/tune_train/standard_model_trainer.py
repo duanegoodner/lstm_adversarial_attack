@@ -7,8 +7,9 @@ from pathlib import Path
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path.append(str(Path(__file__).parent.parent))
-import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.data_structures as ds
+import lstm_adversarial_attack.resource_io as rio
+# import lstm_adversarial_attack.data_structures as ds
 
 
 class StandardModelTrainer:

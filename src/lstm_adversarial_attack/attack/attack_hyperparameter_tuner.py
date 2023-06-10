@@ -5,8 +5,8 @@ from optuna.pruners import BasePruner, MedianPruner
 from optuna.samplers import BaseSampler, TPESampler
 from pathlib import Path
 
-from attack_driver import AttackDriver
-from attack_result_data_structs import TrainerSuccessSummary
+from lstm_adversarial_attack.attack.attack import AttackDriver
+from lstm_adversarial_attack.attack.attack_result_data_structs import TrainerSuccessSummary
 from lstm_adversarial_attack.config_paths import ATTACK_HYPERPARAMETER_TUNING
 import lstm_adversarial_attack.resource_io as rio
 

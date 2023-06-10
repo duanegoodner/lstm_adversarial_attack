@@ -4,16 +4,14 @@ from pathlib import Path
 from typing import Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from adv_attack_trainer import AdversarialAttackTrainer
-from attack_result_data_structs import (
-    TrainerResult,
-    TrainerSuccessSummary,
-)
+import lstm_adversarial_attack.attack.adv_attack_trainer as aat
+import lstm_adversarial_attack.attack.attack_result_data_structs as ads
 import lstm_adversarial_attack.resource_io as rio
-from lstm_adversarial_attack.config_paths import (
-    DEFAULT_ATTACK_TARGET_DIR,
-    ATTACK_OUTPUT_DIR,
-)
+import lstm_adversarial_attack.config_paths as lcp
+# from lstm_adversarial_attack.config_paths import (
+#     DEFAULT_ATTACK_TARGET_DIR,
+#     ATTACK_OUTPUT_DIR,
+# )
 from lstm_adversarial_attack.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex,
     x19m_with_index_collate_fn,
@@ -36,7 +34,7 @@ class AttackDriver:
         sample_selection_seed=None,
         attack_misclassified_samples: bool = False,
         save_train_result: bool = False,
-        output_dir: Path = ATTACK_OUTPUT_DIR,
+        output_dir: Path = lcp.ATTACK_OUTPUT_DIR,
         save_full_trainer: bool = False,
         return_full_trainer: bool = False,
     ):
@@ -66,12 +64,12 @@ class AttackDriver:
         self.save_full_trainer = save_full_trainer
         self.return_full_trainer = return_full_trainer
 
-    def __call__(self) -> AdversarialAttackTrainer | TrainerResult:
+    def __call__(self) -> aat.AdversarialAttackTrainer | ads.TrainerResult:
         model = rio.ResourceImporter().import_pickle_to_object(
             path=self.model_path
         )
         checkpoint = torch.load(self.checkpoint_path)
-        attack_trainer = AdversarialAttackTrainer(
+        attack_trainer = aat.AdversarialAttackTrainer(
             device=self.device,
             model=model,
             state_dict=checkpoint["state_dict"],
@@ -115,7 +113,7 @@ if __name__ == "__main__":
     else:
         cur_device = torch.device("cpu")
 
-    checkpoint_files = list(DEFAULT_ATTACK_TARGET_DIR.glob("*.tar"))
+    checkpoint_files = list(lcp.DEFAULT_ATTACK_TARGET_DIR.glob("*.tar"))
     assert len(checkpoint_files) == 1
     checkpoint_path = checkpoint_files[0]
 
@@ -127,7 +125,7 @@ if __name__ == "__main__":
         optimizer_constructor_kwargs={"lr": 0.01340580859093695},
         batch_size=16,
         epochs_per_batch=500,
-        model_path=DEFAULT_ATTACK_TARGET_DIR / "model.pickle",
+        model_path=lcp.DEFAULT_ATTACK_TARGET_DIR / "model.pickle",
         checkpoint_path=checkpoint_path,
         max_num_samples=500,
         sample_selection_seed=13579,
@@ -135,4 +133,4 @@ if __name__ == "__main__":
     )
 
     trainer_result = attack_driver()
-    success_summary = TrainerSuccessSummary(trainer_result=trainer_result)
+    success_summary = ads.TrainerSuccessSummary(trainer_result=trainer_result)

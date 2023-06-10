@@ -1,14 +1,10 @@
 import torch
 import torch.nn as nn
 from dataclasses import dataclass
-from torch.utils.data import Dataset, Subset
+from torch.utils.data import Subset
 from typing import Callable
-
-from inferrer import StandardInferenceResults, StandardModelInferrer
-from lstm_adversarial_attack.x19_mort_general_dataset import (
-    X19MGeneralDatasetWithIndex,
-    DatasetWithIndex,
-)
+import lstm_adversarial_attack.attack.inferrer as infr
+import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
 
 @dataclass
@@ -62,7 +58,7 @@ class TargetDatasetBuilder:
         self,
         device: torch.device,
         model: nn.Module,
-        orig_dataset: DatasetWithIndex | X19MGeneralDatasetWithIndex,
+        orig_dataset: xmd.DatasetWithIndex | xmd.X19MGeneralDatasetWithIndex,
         collate_fn: Callable,
         batch_size: int = 128,
         include_misclassified_examples: bool = False,
@@ -74,8 +70,8 @@ class TargetDatasetBuilder:
         self.batch_size = batch_size
         self.include_misclassified_examples = include_misclassified_examples
 
-    def get_orig_predictions(self) -> StandardInferenceResults:
-        inferrer = StandardModelInferrer(
+    def get_orig_predictions(self) -> infr.StandardInferenceResults:
+        inferrer = infr.StandardModelInferrer(
             device=self.device,
             model=self.model,
             dataset=self.orig_dataset,
@@ -84,9 +80,9 @@ class TargetDatasetBuilder:
         )
         return inferrer.infer()
 
-    def build(self) -> DatasetWithIndex | Subset:
+    def build(self) -> xmd.DatasetWithIndex | Subset:
         orig_predictions = self.get_orig_predictions()
-        full_target_dataset = X19MGeneralDatasetWithIndex(
+        full_target_dataset = xmd.X19MGeneralDatasetWithIndex(
             measurements=self.orig_dataset.measurements,
             in_hosp_mort=orig_predictions.y_pred,
         )

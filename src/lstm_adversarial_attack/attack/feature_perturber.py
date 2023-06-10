@@ -4,8 +4,8 @@ import torch.nn as nn
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-
-from lstm_adversarial_attack.data_structures import VariableLengthFeatures
+import lstm_adversarial_attack.data_structures as ds
+# from lstm_adversarial_attack.data_structures import VariableLengthFeatures
 
 
 class FeaturePerturber(nn.Module):
@@ -33,9 +33,9 @@ class FeaturePerturber(nn.Module):
         nn.init.zeros_(self.perturbation)
 
     def forward(
-        self, inputs: VariableLengthFeatures
-    ) -> VariableLengthFeatures:
-        return VariableLengthFeatures(
+        self, inputs: ds.VariableLengthFeatures
+    ) -> ds.VariableLengthFeatures:
+        return ds.VariableLengthFeatures(
             features=inputs.features + self.perturbation,
             lengths=inputs.lengths,
         )
