@@ -1,3 +1,4 @@
+import optuna
 import sys
 import torch.nn as nn
 from pathlib import Path
@@ -8,6 +9,7 @@ from typing import Iterable, TypeVar
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 # import lstm_adversarial_attack.data_structures as ds
+import lstm_adversarial_attack.config_settings as lcs
 import lstm_adversarial_attack.lstm_model_stc as lms
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
 import lstm_adversarial_attack.data_structures as ds
@@ -27,14 +29,14 @@ class TrainEvalDataLoaderPair:
 
 @dataclass
 class X19MLSTMTuningRanges:
-    log_lstm_hidden_size: tuple[int, int]
-    lstm_act_options: tuple[str, ...]
-    dropout: tuple[float, float]
-    log_fc_hidden_size: tuple[int, int]
-    fc_act_options: tuple[str, ...]
-    optimizer_options: tuple[str, ...]
-    learning_rate: tuple[float, float]
-    log_batch_size: tuple[int, int]
+    log_lstm_hidden_size: tuple[int, int] = lcs.TUNING_LOG_LSTM_HIDDEN_SIZE
+    lstm_act_options: tuple[str, ...] = lcs.TUNING_LSTM_ACT_OPTIONS
+    dropout: tuple[float, float] = lcs.TUNING_DROPOUT
+    log_fc_hidden_size: tuple[int, int] = lcs.TUNING_LOG_FC_HIDDEN_SIZE
+    fc_act_options: tuple[str, ...] = lcs.TUNING_FC_ACT_OPTIONS
+    optimizer_options: tuple[str, ...] = lcs.TUNING_OPTIMIZER_OPTIONS
+    learning_rate: tuple[float, float] = lcs.TUNING_LEARNING_RATE
+    log_batch_size: tuple[int, int] = lcs.TUNING_LOG_BATCH_SIZE
 
 # TODO segregate into params for model and params for trainer
 @dataclass
@@ -119,17 +121,23 @@ class ObjectiveFunctionTools:
     trainers: list[smt.StandardModelTrainer]
 
 
+
+
+
 _T = TypeVar("_T")
 
 
 class PerformanceSelector:
     _selection_dispatch = {
+        optuna.study.StudyDirection.MINIMIZE: min,
         "min": min,
+        optuna.study.StudyDirection.MAXIMIZE: max,
         "max": max,
     }
 
     def __init__(self, optimize_direction: str):
-        assert (optimize_direction == "min") or (optimize_direction == "max")
+        assert optimize_direction in self._selection_dispatch.keys()
+        # assert (optimize_direction == "min") or (optimize_direction == "max")
         self._optimize_direction = optimize_direction
 
     def choose_best_val(self, values: Iterable[_T]) -> _T:

@@ -16,24 +16,20 @@ class TunerDriver:
     def __init__(
         self,
         device: torch.device,
-        tuning_ranges: tuh.X19MLSTMTuningRanges = tuh.X19MLSTMTuningRanges(
-            log_lstm_hidden_size=lcs.TUNING_LOG_LSTM_HIDDEN_SIZE,
-            lstm_act_options=lcs.TUNING_LSTM_ACT_OPTIONS,
-            dropout=lcs.TUNING_DROPOUT,
-            log_fc_hidden_size=lcs.TUNING_LOG_FC_HIDDEN_SIZE,
-            fc_act_options=lcs.TUNING_FC_ACT_OPTIONS,
-            optimizer_options=lcs.TUNING_OPTIMIZER_OPTIONS,
-            learning_rate=lcs.TUNING_LEARNING_RATE,
-            log_batch_size=lcs.TUNING_LOG_BATCH_SIZE,
-        ),
-        dataset: xmd.X19MGeneralDataset = xmd.X19MGeneralDataset.from_feaure_finalizer_output(),
+        tuning_ranges: tuh.X19MLSTMTuningRanges = tuh.X19MLSTMTuningRanges(),
+        dataset: xmd.X19MGeneralDataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(),
         collate_fn: Callable = xmd.x19m_collate_fn,
+        continue_study_path: Path = None,
+        output_dir: Path = None
+
     ):
         self.tuner = htu.HyperParameterTuner(
             device=device,
             dataset=dataset,
             collate_fn=collate_fn,
             tuning_ranges=tuning_ranges,
+            continue_study_path=continue_study_path,
+            output_dir=output_dir
         )
 
     def __call__(

@@ -52,7 +52,7 @@ class AttackDriver:
         self.max_num_samples = max_num_samples
         self.sample_selection_seed = sample_selection_seed
         self.dataset = (
-            X19MGeneralDatasetWithIndex.from_feaure_finalizer_output(
+            X19MGeneralDatasetWithIndex.from_feature_finalizer_output(
                 max_num_samples=max_num_samples,
                 random_seed=sample_selection_seed,
             )

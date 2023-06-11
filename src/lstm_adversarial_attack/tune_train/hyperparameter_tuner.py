@@ -41,15 +41,16 @@ class HyperParameterTuner:
             str
         ] = cs.TUNER_CV_MEAN_METRICS_OF_INTEREST,
         performance_metric: str = cs.TUNER_PERFORMANCE_METRIC,
-        optimization_direction: str = cs.TUNER_OPTIMIZATION_DIRECTION,
+        optimization_direction: optuna.study.StudyDirection = cs.TUNER_OPTIMIZATION_DIRECTION,
         pruner: BasePruner = MedianPruner(
             n_startup_trials=cs.TUNER_PRUNER_NUM_STARTUP_TRIALS,
             n_warmup_steps=cs.TUNER_PRUNER_NUM_WARMUP_STEPS,
         ),
         hyperparameter_sampler: BaseSampler = TPESampler(),
-        # output_dir: Path = None,
+        output_dir: Path = None,
         save_trial_info: bool = True,
         trial_prefix: str = "trial_",
+        continue_study_path: Path = None,
     ):
         self.device = device
         self.dataset = dataset
@@ -66,22 +67,25 @@ class HyperParameterTuner:
         self.optimization_direction = optimization_direction
         self.optimization_direction_label = (
             "minimize"
-            if optimization_direction == ds.OptimizeDirection.MIN
+            if optimization_direction == optuna.study.StudyDirection.MINIMIZE
             else "maximize"
         )
         self.pruner = pruner
         self.cv_mean_metrics_of_interest = cv_mean_metrics_of_interest
         self.tuning_ranges = tuning_ranges
         self.hyperparameter_sampler = hyperparameter_sampler
-        self.output_dir = rio.create_timestamped_dir(
-            parent_path=lcp.HYPERPARAMETER_OUTPUT_DIR
-        )
+        if output_dir is None:
+            output_dir = rio.create_timestamped_dir(
+                parent_path=lcp.HYPERPARAMETER_OUTPUT_DIR
+            )
+        self.output_dir = output_dir
         self.tensorboard_output_dir = self.output_dir / "tensorboard"
         self.trainer_checkpoint_dir = self.output_dir / "checkpoints_trainer"
         self.tuner_checkpoint_dir = self.output_dir / "checkpoints_tuner"
         self.exporter = rio.ResourceExporter()
         self.save_trial_info = save_trial_info
         self.trial_prefix = trial_prefix
+        self.continue_study_path = continue_study_path
 
     def create_datasets(self) -> list[tuh.TrainEvalDatasetPair]:
         fold_generator_builder = self.fold_class(
@@ -301,17 +305,24 @@ class HyperParameterTuner:
         self, num_trials: int, timeout: int | None = None
     ) -> optuna.Study:
         print(
-            f"Starting hyperparameter tuning.\n\n"
-            f"Data for Tensorboard will be written to:\n"
+            "Starting hyperparameter tuning.\n\n"
+            "Data for Tensorboard will be written to:\n"
             f"{self.tensorboard_output_dir}\n\n"
-            f"Optuna trial and study objects will be saved in:\n"
+            "Optuna trial and study objects will be saved in:\n"
             f"{self.tuner_checkpoint_dir}\n\n"
         )
-        study = optuna.create_study(
-            direction=self.optimization_direction_label,
-            sampler=self.hyperparameter_sampler,
-            pruner=self.pruner,
-        )
+
+        if self.continue_study_path is not None:
+            study = rio.ResourceImporter().import_pickle_to_object(
+                path=self.continue_study_path
+            )
+            assert study.direction == self.optimization_direction
+        else:
+            study = optuna.create_study(
+                direction=self.optimization_direction_label,
+                sampler=self.hyperparameter_sampler,
+                pruner=self.pruner,
+            )
         for trial_num in range(num_trials):
             study.optimize(func=self.objective_fn, n_trials=1, timeout=timeout)
             self.export_study(study=study)

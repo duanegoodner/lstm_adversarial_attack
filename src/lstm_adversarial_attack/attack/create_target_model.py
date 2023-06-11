@@ -49,7 +49,7 @@ if __name__ == "__main__":
     my_inferrer = infr.StandardModelInferrer(
         device=cur_device,
         model=logit_no_dropout_model,
-        dataset=xmd.X19MGeneralDatasetWithIndex.from_feaure_finalizer_output(),
+        dataset=xmd.X19MGeneralDatasetWithIndex.from_feature_finalizer_output(),
         collate_fn=xmd.x19m_with_index_collate_fn,
         batch_size=128,
     )

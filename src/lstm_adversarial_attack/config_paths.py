@@ -44,6 +44,18 @@ BEST_TRIAL_RESULT_PATH = (
     HYPERPARAMETER_OUTPUT_DIR / "best_trial" / "best_trial.pickle"
 )
 
+ONGOING_TUNING_STUDY_DIR = HYPERPARAMETER_OUTPUT_DIR / "continued_trials"
+ONGOING_TUNING_STUDY_PICKLE = (
+    ONGOING_TUNING_STUDY_DIR / "checkpoints_tuner" / "optuna_study.pickle"
+)
+
+CONTINUE_STUDY_PATH = (
+    HYPERPARAMETER_OUTPUT_DIR
+    / "continued_trials"
+    / "checkpoints_tuner"
+    / "optuna_study.pickle"
+)
+
 TRAINING_OUTPUT_DIR = DATA_DIR / "model_training"
 DEFAULT_ATTACK_TARGET_DIR = TRAINING_OUTPUT_DIR / "default_attack_target"
 

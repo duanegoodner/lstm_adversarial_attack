@@ -24,7 +24,7 @@ class TrainerDriver:
         model: nn.Module,
         batch_size: int,
         optimizer: torch.optim.Optimizer,
-        dataset: Dataset = xmd.X19MGeneralDataset.from_feaure_finalizer_output(),
+        dataset: Dataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(),
         collate_fn: Callable = xmd.x19m_collate_fn,
         loss_fn: nn.Module = nn.CrossEntropyLoss(),
         train_dataset_fraction: float = 0.8,

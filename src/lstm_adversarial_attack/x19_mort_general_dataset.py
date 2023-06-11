@@ -49,7 +49,7 @@ class X19MGeneralDataset(Dataset):
         return self.measurements[idx], self.in_hosp_mort[idx]
 
     @classmethod
-    def from_feaure_finalizer_output(
+    def from_feature_finalizer_output(
         cls,
         measurements_path: Path = PREPROCESS_OUTPUT_DIR
         / PREPROCESS_OUTPUT_FILES["measurement_data_list"],
@@ -113,9 +113,9 @@ def x19m_with_index_collate_fn(batch):
 
 
 if __name__ == "__main__":
-    x19_general_dataset = X19MGeneralDataset.from_feaure_finalizer_output(
+    x19_general_dataset = X19MGeneralDataset.from_feature_finalizer_output(
         max_num_samples=100
     )
-    x19_with_index = X19MGeneralDatasetWithIndex.from_feaure_finalizer_output(
+    x19_with_index = X19MGeneralDatasetWithIndex.from_feature_finalizer_output(
         max_num_samples=100
     )
