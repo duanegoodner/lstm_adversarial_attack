@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 #*.pickle
 *.egg-info/
+*.ipynb_checkpoints/
 
 .idea/
 .vscode/

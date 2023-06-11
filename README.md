@@ -1,27 +1,27 @@
 # lstm_adversarial_attack
-*A reproduction study of adversarial attacks on a LSTM time series model*
+LSTM time series deep learning model and adversarial attacks
 
 
 
 ## Overview
 
-This project aims to reproduce results originally published in:
+This project builds on results originally published in:
 
-Sun, M., Tang, F., Yi, J., Wang, F. and Zhou, J., 2018, July. Identify susceptible locations in medical records via adversarial attacks on deep predictive models. In *Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining* (pp. 793-801).  (https://arxiv.org/abs/1802.04822)
+[Sun, M., Tang, F., Yi, J., Wang, F. and Zhou, J., 2018, July. Identify susceptible locations in medical records via adversarial attacks on deep predictive models. In *Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining* (pp. 793-801)](https://dl.acm.org/doi/10.1145/3219819.3219909) 
 
-The original paper trained a Long Short-Term Memory (LSTM) model using time series of Intensive Care Unit (ICU) patient vital-sign and lab measurements as the inputs, and in-hospital mortality as the prediction target. An adversarial attack algorithm was then used to identify small perturbations which, when applied to a real, correctly-classified input sample, result in misclassification of the perturbed input. Susceptibility calculations were then performed to quantify the attack vulnerability as functions of time and the measurement type within the input feature space.
+The original paper trained a Long Short-Term Memory (LSTM) time series model using  patient vital-sign and lab measurements from the Medical Information Mart for Intensive Care (MIMIC-III) database to predict patient outcomes. An adversarial attack algorithm was then used to identify small perturbations which, when applied to a real, correctly-classified input features, result in misclassification of the perturbed input. The attack algorithm used L1 regularization to favor adversarial examples with sparse perturbations which simulate the structure of data entry errors in real medical data. 
 
+In the current work, we focus on:
 
+* A streamlined data preprocessing package for 10x faster conversion from database query outputs to the tensor inputs used by the model.
 
-## Original Paper Code Repository
+* A GPU-compatible adversarial attack algorithm that allows attacks to run on batches of samples
 
-The original authors did not publish a code repository for this particular work, but some of the authors reported on predictive modeling (but not adversarial attack) with a similar LSTM in:
+* Hyperparameter tuning of the LSTM to improve predictive performance
 
-Tang, F., Xiao, C., Wang, F. and Zhou, J., 2018. Predictive modeling in urgent care: a comparative study of machine learning approaches. *Jamia Open*, *1*(1), pp.87-98.
+* Hyperparameter tuning of the Attack module to discover adversarial perturbations with greater sparsity and smaller magnitude than the adversarial examples reported in the original paper
 
-The repository for this paper is available at: https://github.com/illidanlab/urgent-care-comparative
-
-
+  
 
 ## How to run this project
 
@@ -29,8 +29,6 @@ The repository for this paper is available at: https://github.com/illidanlab/urg
 
 * git
 * Docker
-* Python 3.9+
-* Jupyter
 
 
 
@@ -53,6 +51,18 @@ $ git clone https://github.com/duanegoodner/lstm_adversarial_attack
 ### 4. Build the `lstm_aa_app` Docker image
 
 > **Note** The size of the `lstm_aa_app` image will be ~10 GB.
+
+In file `lstm_adversarial_attack/docker/app/.env`, set the value of `LOCAL_PROJECT_ROOT` to the absolute path of the `lstm_adversarial_attack` root directory. For example, if in you ran the command in step 3 from directory `/home/my_user/projects` causing the cloned repo root to be `/home/my_user/projects/lstm_adversarial_attack`  your `lstm_adversarial_attack/docker/app/.env` file would look like this:
+
+```
+LOCAL_PROJECT_ROOT=/home/my_user/projects/lstm_adversarial_attack
+
+PROJECT_NAME=lstm_adversarial_attack
+CONTAINER_DEVSPACE=/home/devspace
+CONTAINER_PROJECT_ROOT=${CONTAINER_DEVSPACE}/project
+```
+
+(Leave the values of `PROJECT_NAME`, `CONTAINER_DEVSPACE`, and `CONTAINER_PROJECT_ROOT` unchanged.)
 
 `cd` into directory `lstm_adversarial_attack/docker`, and run:
 
@@ -239,6 +249,26 @@ The table below indicates that in our study, we were unable to reproduce the att
 These below plots also do NOT show the increase in susceptibility at later measurement times that were reported in the original paper.
 
 ![](https://github.com/duanegoodner/ehr_adversarial_attack/blob/main/data/images/plots.png)
+
+
+
+## Original Paper Code Repository
+
+Although  the code repository for [[Sun, 2018](https://dl.acm.org/doi/10.1145/3219819.3219909)] was not published, some of the authors reported on predictive modeling (but not adversarial attack) with a similar LSTM in:
+
+[Tang, F., Xiao, C., Wang, F. and Zhou, J., 2018. Predictive modeling in urgent care: a comparative study of machine learning approaches. *Jamia Open*, *1*(1), (pp.87-98)](https://academic.oup.com/jamiaopen/article/1/1/87/5032901)
+
+The repository for this paper is available at: https://github.com/illidanlab/urgent-care-comparative
+
+
+
+# References
+
+1. [Sun, M., Tang, F., Yi, J., Wang, F. and Zhou, J., 2018, July. Identify susceptible locations in medical records via adversarial attacks on deep predictive models. In *Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining* (pp. 793-801).](https://dl.acm.org/doi/10.1145/3219819.3219909)
+2. [Johnson, A., Pollard, T., and Mark, R. (2016) 'MIMIC-III Clinical Database' (version 1.4), *PhysioNet*.](https://doi.org/10.13026/C2XW26) 
+3. [Johnson, A. E. W., Pollard, T. J., Shen, L., Lehman, L. H., Feng, M., Ghassemi, M., Moody, B., Szolovits, P., Celi, L. A., & Mark, R. G. (2016). MIMIC-III, a freely accessible critical care database. Scientific Data, 3, 160035.](https://www.nature.com/articles/sdata201635)
+
+4. [Tang, F., Xiao, C., Wang, F. and Zhou, J., 2018. Predictive modeling in urgent care: a comparative study of machine learning approaches. *Jamia Open*, *1*(1), pp.87-98.](https://academic.oup.com/jamiaopen/article/1/1/87/5032901)
 
 
 
