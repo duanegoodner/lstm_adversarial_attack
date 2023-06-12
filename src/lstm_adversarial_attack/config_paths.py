@@ -7,6 +7,12 @@ DATA_DIR = PROJECT_ROOT / "data"
 DB_DOTENV_PATH = PROJECT_ROOT / "config" / "mimiciii_database.env"
 DB_DEFAULT_QUERY_DIR = PROJECT_ROOT / "src" / "mimiciii_queries"
 DB_OUTPUT_DIR = DATA_DIR / "mimiciii_query_results"
+DB_QUERIES = [
+    DB_DEFAULT_QUERY_DIR / "icustay_detail.sql",
+    DB_DEFAULT_QUERY_DIR / "pivoted_bg.sql",
+    DB_DEFAULT_QUERY_DIR / "pivoted_lab.sql",
+    DB_DEFAULT_QUERY_DIR / "pivoted_vital.sql",
+]
 
 PREPROCESS_CHECKPOINTS = DATA_DIR / "preprocess_checkpoints"
 

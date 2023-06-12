@@ -22,7 +22,7 @@ class Preprocessor:
         feature_builder=fb.FeatureBuilder(),
         feature_finalizer=ff.FeatureFinalizer(),
     ):
-        self.modules = [
+        self.preprocess_modules = [
             prefilter,
             measurement_combiner,
             hadm_list_builder,
@@ -39,17 +39,18 @@ class Preprocessor:
     def preprocess(self) -> list[dict[str, pr.DataResource]]:
         start = time.time()
 
-        for module_idx in range(len(self.modules)):
-            module = self.modules[module_idx]
+        for module_idx in range(len(self.preprocess_modules)):
+            module = self.preprocess_modules[module_idx]
             print(
                 f"\nRunning preprocess module {module_idx + 1} of"
-                f" {len(self.modules)}: {module.name}"
+                f" {len(self.preprocess_modules)}: {module.name}"
             )
+            print("Incoming resources:")
+            for ref in module.incoming_resource_refs.__dict__.values():
+                print(f"{ref}")
             exported_resources = module()
             self._saved_files.append(exported_resources)
-            print(
-                f"Done with {module.name}. Results saved to:"
-            )
+            print(f"Done with {module.name}. Results saved to:")
             for item in exported_resources.values():
                 print(f"{item}")
 

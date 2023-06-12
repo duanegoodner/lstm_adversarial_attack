@@ -1,12 +1,12 @@
 import optuna
-from lstm_adversarial_attack.config_paths import DB_DEFAULT_QUERY_DIR
+# from lstm_adversarial_attack.config_paths import DB_DEFAULT_QUERY_DIR
 
-DB_QUERIES = [
-    DB_DEFAULT_QUERY_DIR / "icustay_detail.sql",
-    DB_DEFAULT_QUERY_DIR / "pivoted_bg.sql",
-    DB_DEFAULT_QUERY_DIR / "pivoted_lab.sql",
-    DB_DEFAULT_QUERY_DIR / "pivoted_vital.sql",
-]
+# DB_QUERIES = [
+#     DB_DEFAULT_QUERY_DIR / "icustay_detail.sql",
+#     DB_DEFAULT_QUERY_DIR / "pivoted_bg.sql",
+#     DB_DEFAULT_QUERY_DIR / "pivoted_lab.sql",
+#     DB_DEFAULT_QUERY_DIR / "pivoted_vital.sql",
+# ]
 
 DEFAULT_WINSORIZE_LOW="5%"
 DEFAULT_WINSORIZE_HIGH="95%"

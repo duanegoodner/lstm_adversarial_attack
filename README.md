@@ -14,16 +14,17 @@ The original paper trained a Long Short-Term Memory (LSTM) time series model usi
 In the current work, we focus on:
 
 * A streamlined data preprocessing package for 10x faster conversion from database query outputs to the tensor inputs used by the model.
-
 * A GPU-compatible adversarial attack algorithm that allows attacks to run on batches of samples
-
 * Hyperparameter tuning of the LSTM to improve predictive performance
-
 * Hyperparameter tuning of the Attack module to discover adversarial perturbations with greater sparsity and smaller magnitude than the adversarial examples reported in the original paper
 
-  
+Dataset and model details are described further in [file link] from a complete run through the project data pipeline. 
+
+
 
 ## How to run this project
+
+This section contains instructions on how to set up a development environment to run the project code. (These steps are not necessary if you just want to review the results in the completed Jupyter notebook [link])
 
 ### 1. Requirements
 
@@ -48,11 +49,11 @@ $ git clone https://github.com/duanegoodner/lstm_adversarial_attack
 
 
 
-### 4. Build the `lstm_aa_app` Docker image
+### 4. Set the `LOCAL_PROJECT_ROOT` environment variable (to be used by Docker)
 
 > **Note** The size of the `lstm_aa_app` image will be ~10 GB.
 
-In file `lstm_adversarial_attack/docker/app/.env`, set the value of `LOCAL_PROJECT_ROOT` to the absolute path of the `lstm_adversarial_attack` root directory. For example, if in you ran the command in step 3 from directory `/home/my_user/projects` causing the cloned repo root to be `/home/my_user/projects/lstm_adversarial_attack`  your `lstm_adversarial_attack/docker/app/.env` file would look like this:
+In file `lstm_adversarial_attack/docker/app/.env`, set the value of `LOCAL_PROJECT_ROOT` to the absolute path of the `lstm_adversarial_attack` root directory. Leave the values of `PROJECT_NAME`, `CONTAINER_DEVSPACE`, and `CONTAINER_PROJECT_ROOT` unchanged. For example, if in you ran the command in step 3 from directory `/home/my_user/projects` causing the cloned repo root to be `/home/my_user/projects/lstm_adversarial_attack`  your `lstm_adversarial_attack/docker/app/.env` file would look like this:
 
 ```
 LOCAL_PROJECT_ROOT=/home/my_user/projects/lstm_adversarial_attack
@@ -62,7 +63,9 @@ CONTAINER_DEVSPACE=/home/devspace
 CONTAINER_PROJECT_ROOT=${CONTAINER_DEVSPACE}/project
 ```
 
-(Leave the values of `PROJECT_NAME`, `CONTAINER_DEVSPACE`, and `CONTAINER_PROJECT_ROOT` unchanged.)
+
+
+### 5. Build the `lstm_aa_app` Docker image
 
 `cd` into directory `lstm_adversarial_attack/docker`, and run:
 
