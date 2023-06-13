@@ -2,10 +2,11 @@
 # TODO Consider removing this module. May be overkill.
 import dill
 import pandas as pd
+import sys
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
-from typing import Callable
+import custom_unpickler as cu
 
 
 def create_timestamped_dir(parent_path: Path) -> Path:
@@ -54,19 +55,19 @@ class ResourceImporter:
     def import_pickle_to_df(self, path: Path) -> pd.DataFrame:
         self._validate_path(path=path, file_type=".pickle")
         with path.open(mode="rb") as p:
-            result = dill.load(p)
+            result = cu.load(p)
         return result
 
     def import_pickle_to_object(self, path: Path) -> object:
         self._validate_path(path=path, file_type=".pickle")
         with path.open(mode="rb") as p:
-            result = dill.load(p)
+            result = cu.load(p)
         return result
 
     def import_pickle_to_list(self, path: Path) -> list:
         self._validate_path(path=path, file_type=".pickle")
         with path.open(mode="rb") as p:
-            result = dill.load(p)
+            result = cu.load(p)
         return result
 
 

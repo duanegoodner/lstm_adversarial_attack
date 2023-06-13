@@ -10,7 +10,7 @@ from typing import Iterable, TypeVar
 sys.path.append(str(Path(__file__).parent.parent.parent))
 # import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.config_settings as lcs
-import lstm_adversarial_attack.lstm_model_stc as lms
+import lstm_adversarial_attack.tune_train.lstm_model_stc as lms
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
 import lstm_adversarial_attack.data_structures as ds
 
