@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from dataclasses import dataclass
 from typing import Callable
@@ -264,4 +265,48 @@ class TrainerSuccessSummary:
         self.best_perts_summary = PerturbationSummary(
             padded_perts=self.best_examples.perturbations,
             input_seq_lengths=self.input_seq_lengths,
+        )
+
+    def filtered_perts_summary(
+        self,
+        perts_type: str = None,
+        seq_length: int = None,
+        orig_label: int = None,
+    ) -> PerturbationSummary:
+        assert perts_type == "first" or perts_type == "best"
+        full_examples = (
+            self.first_examples
+            if perts_type == "first"
+            else self.best_examples
+        )
+
+        if seq_length is not None:
+            match_seq_length_summary_indices = torch.where(
+                self.input_seq_lengths == seq_length
+            )[0]
+        else:
+            match_seq_length_summary_indices = torch.arange(
+                len(self.input_seq_lengths)
+            )
+
+        label_tensor = torch.tensor(self.dataset[:][2])
+        success_orig_labels = label_tensor[self.success_dataset_indices]
+        if orig_label is not None:
+            match_label_dataset_indices = torch.where(
+                success_orig_labels == orig_label
+            )[0]
+        else:
+            match_label_dataset_indices = torch.arange(
+                len(self.success_dataset_indices)
+            )
+
+        filtered_indices = np.intersect1d(
+            match_seq_length_summary_indices, match_label_dataset_indices
+        )
+
+        filtered_perts = full_examples.perturbations[filtered_indices, :, :]
+        filtered_seq_lengths = self.input_seq_lengths[filtered_indices]
+
+        return PerturbationSummary(
+            padded_perts=filtered_perts, input_seq_lengths=filtered_seq_lengths
         )
