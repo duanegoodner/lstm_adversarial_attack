@@ -12,8 +12,6 @@ dependencies:
   - isort
   - jupyter
   - jupyterlab
-  - jupyterlab_limit_output
-  - jupyterlab-variableinspector
   - matplotlib
   - numpy
   - pandas
@@ -26,6 +24,8 @@ dependencies:
   - setuptools
   - pip:
     - git+https://github.com/duanegoodner/pygetfacl@0.0.5
+    - jupyterlab_limit_output
+    - jupyterlab-variableinspector
     - optuna
     - pyhealth
     - tensorboard
