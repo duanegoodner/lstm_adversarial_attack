@@ -13,7 +13,7 @@ This project builds on results originally published in:
 
 [Sun, M., Tang, F., Yi, J., Wang, F. and Zhou, J., 2018, July. Identify susceptible locations in medical records via adversarial attacks on deep predictive models. In *Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining* (pp. 793-801)](https://dl.acm.org/doi/10.1145/3219819.3219909)
 
-The original paper trained a Long Short-Term Memory (LSTM) time series model sing data from the Medical Information Mart for Intensive Care (MIMIC-III) database to predict patient outcomes. The input features consisted of data from 13 lab measurements (Blood Urea Nitrogen, HCO3, Na, PaCO2, Glucose, Creatinine, Albumin, Mg, K, Ca, Platelets, and Lactate), and 6 vital signs (Heart Rate, Respiration Rate, Systolic Blood Pressure, Diastolic Blood Pressure, Oxygen Saturation, and Temperature). The prediction target was a binary variable representing in-hospital mortality. Input data for each patient were collected over time spans ranging from 6 to 48 hours. The dataset used for model training and evaluation contained 37,559 samples. Each sample consisted of  a single ICU stay by a patient and was represented by a 48 (hour) x 19 (measurements) input feature matrix. Samples with less than 48 hours of data were padded to 48 hours  the global mean value of each measurement parameter. 
+The original paper trained a Long Short-Term Memory (LSTM) time series model sing data from the Medical Information Mart for Intensive Care (MIMIC-III) database to predict patient outcomes. The input features consisted of data from 13 lab measurements (Blood Urea Nitrogen, HCO<sub>3</sub>, Na, PaCO2, Glucose, Creatinine, Albumin, Mg, K, Ca, Platelets, and Lactate), and 6 vital signs (Heart Rate, Respiration Rate, Systolic Blood Pressure, Diastolic Blood Pressure, Oxygen Saturation, and Temperature). The prediction target was a binary variable representing in-hospital mortality. Input data for each patient were collected over time spans ranging from 6 to 48 hours. The dataset used for model training and evaluation contained 37,559 samples. Each sample consisted of  a single ICU stay by a patient and was represented by a 48 (hour) x 19 (measurements) input feature matrix. Samples with less than 48 hours of data were padded to 48 hours  the global mean value of each measurement parameter. 
 
 The full LSTM model consisted of:
 
@@ -54,8 +54,10 @@ This section contains instructions on how to set up a development environment to
 
 ### 1. Requirements
 
+* CUDA-enabled GPU
 * git
 * Docker
+* [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/overview.html#installation-guide)
 
 
 

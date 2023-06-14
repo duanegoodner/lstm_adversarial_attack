@@ -80,6 +80,22 @@ class TrainerDriver:
             settings=settings,
         )
 
+    @classmethod
+    def from_optuna_study_best_trial(
+        cls,
+        train_device: torch.device,
+        eval_device: torch.device,
+        study_path: Path
+    ):
+        study = rio.ResourceImporter().import_pickle_to_object(path=study_path)
+        settings = tuh.X19LSTMHyperParameterSettings(**study.best_params)
+        return cls.from_hyperparameter_settings(
+            train_device=train_device,
+            eval_device=eval_device,
+            settings=settings
+        )
+
+
     def initialize_output_dir(self) -> Path:
         """
         Creates output dir and places saves pickle of model there
@@ -151,10 +167,16 @@ if __name__ == "__main__":
     else:
         cur_device = torch.device("cpu")
 
-    driver = TrainerDriver.from_optuna_completed_trial(
+    # driver = TrainerDriver.from_optuna_completed_trial(
+    #     train_device=cur_device,
+    #     eval_device=cur_device,
+    #     trial_path=lcp.BEST_TRIAL_RESULT_PATH,
+    # )
+
+    driver = TrainerDriver.from_optuna_study_best_trial(
         train_device=cur_device,
         eval_device=cur_device,
-        trial_path=lcp.BEST_TRIAL_RESULT_PATH,
+        study_path=lcp.ONGOING_TUNING_STUDY_PICKLE
     )
 
     cur_train_eval_pair = driver(

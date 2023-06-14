@@ -32,6 +32,11 @@ class TunerDriver:
             output_dir=output_dir
         )
 
+    def run(self, num_trials: int) -> optuna.Study:
+        completed_study = self.tuner.tune(num_trials=num_trials)
+        return completed_study
+
+
     def __call__(
         self, num_trials: int
     ) -> tuple[htu.HyperParameterTuner, optuna.Study]:
