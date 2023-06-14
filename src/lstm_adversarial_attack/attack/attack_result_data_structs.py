@@ -267,12 +267,12 @@ class TrainerSuccessSummary:
             input_seq_lengths=self.input_seq_lengths,
         )
 
-    def filtered_perts_summary(
+    def get_filtered_perts(
         self,
         perts_type: str = None,
         seq_length: int = None,
         orig_label: int = None,
-    ) -> PerturbationSummary:
+    ) -> torch.tensor:
         assert perts_type == "first" or perts_type == "best"
         full_examples = (
             self.first_examples
@@ -307,6 +307,4 @@ class TrainerSuccessSummary:
         filtered_perts = full_examples.perturbations[filtered_indices, :, :]
         filtered_seq_lengths = self.input_seq_lengths[filtered_indices]
 
-        return PerturbationSummary(
-            padded_perts=filtered_perts, input_seq_lengths=filtered_seq_lengths
-        )
+        return filtered_perts

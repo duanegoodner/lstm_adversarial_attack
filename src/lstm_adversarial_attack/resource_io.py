@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
-import custom_unpickler as cu
+import lstm_adversarial_attack.custom_unpickler as cu
 
 
 def create_timestamped_dir(parent_path: Path) -> Path:

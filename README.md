@@ -5,20 +5,46 @@ LSTM time series deep learning model and adversarial attacks
 
 ## Overview
 
+## 1. Overview
+
+### 1.1 Summary of Prior Work
+
 This project builds on results originally published in:
 
-[Sun, M., Tang, F., Yi, J., Wang, F. and Zhou, J., 2018, July. Identify susceptible locations in medical records via adversarial attacks on deep predictive models. In *Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining* (pp. 793-801)](https://dl.acm.org/doi/10.1145/3219819.3219909) 
+[Sun, M., Tang, F., Yi, J., Wang, F. and Zhou, J., 2018, July. Identify susceptible locations in medical records via adversarial attacks on deep predictive models. In *Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining* (pp. 793-801)](https://dl.acm.org/doi/10.1145/3219819.3219909)
 
-The original paper trained a Long Short-Term Memory (LSTM) time series model using  patient vital-sign and lab measurements from the Medical Information Mart for Intensive Care (MIMIC-III) database to predict patient outcomes. An adversarial attack algorithm was then used to identify small perturbations which, when applied to a real, correctly-classified input features, result in misclassification of the perturbed input. The attack algorithm used L1 regularization to favor adversarial examples with sparse perturbations which simulate the structure of data entry errors in real medical data. 
+The original paper trained a Long Short-Term Memory (LSTM) time series model sing data from the Medical Information Mart for Intensive Care (MIMIC-III) database to predict patient outcomes. The input features consisted of data from 13 lab measurements (Blood Urea Nitrogen, HCO3, Na, PaCO2, Glucose, Creatinine, Albumin, Mg, K, Ca, Platelets, and Lactate), and 6 vital signs (Heart Rate, Respiration Rate, Systolic Blood Pressure, Diastolic Blood Pressure, Oxygen Saturation, and Temperature). The prediction target was a binary variable representing in-hospital mortality. Input data for each patient were collected over time spans ranging from 6 to 48 hours. The dataset used for model training and evaluation contained 37,559 samples. Each sample consisted of  a single ICU stay by a patient and was represented by a 48 (hour) x 19 (measurements) input feature matrix. Samples with less than 48 hours of data were padded to 48 hours  the global mean value of each measurement parameter. 
 
-In the current work, we focus on:
+The full LSTM model consisted of:
 
-* A streamlined data preprocessing package for 10x faster conversion from database query outputs to the tensor inputs used by the model.
-* A GPU-compatible adversarial attack algorithm that allows attacks to run on batches of samples
-* Hyperparameter tuning of the LSTM to improve predictive performance
-* Hyperparameter tuning of the Attack module to discover adversarial perturbations with greater sparsity and smaller magnitude than the adversarial examples reported in the original paper
+- A single-layer, bi-directional LSTM with an input size of 19, and 128 hidden states per direction. Tanh activation was applied to the outputs.
+- A dropout layer with dropout probability = 50%
+- A fully-connected layer with an input size of 256 (for the 2 x 128 LSTM outputs), 32 output nodes, and ReLU activation.
+- A final 2-node layer with soft-max activation.
 
-Dataset and model details are described further in [file link] from a complete run through the project data pipeline. 
+This model was trained using a Binary Cross Entropy loss, and an Adam optimizer (learning rate = 1e-4, momentum decay rate = 0.999, and moving average decay rate = 0.5). An adversarial attack algorithm was then used to identify small perturbations which, when applied to a real, correctly-classified input features, caused the trained model to misclassify the perturbed input. The attack algorithm used L1 regularization to favor adversarial examples with sparse perturbations that resemble the structure of data entry errors most likely to occur in real medical data. Attacks were run serially (one sample at a time), and the attack on a given sample was halted upon finding a single adversarial example.
+
+### 1.2 Focus and Key Findings of Current Poject
+
+The current project follows the general approach of Sun et al, and adds the modifications / extensions
+
+- Implementation in PyTorch (instead of Tensorflow).
+
+- A larger dataset (41,951 patient ICU stays vs 37,559 in the original study). For patients with multiple ICU stays, the original study's code filtered all all stays after the initial stay. This removal appears to have been indadvertent.
+
+- A streamlined `preprocess` sub-package is used to convert database SQL query outputs to the tensor form used for model input. This package reduces RAM consumption by saving large intermediate data structures to disk (primarily Pandas dataframes saved as .pickle files) instead of returning them to global scope of an executing program. It also performs the query output to tensor conversion 90% faster than the original code, primarily through the use of vectorized operations.
+
+- The feature matrices of samples with data collection time ranges less than the maximum observation window (typically 48 hours) are padded with zero values. The padded data are input to the LSTM as Pytorch PackedSequence objects, allowing the padding values to be ignored by the model.
+
+- A GPU-compatible adversarial attack algorithm is implemented to enable running attacks on batches of samples. This enabled a 20X reduction in the the amount of time needed to perform attacks on the full dataset. 
+
+- LSTM predictive performance is improved hyperparameter tuning with the the Optuna Tree-structued Parzen Estimator (TPE) algorithm
+
+- Hyperparameter tuning of the attack algorithm (also using TPE) to find adversarial perturbations with higher sparsity and lower magnitude.
+
+- The attack algorithm was allowed to continue running after the first adversarial example was found for a given input. In most cases, these additional search iterations led to new adversarial examples that exhibited greater sparsity and smaller perturbations than the initially discovered examples.
+
+  
 
 
 

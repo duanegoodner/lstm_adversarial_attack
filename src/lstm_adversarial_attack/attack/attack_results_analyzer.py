@@ -1,21 +1,36 @@
+import torch
 import lstm_adversarial_attack.attack.attack_result_data_structs as ads
 import lstm_adversarial_attack.config_settings as lcs
 
 
-class AttackResultsAnalyzer:
-    def __init__(
-        self, trainer_result: ads.TrainerResult, seq_length_filter: int = None
-    ):
-        self._trainer_result = trainer_result
-        self._seq_length_filter = seq_length_filter
+def calc_gmp_ij(perts: torch.tensor) -> torch.tensor:
+    return torch.max(perts, dim=0).values
 
-    @property
-    def seq_length_filter(self) -> int:
-        return self._seq_length_filter
+def calc_gap_ij(perts: torch.tensor) -> torch.tensor:
+    return torch.sum(torch.abs(perts), dim=0) / perts.shape[0]
 
-    @seq_length_filter.setter
-    def seq_length_filter(self, seq_length: int):
-        assert seq_length <= lcs.MAX_OBSERVATION_HOURS
-        self._seq_length_filter = seq_length
+def calc_gpp_ij(perts: torch.tensor) -> torch.tensor:
+    return torch.count_nonzero(perts, dim=0) / perts.shape[0]
+
+def calc_s_ij(gmp: torch.tensor, gpp: torch.tensor) -> torch.tensor:
+    return torch.mul(gmp, gpp)
+
+def calc_s_j(s_ij: torch.tensor) -> torch.tensor:
+    return torch.sum(s_ij, dim=0)
 
 
+class AttackSusceptibilityMetrics:
+    def __init__(self, perts: torch.tensor):
+        self.perts = perts
+        if perts.shape[0] != 0:
+            self.gmp_ij = calc_gmp_ij(perts=perts)
+            self.gap_ij = calc_gap_ij(perts=perts)
+            self.gpp_ij = calc_gpp_ij(perts=perts)
+            self.s_ij = calc_s_ij(gmp=self.gmp_ij, gpp=self.gpp_ij)
+            self.s_j = calc_s_j(s_ij=self.s_ij)
+        else:
+            self.gmp_ij = None
+            self.gap_ij = None
+            self.gpp_ij = None
+            self.s_ij = None
+            self.s_j = None

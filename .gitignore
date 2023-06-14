@@ -11,10 +11,11 @@ __pycache__/
 data/attack/*
 !data/attack/.gitkeep
 
-data/hyperparameter_tuning/*
-!data/hyperparameter_tuning/.gitkeep
-!data/hyperparameter_tuning/2023-05-25_16_trials
-!data/hyperparameter_tuning/best_trial
+#data/hyperparameter_tuning/*
+#!data/hyperparameter_tuning/.gitkeep
+#!data/hyperparameter_tuning/2023-05-25_16_trials
+#!data/hyperparameter_tuning/best_trial
+#!data/hyperparameter_tuning/continued_trials
 
 data/mimiciii_query_results/*
 !data/mimiciii_query_results/.gitkeep
