@@ -9,6 +9,7 @@ from lstm_adversarial_attack.attack.attack import AttackDriver
 from lstm_adversarial_attack.attack.attack_result_data_structs import TrainerSuccessSummary
 from lstm_adversarial_attack.config_paths import ATTACK_HYPERPARAMETER_TUNING
 import lstm_adversarial_attack.resource_io as rio
+import lstm_adversarial_attack.attack.best_checkpoint_retriever as bcr
 
 
 @dataclass
@@ -56,7 +57,8 @@ class AttackHyperParameterTuner:
         self,
         device: torch.device,
         model_path: Path,
-        checkpoint_path: Path,
+        # checkpoint_path: Path,
+        checkpoint: dict,
         epochs_per_batch: int,
         max_num_samples: int,
         tuning_ranges: AttackTuningRanges,
@@ -67,7 +69,8 @@ class AttackHyperParameterTuner:
     ):
         self.device = device
         self.model_path = model_path
-        self.checkpoint_path = checkpoint_path
+        # self.checkpoint_path = checkpoint_path
+        self.checkpoint = checkpoint
         self.epoch_per_batch = epochs_per_batch
         self.max_num_samples = max_num_samples
         self.tuning_ranges = tuning_ranges
@@ -86,7 +89,8 @@ class AttackHyperParameterTuner:
         attack_driver = AttackDriver(
             device=self.device,
             model_path=self.model_path,
-            checkpoint_path=self.checkpoint_path,
+            # checkpoint_path=self.checkpoint_path,
+            checkpoint=self.checkpoint,
             epochs_per_batch=self.epoch_per_batch,
             batch_size=2**settings.log_batch_size,
             kappa=settings.kappa,

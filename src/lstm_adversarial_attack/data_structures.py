@@ -63,7 +63,9 @@ class EvalEpochResult:
     @classmethod
     def mean(cls, results: list["EvalEpochResult"]) -> "EvalEpochResult":
         return cls(
-            validation_loss=np.mean([item.validation_loss for item in results]),
+            validation_loss=np.mean(
+                [item.validation_loss for item in results]
+            ),
             accuracy=np.mean([item.accuracy for item in results]),
             AUC=np.mean([item.AUC for item in results]),
             precision=np.mean([item.precision for item in results]),

@@ -6,8 +6,10 @@ from typing import Callable
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.adv_attack_trainer as aat
 import lstm_adversarial_attack.attack.attack_result_data_structs as ads
+import lstm_adversarial_attack.attack.best_checkpoint_retriever as bcr
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.config_paths as lcp
+
 # from lstm_adversarial_attack.config_paths import (
 #     DEFAULT_ATTACK_TARGET_DIR,
 #     ATTACK_OUTPUT_DIR,
@@ -23,7 +25,8 @@ class AttackDriver:
         self,
         device: torch.device,
         model_path: Path,
-        checkpoint_path: Path,
+        # checkpoint_path: Path,
+        checkpoint: dict,
         batch_size: int = 128,
         epochs_per_batch: int = 100,
         kappa: float = 0.0,
@@ -40,7 +43,8 @@ class AttackDriver:
     ):
         self.device = device
         self.model_path = model_path
-        self.checkpoint_path = checkpoint_path
+        # self.checkpoint_path = checkpoint_path
+        self.checkpoint = checkpoint
         self.batch_size = batch_size
         self.epochs_per_batch = epochs_per_batch
         self.kappa = kappa
@@ -68,11 +72,11 @@ class AttackDriver:
         model = rio.ResourceImporter().import_pickle_to_object(
             path=self.model_path
         )
-        checkpoint = torch.load(self.checkpoint_path)
+        # checkpoint = torch.load(self.checkpoint_path)
         attack_trainer = aat.AdversarialAttackTrainer(
             device=self.device,
             model=model,
-            state_dict=checkpoint["state_dict"],
+            state_dict=self.checkpoint["state_dict"],
             batch_size=self.batch_size,
             kappa=self.kappa,
             lambda_1=self.lambda_1,
@@ -113,9 +117,19 @@ if __name__ == "__main__":
     else:
         cur_device = torch.device("cpu")
 
-    checkpoint_files = list(lcp.DEFAULT_ATTACK_TARGET_DIR.glob("*.tar"))
-    assert len(checkpoint_files) == 1
-    checkpoint_path = checkpoint_files[0]
+    # checkpoint_files = list(lcp.DEFAULT_ATTACK_TARGET_DIR.glob("*.tar"))
+    # assert len(checkpoint_files) == 1
+    # checkpoint_path = checkpoint_files[0]
+
+    checkpoint_retriever = bcr.BestCheckpointRetriever.from_checkpoints_dir(
+        checkpoints_dir=lcp.TRAINING_OUTPUT_DIR
+        / "2023-06-14_14_40_10.365521"
+        / "checkpoints"
+    )
+    best_checkpoint = checkpoint_retriever.get_extreme_checkpoint(
+        metric=bcr.EvalMetric.VALIDATION_LOSS,
+        direction=bcr.OptimizeDirection.MIN,
+    )
 
     attack_driver = AttackDriver(
         device=cur_device,
@@ -126,7 +140,8 @@ if __name__ == "__main__":
         batch_size=16,
         epochs_per_batch=500,
         model_path=lcp.DEFAULT_ATTACK_TARGET_DIR / "model.pickle",
-        checkpoint_path=checkpoint_path,
+        checkpoint=best_checkpoint,
+        # checkpoint_path=checkpoint_path,
         max_num_samples=500,
         sample_selection_seed=13579,
         save_train_result=False,
