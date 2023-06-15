@@ -20,5 +20,5 @@ if __name__ == "__main__":
     )
 
     cur_train_eval_pair = driver.run(
-        num_cycles=400, epochs_per_cycle=1, save_checkpoints=True
+        num_cycles=25, epochs_per_cycle=1, save_checkpoints=True
     )

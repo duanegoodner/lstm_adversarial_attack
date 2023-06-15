@@ -3,6 +3,7 @@ import torch
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
+import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_hyperparameter_tuner as aht
 import lstm_adversarial_attack.attack.best_checkpoint_retriever as bcr
 import lstm_adversarial_attack.config_paths as lcp
@@ -14,7 +15,7 @@ if __name__ == "__main__":
     else:
         cur_device = torch.device("cpu")
 
-    tuning_ranges = aht.AttackTuningRanges(
+    tuning_ranges = ads.AttackTuningRanges(
         kappa=(0.0, 2),
         lambda_1=(1e-7, 1),
         optimizer_name=("Adam", "RMSprop", "SGD"),

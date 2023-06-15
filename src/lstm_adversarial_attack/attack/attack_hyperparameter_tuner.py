@@ -1,54 +1,14 @@
 import optuna
 import torch
-from dataclasses import dataclass
 from optuna.pruners import BasePruner, MedianPruner
 from optuna.samplers import BaseSampler, TPESampler
 from pathlib import Path
 
-from lstm_adversarial_attack.attack.attack import AttackDriver
-from lstm_adversarial_attack.attack.attack_result_data_structs import TrainerSuccessSummary
-from lstm_adversarial_attack.config_paths import ATTACK_HYPERPARAMETER_TUNING
+import lstm_adversarial_attack.attack.attack as atk
+import lstm_adversarial_attack.attack.attack_data_structs as ads
+import lstm_adversarial_attack.attack.attack_result_data_structs as ards
+import lstm_adversarial_attack.config_paths as lcp
 import lstm_adversarial_attack.resource_io as rio
-
-
-@dataclass
-class AttackTuningRanges:
-    kappa: tuple[float, float]
-    lambda_1: tuple[float, float]
-    optimizer_name: tuple[str, ...]
-    learning_rate: tuple[float, float]
-    log_batch_size: tuple[int, int]
-
-
-@dataclass
-class AttackHyperParameterSettings:
-    kappa: float
-    lambda_1: float
-    optimizer_name: str
-    learning_rate: float
-    log_batch_size: int
-
-    @classmethod
-    def from_optuna_active_trial(
-        cls, trial: optuna.Trial, tuning_ranges: AttackTuningRanges
-    ):
-        return cls(
-            kappa=trial.suggest_float(
-                "kappa", *tuning_ranges.kappa, log=False
-            ),
-            lambda_1=trial.suggest_float(
-                "lambda_1", *tuning_ranges.lambda_1, log=True
-            ),
-            optimizer_name=trial.suggest_categorical(
-                "optimizer_name", list(tuning_ranges.optimizer_name)
-            ),
-            learning_rate=trial.suggest_float(
-                "learning_rate", *tuning_ranges.learning_rate, log=True
-            ),
-            log_batch_size=trial.suggest_int(
-                "log_batch_size", *tuning_ranges.log_batch_size
-            ),
-        )
 
 
 class AttackHyperParameterTuner:
@@ -59,11 +19,11 @@ class AttackHyperParameterTuner:
         checkpoint: dict,
         epochs_per_batch: int,
         max_num_samples: int,
-        tuning_ranges: AttackTuningRanges,
+        tuning_ranges: ads.AttackTuningRanges,
         sample_selection_seed: int = 13579,
         pruner: BasePruner = MedianPruner(),
         hyperparameter_sampler: BaseSampler = TPESampler(),
-        save_trial_info: bool = True,
+        output_dir: Path = None,
     ):
         self.device = device
         self.model_path = model_path
@@ -74,20 +34,43 @@ class AttackHyperParameterTuner:
         self.sample_selection_seed = (sample_selection_seed,)
         self.pruner = pruner
         self.hyperparameter_sampler = hyperparameter_sampler
-        self.save_trial_info = save_trial_info
-        # TODO put all directory creation work in a method
-        self.output_dir = rio.create_timestamped_dir(
-            parent_path=ATTACK_HYPERPARAMETER_TUNING
+        self.output_dir, self.attack_results_dir = self.initialize_output_dir(
+            output_dir=output_dir
         )
-        self.attack_results_dir = self.output_dir / "attack_trial_results"
-        if not self.attack_results_dir.exists():
-            self.attack_results_dir.mkdir()
+        # TODO put all directory creation work in a method
+        # if output_dir is None:
+        #     rio.create_timestamped_dir(
+        #         parent_path=lcp.ATTACK_HYPERPARAMETER_TUNING
+        #     )
+        # self.output_dir = output_dir
+        # self.attack_results_dir = self.output_dir / "attack_trial_results"
+        # if not self.attack_results_dir.exists():
+        #     self.attack_results_dir.mkdir()
 
-    def build_attack_driver(self, trial: optuna.Trial) -> AttackDriver:
-        settings = AttackHyperParameterSettings.from_optuna_active_trial(
+    @staticmethod
+    def initialize_output_dir(
+        output_dir: Path = None
+    ) -> tuple[Path, Path]:
+        if output_dir is None:
+            initialized_output_dir = rio.create_timestamped_dir(
+                parent_path=lcp.ATTACK_HYPERPARAMETER_TUNING
+            )
+        else:
+            initialized_output_dir = output_dir
+            if not initialized_output_dir.exists():
+                initialized_output_dir.mkdir()
+
+        attack_results_dir = initialized_output_dir / "attack_trial_results"
+        if not attack_results_dir.exists():
+            attack_results_dir.mkdir()
+
+        return initialized_output_dir, attack_results_dir
+
+    def build_attack_driver(self, trial: optuna.Trial) -> atk.AttackDriver:
+        settings = ads.AttackHyperParameterSettings.from_optuna_active_trial(
             trial=trial, tuning_ranges=self.tuning_ranges
         )
-        attack_driver = AttackDriver(
+        attack_driver = atk.AttackDriver(
             device=self.device,
             model_path=self.model_path,
             checkpoint=self.checkpoint,
@@ -101,8 +84,8 @@ class AttackHyperParameterTuner:
             optimizer_constructor_kwargs={"lr": settings.learning_rate},
             max_num_samples=self.max_num_samples,
             sample_selection_seed=self.sample_selection_seed,
-            save_train_result=True,
             output_dir=self.attack_results_dir,
+            result_file_prefix=f"trial_{trial.number}",
         )
 
         return attack_driver
@@ -110,7 +93,9 @@ class AttackHyperParameterTuner:
     def objective_fn(self, trial) -> float:
         attack_driver = self.build_attack_driver(trial=trial)
         trainer_result = attack_driver()
-        success_summary = TrainerSuccessSummary(trainer_result=trainer_result)
+        success_summary = ards.TrainerSuccessSummary(
+            trainer_result=trainer_result
+        )
 
         if len(success_summary.best_perts_summary.sparse_small_scores) == 0:
             return 0.0
@@ -131,11 +116,6 @@ class AttackHyperParameterTuner:
             direction="maximize", sampler=self.hyperparameter_sampler
         )
         for trial_num in range(num_trials):
-            study.optimize(
-                func=self.objective_fn, n_trials=1, timeout=timeout
-            )
+            study.optimize(func=self.objective_fn, n_trials=1, timeout=timeout)
             self.export_study(study=study)
         return study
-
-
-
