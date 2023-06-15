@@ -74,6 +74,7 @@ class StandardModelTrainer:
             parent_path=self.checkpoint_dir, file_extension="tar"
         )
         output_object = {
+
             "epoch_num": self.completed_epochs,
             "train_log": self.train_log,
             "eval_log": self.eval_log,

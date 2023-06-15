@@ -22,46 +22,31 @@ class TrainerDriver:
         train_device: torch.device,
         eval_device: torch.device,
         model: nn.Module,
-        batch_size: int,
-        optimizer: torch.optim.Optimizer,
+        hyperparameter_settings: tuh.X19LSTMHyperParameterSettings,
+        # batch_size: int,
+        # optimizer: torch.optim.Optimizer,
         dataset: Dataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(),
         collate_fn: Callable = xmd.x19m_collate_fn,
         loss_fn: nn.Module = nn.CrossEntropyLoss(),
         train_dataset_fraction: float = 0.8,
+        output_dir: Path = None,
     ):
         self.train_device = train_device
         self.eval_device = eval_device
         self.model = model
         self.dataset = dataset
         self.collate_fn = collate_fn
-        self.batch_size = batch_size
+        self.hyperparameter_settings = hyperparameter_settings
+        self.batch_size = 2**hyperparameter_settings.log_batch_size
         self.loss_fn = loss_fn
-        self.optimizer = optimizer
+        self.optimizer = getattr(
+            torch.optim, hyperparameter_settings.optimizer_name
+        )(model.parameters(), lr=hyperparameter_settings.learning_rate)
         self.train_dataset_fraction = train_dataset_fraction
         self.dataset_pair = self.split_dataset()
-        self.output_dir = self.initialize_output_dir()
+        self.output_dir = self.initialize_output_dir(output_dir=output_dir)
         self.tensorboard_output_dir = self.output_dir / "tensorboard"
         self.checkpoint_dir = self.output_dir / "checkpoints"
-
-    @classmethod
-    def from_hyperparameter_settings(
-        cls,
-        train_device: torch.device,
-        eval_device: torch.device,
-        settings: tuh.X19LSTMHyperParameterSettings,
-        *args,
-        **kwargs,
-    ):
-        model = tuh.X19LSTMBuilder(settings=settings).build()
-        return cls(
-            train_device=train_device,
-            eval_device=eval_device,
-            model=model,
-            batch_size=2**settings.log_batch_size,
-            optimizer=getattr(torch.optim, settings.optimizer_name)(
-                model.parameters(), lr=settings.learning_rate
-            ),
-        )
 
     @classmethod
     def from_optuna_completed_trial(
@@ -74,10 +59,11 @@ class TrainerDriver:
             path=trial_path
         )
         settings = tuh.X19LSTMHyperParameterSettings(**completed_trial.params)
-        return cls.from_hyperparameter_settings(
+        return cls(
+            model=tuh.X19LSTMBuilder(settings=settings).build(),
             train_device=train_device,
             eval_device=eval_device,
-            settings=settings,
+            hyperparameter_settings=settings,
         )
 
     @classmethod
@@ -89,19 +75,25 @@ class TrainerDriver:
     ):
         study = rio.ResourceImporter().import_pickle_to_object(path=study_path)
         settings = tuh.X19LSTMHyperParameterSettings(**study.best_params)
-        return cls.from_hyperparameter_settings(
+        return cls(
+            model=tuh.X19LSTMBuilder(settings=settings).build(),
             train_device=train_device,
             eval_device=eval_device,
-            settings=settings,
+            hyperparameter_settings=settings,
         )
 
-    def initialize_output_dir(self) -> Path:
+    def initialize_output_dir(self, output_dir: Path = None) -> Path:
         """
         Creates output dir and places saves pickle of model there
         """
-        output_dir = rio.create_timestamped_dir(
-            parent_path=lcp.TRAINING_OUTPUT_DIR
-        )
+
+        if output_dir is None:
+            output_dir = rio.create_timestamped_dir(
+                parent_path=lcp.TRAINING_OUTPUT_DIR
+            )
+        else:
+            if not output_dir.exists():
+                output_dir.mkdir()
         rio.ResourceExporter().export(
             resource=self.model, path=output_dir / "model.pickle"
         )
@@ -139,7 +131,7 @@ class TrainerDriver:
 
     def run(
         self, num_cycles: int, epochs_per_cycle: int, save_checkpoints: bool
-    ) -> ds.TrainEvalLogPair:
+    ):
         data_loaders = self.build_data_loaders()
         trainer = smt.StandardModelTrainer(
             train_device=self.train_device,
