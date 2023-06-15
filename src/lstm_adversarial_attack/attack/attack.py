@@ -10,10 +10,6 @@ import lstm_adversarial_attack.attack.best_checkpoint_retriever as bcr
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.config_paths as lcp
 
-# from lstm_adversarial_attack.config_paths import (
-#     DEFAULT_ATTACK_TARGET_DIR,
-#     ATTACK_OUTPUT_DIR,
-# )
 from lstm_adversarial_attack.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex,
     x19m_with_index_collate_fn,
@@ -38,12 +34,11 @@ class AttackDriver:
         attack_misclassified_samples: bool = False,
         save_train_result: bool = False,
         output_dir: Path = lcp.ATTACK_OUTPUT_DIR,
-        save_full_trainer: bool = False,
-        return_full_trainer: bool = False,
+        # save_full_trainer: bool = False,
+        # return_full_trainer: bool = False,
     ):
         self.device = device
         self.model_path = model_path
-        # self.checkpoint_path = checkpoint_path
         self.checkpoint = checkpoint
         self.batch_size = batch_size
         self.epochs_per_batch = epochs_per_batch
@@ -65,14 +60,11 @@ class AttackDriver:
         self.attack_misclassified_samples = attack_misclassified_samples
         self.output_dir = output_dir
         self.save_train_result = save_train_result
-        self.save_full_trainer = save_full_trainer
-        self.return_full_trainer = return_full_trainer
 
     def __call__(self) -> aat.AdversarialAttackTrainer | ads.TrainerResult:
         model = rio.ResourceImporter().import_pickle_to_object(
             path=self.model_path
         )
-        # checkpoint = torch.load(self.checkpoint_path)
         attack_trainer = aat.AdversarialAttackTrainer(
             device=self.device,
             model=model,
@@ -90,25 +82,13 @@ class AttackDriver:
 
         train_result = attack_trainer.train_attacker()
 
-        if self.save_train_result or self.save_full_trainer:
-            output_dir = rio.create_timestamped_dir(
-                parent_path=self.output_dir
-            )
-            if self.save_train_result:
-                train_result_output_path = output_dir / "train_result.pickle"
-                rio.ResourceExporter().export(
-                    resource=train_result, path=train_result_output_path
-                )
-            if self.save_full_trainer:
-                trainer_output_path = output_dir / "trainer.pickle"
-                rio.ResourceExporter().export(
-                    resource=attack_trainer, path=trainer_output_path
-                )
-
-        if self.return_full_trainer:
-            return attack_trainer
-        else:
-            return train_result
+        train_result_output_path = rio.create_timestamped_filepath(
+            parent_path=self.output_dir, file_extension="pickle"
+        )
+        rio.ResourceExporter().export(
+            resource=train_result, path=train_result_output_path
+        )
+        return train_result
 
 
 if __name__ == "__main__":
@@ -116,10 +96,6 @@ if __name__ == "__main__":
         cur_device = torch.device("cuda:0")
     else:
         cur_device = torch.device("cpu")
-
-    # checkpoint_files = list(lcp.DEFAULT_ATTACK_TARGET_DIR.glob("*.tar"))
-    # assert len(checkpoint_files) == 1
-    # checkpoint_path = checkpoint_files[0]
 
     checkpoint_retriever = bcr.BestCheckpointRetriever.from_checkpoints_dir(
         checkpoints_dir=lcp.TRAINING_OUTPUT_DIR

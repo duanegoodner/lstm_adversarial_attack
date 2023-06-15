@@ -9,7 +9,6 @@ from lstm_adversarial_attack.attack.attack import AttackDriver
 from lstm_adversarial_attack.attack.attack_result_data_structs import TrainerSuccessSummary
 from lstm_adversarial_attack.config_paths import ATTACK_HYPERPARAMETER_TUNING
 import lstm_adversarial_attack.resource_io as rio
-import lstm_adversarial_attack.attack.best_checkpoint_retriever as bcr
 
 
 @dataclass
@@ -57,7 +56,6 @@ class AttackHyperParameterTuner:
         self,
         device: torch.device,
         model_path: Path,
-        # checkpoint_path: Path,
         checkpoint: dict,
         epochs_per_batch: int,
         max_num_samples: int,
@@ -69,7 +67,6 @@ class AttackHyperParameterTuner:
     ):
         self.device = device
         self.model_path = model_path
-        # self.checkpoint_path = checkpoint_path
         self.checkpoint = checkpoint
         self.epoch_per_batch = epochs_per_batch
         self.max_num_samples = max_num_samples
@@ -78,9 +75,13 @@ class AttackHyperParameterTuner:
         self.pruner = pruner
         self.hyperparameter_sampler = hyperparameter_sampler
         self.save_trial_info = save_trial_info
+        # TODO put all directory creation work in a method
         self.output_dir = rio.create_timestamped_dir(
             parent_path=ATTACK_HYPERPARAMETER_TUNING
         )
+        self.attack_results_dir = self.output_dir / "attack_trial_results"
+        if not self.attack_results_dir.exists():
+            self.attack_results_dir.mkdir()
 
     def build_attack_driver(self, trial: optuna.Trial) -> AttackDriver:
         settings = AttackHyperParameterSettings.from_optuna_active_trial(
@@ -89,7 +90,6 @@ class AttackHyperParameterTuner:
         attack_driver = AttackDriver(
             device=self.device,
             model_path=self.model_path,
-            # checkpoint_path=self.checkpoint_path,
             checkpoint=self.checkpoint,
             epochs_per_batch=self.epoch_per_batch,
             batch_size=2**settings.log_batch_size,
@@ -102,7 +102,7 @@ class AttackHyperParameterTuner:
             max_num_samples=self.max_num_samples,
             sample_selection_seed=self.sample_selection_seed,
             save_train_result=True,
-            output_dir=self.output_dir,
+            output_dir=self.attack_results_dir,
         )
 
         return attack_driver
@@ -130,10 +130,11 @@ class AttackHyperParameterTuner:
         study = optuna.create_study(
             direction="maximize", sampler=self.hyperparameter_sampler
         )
-        study.optimize(
-            func=self.objective_fn, n_trials=num_trials, timeout=timeout
-        )
-        self.export_study(study=study)
+        for trial_num in range(num_trials):
+            study.optimize(
+                func=self.objective_fn, n_trials=1, timeout=timeout
+            )
+            self.export_study(study=study)
         return study
 
 

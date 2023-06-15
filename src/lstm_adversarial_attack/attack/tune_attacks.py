@@ -22,10 +22,6 @@ if __name__ == "__main__":
         log_batch_size=(0, 8),
     )
 
-    # checkpoint_files = list(lcp.DEFAULT_ATTACK_TARGET_DIR.glob("*.tar"))
-    # assert len(checkpoint_files) == 1
-    # checkpoint_path = checkpoint_files[0]
-
     checkpoint_retriever = bcr.BestCheckpointRetriever.from_checkpoints_dir(
         checkpoints_dir=lcp.TRAINING_OUTPUT_DIR
         / "2023-06-14_14_40_10.365521"
@@ -33,16 +29,17 @@ if __name__ == "__main__":
     )
     best_checkpoint = checkpoint_retriever.get_extreme_checkpoint(
         metric=bcr.EvalMetric.VALIDATION_LOSS,
-        direction=bcr.OptimizeDirection.MIN
+        direction=bcr.OptimizeDirection.MIN,
     )
 
     tuner = aht.AttackHyperParameterTuner(
         device=cur_device,
-        model_path=lcp.DEFAULT_ATTACK_TARGET_DIR / "model.pickle",
+        model_path=lcp.TRAINING_OUTPUT_DIR
+        / "2023-06-14_14_40_10.365521"
+        / "model.pickle",
         checkpoint=best_checkpoint,
-        # checkpoint_path=checkpoint_path,
         epochs_per_batch=1000,
-        max_num_samples=250,
+        max_num_samples=16,
         tuning_ranges=tuning_ranges,
     )
 
