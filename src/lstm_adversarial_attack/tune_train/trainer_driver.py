@@ -11,6 +11,7 @@ from typing import Callable
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_settings as lcs
 import lstm_adversarial_attack.weighted_dataloader_builder as wdl
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
@@ -23,35 +24,37 @@ class TrainerDriver:
         self,
         train_device: torch.device,
         eval_device: torch.device,
-        model: nn.Module,
+        # model: nn.Module,
         hyperparameter_settings: tuh.X19LSTMHyperParameterSettings,
+        train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
         model_state_dict: dict = None,
         optimizer_state_dict: dict = None,
-        dataset: Dataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(),
+        # dataset: Dataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(),
         collate_fn: Callable = xmd.x19m_collate_fn,
         loss_fn: nn.Module = nn.CrossEntropyLoss(),
-        train_dataset_fraction: float = 0.8,
+        # train_dataset_fraction: float = 0.8,
         epoch_start_count: int = 0,
         output_dir: Path = None,
     ):
         self.train_device = train_device
         self.eval_device = eval_device
-        self.model = model
+        self.model = tuh.X19LSTMBuilder(settings=hyperparameter_settings).build()
         if model_state_dict is not None:
             self.model.load_state_dict(state_dict=model_state_dict)
-        self.dataset = dataset
+        # self.dataset = dataset
+        self.train_eval_dataset_pair = train_eval_dataset_pair
         self.collate_fn = collate_fn
         self.hyperparameter_settings = hyperparameter_settings
         self.batch_size = 2**hyperparameter_settings.log_batch_size
         self.loss_fn = loss_fn
         self.optimizer = getattr(
             torch.optim, hyperparameter_settings.optimizer_name
-        )(model.parameters(), lr=hyperparameter_settings.learning_rate)
+        )(self.model.parameters(), lr=hyperparameter_settings.learning_rate)
         if optimizer_state_dict is not None:
             self.optimizer.load_state_dict(state_dict=optimizer_state_dict)
-        self.train_dataset_fraction = train_dataset_fraction
+        # self.train_dataset_fraction = train_dataset_fraction
         self.epoch_start_count = epoch_start_count
-        self.dataset_pair = self.split_dataset()
+        # self.dataset_pair = self.split_dataset()
         self.output_dir = self.initialize_output_dir(output_dir=output_dir)
         self.tensorboard_output_dir = self.output_dir / "tensorboard"
         self.checkpoint_dir = self.output_dir / "checkpoints"
@@ -62,13 +65,15 @@ class TrainerDriver:
         train_device: torch.device,
         eval_device: torch.device,
         completed_trial: optuna.Trial,
+        train_eval_dataset_pair: tuh.TrainEvalDatasetPair
     ):
         settings = tuh.X19LSTMHyperParameterSettings(**completed_trial.params)
         return cls(
-            model=tuh.X19LSTMBuilder(settings=settings).build(),
+            # model=tuh.X19LSTMBuilder(settings=settings).build(),
             train_device=train_device,
             eval_device=eval_device,
             hyperparameter_settings=settings,
+            train_eval_dataset_pair=train_eval_dataset_pair
         )
 
     @classmethod
@@ -77,6 +82,7 @@ class TrainerDriver:
         train_device: torch.device,
         eval_device: torch.device,
         trial_path: Path,
+        train_eval_dataset_pair: tuh.TrainEvalDatasetPair
     ):
         completed_trial = rio.ResourceImporter().import_pickle_to_object(
             path=trial_path
@@ -86,6 +92,7 @@ class TrainerDriver:
             train_device=train_device,
             eval_device=eval_device,
             completed_trial=completed_trial,
+            train_eval_dataset_pair=train_eval_dataset_pair
         )
 
     @classmethod
@@ -94,12 +101,14 @@ class TrainerDriver:
         train_device: torch.device,
         eval_device: torch.device,
         study_path: Path,
+        train_eval_dataset_pair: tuh.TrainEvalDatasetPair
     ):
         study = rio.ResourceImporter().import_pickle_to_object(path=study_path)
         return cls.from_optuna_completed_trial_obj(
             train_device=train_device,
             eval_device=eval_device,
             completed_trial=study.best_trial,
+            train_eval_dataset_pair=train_eval_dataset_pair
         )
 
     @classmethod
@@ -107,6 +116,7 @@ class TrainerDriver:
         cls,
         train_device: torch.device,
         eval_device: torch.device,
+        train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
         checkpoint_file: Path,
         hyperparameters_file: Path,
         additional_output_dir: Path,
@@ -122,12 +132,34 @@ class TrainerDriver:
         return cls(
             train_device=train_device,
             eval_device=eval_device,
-            model=model,
+            train_eval_dataset_pair=train_eval_dataset_pair,
+            # model=model,
             hyperparameter_settings=hyperparameter_settings,
             model_state_dict=checkpoint["state_dict"],
             optimizer_state_dict=checkpoint["optimizer_state_dict"],
             epoch_start_count=checkpoint["epoch_num"],
-            output_dir=additional_output_dir
+            output_dir=additional_output_dir,
+        )
+
+    @classmethod
+    def from_standard_previous_training(
+        cls,
+        train_device: torch.device,
+        eval_device: torch.device,
+        train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
+        training_output_dir: Path,
+    ):
+        checkpoint_file = list(
+            (training_output_dir / "checkpoints").glob("*.tar")
+        )[-1]
+
+        return cls.from_previous_training(
+            train_device=train_device,
+            eval_device=eval_device,
+            train_eval_dataset_pair=train_eval_dataset_pair,
+            checkpoint_file=checkpoint_file,
+            hyperparameters_file=training_output_dir / "hyperparameters.pickle",
+            additional_output_dir=training_output_dir
         )
 
     def initialize_output_dir(self, output_dir: Path = None) -> Path:
@@ -153,27 +185,27 @@ class TrainerDriver:
 
         return output_dir
 
-    def split_dataset(self) -> tuh.TrainEvalDatasetPair:
-        train_dataset_size = int(
-            len(self.dataset) * self.train_dataset_fraction
-        )
-        test_dataset_size = len(self.dataset) - train_dataset_size
-        train_dataset, test_dataset = random_split(
-            dataset=self.dataset,
-            lengths=(train_dataset_size, test_dataset_size),
-        )
-        return tuh.TrainEvalDatasetPair(
-            train=train_dataset, validation=test_dataset
-        )
+    # def split_dataset(self) -> tuh.TrainEvalDatasetPair:
+    #     train_dataset_size = int(
+    #         len(self.dataset) * self.train_dataset_fraction
+    #     )
+    #     test_dataset_size = len(self.dataset) - train_dataset_size
+    #     train_dataset, test_dataset = random_split(
+    #         dataset=self.dataset,
+    #         lengths=(train_dataset_size, test_dataset_size),
+    #     )
+    #     return tuh.TrainEvalDatasetPair(
+    #         train=train_dataset, validation=test_dataset
+    #     )
 
     def build_data_loaders(self) -> tuh.TrainEvalDataLoaderPair:
         train_loader = wdl.WeightedDataLoaderBuilder(
-            dataset=self.dataset_pair.train,
+            dataset=self.train_eval_dataset_pair.train,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
         ).build()
         test_loader = DataLoader(
-            dataset=self.dataset_pair.validation,
+            dataset=self.train_eval_dataset_pair.validation,
             batch_size=128,
             shuffle=False,
             collate_fn=self.collate_fn,
@@ -186,6 +218,7 @@ class TrainerDriver:
     def run(
         self, num_cycles: int, epochs_per_cycle: int, save_checkpoints: bool
     ):
+        torch.manual_seed(lcs.TRAINER_RANDOM_SEED)
         data_loaders = self.build_data_loaders()
         trainer = smt.StandardModelTrainer(
             train_device=self.train_device,

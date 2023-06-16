@@ -20,7 +20,7 @@ services:
 #      - jetbrains_user_pubkey
     build:
       context: ../
-      dockerfile: ./app/Dockerfile.app
+      dockerfile: ./app/Dockerfile
       args:
         - PRIMARY_USER=gen_user
 #        - JETBRAINS_USER=${JETBRAINS_USER}

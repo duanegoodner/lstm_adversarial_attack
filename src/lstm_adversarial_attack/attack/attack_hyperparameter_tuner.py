@@ -37,15 +37,6 @@ class AttackHyperParameterTuner:
         self.output_dir, self.attack_results_dir = self.initialize_output_dir(
             output_dir=output_dir
         )
-        # TODO put all directory creation work in a method
-        # if output_dir is None:
-        #     rio.create_timestamped_dir(
-        #         parent_path=lcp.ATTACK_HYPERPARAMETER_TUNING
-        #     )
-        # self.output_dir = output_dir
-        # self.attack_results_dir = self.output_dir / "attack_trial_results"
-        # if not self.attack_results_dir.exists():
-        #     self.attack_results_dir.mkdir()
 
     @staticmethod
     def initialize_output_dir(

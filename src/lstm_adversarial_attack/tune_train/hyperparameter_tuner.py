@@ -24,6 +24,9 @@ import lstm_adversarial_attack.weighted_dataloader_builder as wdb
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 
 
+# TODO Try to replace cross-validtion work here with CrossValidator (But think
+#  about how to match generic CrossValidator with requirements of Optuna
+#  study / trials)
 class HyperParameterTuner:
     def __init__(
         self,

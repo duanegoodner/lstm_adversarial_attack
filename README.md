@@ -54,9 +54,9 @@ This section contains instructions on how to set up a development environment to
 
 ### 1. Requirements
 
-* CUDA-enabled GPU
 * git
 * Docker
+* CUDA-enabled GPU
 * [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/overview.html#installation-guide)
 
 
@@ -79,7 +79,7 @@ $ git clone https://github.com/duanegoodner/lstm_adversarial_attack
 
 ### 4. Set the `LOCAL_PROJECT_ROOT` environment variable (to be used by Docker)
 
-> **Note** The size of the `lstm_aa_app` image will be ~10 GB.
+
 
 In file `lstm_adversarial_attack/docker/app/.env`, set the value of `LOCAL_PROJECT_ROOT` to the absolute path of the `lstm_adversarial_attack` root directory. Leave the values of `PROJECT_NAME`, `CONTAINER_DEVSPACE`, and `CONTAINER_PROJECT_ROOT` unchanged. For example, if in you ran the command in step 3 from directory `/home/my_user/projects` causing the cloned repo root to be `/home/my_user/projects/lstm_adversarial_attack`  your `lstm_adversarial_attack/docker/app/.env` file would look like this:
 
@@ -95,191 +95,76 @@ CONTAINER_PROJECT_ROOT=${CONTAINER_DEVSPACE}/project
 
 ### 5. Build the `lstm_aa_app` Docker image
 
+> **Note** The size of the `lstm_aa_app` image will be ~10 GB.
+
 `cd` into directory `lstm_adversarial_attack/docker`, and run:
 
 ```
 $ docker compose build
 ```
 
+Image `lstm_aa_app` includes an installation of Miniconda3 and has a conda environment created in `/home/devspace/env`. All of the Python dependencies needed for the project are installed in this environment. All of these dependencies are shown in  `lstm_adversarial_attack/docker/app/environment.yml`. 
 
+### 6. Run the `lstm_aa_app` and `postgres_mimiciii` containers
 
-
-
-## Instructions for running code and viewing results in this repository
-
-### Step 1. Download data
-
-This work uses a subset of the MIMIC-III database. The queries used to extract the necessary views and tables from MIMIC-III are saved in `src/docker_db/mimiciii_queries` . The outputs from running these queries are saved as `.targ.gz` files in in`data/mimiciii_query_results` . (So it is not necessary to download the MIMIC-III database. Just clone this repository.) After cloning the ehr_adversarial_attack repository, run the following command from the project root to extract the query results into .csv format:
+From directory `lstm_adversarial_attack/docker` run:
 
 ```
-$ find data/mimiciii_query_results -type f -name '*.tar.gz' -execdir tar -xzvf {} \;
-```
-
-Output:
-
-```
-pivoted_bg.csv
-d_icd_diagnoses.csv
-icustay_detail.csv
-pivoted_vital.csv
-admissions.csv
-diagnoses_icd.csv
-pivoted_gc.csv
-pivoted_uo.csv
-pivoted_lab.csv
-```
-
-### Step 2. Obtain pre-processed data
-
-There are two options for obtaining data that have been converted from the SQL query output format to the feature and label tensors required for LSTM model input. Option A is faster.
-
-#### Option A: Extract the existing preprocessed archive files
-
-From the repository root directory, run the command:
-
-```
-$ find data/output_feature_finalizer -type f -name '*.tar.gz' -execdir tar -xzvf {} \;
-```
-
-Output:
-
-```
-in_hospital_mortality_list.pickle
-measurement_data_list.pickle
-measurement_col_names.pickle
-```
-
-#### Option B: Run the preprocessing code
-
-From the repository root directory, run the following command to preprocess the SQL query outputs into the LSTM model input format:
-
-```
-$ python src/preprocess/main.py
-```
-
-Output:
-
-```shell
-Starting Prefilter
-Done with Prefilter
-
-Starting ICUStatyMeasurementCombiner
-Done with ICUStatyMeasurementCombiner
-
-Starting FullAdmissionListBuilder
-Done with FullAdmissionListBuilder
-
-Starting FeatureBuilder
-Done processing sample 0/41960
-Done processing sample 5000/41960
-Done processing sample 10000/41960
-Done processing sample 15000/41960
-Done processing sample 20000/41960
-Done processing sample 25000/41960
-Done processing sample 30000/41960
-Done processing sample 35000/41960
-Done processing sample 40000/41960
-Done with FeatureBuilder
-
-Starting FeatureFinalizer
-Done with FeatureFinalizer
-
-All Done!
-Total preprocessing time = 555.2803893089294 seconds
-
+$ docker compose up -d
 ```
 
 
 
-### Step 3. Obtain a trained LSTM model
+### 7. Exec into the `lstm_aa_app` container
 
-This step also has a fast option (A), and a slow option (B).
+The `lstm_aa_app` image has a sudo-privileged non-root user,  named `gen_user`.  The conda environment in `/home/devspace/env` gets activated whenever a `bash` or `zsh` shell is launched under `gen_user`. It will be convenient to use `docker exec` to launch a shell in the container for a couple steps later on.
 
-#### Option A: Do nothing, except note the filename that will be needed for Step 4
+To launch a `zsh` shell in the container run:
 
-Parameters of a pre-trained LSTM model are saved in `data/cross_validate_sun2018_full48m19_01/2023-05-07_23:32:09.938445.tar`. Take note of the filename `2023-05-07_23:32:09.938445.tar` (just the filename, not the full path), so you can use it as input when running adversarial attacks in Step 4.
-
-#### Option B: Run the cross-validation script
-
-From the repository root directory, run:
-
-```
-$ python src/LSTMSun2018_cross_validate.py
+``` 
+$ docker exec -it lstm_aa_app /bin/zsh
 ```
 
-This will train LSTM model using cross-validation and and evaluate the predictive performance periodically throughout the training process. Note that this method (used in the original paper) has drawbacks due to the fact that it never evaluates the model on unseen data, so there is significant risk of overfitting.
-
-Output:
-
-```ll
-# Many realtime updates on training loss and evaluation metrics
-Model parameters saved in file: 2023-05-07_23:40:59.241609.tar
-# your filename will be different, but will have the same format
-```
-
-Take note of the .tar filename. for use in Step 4.
-
-
-
-### Step 4. Run adversarial attacks on the model
-
-Now we are ready to run an adversarial attack on an the trained LSTM model. From the repository root, run:
+You will then be at a `zsh` prompt in the container.
 
 ```
-$ python src/adv_attack_full48_m19.py -f <file_name_obained_from_step_3.tar>
+> whoami
+gen_user
+
+> pwd
+/home/devspace/lstm_adversarial_attack
+# docker-compose maps directory is mapped to the local lstm_adversarial_attack repository root
 ```
 
-For example, if you used Option A in Step 3, you would run `$ python src/adv_attack_full48_m19.py -f 2023-05-07_23:32:09.938445.tar`
-
-Output:
-
-```
-# Updates on elapsed time and index of sample under attack
-Attack summary data saved in k0.0-l10.15-lr0.1-ma100-ms1-2023-05-07_23:47:51.261865.pickle
-# Your .tar filename will be different, but will have the same format.
-```
-
-Once again, only the filename (not full path), is printed, but that's all you need for the next step.
+> **Note**: `gen_user`'s `zsh`profile uses OhMyZsh with a Powerlevel10k theme. The shell features provided by these settings are not reflected in this Markdown file. 
 
 
 
-### Step 5. Plot results of the adversarial attacks
+### 8. Launch Jupyter Lab
 
-From the repo root directory, run:
+From a `zsh` prompt in the container, run the following command to start a Jupyter Lab server:
 
 ```
-$ python src/attack_results_analyzer.py -f <filename_from_step4_output.tar>
+> jupyter lab --no-browser --ip 0.0.0.0
 ```
 
-For example, if your output from Step 4 said: `Attack summary data saved in k0.0-l10.15-lr0.1-ma100-ms1-2023-05-07_23:47:51.261865.pickle`, you would run `$ python src/attack_results_analyzer.py -f k0.0-l10.15-lr0.1-ma100-ms1-2023-05-07_23:47:51.261865.pickle `
+Among the various text output to the terminal, you should some lines that look like this:
 
-This will produce plots of attack susceptibilities of various measurements vs. time for 0-to-1 and 1-to-0 attacks.  (The plot for 1-to-0 should appear first. Depending on your environment, you may need to close this plot window before the 0-to-1 plot appears.)
+```
+To access the server, open this file in a browser:
+        file:///home/gen_user/.local/share/jupyter/runtime/jpserver-504-open.html
+Or copy and paste one of these URLs:
+        http://f0e281ad30a4:8888/lab?token=0447a83987dfdc124e4f13df65caf307dccb0198fd92460f
+        http://127.0.0.1:8888/lab?token=0447a83987dfdc124e4f13df65caf307dccb0198fd92460f
+```
 
-
-
-## Key Results
-
-#### LSTM predictive metrics
-
-Here are the LSTM predictive evaluation metrics from the original paper and our work. The performance metric scores from our study are actually higher than those in the original work.
-
-<img src="https://github.com/duanegoodner/ehr_adversarial_attack/blob/main/data/images/LStM_predictive_metrics.png"  width="40%" height="30%">
+You will have a different value for the token in the last two urls. In your browser, go to the bottom url (`http://127.0.0.1:8888/lab?token=...`) to open Jupyter Lab.
 
 
 
-#### Adversarial attack susceptibility vs. measurement parameter
+### 9. Run the Project Jupyter Notebook
 
-The table below indicates that in our study, we were unable to reproduce the attack susceptibilities reported in the original paper.
-
-![](https://github.com/duanegoodner/ehr_adversarial_attack/blob/main/data/images/Table.png)
-
-
-
-#### Adversarial attack susceptibility vs measurement time
-
-These below plots also do NOT show the increase in susceptibility at later measurement times that were reported in the original paper.
-
-![](https://github.com/duanegoodner/ehr_adversarial_attack/blob/main/data/images/plots.png)
+In the Jupyter Lab file explorer, navigate to the `/notebooks` directory, and open `lstm_adversarial_attack.ipynb`. Read through this notebook file, and use code cells within it to run the project.
 
 
 
