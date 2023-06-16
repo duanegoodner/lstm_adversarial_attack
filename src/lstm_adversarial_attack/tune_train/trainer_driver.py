@@ -24,21 +24,24 @@ class TrainerDriver:
         self,
         train_device: torch.device,
         eval_device: torch.device,
-        # model: nn.Module,
         hyperparameter_settings: tuh.X19LSTMHyperParameterSettings,
         train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
         model_state_dict: dict = None,
         optimizer_state_dict: dict = None,
-        # dataset: Dataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(),
         collate_fn: Callable = xmd.x19m_collate_fn,
         loss_fn: nn.Module = nn.CrossEntropyLoss(),
-        # train_dataset_fraction: float = 0.8,
         epoch_start_count: int = 0,
-        output_dir: Path = None,
+        output_root_dir: Path = None,
+        tensorboard_output_dir: Path = None,
+        checkpoint_output_dir: Path = None,
+        summary_writer_group: str = "",
+        summary_writer_subgroup: str = "",
     ):
         self.train_device = train_device
         self.eval_device = eval_device
-        self.model = tuh.X19LSTMBuilder(settings=hyperparameter_settings).build()
+        self.model = tuh.X19LSTMBuilder(
+            settings=hyperparameter_settings
+        ).build()
         if model_state_dict is not None:
             self.model.load_state_dict(state_dict=model_state_dict)
         # self.dataset = dataset
@@ -52,12 +55,55 @@ class TrainerDriver:
         )(self.model.parameters(), lr=hyperparameter_settings.learning_rate)
         if optimizer_state_dict is not None:
             self.optimizer.load_state_dict(state_dict=optimizer_state_dict)
-        # self.train_dataset_fraction = train_dataset_fraction
         self.epoch_start_count = epoch_start_count
-        # self.dataset_pair = self.split_dataset()
-        self.output_dir = self.initialize_output_dir(output_dir=output_dir)
-        self.tensorboard_output_dir = self.output_dir / "tensorboard"
-        self.checkpoint_dir = self.output_dir / "checkpoints"
+        (
+            self.output_root_dir,
+            self.tensorboard_output_dir,
+            self.checkpoint_output_dir,
+        ) = self.initialize_output_dir(
+            output_root_dir=output_root_dir,
+            tensorboard_output_dir=tensorboard_output_dir,
+            checkpoint_output_dir=checkpoint_output_dir
+        )
+        # self.tensorboard_output_dir = self.output_dir / "tensorboard"
+        # self.checkpoint_dir = self.output_dir / "checkpoints"
+        self.summary_writer_group = summary_writer_group
+        self.summary_writer_subgroup = summary_writer_subgroup
+
+    def initialize_output_dir(
+            self,
+            output_root_dir: Path = None,
+            tensorboard_output_dir: Path = None,
+            checkpoint_output_dir: Path = None,
+    ) -> tuple[Path, Path, Path]:
+        """
+        Creates output root, tensorboard dir, and checkpoint dir. Puts copies
+        model and hyperparameters in output root.
+        """
+
+        if output_root_dir is None:
+            output_root_dir = rio.create_timestamped_dir(
+                parent_path=lcp.TRAINING_OUTPUT_DIR
+            )
+        else:
+            output_root_dir.mkdir(parents=True, exist_ok=True)
+        rio.ResourceExporter().export(
+            resource=self.model, path=output_root_dir / "model.pickle"
+        )
+        rio.ResourceExporter().export(
+            resource=self.hyperparameter_settings,
+            path=output_root_dir / "hyperparameters.pickle",
+        )
+
+        if tensorboard_output_dir is None:
+            tensorboard_output_dir = output_root_dir / "tensorboard"
+        tensorboard_output_dir.mkdir(parents=True, exist_ok=True)
+
+        if checkpoint_output_dir is None:
+            checkpoint_output_dir = output_root_dir / "checkpoints"
+        checkpoint_output_dir.mkdir(parents=True, exist_ok=True)
+
+        return output_root_dir, tensorboard_output_dir, checkpoint_output_dir
 
     @classmethod
     def from_optuna_completed_trial_obj(
@@ -65,15 +111,14 @@ class TrainerDriver:
         train_device: torch.device,
         eval_device: torch.device,
         completed_trial: optuna.Trial,
-        train_eval_dataset_pair: tuh.TrainEvalDatasetPair
+        train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
     ):
         settings = tuh.X19LSTMHyperParameterSettings(**completed_trial.params)
         return cls(
-            # model=tuh.X19LSTMBuilder(settings=settings).build(),
             train_device=train_device,
             eval_device=eval_device,
             hyperparameter_settings=settings,
-            train_eval_dataset_pair=train_eval_dataset_pair
+            train_eval_dataset_pair=train_eval_dataset_pair,
         )
 
     @classmethod
@@ -82,17 +127,16 @@ class TrainerDriver:
         train_device: torch.device,
         eval_device: torch.device,
         trial_path: Path,
-        train_eval_dataset_pair: tuh.TrainEvalDatasetPair
+        train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
     ):
         completed_trial = rio.ResourceImporter().import_pickle_to_object(
             path=trial_path
         )
-        # settings = tuh.X19LSTMHyperParameterSettings(**completed_trial.params)
         return cls.from_optuna_completed_trial_obj(
             train_device=train_device,
             eval_device=eval_device,
             completed_trial=completed_trial,
-            train_eval_dataset_pair=train_eval_dataset_pair
+            train_eval_dataset_pair=train_eval_dataset_pair,
         )
 
     @classmethod
@@ -101,14 +145,14 @@ class TrainerDriver:
         train_device: torch.device,
         eval_device: torch.device,
         study_path: Path,
-        train_eval_dataset_pair: tuh.TrainEvalDatasetPair
+        train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
     ):
         study = rio.ResourceImporter().import_pickle_to_object(path=study_path)
         return cls.from_optuna_completed_trial_obj(
             train_device=train_device,
             eval_device=eval_device,
             completed_trial=study.best_trial,
-            train_eval_dataset_pair=train_eval_dataset_pair
+            train_eval_dataset_pair=train_eval_dataset_pair,
         )
 
     @classmethod
@@ -158,45 +202,10 @@ class TrainerDriver:
             eval_device=eval_device,
             train_eval_dataset_pair=train_eval_dataset_pair,
             checkpoint_file=checkpoint_file,
-            hyperparameters_file=training_output_dir / "hyperparameters.pickle",
-            additional_output_dir=training_output_dir
+            hyperparameters_file=training_output_dir
+            / "hyperparameters.pickle",
+            additional_output_dir=training_output_dir,
         )
-
-    def initialize_output_dir(self, output_dir: Path = None) -> Path:
-        """
-        Creates output dir and places saves pickle of model there
-        """
-
-        if output_dir is None:
-            output_dir = rio.create_timestamped_dir(
-                parent_path=lcp.TRAINING_OUTPUT_DIR
-            )
-        else:
-            if not output_dir.exists():
-                output_dir.mkdir()
-        rio.ResourceExporter().export(
-            resource=self.model, path=output_dir / "model.pickle"
-        )
-
-        rio.ResourceExporter().export(
-            resource=self.hyperparameter_settings,
-            path=output_dir / "hyperparameters.pickle",
-        )
-
-        return output_dir
-
-    # def split_dataset(self) -> tuh.TrainEvalDatasetPair:
-    #     train_dataset_size = int(
-    #         len(self.dataset) * self.train_dataset_fraction
-    #     )
-    #     test_dataset_size = len(self.dataset) - train_dataset_size
-    #     train_dataset, test_dataset = random_split(
-    #         dataset=self.dataset,
-    #         lengths=(train_dataset_size, test_dataset_size),
-    #     )
-    #     return tuh.TrainEvalDatasetPair(
-    #         train=train_dataset, validation=test_dataset
-    #     )
 
     def build_data_loaders(self) -> tuh.TrainEvalDataLoaderPair:
         train_loader = wdl.WeightedDataLoaderBuilder(
@@ -228,14 +237,16 @@ class TrainerDriver:
             test_loader=data_loaders.eval,
             loss_fn=self.loss_fn,
             optimizer=self.optimizer,
-            checkpoint_dir=self.checkpoint_dir,
+            checkpoint_dir=self.checkpoint_output_dir,
             summary_writer=SummaryWriter(str(self.tensorboard_output_dir)),
             epoch_start_count=self.epoch_start_count,
+            summary_writer_group=self.summary_writer_group,
+            summary_writer_subgroup=self.summary_writer_subgroup,
         )
 
         print(
             "Training model.\nCheckpoints will be saved"
-            f" in:\n{self.checkpoint_dir}\n\nTensorboard logs will be saved"
+            f" in:\n{self.checkpoint_output_dir}\n\nTensorboard logs will be saved"
             f" in:\n {self.tensorboard_output_dir}\n\n"
         )
 

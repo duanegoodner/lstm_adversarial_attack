@@ -1,27 +1,17 @@
-import optuna
 import sys
 import torch
-import torch.nn as nn
-from optuna.pruners import BasePruner, MedianPruner
-from optuna.samplers import BaseSampler, TPESampler
-from optuna.trial import TrialState
 from pathlib import Path
 from sklearn.model_selection import StratifiedKFold
-from torch.utils.data import DataLoader, Dataset, Subset
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.data import Dataset, Subset
 from typing import Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-
+import lstm_adversarial_attack.config_paths as lcp
 import lstm_adversarial_attack.config_settings as lcs
 import lstm_adversarial_attack.resource_io as rio
-import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.tune_train.trainer_driver as td
-# import lstm_adversarial_attack.data_structures as ds
-import lstm_adversarial_attack.config_paths as lcp
-import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
-import lstm_adversarial_attack.weighted_dataloader_builder as wdb
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
+import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
 
 class CrossValidator:
@@ -29,27 +19,29 @@ class CrossValidator:
         self,
         device: torch.device,
         dataset: Dataset,
-        collate_fn: Callable,
-        # model: nn.Module,
         hyperparameter_settings: tuh.X19LSTMHyperParameterSettings,
         num_folds: int,
         epochs_per_fold: int,
+        collate_fn: Callable = xmd.x19m_collate_fn,
         fold_class: Callable = StratifiedKFold,
         kfold_random_seed: int = lcs.TUNER_KFOLD_RANDOM_SEED,
-        output_dir: Path = None,
+        output_root_dir: Path = None,
         save_fold_info: bool = True,
     ):
         self.device = device
         self.dataset = dataset
         self.collate_fn = collate_fn
-        # self.model = model
         self.hyperparameter_settings = hyperparameter_settings
         self.num_folds = num_folds
         self.epochs_per_fold = epochs_per_fold
         self.fold_class = fold_class
         self.kfold_random_seed = kfold_random_seed
         self.cv_datasets = self.create_datasets()
-        self.output_dir = output_dir
+        if output_root_dir is None:
+            output_root_dir = rio.create_timestamped_dir(
+                parent_path=lcp.CV_ASSESSMENT_OUTPUT_DIR
+            )
+        self.output_root_dir = output_root_dir
         self.save_fold_info = save_fold_info
 
     def create_datasets(self) -> list[tuh.TrainEvalDatasetPair]:
@@ -79,24 +71,51 @@ class CrossValidator:
 
         return all_train_eval_pairs
 
-    # def initialize_model(self):
-    #     for name, param in self.model.named_parameters():
-    #         if "weight" in name:
-    #             nn.init.xavier_normal_(param)
-    #         elif "bias" in name:
-    #             nn.init.constant_(param, 0.0)
-
-
     def run_fold(
         self, fold_idx: int, train_eval_pair: tuh.TrainEvalDatasetPair
     ):
-        # self.initialize_model()
         trainer_driver = td.TrainerDriver(
             train_device=self.device,
             eval_device=self.device,
+            hyperparameter_settings=self.hyperparameter_settings,
+            train_eval_dataset_pair=train_eval_pair,
+            output_root_dir=self.output_root_dir,
+            tensorboard_output_dir=self.output_root_dir / "tensorboard",
+            checkpoint_output_dir=self.output_root_dir
+            / "checkpoints"
+            / f"fold_{fold_idx}",
+            summary_writer_subgroup=f"fold_{fold_idx}",
+        )
 
+        trainer_driver.run(
+            num_cycles=1,
+            epochs_per_cycle=self.epochs_per_fold,
+            save_checkpoints=True,
         )
 
     def run_all_folds(self):
         for fold_idx, train_eval_pair in enumerate(self.cv_datasets):
             self.run_fold(fold_idx=fold_idx, train_eval_pair=train_eval_pair)
+
+
+if __name__ == "__main__":
+    if torch.cuda.is_available():
+        cur_device = torch.device("cuda:0")
+    else:
+        cur_device = torch.device("cpu")
+
+    my_dataset = xmd.X19MGeneralDataset.from_feature_finalizer_output()
+
+    study_path = lcp.ONGOING_TUNING_STUDY_PICKLE
+    study = rio.ResourceImporter().import_pickle_to_object(path=study_path)
+    my_hyperparameters = tuh.X19LSTMHyperParameterSettings(**study.best_params)
+
+    cross_validator = CrossValidator(
+        device=cur_device,
+        dataset=my_dataset,
+        hyperparameter_settings=my_hyperparameters,
+        num_folds=5,
+        epochs_per_fold=20,
+    )
+
+    cross_validator.run_all_folds()

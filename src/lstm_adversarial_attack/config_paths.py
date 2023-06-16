@@ -61,6 +61,9 @@ ONGOING_TUNING_STUDY_PICKLE = (
 #     / "optuna_study.pickle"
 # )
 
+# ##### Cross Validation Assessment Output #####
+CV_ASSESSMENT_OUTPUT_DIR = DATA_DIR / "cv_assessments"
+
 # ##### Model Training #####
 TRAINING_OUTPUT_DIR = DATA_DIR / "model_training"
 
