@@ -38,6 +38,17 @@ class X19MLSTMTuningRanges:
     learning_rate: tuple[float, float] = lcs.TUNING_LEARNING_RATE
     log_batch_size: tuple[int, int] = lcs.TUNING_LOG_BATCH_SIZE
 
+
+@dataclass
+class NonArchHyperParameterSettings:
+    """
+    Holds values of hyperparameters that are not part of model architecture
+    """
+    optimizer_name: str
+    learning_rate: float
+    log_batch_size: int
+
+
 # TODO segregate into params for model and params for trainer
 @dataclass
 class X19LSTMHyperParameterSettings:
@@ -78,6 +89,14 @@ class X19LSTMHyperParameterSettings:
             log_batch_size=trial.suggest_int(
                 "log_batch_size", *tuning_ranges.log_batch_size
             ),
+        )
+
+    @property
+    def non_arch_settings(self) -> NonArchHyperParameterSettings:
+        return NonArchHyperParameterSettings(
+            optimizer_name=self.optimizer_name,
+            learning_rate=self.learning_rate,
+            log_batch_size=self.log_batch_size
         )
 
 

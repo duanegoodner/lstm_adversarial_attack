@@ -1,4 +1,6 @@
 import sys
+
+import optuna
 import torch
 import torch.nn as nn
 from pathlib import Path
@@ -23,17 +25,20 @@ class TrainerDriver:
         eval_device: torch.device,
         model: nn.Module,
         hyperparameter_settings: tuh.X19LSTMHyperParameterSettings,
-        # batch_size: int,
-        # optimizer: torch.optim.Optimizer,
+        model_state_dict: dict = None,
+        optimizer_state_dict: dict = None,
         dataset: Dataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(),
         collate_fn: Callable = xmd.x19m_collate_fn,
         loss_fn: nn.Module = nn.CrossEntropyLoss(),
         train_dataset_fraction: float = 0.8,
+        epoch_start_count: int = 0,
         output_dir: Path = None,
     ):
         self.train_device = train_device
         self.eval_device = eval_device
         self.model = model
+        if model_state_dict is not None:
+            self.model.load_state_dict(state_dict=model_state_dict)
         self.dataset = dataset
         self.collate_fn = collate_fn
         self.hyperparameter_settings = hyperparameter_settings
@@ -42,22 +47,22 @@ class TrainerDriver:
         self.optimizer = getattr(
             torch.optim, hyperparameter_settings.optimizer_name
         )(model.parameters(), lr=hyperparameter_settings.learning_rate)
+        if optimizer_state_dict is not None:
+            self.optimizer.load_state_dict(state_dict=optimizer_state_dict)
         self.train_dataset_fraction = train_dataset_fraction
+        self.epoch_start_count = epoch_start_count
         self.dataset_pair = self.split_dataset()
         self.output_dir = self.initialize_output_dir(output_dir=output_dir)
         self.tensorboard_output_dir = self.output_dir / "tensorboard"
         self.checkpoint_dir = self.output_dir / "checkpoints"
 
     @classmethod
-    def from_optuna_completed_trial(
+    def from_optuna_completed_trial_obj(
         cls,
         train_device: torch.device,
         eval_device: torch.device,
-        trial_path: Path,
+        completed_trial: optuna.Trial,
     ):
-        completed_trial = rio.ResourceImporter().import_pickle_to_object(
-            path=trial_path
-        )
         settings = tuh.X19LSTMHyperParameterSettings(**completed_trial.params)
         return cls(
             model=tuh.X19LSTMBuilder(settings=settings).build(),
@@ -67,19 +72,62 @@ class TrainerDriver:
         )
 
     @classmethod
-    def from_optuna_study_best_trial(
+    def from_optuna_completed_trial_path(
+        cls,
+        train_device: torch.device,
+        eval_device: torch.device,
+        trial_path: Path,
+    ):
+        completed_trial = rio.ResourceImporter().import_pickle_to_object(
+            path=trial_path
+        )
+        # settings = tuh.X19LSTMHyperParameterSettings(**completed_trial.params)
+        return cls.from_optuna_completed_trial_obj(
+            train_device=train_device,
+            eval_device=eval_device,
+            completed_trial=completed_trial,
+        )
+
+    @classmethod
+    def from_optuna_study_path(
         cls,
         train_device: torch.device,
         eval_device: torch.device,
         study_path: Path,
     ):
         study = rio.ResourceImporter().import_pickle_to_object(path=study_path)
-        settings = tuh.X19LSTMHyperParameterSettings(**study.best_params)
-        return cls(
-            model=tuh.X19LSTMBuilder(settings=settings).build(),
+        return cls.from_optuna_completed_trial_obj(
             train_device=train_device,
             eval_device=eval_device,
-            hyperparameter_settings=settings,
+            completed_trial=study.best_trial,
+        )
+
+    @classmethod
+    def from_previous_training(
+        cls,
+        train_device: torch.device,
+        eval_device: torch.device,
+        checkpoint_file: Path,
+        hyperparameters_file: Path,
+        additional_output_dir: Path,
+    ):
+        hyperparameter_settings = (
+            rio.ResourceImporter().import_pickle_to_object(
+                path=hyperparameters_file
+            )
+        )
+        model = tuh.X19LSTMBuilder(settings=hyperparameter_settings).build()
+        model.to(train_device)
+        checkpoint = torch.load(checkpoint_file)
+        return cls(
+            train_device=train_device,
+            eval_device=eval_device,
+            model=model,
+            hyperparameter_settings=hyperparameter_settings,
+            model_state_dict=checkpoint["state_dict"],
+            optimizer_state_dict=checkpoint["optimizer_state_dict"],
+            epoch_start_count=checkpoint["epoch_num"],
+            output_dir=additional_output_dir
         )
 
     def initialize_output_dir(self, output_dir: Path = None) -> Path:
@@ -97,6 +145,12 @@ class TrainerDriver:
         rio.ResourceExporter().export(
             resource=self.model, path=output_dir / "model.pickle"
         )
+
+        rio.ResourceExporter().export(
+            resource=self.hyperparameter_settings,
+            path=output_dir / "hyperparameters.pickle",
+        )
+
         return output_dir
 
     def split_dataset(self) -> tuh.TrainEvalDatasetPair:
@@ -143,6 +197,7 @@ class TrainerDriver:
             optimizer=self.optimizer,
             checkpoint_dir=self.checkpoint_dir,
             summary_writer=SummaryWriter(str(self.tensorboard_output_dir)),
+            epoch_start_count=self.epoch_start_count,
         )
 
         print(
