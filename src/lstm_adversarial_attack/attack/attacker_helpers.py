@@ -120,24 +120,11 @@ class AdversarialLoss(nn.Module):
         ]
 
         logit_deltas = orig_predicted_logit - orig_not_predicted_logit
-
-        # logit_deltas = logits.gather(
-        #     1, original_labels.view(-1, 1)
-        # ) - logits.gather(1, (~original_labels.view(-1, 1).bool()).long())
         logit_losses = torch.max(logit_deltas, -1 * torch.tensor(self.kappa))
         l1_losses = self.lambda_1 * torch.linalg.matrix_norm(
             perturbations, ord=1
         )
         sample_net_losses = torch.squeeze(logit_losses) + l1_losses
-        # sample_net_losses = torch.squeeze(logit_losses)
         mean_loss = torch.mean(sample_net_losses)
         return mean_loss, sample_net_losses
-        # max_elements = torch.max(logit_deltas, -1 * torch.tensor(self.kappa))
-        # return torch.mean(max_elements)
 
-
-# loss_fn = AdversarialLoss(kappa=0.0)
-# my_logits = torch.tensor([[0.5, 0.4], [0.3, 0.5]], dtype=torch.float32)
-# my_original_labels = torch.tensor([0, 1], dtype=torch.long)
-#
-# result = loss_fn(my_logits, my_original_labels)

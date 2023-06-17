@@ -21,41 +21,46 @@ if __name__ == "__main__":
     train_dataset_size = int(len(dataset) * train_dataset_fraction)
     test_dataset_size = len(dataset) - train_dataset_size
     train_dataset, test_dataset = random_split(
-        dataset=dataset, lengths=(train_dataset_size, test_dataset_size))
+        dataset=dataset, lengths=(train_dataset_size, test_dataset_size)
+    )
     train_eval_pair = tuh.TrainEvalDatasetPair(
-        train=train_dataset,
-        validation=test_dataset
+        train=train_dataset, validation=test_dataset
     )
 
-    driver = td.TrainerDriver.from_optuna_study_path(
-        train_device=cur_device,
-        eval_device=cur_device,
-        train_eval_dataset_pair=train_eval_pair,
-        study_path=lcp.ONGOING_TUNING_STUDY_PICKLE
-    )
+    # driver = td.TrainerDriver.from_optuna_study_path(
+    #     train_device=cur_device,
+    #     eval_device=cur_device,
+    #     train_eval_dataset_pair=train_eval_pair,
+    #     study_path=lcp.ONGOING_TUNING_STUDY_PICKLE,
+    # )
 
     #  When using either of two blocks below, get big jump in loss
     #  on restart if first round of training had many (e.g. 400) epochs.
     #  Believe to be due to random state and/or Adam issue.
 
-    # output_dir = lcp.TRAINING_OUTPUT_DIR / "2023-06-15_22_32_09.111169"
+    # output_dir = lcp.TRAINING_OUTPUT_DIR / "2023-06-17_15_14_45.375162"
     # driver = td.TrainerDriver.from_previous_training(
     #     train_device=cur_device,
     #     eval_device=cur_device,
     #     checkpoint_file=output_dir
     #     / "checkpoints"
-    #     / "2023-06-15_22_40_02.672443.tar",
+    #     / "2023-06-17_15_26_15.852165.tar",
     #     hyperparameters_file=output_dir / "hyperparameters.pickle",
     #     additional_output_dir=output_dir,
+    #     train_eval_dataset_pair=train_eval_pair
     # )
 
-    # driver = td.TrainerDriver.from_standard_previous_training(
-    #     train_device=cur_device,
-    #     eval_device=cur_device,
-    #     training_output_dir=lcp.TRAINING_OUTPUT_DIR
-    #     / "2023-06-15_19_31_08.223814",
-    # )
+    driver = td.TrainerDriver.from_standard_previous_training(
+        train_device=cur_device,
+        eval_device=cur_device,
+        train_eval_dataset_pair=train_eval_pair,
+        training_output_dir=lcp.TRAINING_OUTPUT_DIR
+        / "2023-06-17_15_14_45.375162",
+    )
 
     cur_train_eval_pair = driver.run(
-        num_cycles=800, epochs_per_cycle=1, save_checkpoints=True
+        num_epochs=1000,
+        eval_interval=10,
+        evals_per_checkpoint=1,
+        save_checkpoints=True,
     )

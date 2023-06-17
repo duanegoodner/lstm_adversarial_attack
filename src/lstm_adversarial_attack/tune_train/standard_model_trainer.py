@@ -9,6 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 sys.path.append(str(Path(__file__).parent.parent))
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.resource_io as rio
+
 # import lstm_adversarial_attack.data_structures as ds
 
 
@@ -24,8 +25,8 @@ class StandardModelTrainer:
         test_loader: ud.DataLoader,
         checkpoint_dir: Path,
         epoch_start_count: int = 0,
-        train_log: ds.TrainLog = ds.TrainLog(),
-        eval_log: ds.EvalLog = ds.EvalLog(),
+        # train_log: ds.TrainLog = ds.TrainLog(),
+        # eval_log: ds.EvalLog = ds.EvalLog(),
         summary_writer: SummaryWriter = None,
         summary_writer_group: str = "",
         summary_writer_subgroup: str = "",
@@ -44,8 +45,8 @@ class StandardModelTrainer:
         self.summary_writer = summary_writer
         self.summary_writer_group = summary_writer_group
         self.summary_writer_subgroup = summary_writer_subgroup
-        self.train_log = train_log
-        self.eval_log = eval_log
+        self.train_log = ds.TrainLog()
+        self.eval_log = ds.EvalLog()
 
     @staticmethod
     def calculate_performance_metrics(
@@ -67,17 +68,16 @@ class StandardModelTrainer:
     def reset_epoch_counts(self):
         self.completed_epochs = 0
 
-    def save_checkpoint(
+    def _save_checkpoint(
         self,
     ) -> Path:
         output_path = rio.create_timestamped_filepath(
             parent_path=self.checkpoint_dir, file_extension="tar"
         )
         output_object = {
-
             "epoch_num": self.completed_epochs,
-            "train_log": self.train_log,
-            "eval_log": self.eval_log,
+            "train_log_entry": self.train_log.data[-1],
+            "eval_log_entry": self.eval_log.data[-1],
             "state_dict": self.model.state_dict(),
             "optimizer_state_dict": self.optimizer.state_dict(),
         }
@@ -106,13 +106,13 @@ class StandardModelTrainer:
                 running_loss += loss.item()
             epoch_loss = running_loss / (num_batches + 1)
 
+            self.completed_epochs += 1
             self.train_log.update(
                 entry=ds.TrainLogEntry(
                     epoch=self.completed_epochs,
                     result=ds.TrainEpochResult(loss=epoch_loss),
                 )
             )
-            self.completed_epochs += 1
             self.report_epoch_loss(epoch_loss=epoch_loss)
 
     def report_epoch_loss(self, epoch_loss: float):
@@ -123,7 +123,7 @@ class StandardModelTrainer:
 
         if self.summary_writer is not None:
             self.summary_writer.add_scalars(
-                f"{self.summary_writer_group}/training_loss",
+                f"{self.summary_writer_group}/_training_loss",
                 {
                     f"{self.summary_writer_subgroup}": epoch_loss,
                 },
@@ -187,7 +187,7 @@ class StandardModelTrainer:
                 self.completed_epochs,
             )
             self.summary_writer.add_scalars(
-                f"{self.summary_writer_group}/validation_loss",
+                f"{self.summary_writer_group}/_validation_loss",
                 {
                     f"{self.summary_writer_subgroup}": (
                         eval_results.validation_loss
@@ -198,18 +198,22 @@ class StandardModelTrainer:
 
     def run_train_eval_cycles(
         self,
-        num_cycles: int,
-        epochs_per_cycle: int = 1,
+        num_epochs: int,
+        eval_interval: int,
+        evals_per_checkpoint: int,
+        # num_cycles: int,
+        # epochs_per_cycle: int = 1,
         save_checkpoints: bool = False,
-        num_cycles_per_checkpoint: int = 10,
+        # num_cycles_per_checkpoint: int = 10,
     ):
-        for cycle_num in range(num_cycles):
-            self.train_model(num_epochs=epochs_per_cycle)
-            self.evaluate_model()
-            if (
-                save_checkpoints
-                and ((cycle_num + 1) % num_cycles_per_checkpoint) == 0
-            ):
-                self.save_checkpoint()
+        for epoch in range(num_epochs):
+            self.train_model(num_epochs=1)
+            if (epoch + 1) % eval_interval == 0:
+                self.evaluate_model()
+                if (
+                    (evals_per_checkpoint * (epoch + 1)) % evals_per_checkpoint
+                    == 0
+                ) and save_checkpoints:
+                    self._save_checkpoint()
 
         return ds.TrainEvalLogPair(train=self.train_log, eval=self.eval_log)

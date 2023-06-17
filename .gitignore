@@ -11,6 +11,9 @@ __pycache__/
 data/attack/*
 !data/attack/.gitkeep
 
+data/cv_assessments/*
+!data/cv_assessments/.gitkeep
+
 data/mimiciii_query_results/*
 !data/mimiciii_query_results/.gitkeep
 

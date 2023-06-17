@@ -63,7 +63,7 @@ class TrainerDriver:
         ) = self.initialize_output_dir(
             output_root_dir=output_root_dir,
             tensorboard_output_dir=tensorboard_output_dir,
-            checkpoint_output_dir=checkpoint_output_dir
+            checkpoint_output_dir=checkpoint_output_dir,
         )
         # self.tensorboard_output_dir = self.output_dir / "tensorboard"
         # self.checkpoint_dir = self.output_dir / "checkpoints"
@@ -71,10 +71,10 @@ class TrainerDriver:
         self.summary_writer_subgroup = summary_writer_subgroup
 
     def initialize_output_dir(
-            self,
-            output_root_dir: Path = None,
-            tensorboard_output_dir: Path = None,
-            checkpoint_output_dir: Path = None,
+        self,
+        output_root_dir: Path = None,
+        tensorboard_output_dir: Path = None,
+        checkpoint_output_dir: Path = None,
     ) -> tuple[Path, Path, Path]:
         """
         Creates output root, tensorboard dir, and checkpoint dir. Puts copies
@@ -172,7 +172,7 @@ class TrainerDriver:
         )
         model = tuh.X19LSTMBuilder(settings=hyperparameter_settings).build()
         model.to(train_device)
-        checkpoint = torch.load(checkpoint_file)
+        checkpoint = torch.load(checkpoint_file, map_location=train_device)
         return cls(
             train_device=train_device,
             eval_device=eval_device,
@@ -182,7 +182,7 @@ class TrainerDriver:
             model_state_dict=checkpoint["state_dict"],
             optimizer_state_dict=checkpoint["optimizer_state_dict"],
             epoch_start_count=checkpoint["epoch_num"],
-            output_dir=additional_output_dir,
+            # output_dir=additional_output_dir,
         )
 
     @classmethod
@@ -225,7 +225,11 @@ class TrainerDriver:
         )
 
     def run(
-        self, num_cycles: int, epochs_per_cycle: int, save_checkpoints: bool
+        self,
+        num_epochs: int,
+        eval_interval: int,
+        evals_per_checkpoint,
+        save_checkpoints: bool,
     ):
         torch.manual_seed(lcs.TRAINER_RANDOM_SEED)
         data_loaders = self.build_data_loaders()
@@ -246,14 +250,15 @@ class TrainerDriver:
 
         print(
             "Training model.\nCheckpoints will be saved"
-            f" in:\n{self.checkpoint_output_dir}\n\nTensorboard logs will be saved"
-            f" in:\n {self.tensorboard_output_dir}\n\n"
+            f" in:\n{self.checkpoint_output_dir}\n\nTensorboard logs will be"
+            f" saved in:\n {self.tensorboard_output_dir}\n\n"
         )
 
         # This function returns a TrainEval pair, but currently no need to
         # capture it. All data gets saved to disk.
         trainer.run_train_eval_cycles(
-            num_cycles=num_cycles,
-            epochs_per_cycle=epochs_per_cycle,
+            num_epochs=num_epochs,
+            eval_interval=eval_interval,
+            evals_per_checkpoint=evals_per_checkpoint,
             save_checkpoints=save_checkpoints,
         )
