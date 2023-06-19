@@ -26,6 +26,7 @@ class TrainerDriver:
         eval_device: torch.device,
         hyperparameter_settings: tuh.X19LSTMHyperParameterSettings,
         train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
+        model: nn.Module,
         model_state_dict: dict = None,
         optimizer_state_dict: dict = None,
         collate_fn: Callable = xmd.x19m_collate_fn,
@@ -39,9 +40,7 @@ class TrainerDriver:
     ):
         self.train_device = train_device
         self.eval_device = eval_device
-        self.model = tuh.X19LSTMBuilder(
-            settings=hyperparameter_settings
-        ).build()
+        self.model = model
         if model_state_dict is not None:
             self.model.load_state_dict(state_dict=model_state_dict)
         # self.dataset = dataset
@@ -114,10 +113,12 @@ class TrainerDriver:
         train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
     ):
         settings = tuh.X19LSTMHyperParameterSettings(**completed_trial.params)
+        model = tuh.X19LSTMBuilder(settings=settings).build()
         return cls(
             train_device=train_device,
             eval_device=eval_device,
             hyperparameter_settings=settings,
+            model=model,
             train_eval_dataset_pair=train_eval_dataset_pair,
         )
 
@@ -177,12 +178,12 @@ class TrainerDriver:
             train_device=train_device,
             eval_device=eval_device,
             train_eval_dataset_pair=train_eval_dataset_pair,
-            # model=model,
+            model=model,
             hyperparameter_settings=hyperparameter_settings,
             model_state_dict=checkpoint["state_dict"],
             optimizer_state_dict=checkpoint["optimizer_state_dict"],
             epoch_start_count=checkpoint["epoch_num"],
-            # output_dir=additional_output_dir,
+            output_root_dir=additional_output_dir,
         )
 
     @classmethod
@@ -193,7 +194,7 @@ class TrainerDriver:
         train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
         training_output_dir: Path,
     ):
-        checkpoint_file = list(
+        checkpoint_file = sorted(
             (training_output_dir / "checkpoints").glob("*.tar")
         )[-1]
 

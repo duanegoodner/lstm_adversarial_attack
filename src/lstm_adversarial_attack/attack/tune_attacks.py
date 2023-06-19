@@ -5,8 +5,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_hyperparameter_tuner as aht
-import lstm_adversarial_attack.attack.best_checkpoint_retriever as bcr
 import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs
 
 
 if __name__ == "__main__":
@@ -23,25 +23,25 @@ if __name__ == "__main__":
         log_batch_size=(0, 8),
     )
 
-    checkpoint_retriever = bcr.BestCheckpointRetriever.from_checkpoints_dir(
-        checkpoints_dir=lcp.TRAINING_OUTPUT_DIR
-        / "2023-06-14_14_40_10.365521"
+    fold_summarizer = cvs.FoldSummarizer.from_fold_checkpoint_dir(
+        fold_checkpoint_dir=lcp.TRAINING_OUTPUT_DIR
+        / "2023-06-17_18_43_05.989001"
         / "checkpoints"
     )
-    best_checkpoint = checkpoint_retriever.get_extreme_checkpoint(
-        metric=bcr.EvalMetric.VALIDATION_LOSS,
-        direction=bcr.OptimizeDirection.MIN,
+
+    best_checkpoint = fold_summarizer.get_extreme_checkpoint(
+        metric=cvs.EvalMetric.VALIDATION_LOSS,
+        optimize_direction=cvs.OptimizeDirection.MIN
     )
 
     tuner = aht.AttackHyperParameterTuner(
         device=cur_device,
-        model_path=lcp.TRAINING_OUTPUT_DIR
-        / "2023-06-14_14_40_10.365521"
-        / "model.pickle",
+        model_path=lcp.TRAINING_OUTPUT_DIR / "2023-06-17_18_43_05.989001" /
+        "model.pickle",
         checkpoint=best_checkpoint,
         epochs_per_batch=1000,
         max_num_samples=16,
-        tuning_ranges=tuning_ranges,
+        tuning_ranges=tuning_ranges
     )
 
     study_result = tuner.tune(num_trials=20)

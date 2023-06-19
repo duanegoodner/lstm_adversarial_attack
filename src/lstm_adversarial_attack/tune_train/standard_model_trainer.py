@@ -3,6 +3,7 @@ import sys
 import torch.nn as nn
 import torch.optim
 import torch.utils.data as ud
+from copy import deepcopy
 from pathlib import Path
 from torch.utils.tensorboard import SummaryWriter
 
@@ -75,11 +76,11 @@ class StandardModelTrainer:
             parent_path=self.checkpoint_dir, file_extension="tar"
         )
         output_object = {
-            "epoch_num": self.completed_epochs,
-            "train_log_entry": self.train_log.data[-1],
-            "eval_log_entry": self.eval_log.data[-1],
-            "state_dict": self.model.state_dict(),
-            "optimizer_state_dict": self.optimizer.state_dict(),
+            "epoch_num": deepcopy(self.completed_epochs),
+            "train_log_entry": deepcopy(self.train_log.data[-1]),
+            "eval_log_entry": deepcopy(self.eval_log.data[-1]),
+            "state_dict": deepcopy(self.model.state_dict()),
+            "optimizer_state_dict": deepcopy(self.optimizer.state_dict()),
         }
         torch.save(obj=output_object, f=output_path)
         return output_path

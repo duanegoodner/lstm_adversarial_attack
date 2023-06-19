@@ -22,7 +22,7 @@ class CrossValidator:
         hyperparameter_settings: tuh.X19LSTMHyperParameterSettings,
         num_folds: int,
         epochs_per_fold: int,
-        eval_interval: int ,
+        eval_interval: int,
         evals_per_checkpoint: int,
         collate_fn: Callable = xmd.x19m_collate_fn,
         fold_class: Callable = StratifiedKFold,
@@ -82,6 +82,9 @@ class CrossValidator:
             train_device=self.device,
             eval_device=self.device,
             hyperparameter_settings=self.hyperparameter_settings,
+            model=tuh.X19LSTMBuilder(
+                settings=self.hyperparameter_settings
+            ).build(),
             train_eval_dataset_pair=train_eval_pair,
             output_root_dir=self.output_root_dir,
             tensorboard_output_dir=self.output_root_dir / "tensorboard",
@@ -122,7 +125,7 @@ if __name__ == "__main__":
         num_folds=5,
         epochs_per_fold=20,
         eval_interval=5,
-        evals_per_checkpoint=1
+        evals_per_checkpoint=1,
     )
 
     cross_validator.run_all_folds()

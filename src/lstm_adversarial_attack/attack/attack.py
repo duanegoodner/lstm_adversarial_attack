@@ -120,8 +120,6 @@ class AttackDriver:
                 parent_path=self.output_dir, file_extension="pickle"
             )
 
-
-
         rio.ResourceExporter().export(
             resource=train_result, path=train_result_output_path
         )
