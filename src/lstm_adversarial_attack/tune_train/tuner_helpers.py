@@ -113,7 +113,7 @@ class X19LSTMBuilder:
 
     def build(self) -> nn.Sequential:
         return nn.Sequential(
-            lms.BidirectionalX19LSTM(
+            lms.BidirectionalLSTMX19(
                 input_size=19,
                 lstm_hidden_size=2**self.log_lstm_hidden_size,
             ),
@@ -126,6 +126,26 @@ class X19LSTMBuilder:
             getattr(nn, self.fc_act_name)(),
             nn.Linear(
                 in_features=2**self.log_fc_hidden_size,
+                out_features=2,
+            ),
+            nn.Softmax(dim=1),
+        )
+
+    def build_for_tensorboard(self) -> nn.Sequential:
+        return nn.Sequential(
+            lms.BidirectionalLSTMX19ForTensorboard(
+                input_size=19,
+                lstm_hidden_size=2 ** self.log_lstm_hidden_size,
+            ),
+            getattr(nn, self.lstm_act_name)(),
+            nn.Dropout(p=self.dropout),
+            nn.Linear(
+                in_features=2 * (2 ** self.log_lstm_hidden_size),
+                out_features=2 ** self.log_fc_hidden_size,
+            ),
+            getattr(nn, self.fc_act_name)(),
+            nn.Linear(
+                in_features=2 ** self.log_fc_hidden_size,
                 out_features=2,
             ),
             nn.Softmax(dim=1),

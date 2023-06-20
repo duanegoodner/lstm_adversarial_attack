@@ -4,7 +4,8 @@ import optuna
 import torch
 import torch.nn as nn
 from pathlib import Path
-from torch.utils.data import DataLoader, Dataset, random_split
+from torch.nn.utils.rnn import pad_sequence
+from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from typing import Callable
 
@@ -15,7 +16,6 @@ import lstm_adversarial_attack.config_settings as lcs
 import lstm_adversarial_attack.weighted_dataloader_builder as wdl
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
-import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 
 
@@ -37,13 +37,13 @@ class TrainerDriver:
         checkpoint_output_dir: Path = None,
         summary_writer_group: str = "",
         summary_writer_subgroup: str = "",
+        summary_writer_add_graph: bool = False,
     ):
         self.train_device = train_device
         self.eval_device = eval_device
         self.model = model
         if model_state_dict is not None:
             self.model.load_state_dict(state_dict=model_state_dict)
-        # self.dataset = dataset
         self.train_eval_dataset_pair = train_eval_dataset_pair
         self.collate_fn = collate_fn
         self.hyperparameter_settings = hyperparameter_settings
@@ -64,10 +64,9 @@ class TrainerDriver:
             tensorboard_output_dir=tensorboard_output_dir,
             checkpoint_output_dir=checkpoint_output_dir,
         )
-        # self.tensorboard_output_dir = self.output_dir / "tensorboard"
-        # self.checkpoint_dir = self.output_dir / "checkpoints"
         self.summary_writer_group = summary_writer_group
         self.summary_writer_subgroup = summary_writer_subgroup
+        self.summary_writer_add_graph = summary_writer_add_graph
 
     def initialize_output_dir(
         self,
@@ -225,6 +224,24 @@ class TrainerDriver:
             train=train_loader, eval=test_loader
         )
 
+    def add_model_graph_to_tensorboard(self, summary_writer: SummaryWriter):
+        tensorboard_model = tuh.X19LSTMBuilder(
+            settings=self.hyperparameter_settings
+        ).build_for_tensorboard()
+        dummy_input = torch.randn(
+            self.batch_size, lcs.MAX_OBSERVATION_HOURS, 19
+        )
+        # dummy_dataloader = wdl.WeightedDataLoaderBuilder(
+        #     self.train_eval_dataset_pair.train,
+        #     batch_size=self.batch_size,
+        #     collate_fn=self.collate_fn,
+        # ).build()
+        # dummy_data_iterator = iter(dummy_dataloader)
+        # dummy_batch = next(dummy_data_iterator)
+        # padded_inputs = pad_sequence(dummy_batch[0])
+
+        summary_writer.add_graph(tensorboard_model, dummy_input)
+
     def run(
         self,
         num_epochs: int,
@@ -234,6 +251,19 @@ class TrainerDriver:
     ):
         torch.manual_seed(lcs.TRAINER_RANDOM_SEED)
         data_loaders = self.build_data_loaders()
+        summary_writer = SummaryWriter(str(self.tensorboard_output_dir))
+
+        if self.summary_writer_add_graph:
+            self.add_model_graph_to_tensorboard(summary_writer=summary_writer)
+            # dummy_dataloader = wdl.WeightedDataLoaderBuilder(
+            #     dataset=self.train_eval_dataset_pair.train,
+            #     batch_size=self.batch_size,
+            #     collate_fn=self.collate_fn
+            # ).build()
+            # dummy_iterator = iter(dummy_dataloader)
+            # dummy_features, dummy_labels = next(dummy_iterator)
+            # summary_writer.add_graph(self.model, dummy_features)
+
         trainer = smt.StandardModelTrainer(
             train_device=self.train_device,
             eval_device=self.eval_device,
@@ -243,7 +273,7 @@ class TrainerDriver:
             loss_fn=self.loss_fn,
             optimizer=self.optimizer,
             checkpoint_dir=self.checkpoint_output_dir,
-            summary_writer=SummaryWriter(str(self.tensorboard_output_dir)),
+            summary_writer=summary_writer,
             epoch_start_count=self.epoch_start_count,
             summary_writer_group=self.summary_writer_group,
             summary_writer_subgroup=self.summary_writer_subgroup,

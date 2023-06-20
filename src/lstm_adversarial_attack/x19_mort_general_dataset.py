@@ -93,7 +93,6 @@ def x19m_collate_fn(batch):
     ), torch.tensor(labels, dtype=torch.long)
     # return padded_features, torch.tensor(labels, dtype=torch.long), lengths
 
-
 class X19MGeneralDatasetWithIndex(X19MGeneralDataset, DatasetWithIndex):
     def __getitem__(self, idx: int):
         return idx, self.measurements[idx], self.in_hosp_mort[idx]

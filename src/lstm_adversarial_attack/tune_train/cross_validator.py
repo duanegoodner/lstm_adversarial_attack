@@ -92,6 +92,7 @@ class CrossValidator:
             / "checkpoints"
             / f"fold_{fold_idx}",
             summary_writer_subgroup=f"fold_{fold_idx}",
+            summary_writer_add_graph=fold_idx==0
         )
 
         trainer_driver.run(

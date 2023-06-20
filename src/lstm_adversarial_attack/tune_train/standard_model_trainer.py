@@ -26,8 +26,6 @@ class StandardModelTrainer:
         test_loader: ud.DataLoader,
         checkpoint_dir: Path,
         epoch_start_count: int = 0,
-        # train_log: ds.TrainLog = ds.TrainLog(),
-        # eval_log: ds.EvalLog = ds.EvalLog(),
         summary_writer: SummaryWriter = None,
         summary_writer_group: str = "",
         summary_writer_subgroup: str = "",
@@ -202,10 +200,7 @@ class StandardModelTrainer:
         num_epochs: int,
         eval_interval: int,
         evals_per_checkpoint: int,
-        # num_cycles: int,
-        # epochs_per_cycle: int = 1,
         save_checkpoints: bool = False,
-        # num_cycles_per_checkpoint: int = 10,
     ):
         for epoch in range(num_epochs):
             self.train_model(num_epochs=1)
