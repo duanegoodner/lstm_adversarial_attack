@@ -11,10 +11,11 @@ sys.path.append(str(Path(__file__).parent.parent))
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.resource_io as rio
 
-# import lstm_adversarial_attack.data_structures as ds
-
 
 class StandardModelTrainer:
+    """
+    Trains and evaluates a model. Can save checkpoints & write to Tensorboard.
+    """
     def __init__(
         self,
         train_device: torch.device,
@@ -51,6 +52,17 @@ class StandardModelTrainer:
     def calculate_performance_metrics(
         y_score: torch.tensor, y_pred: torch.tensor, y_true: torch.tensor
     ) -> ds.ClassificationScores:
+        """
+
+        :param y_score:
+        :type y_score:
+        :param y_pred: 
+        :type y_pred:
+        :param y_true:
+        :type y_true:
+        :return:
+        :rtype:
+        """
         y_true_one_hot = torch.nn.functional.one_hot(y_true)
         y_score_np = y_score.detach().numpy()
         y_pred_np = y_pred.detach().numpy()

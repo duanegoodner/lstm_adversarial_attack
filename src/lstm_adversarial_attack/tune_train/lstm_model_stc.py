@@ -5,7 +5,6 @@ from pathlib import Path
 from torch.nn.utils.rnn import (
     pack_padded_sequence,
     pad_packed_sequence,
-    pad_sequence,
 )
 
 sys.path.append(str(Path(__file__).parent.parent))
@@ -49,17 +48,14 @@ class BidirectionalLSTMX19(nn.Module):
         return final_lstm_out
 
 
-class BidirectionalLSTMX19ForTensorboard(nn.Module):
+class BidirectionalLSTMX19Graph(nn.Module):
     """
-    This variant of BidirectionalLSTMX19 takes a list of tensors (padded to
-    same size along axis 1) as inputs instead of a list of
-    VariableLengthFeatures. Intended for use with
-    SummaryWriter.add_graph(model, inputs) method which can only handle tensor
-    or list of tensors (of equal length) for its input arg.
+    Not recommended for modeling use. Only for model graph visualizations that
+    require only feature tensor input.
     """
 
     def __init__(self, input_size: int = 19, lstm_hidden_size: int = 128):
-        super(BidirectionalLSTMX19ForTensorboard, self).__init__()
+        super(BidirectionalLSTMX19Graph, self).__init__()
         self.input_size = input_size
         self.lstm_hidden_size = lstm_hidden_size
         self.lstm = nn.LSTM(
@@ -70,6 +66,5 @@ class BidirectionalLSTMX19ForTensorboard(nn.Module):
         )
 
     def forward(self, inputs: torch.tensor) -> torch.tensor:
-        # padded_inputs = pad_sequence(inputs, batch_first=True)
         lstm_out, (h_n, c_n) = self.lstm(inputs)
         return lstm_out

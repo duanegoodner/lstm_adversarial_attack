@@ -5,7 +5,7 @@ from enum import Enum, auto
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_paths as cfg_paths
 
 
 class OptimizeDirection(Enum):
@@ -130,7 +130,7 @@ class CrossValidationSummarizer:
             cv_output_root = sorted(
                 [
                     item
-                    for item in lcp.CV_ASSESSMENT_OUTPUT_DIR.iterdir()
+                    for item in cfg_paths.CV_ASSESSMENT_OUTPUT_DIR.iterdir()
                     if item.is_dir()
                 ]
             )[-1]

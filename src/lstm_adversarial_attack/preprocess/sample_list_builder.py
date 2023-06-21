@@ -7,20 +7,28 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.preprocess.preprocess_module as pm
 import lstm_adversarial_attack.preprocess.preprocess_input_classes as pic
-import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_paths as cfg_paths
 
 
 @dataclass
 class FullAdmissionListBuilderResources:
+    """
+    Container for the data FullAdmissionListBuilder object uses
+    """
     icustay_bg_lab_vital: pd.DataFrame
 
 
 class FullAdmissionListBuilder(pm.PreprocessModule):
+    """
+    Converts merged ICUStayMeasurementData to list of FullAdmission objects
+    """
     def __init__(
         self,
-        settings=pic.FullAdmissionListBuilderSettings(),
-        incoming_resource_refs=pic.FullAdmissionListBuilderResourceRefs(),
+        # settings=pic.FullAdmissionListBuilderSettings(),
+        # incoming_resource_refs=pic.FullAdmissionListBuilderResourceRefs(),
     ):
+        settings = pic.FullAdmissionListBuilderSettings()
+        incoming_resource_refs = pic.FullAdmissionListBuilderResourceRefs()
         super().__init__(
             name="FullAdmission Object List Builder",
             settings=settings,
@@ -28,6 +36,10 @@ class FullAdmissionListBuilder(pm.PreprocessModule):
         )
 
     def _import_resources(self) -> FullAdmissionListBuilderResources:
+        """
+        Imports resource refs into data container
+        :return: dataclass containing ref to single dataframe
+        """
         imported_data = FullAdmissionListBuilderResources(
             icustay_bg_lab_vital=self.import_pickle_to_df(
                 path=self.incoming_resource_refs.icustay_bg_lab_vital
@@ -36,6 +48,9 @@ class FullAdmissionListBuilder(pm.PreprocessModule):
         return imported_data
 
     def process(self):
+        """
+        Converts imported resources to list of FullAdmission objects  & exports
+        """
         data = self._import_resources()
         data.icustay_bg_lab_vital = data.icustay_bg_lab_vital.drop(
             [
@@ -70,7 +85,7 @@ class FullAdmissionListBuilder(pm.PreprocessModule):
 
         output_path = (
             self.settings.output_dir
-            / lcp.FULL_ADMISSION_LIST_OUTPUT_FILES["full_admission_list"]
+            / cfg_paths.FULL_ADMISSION_LIST_OUTPUT_FILES["full_admission_list"]
         )
         self.export_resource(
             key="full_admission_list",

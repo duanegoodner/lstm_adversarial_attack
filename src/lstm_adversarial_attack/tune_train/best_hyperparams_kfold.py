@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 import lstm_adversarial_attack.tune_train.cross_validator_driver as cvd
-import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
 
@@ -18,7 +18,7 @@ def main():
     cv_driver = cvd.CrossValidatorDriver.from_study_path(
         device=cur_device,
         dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
-        study_path=lcp.ONGOING_TUNING_STUDY_PICKLE
+        study_path=cfg_paths.ONGOING_TUNING_STUDY_PICKLE
     )
     cv_driver.run()
 

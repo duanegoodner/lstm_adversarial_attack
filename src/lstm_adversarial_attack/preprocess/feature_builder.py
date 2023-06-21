@@ -1,29 +1,39 @@
 import pandas as pd
 from dataclasses import dataclass
-
 import lstm_adversarial_attack.preprocess.preprocess_module as pm
 import lstm_adversarial_attack.preprocess.preprocess_input_classes as pic
 
 
 @dataclass
 class FeatureBuilderResources:
+    """
+    Container for data objects used by FeatureBuilder
+    """
     # TODO type hint should be list[FullAdmissionData] (?)
-    full_admission_list: pd.DataFrame
+    # full_admission_list: pd.DataFrame
+    full_admission_list: list[pic.FullAdmissionData]
 
 
 class FeatureBuilder(pm.PreprocessModule):
+    """
+    Converts dataframe of FullAdmission objects to 1-hr sampled time series
+    """
     def __init__(
         self,
-        settings=pic.FeatureBuilderSettings(),
-        incoming_resource_refs=pic.FeatureBuilderResourceRefs(),
     ):
+        """
+        Instantiates settings and resource references and passes to base class
+        constructor
+        """
+        settings = pic.FeatureBuilderSettings()
+        incoming_resource_refs = pic.FeatureBuilderResourceRefs()
         super().__init__(
             name="Feature Builder",
             settings=settings,
             incoming_resource_refs=incoming_resource_refs,
         )
         # since stats_summary df is small, make it a data member
-        # (we try to keep scope of big dfs limited to process() method)
+        # (we usually try to limit scope of big dfs to process() method)
         stats_summary_path = incoming_resource_refs.bg_lab_vital_summary_stats
         self.stats_summary = self.import_pickle_to_df(stats_summary_path)
 
@@ -36,8 +46,15 @@ class FeatureBuilder(pm.PreprocessModule):
         return imported_data
 
     def _resample(
-        self, raw_time_series_df: pd.DataFrame, raw_timestamp_col: str
+        self, raw_time_series_df: pd.DataFrame
     ) -> pd.DataFrame:
+        """
+        Resamples measurement times series to hourly increments.
+
+        Imputes missing values by interpolation (for params w/ some data)
+        :param raw_time_series_df: time series with actual measurement times
+        :return: time series df with hourly values / averages
+        """
         resampled_df = (
             raw_time_series_df.resample("H")
             .mean()
@@ -49,6 +66,10 @@ class FeatureBuilder(pm.PreprocessModule):
         return resampled_df
 
     def _fill_missing_data(self, resampled_df: pd.DataFrame):
+        """
+        Sets val of params with zero data for stay to global mean of that param
+        :param resampled_df: df that may have no data in some mease cols
+        """
         cols_with_all_nan = resampled_df.columns[resampled_df.isna().all()]
         na_fill_val_map = {
             col: self.stats_summary.loc["50%", col]
@@ -57,6 +78,10 @@ class FeatureBuilder(pm.PreprocessModule):
         resampled_df.fillna(na_fill_val_map, inplace=True)
 
     def _winsorize(self, filled_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Winsorizes measurement data. Default is to 5th & 95th %ile
+        :param filled_df: has all missing data imputed by interp or global mean
+        """
         winsorized_df = filled_df[self.stats_summary.columns].clip(
             lower=self.stats_summary.loc[self.settings.winsorize_low, :],
             upper=self.stats_summary.loc[self.settings.winsorize_high, :],
@@ -65,6 +90,10 @@ class FeatureBuilder(pm.PreprocessModule):
         return winsorized_df
 
     def _rescale(self, winsorized_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Rescales all measurements so all data is between 0 and 1.
+        :param winsorized_df: df with imputation and winsorization applied.
+        """
         rescaled_df = (
             winsorized_df
             - self.stats_summary.loc[self.settings.winsorize_low, :]
@@ -75,11 +104,16 @@ class FeatureBuilder(pm.PreprocessModule):
         return rescaled_df
 
     def _process_hadm_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Imputes, winsorizes, and rescales data.
+        :param df: dataframe member of FullAdmissionData object
+        """
         # sorting probably not necessary, but helps with debugging
         df.sort_values("charttime")
         df.set_index("charttime", inplace=True)
         new_df = self._resample(
-            raw_time_series_df=df, raw_timestamp_col="charttime"
+            raw_time_series_df=df,
+            # raw_timestamp_col="charttime"
         )
         self._fill_missing_data(resampled_df=new_df)
         new_df = self._winsorize(filled_df=new_df)
@@ -89,6 +123,11 @@ class FeatureBuilder(pm.PreprocessModule):
         return new_df
 
     def process(self):
+        """
+        Winsorizes, imputes and normalizes dfs in list of FullAdmission objects
+
+        Exports result (full list of modified objects) to pickle)
+        """
         assert self.settings.output_dir.exists()
 
         data = self._import_resources()

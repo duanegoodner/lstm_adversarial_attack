@@ -11,7 +11,7 @@ from typing import Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.resource_io as rio
-import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as lcs
 import lstm_adversarial_attack.weighted_dataloader_builder as wdl
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
@@ -81,7 +81,7 @@ class TrainerDriver:
 
         if output_root_dir is None:
             output_root_dir = rio.create_timestamped_dir(
-                parent_path=lcp.TRAINING_OUTPUT_DIR
+                parent_path=cfg_paths.TRAINING_OUTPUT_DIR
             )
         else:
             output_root_dir.mkdir(parents=True, exist_ok=True)

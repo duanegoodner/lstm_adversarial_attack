@@ -4,11 +4,11 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.attack.attack_result_data_structs as ads
-import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.attack.attack_results_analyzer as ara
 
 optuna_output_dir = (
-    lcp.ATTACK_HYPERPARAMETER_TUNING / "2023-06-09_16:20:47.824222"
+    cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-06-09_16:20:47.824222"
 )
 study_path = optuna_output_dir / "optuna_study.pickle"
 trial_result_paths = list(optuna_output_dir.glob("*/*.pickle"))

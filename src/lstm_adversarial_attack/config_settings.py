@@ -1,12 +1,24 @@
 import optuna
-# from lstm_adversarial_attack.config_paths import DB_DEFAULT_QUERY_DIR
 
-# DB_QUERIES = [
-#     DB_DEFAULT_QUERY_DIR / "icustay_detail.sql",
-#     DB_DEFAULT_QUERY_DIR / "pivoted_bg.sql",
-#     DB_DEFAULT_QUERY_DIR / "pivoted_lab.sql",
-#     DB_DEFAULT_QUERY_DIR / "pivoted_vital.sql",
-# ]
+PREPROCESS_BG_DATA_COLS = ["potassium", "calcium", "ph", "pco2", "lactate"]
+PREPROCESS_LAB_DATA_COLS = [
+    "albumin",
+    "bun",
+    "creatinine",
+    "sodium",
+    "bicarbonate",
+    "platelet",
+    "glucose",
+    "magnesium",
+]
+PREPROCESS_VITAL_DATA_COLS = [
+    "heartrate",
+    "sysbp",
+    "diasbp",
+    "tempc",
+    "resprate",
+    "spo2",
+]
 
 DEFAULT_WINSORIZE_LOW="5%"
 DEFAULT_WINSORIZE_HIGH="95%"

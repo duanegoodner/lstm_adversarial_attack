@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_hyperparameter_tuner as aht
-import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs
 
 
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     )
 
     fold_summarizer = cvs.FoldSummarizer.from_fold_checkpoint_dir(
-        fold_checkpoint_dir=lcp.TRAINING_OUTPUT_DIR
+        fold_checkpoint_dir=cfg_paths.TRAINING_OUTPUT_DIR
         / "2023-06-17_18_43_05.989001"
         / "checkpoints"
     )
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     tuner = aht.AttackHyperParameterTuner(
         device=cur_device,
-        model_path=lcp.TRAINING_OUTPUT_DIR / "2023-06-17_18_43_05.989001" /
+        model_path=cfg_paths.TRAINING_OUTPUT_DIR / "2023-06-17_18_43_05.989001" /
         "model.pickle",
         checkpoint=best_checkpoint,
         epochs_per_batch=1000,

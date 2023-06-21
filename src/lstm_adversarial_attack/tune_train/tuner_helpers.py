@@ -131,9 +131,9 @@ class X19LSTMBuilder:
             nn.Softmax(dim=1),
         )
 
-    def build_for_tensorboard(self) -> nn.Sequential:
+    def build_for_model_graph(self) -> nn.Sequential:
         return nn.Sequential(
-            lms.BidirectionalLSTMX19ForTensorboard(
+            lms.BidirectionalLSTMX19Graph(
                 input_size=19,
                 lstm_hidden_size=2 ** self.log_lstm_hidden_size,
             ),

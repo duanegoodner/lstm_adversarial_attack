@@ -5,7 +5,7 @@ from pathlib import Path
 from torch.utils.data import random_split
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as lcs
 import lstm_adversarial_attack.tune_train.trainer_driver as td
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
@@ -40,7 +40,7 @@ class SingleFoldTrainer:
             train_device=self.device,
             eval_device=self.device,
             train_eval_dataset_pair=train_eval_pair,
-            study_path=lcp.ONGOING_TUNING_STUDY_PICKLE,
+            study_path=cfg_paths.ONGOING_TUNING_STUDY_PICKLE,
         )
 
         driver.run(
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     #     train_device=cur_device,
     #     eval_device=cur_device,
     #     train_eval_dataset_pair=train_eval_pair,
-    #     study_path=lcp.ONGOING_TUNING_STUDY_PICKLE,
+    #     study_path=cfg_paths.ONGOING_TUNING_STUDY_PICKLE,
     # )
     #
     # cur_train_eval_pair = driver.run(
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     #     train_device=cur_device,
     #     eval_device=cur_device,
     #     train_eval_dataset_pair=train_eval_pair,
-    #     training_output_dir=lcp.TRAINING_OUTPUT_DIR
+    #     training_output_dir=cfg_paths.TRAINING_OUTPUT_DIR
     #     / "2023-06-17_18_06_39.996609",
     # )
 

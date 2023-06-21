@@ -5,12 +5,18 @@ import sys
 import time
 from dotenv import load_dotenv
 from pathlib import Path
-
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 
 class MimiciiiDatabaseAccess:
+    """
+    Connects to and runs queries on MIMIC-III Postgres database
+    """
     def __init__(self, dotenv_path: Path, output_dir: Path):
+        """
+        :param dotenv_path: path .env file w/ values needed for connection
+        :param output_dir: directory where query results get stored
+        """
         load_dotenv(dotenv_path=dotenv_path)
         self._connection = None
         self._dotenv_path = dotenv_path
@@ -18,6 +24,9 @@ class MimiciiiDatabaseAccess:
 
 
     def connect(self):
+        """
+        Connects to database. connection object stored in self._connection.
+        """
         load_dotenv(dotenv_path=self._dotenv_path)
         self._connection = psycopg2.connect(
             host=os.getenv("MIMICIII_DATABASE_HOST"),
@@ -26,7 +35,13 @@ class MimiciiiDatabaseAccess:
             password=os.getenv("MIMICIII_DATABASE_PASSWORD"),
         )
 
-    def _execute_query(self, sql_file_path: Path) -> tuple[list, list]:
+    def _execute_query(self, sql_file_path: Path) -> tuple[list[str], list[tuple]]:
+        """
+        Executes sql query.
+        :param sql_file_path:
+        :type sql_file_path:
+        :return: tuple (el[0] =  list of headers, el[1] = list of row results)
+        """
         cur = self._connection.cursor()
         with sql_file_path.open(mode="r") as q:
             query = q.read()
@@ -43,6 +58,11 @@ class MimiciiiDatabaseAccess:
     def _write_query_to_csv(
         self, query_result: tuple[list, list], query_gen_name: str
     ):
+        """
+        Saves result of query to .csv file.
+        :param query_result: tuple of form output by self._execute_query()
+        :param query_gen_name: label used for filename
+        """
         output_path = self._output_dir / f"{query_gen_name}.csv"
         print(f"Writing result to csv: {output_path}")
         start = time.time()
@@ -52,15 +72,20 @@ class MimiciiiDatabaseAccess:
             writer.writerows(query_result[1])
         end = time.time()
         print(f"Done. csv write time = {(end - start):.2f} seconds\n")
+        # If csv writing is too slow, try modifying query text.
+        # Would prepend with: "copy ("
+        # And append with: "to str(output_path) with delimiter ',' csv header"
 
-        # give file creator and trusted work group full access to csv
+        # give file creator and work group full access to csv
+        # (for work in app_dev container when connecting through Pycharm)
         output_path.chmod(0o775)
 
 
-    # If csv writing is too slow, try modifying query text.
-    # Would prepend with: "copy ("
-    # And append with: "to str(output_path) with delimiter ',' csv header"
     def _run_query_and_save_to_csv(self, sql_file_path: Path):
+        """
+        Runs a sql query and saves result to .csv.
+        :param sql_file_path: path to .sql file
+        """
         assert sql_file_path.name.endswith(".sql")
         query_gen_name = sql_file_path.name[: -len(".sql")]
 
@@ -72,6 +97,11 @@ class MimiciiiDatabaseAccess:
     def run_sql_queries(
         self, sql_query_paths: list[Path]
     ) -> list[Path]:
+        """
+        Runs and saves results of queries in a list of .sql filepaths.
+        :param sql_query_paths: list of .sql query filepaths
+        :return: list of paths to .csv query output files
+        """
         result_paths = []
         for query_idx in range(len(sql_query_paths)):
         # for query_path in sql_query_paths:
@@ -83,6 +113,9 @@ class MimiciiiDatabaseAccess:
         return result_paths
 
     def close_connection(self):
+        """
+        Closes database connection saved in self._connection
+        """
         if self._connection is not None:
             self._connection.close()
 

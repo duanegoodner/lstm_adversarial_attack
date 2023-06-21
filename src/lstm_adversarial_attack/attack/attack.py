@@ -9,7 +9,7 @@ import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.attack.best_checkpoint_retriever as bcr
 import lstm_adversarial_attack.resource_io as rio
-import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_paths as cfg_paths
 
 from lstm_adversarial_attack.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex,
@@ -32,7 +32,7 @@ class AttackDriver:
         max_num_samples=None,
         sample_selection_seed=None,
         attack_misclassified_samples: bool = False,
-        output_dir: Path = lcp.ATTACK_OUTPUT_DIR,
+        output_dir: Path = cfg_paths.ATTACK_OUTPUT_DIR,
         result_file_prefix: str = None,
     ):
         self.device = device
@@ -70,7 +70,7 @@ class AttackDriver:
         max_num_samples: int = None,
         sample_selection_seed: int = None,
         attack_misclassified_samples: bool = False,
-        output_dir: Path = lcp.ATTACK_OUTPUT_DIR,
+        output_dir: Path = cfg_paths.ATTACK_OUTPUT_DIR,
     ):
         return cls(
             device=device,
@@ -133,7 +133,7 @@ if __name__ == "__main__":
         cur_device = torch.device("cpu")
 
     checkpoint_retriever = bcr.BestCheckpointRetriever.from_checkpoints_dir(
-        checkpoints_dir=lcp.TRAINING_OUTPUT_DIR
+        checkpoints_dir=cfg_paths.TRAINING_OUTPUT_DIR
         / "2023-06-14_14_40_10.365521"
         / "checkpoints"
     )
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         optimizer_constructor_kwargs={"lr": 0.01340580859093695},
         batch_size=16,
         epochs_per_batch=500,
-        model_path=lcp.TRAINING_OUTPUT_DIR
+        model_path=cfg_paths.TRAINING_OUTPUT_DIR
         / "2023-06-14_14_40_10.365521"
         / "model.pickle",
         checkpoint=best_checkpoint,

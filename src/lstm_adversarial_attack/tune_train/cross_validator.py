@@ -6,7 +6,7 @@ from torch.utils.data import Dataset, Subset
 from typing import Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as lcs
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.tune_train.trainer_driver as td
@@ -43,7 +43,7 @@ class CrossValidator:
         self.cv_datasets = self.create_datasets()
         if output_root_dir is None:
             output_root_dir = rio.create_timestamped_dir(
-                parent_path=lcp.CV_ASSESSMENT_OUTPUT_DIR
+                parent_path=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR
             )
         self.output_root_dir = output_root_dir
         self.save_fold_info = save_fold_info
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     my_dataset = xmd.X19MGeneralDataset.from_feature_finalizer_output()
 
-    study_path = lcp.ONGOING_TUNING_STUDY_PICKLE
+    study_path = cfg_paths.ONGOING_TUNING_STUDY_PICKLE
     study = rio.ResourceImporter().import_pickle_to_object(path=study_path)
     my_hyperparameters = tuh.X19LSTMHyperParameterSettings(**study.best_params)
 

@@ -6,24 +6,38 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.preprocess.preprocess_module as pm
 import lstm_adversarial_attack.preprocess.preprocess_input_classes as pic
-
-# from lstm_adversarial_attack.config_paths import PREPROCESS_OUTPUT_FILES
 
 
 @dataclass
 class FeatureFinalizerResources:
+    """
+    Container for the data objects imported by FeatureFinalizer
+    """
     processed_admission_list: list[pic.FullAdmissionData]
 
 
 class FeatureFinalizer(pm.PreprocessModule):
+    """
+    Selects time range of data from FullAdmissionData from FeatureBuilder.
+
+    Converts df features timeseries to numpy arrays
+
+    Exports features, labels, and measurement names
+    """
     def __init__(
         self,
-        settings=pic.FeatureFinalizerSettings(),
-        incoming_resource_refs=pic.FeatureFinalizerResourceRefs(),
+        # settings=pic.FeatureFinalizerSettings(),
+        # incoming_resource_refs=pic.FeatureFinalizerResourceRefs(),
     ):
+        """
+        Instantiates settings and resource references and passes to base class
+        constructor
+        """
+        settings = pic.FeatureFinalizerSettings()
+        incoming_resource_refs = pic.FeatureFinalizerResourceRefs()
         super().__init__(
             name="Feature Finalizer",
             settings=settings,
@@ -31,6 +45,10 @@ class FeatureFinalizer(pm.PreprocessModule):
         )
 
     def _import_resources(self) -> FeatureFinalizerResources:
+        """
+        imports data from pickle file to container dataclass
+        :return: dataclass with refs to imported data
+        """
         imported_data = FeatureFinalizerResources(
             processed_admission_list=self.import_pickle_to_list(
                 self.incoming_resource_refs.processed_admission_list
@@ -42,6 +60,11 @@ class FeatureFinalizer(pm.PreprocessModule):
     def _get_measurement_col_names(
         admission_list: list[pic.FullAdmissionData],
     ) -> tuple:
+        """
+        Gets names of measurement data cols & stores as tuple
+        :param admission_list: list of FullAdmissionData
+        :return: measurement column names
+        """
         # confirm each sample's dataframe has same col names
         all_data_col_names = [
             item.time_series.columns for item in admission_list
@@ -62,6 +85,14 @@ class FeatureFinalizer(pm.PreprocessModule):
         end_time: np.datetime64 = None,
         time_col: str = "charttime",
     ) -> pd.DataFrame:
+        """
+        Filters time series dataframe down to time window of interest
+        :param time_series: df with measurements time series
+        :param start_time: begin time of window (default to hosp admit time)
+        :param end_time: end time of window
+        :param time_col: timestamp col of incoming df
+        :return: df with times filtered down to window of interest
+        """
         if start_time is None:
             start_time = np.array([np.datetime64(datetime.min)])
         if end_time is None:
@@ -74,6 +105,11 @@ class FeatureFinalizer(pm.PreprocessModule):
     def _get_feature_array(
         self, sample: pic.FullAdmissionData
     ) -> np.ndarray | None:
+        """
+        Filters time series df to window of interest & converts to array
+        :param sample: FullAdmissionData object (has time series df attribute)
+        :return: filtered numpy array of time series data
+        """
         observation_start_time = getattr(
             sample, self.settings.observation_window_start
         )
@@ -98,6 +134,11 @@ class FeatureFinalizer(pm.PreprocessModule):
             return None
 
     def process(self):
+        """
+        Imports and filters time series.
+
+        Exports list of time series arrays, list of labels, & col names.
+        """
         assert self.settings.output_dir.exists()
         data = self._import_resources()
         measurement_col_names = self._get_measurement_col_names(
@@ -125,14 +166,14 @@ class FeatureFinalizer(pm.PreprocessModule):
             key="measurement_data_list",
             resource=measurement_data_list,
             path=self.settings.output_dir
-            / lcp.PREPROCESS_OUTPUT_FILES["measurement_data_list"],
+            / cfg_paths.PREPROCESS_OUTPUT_FILES["measurement_data_list"],
         )
 
         self.export_resource(
             key="in_hospital_mortality_list",
             resource=in_hospital_mortality_list,
             path=self.settings.output_dir
-            / lcp.PREPROCESS_OUTPUT_FILES["in_hospital_mortality_list"],
+            / cfg_paths.PREPROCESS_OUTPUT_FILES["in_hospital_mortality_list"],
         )
 
 

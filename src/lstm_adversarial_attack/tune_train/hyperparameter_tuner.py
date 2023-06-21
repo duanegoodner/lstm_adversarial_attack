@@ -18,7 +18,7 @@ import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.data_structures as ds
 
 # import lstm_adversarial_attack.data_structures as ds
-import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
 import lstm_adversarial_attack.weighted_dataloader_builder as wdb
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
@@ -79,7 +79,7 @@ class HyperParameterTuner:
         self.hyperparameter_sampler = hyperparameter_sampler
         if output_dir is None:
             output_dir = rio.create_timestamped_dir(
-                parent_path=lcp.HYPERPARAMETER_OUTPUT_DIR
+                parent_path=cfg_paths.HYPERPARAMETER_OUTPUT_DIR
             )
         self.output_dir = output_dir
         self.tensorboard_output_dir = self.output_dir / "tensorboard"

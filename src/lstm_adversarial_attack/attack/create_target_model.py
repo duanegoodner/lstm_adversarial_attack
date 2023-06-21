@@ -5,10 +5,10 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.attack.inferrer as infr
-import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
-training_output_root = lcp.TRAINING_OUTPUT_DIR / "2023-05-30_22:02:07.515447"
+training_output_root = cfg_paths.TRAINING_OUTPUT_DIR / "2023-05-30_22:02:07.515447"
 model_path = training_output_root / "model.pickle"
 checkpoint_path = (
     training_output_root / "checkpoints" / "2023-05-30_22:19:03.666893.tar"

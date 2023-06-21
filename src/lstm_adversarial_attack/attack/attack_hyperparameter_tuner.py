@@ -7,7 +7,7 @@ from pathlib import Path
 import lstm_adversarial_attack.attack.attack as atk
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
-import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.resource_io as rio
 
 
@@ -44,7 +44,7 @@ class AttackHyperParameterTuner:
     ) -> tuple[Path, Path]:
         if output_dir is None:
             initialized_output_dir = rio.create_timestamped_dir(
-                parent_path=lcp.ATTACK_HYPERPARAMETER_TUNING
+                parent_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
             )
         else:
             initialized_output_dir = output_dir

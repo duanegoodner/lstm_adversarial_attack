@@ -8,7 +8,7 @@ strict digraph model {
                         <TR><TD>input-tensor<BR/>depth:0</TD><TD>(32, 19)</TD></TR>
                     </TABLE>> fillcolor=lightyellow]
 	subgraph cluster_2 {
-		fontsize=12 label=BidirectionalLSTMX19ForTensorboard labeljust=l style=dashed
+		fontsize=12 label=BidirectionalLSTMX19Graph labeljust=l style=dashed
 		1 [label=<
                     <TABLE BORDER="0" CELLBORDER="1"
                     CELLSPACING="0" CELLPADDING="4">

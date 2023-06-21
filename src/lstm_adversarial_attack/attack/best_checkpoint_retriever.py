@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_paths as cfg_paths
 
 
 class OptimizeDirection(Enum):
@@ -55,7 +55,7 @@ class BestCheckpointRetriever:
 
 if __name__ == "__main__":
     my_checkpoints_dir = (
-        lcp.TRAINING_OUTPUT_DIR / "2023-06-14_14_40_10.365521" / "checkpoints"
+        cfg_paths.TRAINING_OUTPUT_DIR / "2023-06-14_14_40_10.365521" / "checkpoints"
     )
     checkpoint_retriever = BestCheckpointRetriever.from_checkpoints_dir(
         checkpoints_dir=my_checkpoints_dir
