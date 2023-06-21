@@ -1,10 +1,7 @@
 import sys
-
-import optuna
 import torch
 from pathlib import Path
 from torch.utils.data import Dataset
-
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_settings as lcs
 import lstm_adversarial_attack.resource_io as rio
@@ -13,6 +10,11 @@ import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 
 
 class CrossValidatorDriver:
+    """
+    Instantiates and runs a CrossValidator.
+
+    Use as isolation layer to avoid modifying CrossValidator code when testing.
+    """
     def __init__(
         self,
         device: torch.device,
@@ -35,6 +37,12 @@ class CrossValidatorDriver:
     def from_study_path(
         cls, device: torch.device, dataset: Dataset, study_path: Path
     ):
+        """
+        Creates CrossValidationDriver from path to optuna.Study pickle file
+        :param device: device to run on
+        :param dataset: full dataset for cross validation
+        :param study_path: path to optuna.Study pickle file
+        """
         study = rio.ResourceImporter().import_pickle_to_object(path=study_path)
         hyperparameters = tuh.X19LSTMHyperParameterSettings(
             **study.best_params
@@ -44,6 +52,9 @@ class CrossValidatorDriver:
         )
 
     def run(self):
+        """
+        Instantiates and runs CrossValidator
+        """
         cross_validator = cv.CrossValidator(
             device=self.device,
             dataset=self.dataset,

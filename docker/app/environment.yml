@@ -8,7 +8,6 @@ dependencies:
   - black
   - docker-py
   - dill
-  - graphviz
   # - gensim
   - isort
   - jupyter
@@ -27,6 +26,7 @@ dependencies:
   - setuptools
   - pip:
     - git+https://github.com/duanegoodner/pygetfacl@0.0.5
+    - graphviz
     - netron
     - optuna
     - pyhealth

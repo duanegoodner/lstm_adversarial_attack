@@ -6,17 +6,20 @@ from torch.nn.utils.rnn import (
     pack_padded_sequence,
     pad_packed_sequence,
 )
-
 sys.path.append(str(Path(__file__).parent.parent))
+import lstm_adversarial_attack.config_settings as lcs
 from lstm_adversarial_attack.data_structures import VariableLengthFeatures
 
 
-# use this as component in nn.Sequential of full model
 class BidirectionalLSTMX19(nn.Module):
+    """
+    Bidirectional, single layer LSTM that takes VariableLengthFeatures objects
+    as input.
+    """
     def __init__(
         self,
-        input_size: int = 19,
-        lstm_hidden_size: int = 128,
+        lstm_hidden_size: int,
+        input_size: int = lcs.LSTM_INPUT_SIZE,
     ):
         super(BidirectionalLSTMX19, self).__init__()
         self.input_size = input_size
@@ -32,6 +35,15 @@ class BidirectionalLSTMX19(nn.Module):
         self,
         variable_length_features: VariableLengthFeatures,
     ) -> torch.tensor:
+        """
+        Converts batch of VariableLengthFeatures to PackedSequence, runs
+        through LSTM, then unpacks. .lengths of inputs used when packing and
+        unpacking.
+        :param variable_length_features: object with two data members - tensor
+        of batch_size x max_input_seq_length x input_size (num measurements),
+        and integer specifying actual seq_length.
+        :return: unpacked LSTM outputs
+        """
         packed_features = pack_padded_sequence(
             variable_length_features.features,
             lengths=variable_length_features.lengths,
@@ -53,7 +65,6 @@ class BidirectionalLSTMX19Graph(nn.Module):
     Not recommended for modeling use. Only for model graph visualizations that
     require only feature tensor input.
     """
-
     def __init__(self, input_size: int = 19, lstm_hidden_size: int = 128):
         super(BidirectionalLSTMX19Graph, self).__init__()
         self.input_size = input_size

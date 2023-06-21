@@ -1,15 +1,20 @@
 import sys
 import torch
 from pathlib import Path
-
 sys.path.append(str(Path(__file__).parent.parent.parent))
-
 import lstm_adversarial_attack.tune_train.cross_validator_driver as cvd
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
 
 def main():
+    """
+    Runs cross-validation using best result from an optuna study.
+
+    Path of optuna study to use set by: config_paths.ONGOING_TUNING_STUDY_DIR
+
+    Other settings specified in config_settings.TUNER... variables.
+    """
     if torch.cuda.is_available():
         cur_device = torch.device("cuda:0")
     else:

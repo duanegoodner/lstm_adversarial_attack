@@ -18,8 +18,9 @@ class StandardModelTrainer:
     """
     def __init__(
         self,
-        train_device: torch.device,
-        eval_device: torch.device,
+        # train_device: torch.device,
+        # eval_device: torch.device,
+        device: torch.device,
         model: nn.Module,
         loss_fn: nn.Module,
         optimizer: torch.optim.Optimizer,
@@ -31,8 +32,9 @@ class StandardModelTrainer:
         summary_writer_group: str = "",
         summary_writer_subgroup: str = "",
     ):
-        self.train_device = train_device
-        self.eval_device = eval_device
+        self.device = device
+        # self.train_device = train_device
+        # self.eval_device = eval_device
         self.model = model
         self.loss_fn = loss_fn
         self.optimizer = optimizer
@@ -53,15 +55,11 @@ class StandardModelTrainer:
         y_score: torch.tensor, y_pred: torch.tensor, y_true: torch.tensor
     ) -> ds.ClassificationScores:
         """
-
-        :param y_score:
-        :type y_score:
-        :param y_pred: 
-        :type y_pred:
-        :param y_true:
-        :type y_true:
-        :return:
-        :rtype:
+        Calcs performance metrics using data returned by self.evaluate_model()
+        :param y_score: float outputs of final layer
+        :param y_pred: predicted classes
+        :param y_true: actual classes
+        :return: ClassificationScores container w/ calculated metrics
         """
         y_true_one_hot = torch.nn.functional.one_hot(y_true)
         y_score_np = y_score.detach().numpy()
@@ -76,12 +74,13 @@ class StandardModelTrainer:
             f1=skm.f1_score(y_true=y_true_np, y_pred=y_pred_np),
         )
 
-    def reset_epoch_counts(self):
-        self.completed_epochs = 0
-
     def _save_checkpoint(
         self,
     ) -> Path:
+        """
+        Saves checkpoint w/ model/optimizer params & latest train/eval results
+        :return: path of file where checkpoint is saved
+        """
         output_path = rio.create_timestamped_filepath(
             parent_path=self.checkpoint_dir, file_extension="tar"
         )
@@ -99,15 +98,21 @@ class StandardModelTrainer:
         self,
         num_epochs: int,
     ):
-        self.model.to(self.train_device)
+        """
+        Trains model for num_epochs. Stores results in self.train_log.
+
+        Optionally writes to Tensorboard SummaryWriter.
+        :param num_epochs: number of epochs to run training
+        """
+        self.model.to(self.device)
         self.model.train()
 
         for epoch in range(num_epochs):
             running_loss = 0.0
             for num_batches, (inputs, y) in enumerate(self.train_loader):
                 inputs.features, y = (
-                    inputs.features.to(self.train_device),
-                    y.to(self.train_device),
+                    inputs.features.to(self.device),
+                    y.to(self.device),
                 )
                 self.optimizer.zero_grad()
                 y_hat = self.model(inputs).squeeze()
@@ -127,6 +132,10 @@ class StandardModelTrainer:
             self.report_epoch_loss(epoch_loss=epoch_loss)
 
     def report_epoch_loss(self, epoch_loss: float):
+        """
+        Writes loss val to Tensorboard output using SummaryWriter
+        :param epoch_loss: loss val for epoch
+        """
         print(
             f"{self.summary_writer_subgroup}, epoch_{self.completed_epochs},"
             f" Loss: {epoch_loss:.4f}"
@@ -142,16 +151,19 @@ class StandardModelTrainer:
             )
 
     @torch.no_grad()
-    def evaluate_model(self, return_results: bool = False):
+    def evaluate_model(self):
+        """
+        Evaluates model. Calculates and stores perfromance metrics.
+        """
         running_loss = 0.0
-        self.model.to(self.eval_device)
+        self.model.to(self.device)
         self.model.eval()
         all_y_true = torch.LongTensor()
         all_y_pred = torch.LongTensor()
         all_y_score = torch.FloatTensor()
         for num_batches, (inputs, y) in enumerate(self.train_loader):
-            inputs.features, y = inputs.features.to(self.eval_device), y.to(
-                self.eval_device
+            inputs.features, y = inputs.features.to(self.device), y.to(
+                self.device
             )
             y_hat = self.model(inputs)
             loss = self.loss_fn(y_hat, y)
@@ -174,18 +186,15 @@ class StandardModelTrainer:
         self.report_eval_results(
             eval_results=eval_results,
         )
-        if return_results:
-            return ds.FullEvalResult(
-                metrics=eval_results,
-                y_pred=all_y_true,
-                y_score=all_y_score,
-                y_true=all_y_true,
-            )
 
     def report_eval_results(
         self,
         eval_results: ds.EvalEpochResult,
     ):
+        """
+        Writes eval results to Tensorboard via SummaryWriter
+        :param eval_results:
+        """
         print(
             f"\n{self.summary_writer_subgroup} performance on test"
             f" data:\n{eval_results}\n"
@@ -214,6 +223,14 @@ class StandardModelTrainer:
         evals_per_checkpoint: int,
         save_checkpoints: bool = False,
     ):
+        """
+        Runs train/eval cycles and optionally saves checkpoints.
+        :param num_epochs: total number of epochs to run
+        :param eval_interval: number of train epochs per eval
+        :param evals_per_checkpoint: number of evals per checkpoint
+        :param save_checkpoints: whether or not to save checkpoints
+        :return: object containing logs of train and eval data
+        """
         for epoch in range(num_epochs):
             self.train_model(num_epochs=1)
             if (epoch + 1) % eval_interval == 0:

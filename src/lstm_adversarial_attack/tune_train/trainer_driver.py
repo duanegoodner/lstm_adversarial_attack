@@ -4,7 +4,6 @@ import optuna
 import torch
 import torch.nn as nn
 from pathlib import Path
-from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from typing import Callable
@@ -20,10 +19,17 @@ import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 
 
 class TrainerDriver:
+    """
+    Isolation layer to avoid need to modify StandardModelTrainer.
+
+    Instantiates and runs a StandardModelTrainer.
+
+    Provides class methods to instantiate from Optuna output or checkpoints.
+
+    """
     def __init__(
         self,
-        train_device: torch.device,
-        eval_device: torch.device,
+        device: torch.device,
         hyperparameter_settings: tuh.X19LSTMHyperParameterSettings,
         train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
         model: nn.Module,
@@ -39,8 +45,7 @@ class TrainerDriver:
         summary_writer_subgroup: str = "",
         summary_writer_add_graph: bool = False,
     ):
-        self.train_device = train_device
-        self.eval_device = eval_device
+        self.device = device
         self.model = model
         if model_state_dict is not None:
             self.model.load_state_dict(state_dict=model_state_dict)
@@ -76,7 +81,11 @@ class TrainerDriver:
     ) -> tuple[Path, Path, Path]:
         """
         Creates output root, tensorboard dir, and checkpoint dir. Puts copies
-        model and hyperparameters in output root.
+        of model and hyperparameters in output root.
+        :param output_root_dir: root dir for files saved from training/eval
+        :param tensorboard_output_dir: folder for tensorboard output
+        :param checkpoint_output_dir: folder to save checkpoints in
+        :return: output_root_dir, tensorboard_output_dir, checkpoint_output_dir
         """
 
         if output_root_dir is None:
@@ -106,16 +115,20 @@ class TrainerDriver:
     @classmethod
     def from_optuna_completed_trial_obj(
         cls,
-        train_device: torch.device,
-        eval_device: torch.device,
+        device: torch.device,
         completed_trial: optuna.Trial,
         train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
     ):
+        """
+        Creates a TrainerDriver using info from optuna.Trial object
+        :param device: device to run on
+        :param completed_trial: a completed optuna.Trial object
+        :param train_eval_dataset_pair: train & eval datasets
+        """
         settings = tuh.X19LSTMHyperParameterSettings(**completed_trial.params)
         model = tuh.X19LSTMBuilder(settings=settings).build()
         return cls(
-            train_device=train_device,
-            eval_device=eval_device,
+            device=device,
             hyperparameter_settings=settings,
             model=model,
             train_eval_dataset_pair=train_eval_dataset_pair,
@@ -124,17 +137,21 @@ class TrainerDriver:
     @classmethod
     def from_optuna_completed_trial_path(
         cls,
-        train_device: torch.device,
-        eval_device: torch.device,
+        device: torch.device,
         trial_path: Path,
         train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
     ):
+        """
+        Creates a TrainerDriver using (pickle) file path of optuna.Trial
+        :param device: device to run on
+        :param trial_path: path to pickle with completed optuna.Trial
+        :param train_eval_dataset_pair: train & eval datasets
+        """
         completed_trial = rio.ResourceImporter().import_pickle_to_object(
             path=trial_path
         )
         return cls.from_optuna_completed_trial_obj(
-            train_device=train_device,
-            eval_device=eval_device,
+            device=device,
             completed_trial=completed_trial,
             train_eval_dataset_pair=train_eval_dataset_pair,
         )
@@ -142,15 +159,19 @@ class TrainerDriver:
     @classmethod
     def from_optuna_study_path(
         cls,
-        train_device: torch.device,
-        eval_device: torch.device,
+        device: torch.device,
         study_path: Path,
         train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
     ):
+        """
+        Creates TrainerDriver using filepath of optuna.Study pickle
+        :param device: device to run on
+        :param study_path: file path to optuna.Study pickle file
+        :param train_eval_dataset_pair: train and test/eval datasets
+        """
         study = rio.ResourceImporter().import_pickle_to_object(path=study_path)
         return cls.from_optuna_completed_trial_obj(
-            train_device=train_device,
-            eval_device=eval_device,
+            device=device,
             completed_trial=study.best_trial,
             train_eval_dataset_pair=train_eval_dataset_pair,
         )
@@ -158,24 +179,30 @@ class TrainerDriver:
     @classmethod
     def from_previous_training(
         cls,
-        train_device: torch.device,
-        eval_device: torch.device,
+        device: torch.device,
         train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
         checkpoint_file: Path,
         hyperparameters_file: Path,
         additional_output_dir: Path,
     ):
+        """
+        Creates TrainerDriver w/ info from files output by previous train run
+        :param device: device to run on
+        :param train_eval_dataset_pair: train and eval/test datasets
+        :param checkpoint_file: path to previous training checkpoint
+        :param hyperparameters_file: path X19LSTMHyperParameterSettings pickle
+        :param additional_output_dir: path where new output will be saved
+        """
         hyperparameter_settings = (
             rio.ResourceImporter().import_pickle_to_object(
                 path=hyperparameters_file
             )
         )
         model = tuh.X19LSTMBuilder(settings=hyperparameter_settings).build()
-        model.to(train_device)
-        checkpoint = torch.load(checkpoint_file, map_location=train_device)
+        model.to(device)
+        checkpoint = torch.load(checkpoint_file, map_location=device)
         return cls(
-            train_device=train_device,
-            eval_device=eval_device,
+            device=device,
             train_eval_dataset_pair=train_eval_dataset_pair,
             model=model,
             hyperparameter_settings=hyperparameter_settings,
@@ -188,18 +215,24 @@ class TrainerDriver:
     @classmethod
     def from_standard_previous_training(
         cls,
-        train_device: torch.device,
-        eval_device: torch.device,
+        device: torch.device,
         train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
         training_output_dir: Path,
     ):
+        """
+        Creates TrainerDriver output root of previous training.
+
+        Assumes standard training output file structure.
+        :param device: device to run on
+        :param train_eval_dataset_pair: train and test/eval datasets
+        :param training_output_dir: root output dir of previous training
+        """
         checkpoint_file = sorted(
             (training_output_dir / "checkpoints").glob("*.tar")
         )[-1]
 
         return cls.from_previous_training(
-            train_device=train_device,
-            eval_device=eval_device,
+            device=device,
             train_eval_dataset_pair=train_eval_dataset_pair,
             checkpoint_file=checkpoint_file,
             hyperparameters_file=training_output_dir
@@ -208,6 +241,12 @@ class TrainerDriver:
         )
 
     def build_data_loaders(self) -> tuh.TrainEvalDataLoaderPair:
+        """
+        Builds train and test dataloaders.
+
+        Trainloader uses WeightedRandomSampler (b/c project data is imbalanced)
+        :return: dataclass w/ refs to both dataloaders.
+        """
         train_loader = wdl.WeightedDataLoaderBuilder(
             dataset=self.train_eval_dataset_pair.train,
             batch_size=self.batch_size,
@@ -225,20 +264,21 @@ class TrainerDriver:
         )
 
     def add_model_graph_to_tensorboard(self, summary_writer: SummaryWriter):
+        """
+        Writes a graph object representing self.model to Tensorboard.
+
+        Actual graph written is for dummy_model with only tensor input.
+
+        (writer cannot handle model with VariableLengthInput as input)
+
+        :param summary_writer: SummaryWriter object
+        """
         tensorboard_model = tuh.X19LSTMBuilder(
             settings=self.hyperparameter_settings
-        ).build_for_tensorboard()
+        ).build_for_model_graph()
         dummy_input = torch.randn(
             self.batch_size, lcs.MAX_OBSERVATION_HOURS, 19
         )
-        # dummy_dataloader = wdl.WeightedDataLoaderBuilder(
-        #     self.train_eval_dataset_pair.train,
-        #     batch_size=self.batch_size,
-        #     collate_fn=self.collate_fn,
-        # ).build()
-        # dummy_data_iterator = iter(dummy_dataloader)
-        # dummy_batch = next(dummy_data_iterator)
-        # padded_inputs = pad_sequence(dummy_batch[0])
 
         summary_writer.add_graph(tensorboard_model, dummy_input)
 
@@ -249,24 +289,22 @@ class TrainerDriver:
         evals_per_checkpoint,
         save_checkpoints: bool,
     ):
+        """
+        Writes graph to tensorboard, instantiates Trainer & runs train/eval cycles.
+        :param num_epochs: Number of epochs to train
+        :param eval_interval: Number of epochs between evals
+        :param evals_per_checkpoint: Number of evals per checkpoint
+        :param save_checkpoints: Whether to save checkpoints
+        """
         torch.manual_seed(lcs.TRAINER_RANDOM_SEED)
         data_loaders = self.build_data_loaders()
         summary_writer = SummaryWriter(str(self.tensorboard_output_dir))
 
         if self.summary_writer_add_graph:
             self.add_model_graph_to_tensorboard(summary_writer=summary_writer)
-            # dummy_dataloader = wdl.WeightedDataLoaderBuilder(
-            #     dataset=self.train_eval_dataset_pair.train,
-            #     batch_size=self.batch_size,
-            #     collate_fn=self.collate_fn
-            # ).build()
-            # dummy_iterator = iter(dummy_dataloader)
-            # dummy_features, dummy_labels = next(dummy_iterator)
-            # summary_writer.add_graph(self.model, dummy_features)
 
         trainer = smt.StandardModelTrainer(
-            train_device=self.train_device,
-            eval_device=self.eval_device,
+            device=self.device,
             model=self.model,
             train_loader=data_loaders.train,
             test_loader=data_loaders.eval,

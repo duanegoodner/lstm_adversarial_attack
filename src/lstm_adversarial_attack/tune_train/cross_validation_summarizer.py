@@ -3,17 +3,22 @@ import sys
 import torch
 from enum import Enum, auto
 from pathlib import Path
-
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as cfg_paths
 
 
 class OptimizeDirection(Enum):
+    """
+    For use by methods in FoldSummarizer and CrossValidation Summarizer
+    """
     MAX = auto()
     MIN = auto()
 
 
 class EvalMetric(Enum):
+    """
+    For use by methods in FoldSummarizer and CrossValidation Summarizer
+    """
     AUC = auto()
     ACCURACY = auto()
     F1 = auto()
@@ -23,17 +28,26 @@ class EvalMetric(Enum):
 
 
 class FoldSummarizer:
+    """
+    Summarizes train and eval data from single fold
+    """
     def __init__(
         self,
         fold_checkpoints: list[dict],
         checkpoints_dirname: str = None,
         fold_num: int = None,
     ):
+        """
+        :param fold_checkpoints: list of checkpoint dictionaries
+        :param checkpoints_dirname: directory where checkpoints are stored
+        :param fold_num: integer index of fold
+        """
         fold_checkpoints.sort(key=lambda x: x["epoch_num"])
         self.fold_checkpoints = fold_checkpoints
         self.checkpoints_dirname = checkpoints_dirname
         self.fold_num = fold_num
 
+    # translated enums into object attributes
     _metric_dispatch = {
         EvalMetric.AUC: "auc",
         EvalMetric.ACCURACY: "accuracy",
@@ -47,6 +61,11 @@ class FoldSummarizer:
     def from_fold_checkpoint_dir(
         cls, fold_checkpoint_dir: Path, fold_num: int
     ):
+        """
+        Creates FoldSummarizer from provided path to dir containing checkpoints
+        :param fold_checkpoint_dir: directory containing checkpoints
+        :param fold_num: integer index of fold
+        """
         checkpoint_files = sorted(fold_checkpoint_dir.glob("*.tar"))
         fold_checkpoints = [torch.load(item) for item in checkpoint_files]
         return cls(
@@ -57,6 +76,9 @@ class FoldSummarizer:
 
     @property
     def result_df(self) -> pd.DataFrame:
+        """
+        :return: Dataframe of eval metrics and train loss. 1 row per epoch
+        """
         result_dict = {
             "epoch": [item["epoch_num"] for item in self.fold_checkpoints],
             "train_loss": [
@@ -93,6 +115,12 @@ class FoldSummarizer:
     def _get_optimal_idx(
         self, metric: EvalMetric, optimize_direction: OptimizeDirection
     ) -> int:
+        """
+        Gets results dataframe index of extreme (min or max) val of a metric
+        :param metric: performance metric to use as criteria
+        :param optimize_direction: min or max
+        :return: index of row containing extreme val of metric
+        """
         if optimize_direction == OptimizeDirection.MIN:
             extreme_idx = (
                 self.result_df[[self._metric_dispatch[metric]]].idxmin().item()
@@ -106,6 +134,12 @@ class FoldSummarizer:
     def get_extreme_checkpoint(
         self, metric: EvalMetric, optimize_direction: OptimizeDirection
     ) -> dict:
+        """
+        Gets the checkpoint dict corresponding to an extreme val of a metric
+        :param metric: metric for criteria
+        :param optimize_direction: min or max
+        :return: a checkpoint dictionary
+        """
         extreme_idx = self._get_optimal_idx(
             metric=metric, optimize_direction=optimize_direction
         )
@@ -168,6 +202,12 @@ class CrossValidationSummarizer:
     def get_optimal_results_df(
         self, metric: EvalMetric, optimize_direction: OptimizeDirection
     ) -> pd.DataFrame:
+        """
+        Gets best epoch result wrt metric & optimize direction for each fold
+        :param metric: metric to find min or max of
+        :param optimize_direction: min or max
+        :return: dataframe (cols --> metrics, rows --> folds)
+        """
         best_rows = [
             item.get_optimal_result_row(
                 metric=metric, optimize_direction=optimize_direction
@@ -180,6 +220,13 @@ class CrossValidationSummarizer:
 
 
 def main():
+    """
+    Creates CrossValidationSummarizer from latest data in path defined by:
+    config_paths.
+
+    Gets best metrics from each fold.
+    :return: df with 1 row per fold (has each folds best epoch's data)
+    """
 
     cv_summarizer = CrossValidationSummarizer.from_cv_checkpoints_dir()
     optimal_results_df = cv_summarizer.get_optimal_results_df(

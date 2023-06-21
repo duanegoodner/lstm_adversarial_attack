@@ -17,18 +17,27 @@ import lstm_adversarial_attack.data_structures as ds
 
 @dataclass
 class TrainEvalDatasetPair:
+    """
+    Container for a train dataset and eval dataset
+    """
     train: Dataset
     validation: Dataset
 
 
 @dataclass
 class TrainEvalDataLoaderPair:
+    """
+    Container for a train dataloader and eval dataloader
+    """
     train: DataLoader
     eval: DataLoader
 
 
 @dataclass
 class X19MLSTMTuningRanges:
+    """
+    Container of hyperparameter tuning ranges intended for use with Optuna
+    """
     log_lstm_hidden_size: tuple[int, int] = lcs.TUNING_LOG_LSTM_HIDDEN_SIZE
     lstm_act_options: tuple[str, ...] = lcs.TUNING_LSTM_ACT_OPTIONS
     dropout: tuple[float, float] = lcs.TUNING_DROPOUT
@@ -49,9 +58,11 @@ class NonArchHyperParameterSettings:
     log_batch_size: int
 
 
-# TODO segregate into params for model and params for trainer
 @dataclass
 class X19LSTMHyperParameterSettings:
+    """
+    Hyperparameter values
+    """
     log_lstm_hidden_size: int
     lstm_act_name: str
     dropout: float
@@ -63,8 +74,14 @@ class X19LSTMHyperParameterSettings:
 
     @classmethod
     def from_optuna_active_trial(
-        cls, trial, tuning_ranges: X19MLSTMTuningRanges
+        cls, trial: optuna.Trial, tuning_ranges: X19MLSTMTuningRanges
     ):
+        """
+        Creates X19MLSTMTuningRanges object with getting Optuna suggestions
+        :param trial: currently running optuna.Trial
+        :param tuning_ranges: hyperparameter allowed ranges
+        :return:
+        """
         return cls(
             log_lstm_hidden_size=trial.suggest_int(
                 "log_lstm_hidden_size",
@@ -93,6 +110,10 @@ class X19LSTMHyperParameterSettings:
 
     @property
     def non_arch_settings(self) -> NonArchHyperParameterSettings:
+        """
+        Returns the subset of settings not related to model architecture
+        :return: values of non-architectural hyperparams
+        """
         return NonArchHyperParameterSettings(
             optimizer_name=self.optimizer_name,
             learning_rate=self.learning_rate,
@@ -101,6 +122,9 @@ class X19LSTMHyperParameterSettings:
 
 
 class X19LSTMBuilder:
+    """
+    Builds LSTM + 2 fully-connected layers model (as a torch.nn.Sequential)
+    """
     def __init__(
         self,
         settings: X19LSTMHyperParameterSettings,
@@ -112,6 +136,10 @@ class X19LSTMBuilder:
         self.fc_act_name = settings.fc_act_name
 
     def build(self) -> nn.Sequential:
+        """
+        Builds model using hyperparameters assigned in constructor
+        :return: a nn.Sequential model (takes VariableLengthFeatures as input)
+        """
         return nn.Sequential(
             lms.BidirectionalLSTMX19(
                 input_size=19,
@@ -132,6 +160,10 @@ class X19LSTMBuilder:
         )
 
     def build_for_model_graph(self) -> nn.Sequential:
+        """
+        Builds a model that does NOT take VariableLengthFeatures as input
+        :return: nn.Sequential model
+        """
         return nn.Sequential(
             lms.BidirectionalLSTMX19Graph(
                 input_size=19,
@@ -154,19 +186,22 @@ class X19LSTMBuilder:
 
 @dataclass
 class ObjectiveFunctionTools:
+    """
+    Collection of tools needed by HyperparameterTuner.objective_fn
+    """
     settings: X19LSTMHyperParameterSettings
     summary_writer: SummaryWriter
     cv_means_log: ds.EvalLog
     trainers: list[smt.StandardModelTrainer]
 
 
-
-
-
 _T = TypeVar("_T")
 
 
 class PerformanceSelector:
+    """
+    Generic selector of min or max vals. Used by HyperparameterTuner.
+    """
     _selection_dispatch = {
         optuna.study.StudyDirection.MINIMIZE: min,
         "min": min,

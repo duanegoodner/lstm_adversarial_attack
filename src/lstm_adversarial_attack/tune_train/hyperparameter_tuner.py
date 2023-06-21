@@ -12,22 +12,22 @@ from torch.utils.tensorboard import SummaryWriter
 from typing import Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-
 import lstm_adversarial_attack.config_settings as cs
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.data_structures as ds
-
-# import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
 import lstm_adversarial_attack.weighted_dataloader_builder as wdb
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 
 
-# TODO Try to replace cross-validtion work here with CrossValidator (But think
-#  about how to match generic CrossValidator with requirements of Optuna
-#  study / trials)
+# TODO Try to replace cross-validation work here with CrossValidator (if able
+#   to match generic CrossValidator with requirements of Optuna study / trials)
 class HyperParameterTuner:
+    """
+    Tunes hyperparameters. Runs K-fold CV for each set of hyperparams.
+    Uses Optuna pruning and optimization objects.
+    """
     def __init__(
         self,
         device: torch.device,
@@ -39,17 +39,17 @@ class HyperParameterTuner:
         epochs_per_fold: int = cs.TUNER_EPOCHS_PER_FOLD,
         fold_class: Callable = StratifiedKFold,
         kfold_random_seed: int = cs.TUNER_KFOLD_RANDOM_SEED,
-        loss_fn: nn.Module = nn.CrossEntropyLoss(),
+        # loss_fn: nn.Module = nn.CrossEntropyLoss(),
         cv_mean_metrics_of_interest: tuple[
             str
         ] = cs.TUNER_CV_MEAN_METRICS_OF_INTEREST,
         performance_metric: str = cs.TUNER_PERFORMANCE_METRIC,
         optimization_direction: optuna.study.StudyDirection = cs.TUNER_OPTIMIZATION_DIRECTION,
-        pruner: BasePruner = MedianPruner(
-            n_startup_trials=cs.TUNER_PRUNER_NUM_STARTUP_TRIALS,
-            n_warmup_steps=cs.TUNER_PRUNER_NUM_WARMUP_STEPS,
-        ),
-        hyperparameter_sampler: BaseSampler = TPESampler(),
+        # pruner: BasePruner = MedianPruner(
+        #     n_startup_trials=cs.TUNER_PRUNER_NUM_STARTUP_TRIALS,
+        #     n_warmup_steps=cs.TUNER_PRUNER_NUM_WARMUP_STEPS,
+        # ),
+        # hyperparameter_sampler: BaseSampler = TPESampler(),
         output_dir: Path = None,
         save_trial_info: bool = True,
         trial_prefix: str = "trial_",
@@ -65,7 +65,7 @@ class HyperParameterTuner:
         # use seed to keep same fold indices for all trials
         self.kfold_random_seed = kfold_random_seed
         self.cv_datasets = self.create_datasets()
-        self.loss_fn = loss_fn
+        self.loss_fn = nn.CrossEntropyLoss()
         self.performance_metric = performance_metric
         self.optimization_direction = optimization_direction
         self.optimization_direction_label = (
@@ -73,10 +73,13 @@ class HyperParameterTuner:
             if optimization_direction == optuna.study.StudyDirection.MINIMIZE
             else "maximize"
         )
-        self.pruner = pruner
+        self.pruner = MedianPruner(
+            n_startup_trials=cs.TUNER_PRUNER_NUM_STARTUP_TRIALS,
+            n_warmup_steps=cs.TUNER_PRUNER_NUM_WARMUP_STEPS,
+        )
         self.cv_mean_metrics_of_interest = cv_mean_metrics_of_interest
         self.tuning_ranges = tuning_ranges
-        self.hyperparameter_sampler = hyperparameter_sampler
+        self.hyperparameter_sampler = TPESampler()
         if output_dir is None:
             output_dir = rio.create_timestamped_dir(
                 parent_path=cfg_paths.HYPERPARAMETER_OUTPUT_DIR
@@ -91,6 +94,11 @@ class HyperParameterTuner:
         self.continue_study_path = continue_study_path
 
     def create_datasets(self) -> list[tuh.TrainEvalDatasetPair]:
+        """
+        Creates the K-fold datasets.
+        Same datasets are used for each set of hyperparameters.
+        :return: train/eval dataset pair for each fold
+        """
         fold_generator_builder = self.fold_class(
             n_splits=self.num_folds,
             shuffle=True,
@@ -119,6 +127,12 @@ class HyperParameterTuner:
 
     @staticmethod
     def initialize_model(model: nn.Module):
+        """
+        Initializes params of model. Currently not used.
+
+        May need if using same model object for different folds
+        :param model: a Pytorch model
+        """
         for name, param in model.named_parameters():
             if "weight" in name:
                 nn.init.xavier_normal_(param)
@@ -130,7 +144,14 @@ class HyperParameterTuner:
         settings: tuh.X19LSTMHyperParameterSettings,
         summary_writer: SummaryWriter,
         trial_number: int,
-    ):
+    ) -> list[smt.StandardModelTrainer]:
+        """
+        Creates one StandardModelTrainer per fold.
+        :param settings: hyperparameter settings for an optuna.Trial
+        :param summary_writer: object that writes to Tensorboard
+        :param trial_number: .number value of optuna.Trial using trainers
+        :return: list containing the StandardModelTrainer objects
+        """
         trainers = []
         for fold_idx, dataset_pair in enumerate(self.cv_datasets):
             model = tuh.X19LSTMBuilder(settings=settings).build()
@@ -147,8 +168,7 @@ class HyperParameterTuner:
             )
 
             trainer = smt.StandardModelTrainer(
-                train_device=self.device,
-                eval_device=self.device,
+                device=self.device,
                 model=model,
                 loss_fn=self.loss_fn,
                 optimizer=getattr(torch.optim, settings.optimizer_name)(
@@ -168,10 +188,18 @@ class HyperParameterTuner:
 
     def export_trial_info(
         self,
-        trial,
+        trial: optuna.Trial,
         trainers: list[smt.StandardModelTrainer],
         cv_means_log: ds.EvalLog,
     ):
+        """
+        Saves a completed optuna.Trial object to pickle file.
+
+        Trial objective metric is a mean across all folds.
+        :param trial: completed optuna.Trial object
+        :param trainers: the StandardModelTrainers form trial (1 per fold)
+        :param cv_means_log: log of cross-fold means of performance metrics
+        """
         if not self.tuner_checkpoint_dir.exists():
             self.tuner_checkpoint_dir.mkdir()
 
@@ -197,6 +225,12 @@ class HyperParameterTuner:
         summary_writer: SummaryWriter,
         trial: optuna.Trial,
     ):
+        """
+        Writes cross-fold mean metric data to Tensorboard
+        :param log_entry: metric mean data from block of epochs
+        :param summary_writer: object that writes to Tensorboard output dir
+        :param trial: ongoing optuna trial that generated data
+        """
         for metric in self.cv_mean_metrics_of_interest:
             summary_writer.add_scalar(
                 f"{self.trial_prefix}{trial.number}/{metric}_mean",
@@ -205,6 +239,11 @@ class HyperParameterTuner:
             )
 
     def build_objective_function_tools(self, trial: optuna.Trial):
+        """
+        Builds ObjectiveFunctionTools object to be used by trial
+        :param trial:
+        :return: dataclass containing objects for use during trial
+        """
         settings = tuh.X19LSTMHyperParameterSettings.from_optuna_active_trial(
             trial=trial, tuning_ranges=self.tuning_ranges
         )
@@ -224,10 +263,20 @@ class HyperParameterTuner:
         )
 
     def objective_fn(self, trial) -> float | None:
+        """
+        Runs cross-validation & returns mean of a performance metric across
+        folds (metric specified by self.performance_metric). Epochs are run in
+        blocks, and each block is completed for all folds before proceeding to
+        next block. This allows Optuna to prune trials based on cross-fold mean
+        values.
+        :param trial: Current optuna Trial
+        :return: mean value of a performance metric
+        :rtype:
+        """
         objective_tools = self.build_objective_function_tools(trial=trial)
 
-        # TODO consider setting seed here so WeightedRandomSampler makes same
-        #  selections across all trials
+        # TODO consider setting seed here to ensure WeightedRandomSampler
+        #  makes same selections across all trials
         for cv_epoch in range(self.num_cv_epochs):
             eval_epoch_results = []
             for fold_idx, trainer in enumerate(objective_tools.trainers):
@@ -235,6 +284,7 @@ class HyperParameterTuner:
                 trainer.evaluate_model()
                 eval_epoch_results.append(trainer.eval_log.latest_entry)
                 trainer.model.to("cpu")
+
             mean_validation_vals = ds.EvalEpochResult.mean(
                 [item.result for item in eval_epoch_results]
             )
@@ -253,6 +303,7 @@ class HyperParameterTuner:
                 trial=trial,
             )
 
+            # report result so Optuna can determine if trial should be pruned
             trial.report(
                 getattr(mean_validation_vals, self.performance_metric),
                 cv_epoch,
@@ -278,6 +329,10 @@ class HyperParameterTuner:
         )
 
     def export_study(self, study: optuna.Study):
+        """
+        Saves optuna.Study object to pickle.
+        :param study: the optuna.Study object ot be saved
+        """
         if not self.tuner_checkpoint_dir.exists():
             self.tuner_checkpoint_dir.mkdir()
         study_filename = f"optuna_study.pickle"
@@ -286,6 +341,10 @@ class HyperParameterTuner:
 
     @staticmethod
     def report_study_results(study: optuna.Study):
+        """
+        Prints summary info form study to terminal
+        :param study: an optuna.Study
+        """
         pruned_trials = study.get_trials(
             deepcopy=False, states=[TrialState.PRUNED]
         )
@@ -307,6 +366,12 @@ class HyperParameterTuner:
     def tune(
         self, num_trials: int, timeout: int | None = None
     ) -> optuna.Study:
+        """
+        Initiate and run an optuna study.
+        Result saved to self.tuner_checkpoint_dir
+        :param num_trials: number of trials to run
+        :param timeout: max time for study (default is no limit)
+        """
         print(
             "Starting hyperparameter tuning.\n\n"
             "Data for Tensorboard will be written to:\n"

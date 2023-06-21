@@ -8,7 +8,6 @@ dependencies:
   - black
   - docker-py
   - dill
-  - graphviz
 #  - gensim
   - isort
   - jupyter
@@ -25,6 +24,7 @@ dependencies:
   - setuptools
   - pip:
     - git+https://github.com/duanegoodner/pygetfacl@0.0.5
+    - graphviz
     - jupyterlab_limit_output
     - jupyterlab-variableinspector
     - netron

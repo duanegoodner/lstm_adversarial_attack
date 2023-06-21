@@ -11,13 +11,15 @@ import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 import lstm_adversarial_attack.config_settings as lcs
 
 
-
 class TunerDriver:
+    """
+    Instantiates and runs a HyperparameterTuner
+    """
     def __init__(
         self,
         device: torch.device,
-        tuning_ranges: tuh.X19MLSTMTuningRanges = tuh.X19MLSTMTuningRanges(),
-        dataset: xmd.X19MGeneralDataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(),
+        # tuning_ranges: tuh.X19MLSTMTuningRanges = tuh.X19MLSTMTuningRanges(),
+        # dataset: xmd.X19MGeneralDataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(),
         collate_fn: Callable = xmd.x19m_collate_fn,
         continue_study_path: Path = None,
         output_dir: Path = None
@@ -25,14 +27,19 @@ class TunerDriver:
     ):
         self.tuner = htu.HyperParameterTuner(
             device=device,
-            dataset=dataset,
+            dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
             collate_fn=collate_fn,
-            tuning_ranges=tuning_ranges,
+            tuning_ranges=tuh.X19MLSTMTuningRanges(),
             continue_study_path=continue_study_path,
             output_dir=output_dir
         )
 
     def run(self, num_trials: int) -> optuna.Study:
+        """
+        Runs an optuna study for num_trials
+        :param num_trials: number of trials to run
+        :return: completed optuna study
+        """
         completed_study = self.tuner.tune(num_trials=num_trials)
         return completed_study
 

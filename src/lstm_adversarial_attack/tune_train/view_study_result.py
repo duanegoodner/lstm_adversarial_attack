@@ -1,3 +1,6 @@
+# development script for viewing saved Optuna study object and creating
+# a graph object representing model with best hyperparams from study
+
 import sys
 from pathlib import Path
 from torchview import draw_graph
@@ -25,4 +28,6 @@ cur_model = tuh.X19LSTMBuilder(
 cur_model_graph = draw_graph(
     model=cur_model, input_size=(32, 19), device="meta"
 )
-cur_model_graph.visual_graph.render(cfg_paths.DATA_DIR / "test_graph", format="png")
+cur_model_graph.visual_graph.render(
+    cfg_paths.DATA_DIR / "test_graph", format="png"
+)

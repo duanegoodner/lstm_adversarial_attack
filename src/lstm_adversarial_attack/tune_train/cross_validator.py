@@ -4,7 +4,6 @@ from pathlib import Path
 from sklearn.model_selection import StratifiedKFold
 from torch.utils.data import Dataset, Subset
 from typing import Callable
-
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as lcs
@@ -15,6 +14,9 @@ import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
 
 class CrossValidator:
+    """
+    Runs K-fold cross-validation
+    """
     def __init__(
         self,
         device: torch.device,
@@ -49,6 +51,10 @@ class CrossValidator:
         self.save_fold_info = save_fold_info
 
     def create_datasets(self) -> list[tuh.TrainEvalDatasetPair]:
+        """
+        Generates train/eval datasets (subsets of full dataset) for each fold
+        :return: K pairs of train/eval datasets
+        """
         fold_generator_builder = self.fold_class(
             n_splits=self.num_folds,
             shuffle=True,
@@ -78,9 +84,17 @@ class CrossValidator:
     def run_fold(
         self, fold_idx: int, train_eval_pair: tuh.TrainEvalDatasetPair
     ):
+        """
+        Runs train/eval sequences for a single fold.
+
+        Results get saved under self.root_output_dir
+        :param fold_idx: index of fold
+        :param train_eval_pair: train/eval dataset pair for current fold
+        """
         trainer_driver = td.TrainerDriver(
-            train_device=self.device,
-            eval_device=self.device,
+            # train_device=self.device,
+            # eval_device=self.device,
+            device=self.device,
             hyperparameter_settings=self.hyperparameter_settings,
             model=tuh.X19LSTMBuilder(
                 settings=self.hyperparameter_settings
@@ -103,6 +117,11 @@ class CrossValidator:
         )
 
     def run_all_folds(self):
+        """
+        Runs train/eval sequence on all folds.
+
+        Results saved under self.root_output_dir
+        """
         for fold_idx, train_eval_pair in enumerate(self.cv_datasets):
             self.run_fold(fold_idx=fold_idx, train_eval_pair=train_eval_pair)
 
