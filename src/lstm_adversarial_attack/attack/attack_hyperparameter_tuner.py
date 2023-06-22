@@ -38,9 +38,8 @@ class AttackHyperParameterTuner:
             output_dir=output_dir
         )
 
-    @staticmethod
     def initialize_output_dir(
-        output_dir: Path = None
+        self, output_dir: Path = None
     ) -> tuple[Path, Path]:
         if output_dir is None:
             initialized_output_dir = rio.create_timestamped_dir(
@@ -50,6 +49,11 @@ class AttackHyperParameterTuner:
             initialized_output_dir = output_dir
             if not initialized_output_dir.exists():
                 initialized_output_dir.mkdir()
+
+        rio.ResourceExporter().export(
+            resource=self,
+            path=initialized_output_dir / "attack_hyperparameter_tuner.pickle",
+        )
 
         attack_results_dir = initialized_output_dir / "attack_trial_results"
         if not attack_results_dir.exists():
