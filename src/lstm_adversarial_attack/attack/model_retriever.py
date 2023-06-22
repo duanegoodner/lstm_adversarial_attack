@@ -36,6 +36,23 @@ class ModelRetriever:
         self.checkpoints_dir = self.training_output_dir / "checkpoints"
         self.model_path = self.training_output_dir / "model.pickle"
 
+    @property
+    def _retriever_dispatch(self) -> dict:
+        return {
+            ModelAssessmentType.SINGLE_FOLD: self.get_single_fold_trained_model,
+            ModelAssessmentType.KFOLD: self.get_cv_trained_model,
+        }
+
+    def get_model(
+        self,
+        assessment_type: ModelAssessmentType,
+        eval_metric: cvs.EvalMetric,
+        optimize_direction: cvs.OptimizeDirection,
+    ) -> ModelPathCheckpointPair:
+        return self._retriever_dispatch[assessment_type](
+            eval_metric, optimize_direction
+        )
+
     def get_single_fold_trained_model(
         self,
         eval_metric: cvs.EvalMetric,
@@ -77,5 +94,5 @@ if __name__ == "__main__":
     )
     kfold_model_checkpoint_pair = kfold_model_retriever.get_cv_trained_model(
         metric=cvs.EvalMetric.VALIDATION_LOSS,
-        optimize_direction=cvs.OptimizeDirection.MIN
+        optimize_direction=cvs.OptimizeDirection.MIN,
     )

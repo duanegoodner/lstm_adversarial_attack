@@ -11,7 +11,7 @@ import lstm_adversarial_attack.config_settings as lcs
 from lstm_adversarial_attack.data_structures import VariableLengthFeatures
 
 
-class BidirectionalLSTMX19(nn.Module):
+class BidirectionalX19LSTM(nn.Module):
     """
     Bidirectional, single layer LSTM that takes VariableLengthFeatures objects
     as input.
@@ -21,7 +21,7 @@ class BidirectionalLSTMX19(nn.Module):
         lstm_hidden_size: int,
         input_size: int = lcs.LSTM_INPUT_SIZE,
     ):
-        super(BidirectionalLSTMX19, self).__init__()
+        super(BidirectionalX19LSTM, self).__init__()
         self.input_size = input_size
         self.lstm_hidden_size = lstm_hidden_size
         self.lstm = nn.LSTM(
