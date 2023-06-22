@@ -24,24 +24,26 @@ if __name__ == "__main__":
     )
 
     fold_summarizer = cvs.FoldSummarizer.from_fold_checkpoint_dir(
-        fold_checkpoint_dir=cfg_paths.TRAINING_OUTPUT_DIR
+        fold_checkpoint_dir=cfg_paths.SINGLE_FOLD_OUTPUT_DIR
         / "2023-06-17_18_43_05.989001"
-        / "checkpoints"
+        / "checkpoints",
+        fold_num=0,
     )
 
     best_checkpoint = fold_summarizer.get_extreme_checkpoint(
         metric=cvs.EvalMetric.VALIDATION_LOSS,
-        optimize_direction=cvs.OptimizeDirection.MIN
+        optimize_direction=cvs.OptimizeDirection.MIN,
     )
 
     tuner = aht.AttackHyperParameterTuner(
         device=cur_device,
-        model_path=cfg_paths.TRAINING_OUTPUT_DIR / "2023-06-17_18_43_05.989001" /
-        "model.pickle",
+        model_path=cfg_paths.SINGLE_FOLD_OUTPUT_DIR
+        / "2023-06-17_18_43_05.989001"
+        / "model.pickle",
         checkpoint=best_checkpoint,
         epochs_per_batch=1000,
         max_num_samples=16,
-        tuning_ranges=tuning_ranges
+        tuning_ranges=tuning_ranges,
     )
 
     study_result = tuner.tune(num_trials=20)

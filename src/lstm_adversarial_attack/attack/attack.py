@@ -133,7 +133,7 @@ if __name__ == "__main__":
         cur_device = torch.device("cpu")
 
     checkpoint_retriever = bcr.BestCheckpointRetriever.from_checkpoints_dir(
-        checkpoints_dir=cfg_paths.TRAINING_OUTPUT_DIR
+        checkpoints_dir=cfg_paths.SINGLE_FOLD_OUTPUT_DIR
         / "2023-06-14_14_40_10.365521"
         / "checkpoints"
     )
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         optimizer_constructor_kwargs={"lr": 0.01340580859093695},
         batch_size=16,
         epochs_per_batch=500,
-        model_path=cfg_paths.TRAINING_OUTPUT_DIR
+        model_path=cfg_paths.SINGLE_FOLD_OUTPUT_DIR
         / "2023-06-14_14_40_10.365521"
         / "model.pickle",
         checkpoint=best_checkpoint,

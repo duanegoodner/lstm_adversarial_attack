@@ -62,13 +62,12 @@ ONGOING_TUNING_STUDY_PICKLE = (
 # )
 
 # ##### Cross Validation Assessment Output #####
-CV_ASSESSMENT_OUTPUT_DIR = DATA_DIR / "cv_assessments"
+MODEL_ASSESSMENTS_DIR = DATA_DIR / "model_assessments"
+CV_ASSESSMENT_OUTPUT_DIR = MODEL_ASSESSMENTS_DIR / "cross_validation"
+SINGLE_FOLD_OUTPUT_DIR = MODEL_ASSESSMENTS_DIR / "single_fold_training"
 
-# ##### Model Training #####
-TRAINING_OUTPUT_DIR = DATA_DIR / "model_training"
 
-
-DEFAULT_ATTACK_TARGET_DIR = TRAINING_OUTPUT_DIR / "default_attack_target"
+DEFAULT_ATTACK_TARGET_DIR = SINGLE_FOLD_OUTPUT_DIR / "default_attack_target"
 
 ATTACK_OUTPUT_DIR = DATA_DIR / "attack"
 ATTACK_HYPERPARAMETER_TUNING = (

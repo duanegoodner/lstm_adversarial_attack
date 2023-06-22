@@ -3,14 +3,25 @@ import sys
 import torch
 from enum import Enum, auto
 from pathlib import Path
+
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_paths as cfg_paths
+import lstm_adversarial_attack.config_paths as lcp
+
+
+def get_newest_sub_dir(path: Path) -> Path | None:
+    assert path.is_dir()
+    sub_dirs = [item for item in path.iterdir() if item.is_dir()]
+    if len(sub_dirs) != 0:
+        return sorted(sub_dirs, key=lambda x: x.name)[-1]
+    else:
+        return None
 
 
 class OptimizeDirection(Enum):
     """
     For use by methods in FoldSummarizer and CrossValidation Summarizer
     """
+
     MAX = auto()
     MIN = auto()
 
@@ -19,6 +30,7 @@ class EvalMetric(Enum):
     """
     For use by methods in FoldSummarizer and CrossValidation Summarizer
     """
+
     AUC = auto()
     ACCURACY = auto()
     F1 = auto()
@@ -31,6 +43,7 @@ class FoldSummarizer:
     """
     Summarizes train and eval data from single fold
     """
+
     def __init__(
         self,
         fold_checkpoints: list[dict],
@@ -48,7 +61,7 @@ class FoldSummarizer:
         self.fold_num = fold_num
 
     # translated enums into object attributes
-    _metric_dispatch = {
+    metric_dispatch = {
         EvalMetric.AUC: "auc",
         EvalMetric.ACCURACY: "accuracy",
         EvalMetric.F1: "f1",
@@ -123,11 +136,11 @@ class FoldSummarizer:
         """
         if optimize_direction == OptimizeDirection.MIN:
             extreme_idx = (
-                self.result_df[[self._metric_dispatch[metric]]].idxmin().item()
+                self.result_df[[self.metric_dispatch[metric]]].idxmin().item()
             )
         else:
             extreme_idx = (
-                self.result_df[[self._metric_dispatch[metric]]].idxmax().item()
+                self.result_df[[self.metric_dispatch[metric]]].idxmax().item()
             )
         return extreme_idx
 
@@ -155,28 +168,26 @@ class FoldSummarizer:
 
 
 class CrossValidationSummarizer:
-    def __init__(self, fold_summarizers: list[FoldSummarizer]):
+    def __init__(self, fold_summarizers: dict[int, FoldSummarizer]):
         self.fold_summarizers = fold_summarizers
 
     @classmethod
     def from_cv_checkpoints_dir(cls, cv_checkpoints_dir: Path = None):
         if cv_checkpoints_dir is None:
-            cv_output_root = sorted(
-                [
-                    item
-                    for item in cfg_paths.CV_ASSESSMENT_OUTPUT_DIR.iterdir()
-                    if item.is_dir()
-                ]
-            )[-1]
+            cv_output_root = get_newest_sub_dir(
+                path=lcp.CV_ASSESSMENT_OUTPUT_DIR
+            )
             cv_checkpoints_dir = cv_output_root / "checkpoints"
 
-        fold_checkpoint_dirs = sorted(cv_checkpoints_dir.glob("fold*"))
-        fold_summarizers = [
-            FoldSummarizer.from_fold_checkpoint_dir(
-                fold_checkpoint_dir=fold_checkpoint_dirs[i], fold_num=i
+        fold_checkpoint_dirs = list(cv_checkpoints_dir.glob("fold*"))
+        fold_checkpoint_dirs.sort(key=lambda x: x.stat().st_mtime)
+        fold_summarizers = {
+            fold_index: FoldSummarizer.from_fold_checkpoint_dir(
+                fold_checkpoint_dir=fold_checkpoint_dirs[fold_index],
+                fold_num=fold_index,
             )
-            for i in range(len(fold_checkpoint_dirs))
-        ]
+            for fold_index in range(len(fold_checkpoint_dirs))
+        }
         return cls(fold_summarizers=fold_summarizers)
 
     @property
@@ -196,7 +207,7 @@ class CrossValidationSummarizer:
             fold.get_extreme_checkpoint(
                 metric=metric, optimize_direction=optimize_direction
             )
-            for fold in self.fold_summarizers
+            for index, fold in self.fold_summarizers.items()
         ]
 
     def get_optimal_results_df(
@@ -209,14 +220,39 @@ class CrossValidationSummarizer:
         :return: dataframe (cols --> metrics, rows --> folds)
         """
         best_rows = [
-            item.get_optimal_result_row(
+            fold.get_optimal_result_row(
                 metric=metric, optimize_direction=optimize_direction
             )
-            for item in self.fold_summarizers
+            for index, fold in self.fold_summarizers.items()
         ]
-        df = pd.concat(best_rows, axis=1).T
+        df = pd.concat(best_rows, axis=1).T.reset_index(names="fold")
         df["epoch"] = df["epoch"].astype("int")
         return df
+
+    def get_midrange_fold(
+        self, metric: EvalMetric, optimize_direction: OptimizeDirection
+    ):
+        optimal_results_df = self.get_optimal_results_df(
+            metric=metric, optimize_direction=optimize_direction
+        )
+        metric_name = FoldSummarizer.metric_dispatch[metric]
+        sorted_optimal_results_df = optimal_results_df.sort_values(
+            by=[metric_name]
+        )
+
+        return sorted_optimal_results_df.iloc[
+            int(len(sorted_optimal_results_df) / 2)
+        ]["fold"].astype("int")
+
+    def get_midrange_checkpoint(
+        self, metric: EvalMetric, optimize_direction: OptimizeDirection
+    ):
+        midrange_fold = self.get_midrange_fold(
+            metric=metric, optimize_direction=optimize_direction
+        )
+        return self.fold_summarizers[midrange_fold].get_extreme_checkpoint(
+            metric=metric, optimize_direction=optimize_direction
+        )
 
 
 def main():

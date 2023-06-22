@@ -62,7 +62,7 @@ class SingleFoldTrainer:
         #     train_device=cur_device,
         #     eval_device=cur_device,
         #     train_eval_dataset_pair=train_eval_pair,
-        #     training_output_dir=cfg_paths.TRAINING_OUTPUT_DIR
+        #     training_output_dir=cfg_paths.SINGLE_FOLD_OUTPUT_DIR
         #     / "2023-06-17_18_06_39.996609",
         # )
 

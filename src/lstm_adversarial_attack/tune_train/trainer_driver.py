@@ -90,7 +90,7 @@ class TrainerDriver:
 
         if output_root_dir is None:
             output_root_dir = rio.create_timestamped_dir(
-                parent_path=cfg_paths.TRAINING_OUTPUT_DIR
+                parent_path=cfg_paths.SINGLE_FOLD_OUTPUT_DIR
             )
         else:
             output_root_dir.mkdir(parents=True, exist_ok=True)

@@ -55,7 +55,7 @@ class BestCheckpointRetriever:
 
 if __name__ == "__main__":
     my_checkpoints_dir = (
-        cfg_paths.TRAINING_OUTPUT_DIR / "2023-06-14_14_40_10.365521" / "checkpoints"
+        cfg_paths.SINGLE_FOLD_OUTPUT_DIR / "2023-06-14_14_40_10.365521" / "checkpoints"
     )
     checkpoint_retriever = BestCheckpointRetriever.from_checkpoints_dir(
         checkpoints_dir=my_checkpoints_dir
