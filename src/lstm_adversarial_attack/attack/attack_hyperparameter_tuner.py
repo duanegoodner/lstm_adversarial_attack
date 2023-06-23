@@ -89,12 +89,21 @@ class AttackHyperParameterTuner:
             trainer_result=trainer_result
         )
 
-        if len(success_summary.best_perts_summary.sparse_small_scores) == 0:
+        # if len(success_summary.best_perts_summary.sparse_small_scores) == 0:
+        #     return 0.0
+        # else:
+        #     return torch.sum(
+        #         success_summary.best_perts_summary.sparse_small_scores
+        #     ).item()
+
+        if len(success_summary.best_perts_summary.sparsity) == 0:
             return 0.0
         else:
             return torch.sum(
-                success_summary.best_perts_summary.sparse_small_scores
+                success_summary.best_perts_summary.sparsity
             ).item()
+
+
 
     def export_study(self, study: optuna.Study):
         study_filename = "optuna_study.pickle"

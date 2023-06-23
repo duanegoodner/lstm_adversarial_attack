@@ -193,6 +193,12 @@ class PerturbationSummary:
         self.fraction_nonzero = (
             self.num_nonzero.float() / self.num_actual_elements.float()
         )
+
+        if len(self.fraction_nonzero) == 0:
+            self.sparsity = torch.tensor([], dtype=torch.float32)
+        else:
+            self.sparsity = 1 - self.fraction_nonzero
+
         if len(self.fraction_nonzero) == 0:
             self.sparse_small_scores = torch.tensor([], dtype=torch.float32)
         else:
