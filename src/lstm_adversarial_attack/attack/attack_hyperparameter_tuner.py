@@ -24,6 +24,7 @@ class AttackHyperParameterTuner:
         pruner: BasePruner = MedianPruner(),
         hyperparameter_sampler: BaseSampler = TPESampler(),
         output_dir: Path = None,
+        continue_study_path: Path = None,
     ):
         self.device = device
         self.model_path = model_path
@@ -37,6 +38,7 @@ class AttackHyperParameterTuner:
         self.output_dir, self.attack_results_dir = self.initialize_output_dir(
             output_dir=output_dir
         )
+        self.continue_study_path = continue_study_path
 
     def initialize_output_dir(
         self, output_dir: Path = None
@@ -49,11 +51,6 @@ class AttackHyperParameterTuner:
             initialized_output_dir = output_dir
             if not initialized_output_dir.exists():
                 initialized_output_dir.mkdir()
-
-        rio.ResourceExporter().export(
-            resource=self,
-            path=initialized_output_dir / "attack_hyperparameter_tuner.pickle",
-        )
 
         attack_results_dir = initialized_output_dir / "attack_trial_results"
         if not attack_results_dir.exists():
@@ -107,9 +104,14 @@ class AttackHyperParameterTuner:
     def tune(
         self, num_trials: int, timeout: int | None = None
     ) -> optuna.Study:
-        study = optuna.create_study(
-            direction="maximize", sampler=self.hyperparameter_sampler
-        )
+        if self.continue_study_path is not None:
+            study = rio.ResourceImporter().import_pickle_to_object(
+                path=self.continue_study_path
+            )
+        else:
+            study = optuna.create_study(
+                direction="maximize", sampler=self.hyperparameter_sampler
+            )
         for trial_num in range(num_trials):
             study.optimize(func=self.objective_fn, n_trials=1, timeout=timeout)
             self.export_study(study=study)

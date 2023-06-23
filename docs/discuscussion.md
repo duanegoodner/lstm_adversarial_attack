@@ -18,7 +18,7 @@ and attempt to find one or more set of modified features , when applied to the i
 
 
 
-Our method of adversarial attack is similar to the approaches of Chen et al. and Sun et al. When attacking a binary classification model with trained parameters $\theta$, we start with the input feature matrix $X$ of a sample that the model correctly predicts to be in class $t_{c}$, so  $M(X) = t_{c}$ where $M$ is the model's prediction function. We then search for a perturbation matrix $P$ that meets the condition:
+Our method of adversarial attack is similar to Chen et al.'s approch that uses an adversarial loss function and L1 regularization. When attacking a binary classification model with trained parameters $\theta$, we start with the input feature matrix $X$ of a sample that the model correctly predicts to be in class $t_{c}$, so  $M(X) = t_{c}$ where $M$ is the model's prediction function. We then search for a perturbation matrix $P$ that meets the condition:
 $$
 M(X + P) \ne t_{c}
 $$
@@ -26,7 +26,7 @@ Since we are dealing with binary classification, this condition is equivalent to
 $$
 M(X + P) = \neg{t_{c}}
 $$
-where $\neg{t_c}$ is the boolean opposite of $t_c$. Defining a perturbed feature matrix $\widetilde{X} = X + P$ , an adversarial loss function can be written as:
+where $\neg{t_c}$ is the negationz of $t_c$. Defining a perturbed feature matrix $\widetilde{X} = X + P$ , an adversarial loss function can be written as:
 $$
 max\{[Logit(\widetilde{X})]_{t_c} - [Logit(X)]_{\neg{t_c}}, - \kappa \}
 $$
@@ -35,7 +35,6 @@ $$
 $$
 max\{[Logit(\widetilde{X})]_{y_\theta} - [Logit(X)]_{\widetilde{y}_\theta}, - \kappa \} + \lambda||\widetilde{X}-X||_1
 $$
-
 
 
 

@@ -20,6 +20,7 @@ class AttackTunerDriver:
         target_model_path: Path,
         target_model_checkpoint: dict,
         tuning_ranges: ads.AttackTuningRanges = None,
+        output_dir: Path = None,
     ):
         self.device = device
         self.target_model_path = target_model_path
@@ -33,17 +34,14 @@ class AttackTunerDriver:
                 log_batch_size=cfg_settings.ATTACK_TUNING_LOG_BATCH_SIZE,
             )
         self.tuning_ranges = tuning_ranges
-        self.output_dir = self.initialize_output_dir()
-
-    def initialize_output_dir(self):
-        initialized_output_dir = rio.create_timestamped_dir(
-            parent_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
-        )
+        if output_dir is None:
+            output_dir = rio.create_timestamped_dir(
+                parent_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
+            )
+        self.output_dir = output_dir
         rio.ResourceExporter().export(
-            resource=self,
-            path=initialized_output_dir / "attack_tuner_driver.pickle",
+            resource=self, path=self.output_dir / "attack_tuner_driver.pickle"
         )
-        return initialized_output_dir
 
     @classmethod
     def from_model_assessment(
@@ -79,23 +77,77 @@ class AttackTunerDriver:
             epochs_per_batch=cfg_settings.ATTACK_TUNING_EPOCHS,
             max_num_samples=cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
             tuning_ranges=self.tuning_ranges,
-            output_dir=self.output_dir
+            output_dir=self.output_dir,
+        )
+
+        return tuner.tune(num_trials=num_trials)
+
+    def restart(self, output_dir: Path, num_trials: int) -> optuna.Study:
+        tuner = aht.AttackHyperParameterTuner(
+            device=self.device,
+            model_path=self.target_model_path,
+            checkpoint=self.target_model_checkpoint,
+            epochs_per_batch=cfg_settings.ATTACK_TUNING_EPOCHS,
+            max_num_samples=cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
+            tuning_ranges=self.tuning_ranges,
+            continue_study_path=output_dir / "optuna_study.pickle",
+            output_dir=output_dir,
         )
 
         return tuner.tune(num_trials=num_trials)
 
 
-if __name__ == "__main__":
+def start_new_tuning(
+    num_trials: int,
+    target_model_assessment_type: amr.ModelAssessmentType,
+    target_model_assessment_dir: Path = None,
+) -> optuna.Study:
     if torch.cuda.is_available():
-        cur_device = torch.device("cuda:0")
+        device = torch.device("cuda:0")
     else:
-        cur_device = torch.device("cpu")
+        device = torch.device("cpu")
 
     tuner_driver = AttackTunerDriver.from_model_assessment(
-        device=cur_device,
-        assessment_type=amr.ModelAssessmentType.KFOLD,
+        device=device,
+        assessment_type=target_model_assessment_type,
         selection_metric=cvs.EvalMetric.VALIDATION_LOSS,
         optimize_direction=cvs.OptimizeDirection.MIN,
+        training_output_dir=target_model_assessment_dir,
     )
 
-    study_result = tuner_driver.run(num_trials=20)
+    print(
+        "Starting new Attack Hyperparameter Tuning study using trained"
+        f" predictive model in:\n {tuner_driver.target_model_path}\n\n"
+        f"Tuning results will be saved in: {tuner_driver.output_dir}\n"
+    )
+
+    return tuner_driver.run(num_trials=num_trials)
+
+
+def resume_tuning(ongoing_tuning_dir: Path = None) -> optuna.Study:
+    if ongoing_tuning_dir is None:
+        ongoing_tuning_dir = cvs.get_newest_sub_dir(
+            path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
+        )
+
+    reloaded_tuner_driver = rio.ResourceImporter().import_pickle_to_object(
+        path=ongoing_tuning_dir / "attack_tuner_driver.pickle"
+    )
+
+    print(
+        f"Resuming Attack Hyperparameter Tuning study data in:\n"
+        f"{reloaded_tuner_driver.output_dir}\n"
+    )
+
+    return reloaded_tuner_driver.restart(
+        output_dir=ongoing_tuning_dir, num_trials=20
+    )
+
+
+if __name__ == "__main__":
+    # initial_study = start_new_tuning(
+    #     num_trials=30,
+    #     target_model_assessment_type=amr.ModelAssessmentType.KFOLD,
+    # )
+
+    continued_study = resume_tuning()

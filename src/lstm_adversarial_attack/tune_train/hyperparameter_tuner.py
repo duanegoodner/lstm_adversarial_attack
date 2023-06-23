@@ -39,17 +39,11 @@ class HyperParameterTuner:
         epochs_per_fold: int = cs.TUNER_EPOCHS_PER_FOLD,
         fold_class: Callable = StratifiedKFold,
         kfold_random_seed: int = cs.TUNER_KFOLD_RANDOM_SEED,
-        # loss_fn: nn.Module = nn.CrossEntropyLoss(),
         cv_mean_metrics_of_interest: tuple[
             str
         ] = cs.TUNER_CV_MEAN_METRICS_OF_INTEREST,
         performance_metric: str = cs.TUNER_PERFORMANCE_METRIC,
         optimization_direction: optuna.study.StudyDirection = cs.TUNER_OPTIMIZATION_DIRECTION,
-        # pruner: BasePruner = MedianPruner(
-        #     n_startup_trials=cs.TUNER_PRUNER_NUM_STARTUP_TRIALS,
-        #     n_warmup_steps=cs.TUNER_PRUNER_NUM_WARMUP_STEPS,
-        # ),
-        # hyperparameter_sampler: BaseSampler = TPESampler(),
         output_dir: Path = None,
         save_trial_info: bool = True,
         trial_prefix: str = "trial_",

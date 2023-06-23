@@ -8,10 +8,10 @@ import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.attack.attack_results_analyzer as ara
 
 optuna_output_dir = (
-    cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-06-09_16:20:47.824222"
+    cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-06-22_13_40_47.561842"
 )
 study_path = optuna_output_dir / "optuna_study.pickle"
-trial_result_paths = list(optuna_output_dir.glob("*/*.pickle"))
+trial_result_paths = sorted((optuna_output_dir / "attack_trial_results").iterdir(), key=lambda x: x.stat().st_mtime)
 
 study = rio.ResourceImporter().import_pickle_to_object(path=study_path)
 

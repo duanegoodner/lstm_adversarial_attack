@@ -246,17 +246,23 @@ class AdversarialAttackTrainer:
 
         return batch_result
 
-    # def export(self):
-    #     output_path = rio.create_timestamped_filepath(
-    #         parent_path=ATTACK_OUTPUT_DIR, file_extension="pickle"
-    #     )
-    #     rio.ResourceExporter().export(resource=self, path=output_path)
+    def display_attack_info(self):
+        print(f"Running attacks with:\n"
+              f"batch_size = {self.batch_size}\n"
+              f"kappa = {self.kappa}\n"
+              f"lambda_1 = {self.lambda_1}\n"
+              f"optimizer = {self.optimizer_constructor}\n"
+              f"optimizer constructor kwargs = {self.optimizer_constructor}\n"
+              f"epochs per batch = {self.epochs_per_batch}\n"
+              f"max number of samples = {len(self.dataset)}\n")
 
     def train_attacker(self):
         data_loader = self.build_data_loader()
         self.attacker.to(self.device)
         self.set_attacker_train_mode()
         trainer_result = ads.TrainerResult(dataset=self.dataset)
+
+        self.display_attack_info()
 
         for num_batches, (indices, orig_features, orig_labels) in enumerate(
             data_loader

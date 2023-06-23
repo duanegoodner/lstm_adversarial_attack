@@ -18,8 +18,6 @@ class TunerDriver:
     def __init__(
         self,
         device: torch.device,
-        # tuning_ranges: tuh.X19MLSTMTuningRanges = tuh.X19MLSTMTuningRanges(),
-        # dataset: xmd.X19MGeneralDataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(),
         collate_fn: Callable = xmd.x19m_collate_fn,
         continue_study_path: Path = None,
         output_dir: Path = None
