@@ -77,7 +77,7 @@ class AttackHyperParameterTuner:
             max_num_samples=self.max_num_samples,
             sample_selection_seed=self.sample_selection_seed,
             output_dir=self.attack_results_dir,
-            result_file_prefix=f"trial_{trial.number}",
+            result_file_prefix=f"_trial_{trial.number}",
         )
 
         return attack_driver

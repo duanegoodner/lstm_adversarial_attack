@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from pathlib import Path
 from torch.utils.data import DataLoader, Subset
 from typing import Callable
 
@@ -9,6 +10,7 @@ import lstm_adversarial_attack.attack.attack_result_data_structs as ads
 import lstm_adversarial_attack.config_settings as lcs
 import lstm_adversarial_attack.dataset_with_index as dsi
 import lstm_adversarial_attack.data_structures as ds
+import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.weighted_dataloader_builder as wdb
 
 
@@ -29,6 +31,8 @@ class AdversarialAttackTrainer:
         attack_misclassified_samples: bool,
         inference_batch_size: int = 128,
         use_weighted_data_loader: bool = False,
+        checkpoint_interval: int = None,
+        output_dir: Path = None,
     ):
         self.device = device
         self.model = model
@@ -55,6 +59,10 @@ class AdversarialAttackTrainer:
         self.attack_misclassified_samples = attack_misclassified_samples
         self.use_weighted_data_loader = use_weighted_data_loader
         self.latest_result = None
+        self.checkpoint_interval = checkpoint_interval
+        self.output_dir = output_dir
+        if self.checkpoint_interval is not None:
+            assert self.output_dir is not None
 
     @property
     def batch_size(self) -> int:
@@ -257,6 +265,18 @@ class AdversarialAttackTrainer:
             f" {len(self.dataset)}\n"
         )
 
+    def save_checkpoint(
+        self, trainer_result: ads.TrainerResult, num_batches: int
+    ):
+        checkpoint_path = rio.create_timestamped_filepath(
+            parent_path=self.output_dir,
+            file_extension="pickle",
+            suffix=f"_{num_batches + 1}_batch_attack_result",
+        )
+        rio.ResourceExporter().export(
+            resource=trainer_result, path=checkpoint_path
+        )
+
     def train_attacker(self):
         data_loader = self.build_data_loader()
         self.attacker.to(self.device)
@@ -276,6 +296,13 @@ class AdversarialAttackTrainer:
             )
 
             trainer_result.update(batch_result=batch_result)
+
+            if self.checkpoint_interval is not None and (
+                (num_batches + 1) % self.checkpoint_interval == 0
+            ):
+                self.save_checkpoint(
+                    trainer_result=trainer_result, num_batches=num_batches
+                )
 
         self.latest_result = trainer_result
 

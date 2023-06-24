@@ -1,6 +1,8 @@
 import numpy as np
 import torch
+from torch.utils.data import Dataset
 from dataclasses import dataclass
+from enum import Enum, auto
 from typing import Callable
 import lstm_adversarial_attack.dataset_with_index as dsi
 
@@ -167,35 +169,29 @@ class PerturbationSummary:
     @property
     def actual_perts(self):
         return [
-        self.padded_perts[i, : self.input_seq_lengths[i], :]
-        for i in range(self.input_seq_lengths.shape[0])
-    ]
+            self.padded_perts[i, : self.input_seq_lengths[i], :]
+            for i in range(self.input_seq_lengths.shape[0])
+        ]
+
     @property
     def abs_perts(self):
         return [torch.abs(item) for item in self.actual_perts]
 
     @property
     def sum_abs_perts(self):
-        return torch.tensor(
-        [torch.sum(item) for item in self.abs_perts]
-    )
+        return torch.tensor([torch.sum(item) for item in self.abs_perts])
 
     @property
     def pert_magnitude_mean_vals(self):
-        return torch.tensor(
-        [torch.mean(item) for item in self.abs_perts]
-    )
+        return torch.tensor([torch.mean(item) for item in self.abs_perts])
 
     @property
     def pert_magnitude_min_vals(self):
-        return torch.tensor(
-        [torch.min(item) for item in self.abs_perts]
-    )
+        return torch.tensor([torch.min(item) for item in self.abs_perts])
+
     @property
     def pert_magnitude_max_vals(self):
-        return torch.tensor(
-        [torch.max(item) for item in self.abs_perts]
-    )
+        return torch.tensor([torch.max(item) for item in self.abs_perts])
 
     @property
     def pert_magnitude_global_mean(self):
@@ -212,8 +208,8 @@ class PerturbationSummary:
     @property
     def num_nonzero(self):
         return torch.tensor(
-        [torch.count_nonzero(item) for item in self.actual_perts]
-    )
+            [torch.count_nonzero(item) for item in self.actual_perts]
+        )
 
     def num_examples_with_num_nonzero_less_than(self, cutoff: int):
         return torch.where(self.num_nonzero < cutoff)[0].shape[0]
@@ -232,7 +228,6 @@ class PerturbationSummary:
 
     @property
     def fraction_nonzero_min(self):
-
         if len(self.fraction_nonzero) == 0:
             return torch.tensor([], dtype=torch.float32)
         else:
@@ -258,105 +253,207 @@ class PerturbationSummary:
         if len(self.fraction_nonzero) == 0:
             return torch.tensor([], dtype=torch.float32)
         else:
-            return (
-                1 - self.fraction_nonzero
-            ) / self.sum_abs_perts
+            return (1 - self.fraction_nonzero) / self.sum_abs_perts
+
+
+class RecordedExampleType(Enum):
+    FIRST = auto()
+    BEST = auto()
 
 
 class TrainerSuccessSummary:
     def __init__(self, trainer_result: TrainerResult):
-        best_success_trainer_indices = torch.where(
-            trainer_result.best_examples.epochs != -1
+        self.trainer_result = trainer_result
+
+    @property
+    def indices_attacked_dataset(self) -> torch.tensor:
+        return self.trainer_result.dataset_indices
+
+    @property
+    def indices_success_trainer(self) -> torch.tensor:
+        best_indices_success_trainer = torch.where(
+            self.trainer_result.best_examples.epochs != -1
         )[0]
-        first_success_trainer_indices = torch.where(
-            trainer_result.first_examples.epochs != -1
+        first_indices_success_trainer = torch.where(
+            self.trainer_result.first_examples.epochs != -1
         )[0]
         assert (
-            (best_success_trainer_indices == first_success_trainer_indices)
+            (best_indices_success_trainer == first_indices_success_trainer)
             .all()
             .item()
         )
+        return best_indices_success_trainer
 
-        self.dataset = trainer_result.dataset
-        self.attacked_dataset_indices = trainer_result.dataset_indices
-        self.success_dataset_indices = trainer_result.dataset_indices[
-            best_success_trainer_indices
+    @property
+    def indices_success_dataset(self) -> torch.tensor:
+        return self.trainer_result.dataset_indices[
+            self.indices_success_trainer
         ]
-        self.epochs_run = trainer_result.epochs_run[
-            best_success_trainer_indices
+
+    @property
+    def orig_labels_attacked(self) -> torch.tensor:
+        return self.trainer_result.dataset[:][2]
+
+    @property
+    def orig_labels_success(self) -> torch.tensor:
+
+
+
+
+    @property
+    def input_seq_lengths(self) -> torch.tensor:
+        return self.trainer_result.input_seq_lengths[
+            self.indices_success_trainer
         ]
-        self.input_seq_lengths = trainer_result.input_seq_lengths[
-            best_success_trainer_indices
-        ]
-        self.first_examples = RecordedTrainerExamples(
-            epochs=trainer_result.first_examples.epochs[
-                first_success_trainer_indices
+
+    @property
+    def first_recorded_examples(self) -> RecordedTrainerExamples:
+        return RecordedTrainerExamples(
+            epochs=self.trainer_result.first_examples.epochs[
+                self.indices_success_trainer
             ],
-            losses=trainer_result.first_examples.losses[
-                first_success_trainer_indices
+            losses=self.trainer_result.first_examples.losses[
+                self.indices_success_trainer
             ],
-            perturbations=trainer_result.first_examples.perturbations[
-                first_success_trainer_indices, :, :
+            perturbations=self.trainer_result.first_examples.perturbations[
+                self.indices_success_trainer, :, :
             ],
         )
-        self.best_examples = RecordedTrainerExamples(
-            epochs=trainer_result.best_examples.epochs[
-                best_success_trainer_indices
+
+    @property
+    def best_recorded_examples(self) -> RecordedTrainerExamples:
+        return RecordedTrainerExamples(
+            epochs=self.trainer_result.best_examples.epochs[
+                self.indices_success_trainer
             ],
-            losses=trainer_result.best_examples.losses[
-                best_success_trainer_indices
+            losses=self.trainer_result.best_examples.losses[
+                self.indices_success_trainer
             ],
-            perturbations=trainer_result.best_examples.perturbations[
-                best_success_trainer_indices, :, :
+            perturbations=self.trainer_result.best_examples.perturbations[
+                self.indices_success_trainer, :, :
             ],
         )
-        self.first_perts_summary = PerturbationSummary(
-            padded_perts=self.first_examples.perturbations,
+
+    @property
+    def first_examples_perts_summary(self) -> PerturbationSummary:
+        return PerturbationSummary(
+            padded_perts=self.first_recorded_examples.perturbations,
             input_seq_lengths=self.input_seq_lengths,
         )
-        self.best_perts_summary = PerturbationSummary(
-            padded_perts=self.best_examples.perturbations,
+
+    @property
+    def best_examples_perts_summary(self) -> PerturbationSummary:
+        return PerturbationSummary(
+            padded_perts=self.best_recorded_examples.perturbations,
             input_seq_lengths=self.input_seq_lengths,
         )
 
-    def get_filtered_perts(
-        self,
-        perts_type: str = None,
-        seq_length: int = None,
-        orig_label: int = None,
-    ) -> torch.tensor:
-        assert perts_type == "first" or perts_type == "best"
-        full_examples = (
-            self.first_examples
-            if perts_type == "first"
-            else self.best_examples
-        )
+    def trainer_indices_for_samples_of_length(self, n: int) -> torch.tensor:
+        return self.indices_success_trainer[
+            torch.where(self.input_seq_lengths == n)[0]
+        ]
 
-        if seq_length is not None:
-            match_seq_length_summary_indices = torch.where(
-                self.input_seq_lengths == seq_length
-            )[0]
-        else:
-            match_seq_length_summary_indices = torch.arange(
-                len(self.input_seq_lengths)
-            )
 
-        label_tensor = torch.tensor(self.dataset[:][2])
-        success_orig_labels = label_tensor[self.success_dataset_indices]
-        if orig_label is not None:
-            match_label_dataset_indices = torch.where(
-                success_orig_labels == orig_label
-            )[0]
-        else:
-            match_label_dataset_indices = torch.arange(
-                len(self.success_dataset_indices)
-            )
+    # def trainer_indices_for_samples_of_orig_label(
+    #     self, orig_label: int
+    # ) -> torch.tensor:
+    #     torch.where[]
 
-        filtered_indices = np.intersect1d(
-            match_seq_length_summary_indices, match_label_dataset_indices
-        )
 
-        filtered_perts = full_examples.perturbations[filtered_indices, :, :]
-        filtered_seq_lengths = self.input_seq_lengths[filtered_indices]
-
-        return filtered_perts
+# class TrainerSuccessSummary:
+#     def __init__(self, trainer_result: TrainerResult):
+#         best_success_trainer_indices = torch.where(
+#             trainer_result.best_examples.epochs != -1
+#         )[0]
+#         first_success_trainer_indices = torch.where(
+#             trainer_result.first_examples.epochs != -1
+#         )[0]
+#         assert (
+#             (best_success_trainer_indices == first_success_trainer_indices)
+#             .all()
+#             .item()
+#         )
+#
+#         self.dataset = trainer_result.dataset
+#         self.attacked_dataset_indices = trainer_result.dataset_indices
+#         self.success_dataset_indices = trainer_result.dataset_indices[
+#             best_success_trainer_indices
+#         ]
+#         self.epochs_run = trainer_result.epochs_run[
+#             best_success_trainer_indices
+#         ]
+#         self.input_seq_lengths = trainer_result.input_seq_lengths[
+#             best_success_trainer_indices
+#         ]
+#         self.first_examples = RecordedTrainerExamples(
+#             epochs=trainer_result.first_examples.epochs[
+#                 first_success_trainer_indices
+#             ],
+#             losses=trainer_result.first_examples.losses[
+#                 first_success_trainer_indices
+#             ],
+#             perturbations=trainer_result.first_examples.perturbations[
+#                 first_success_trainer_indices, :, :
+#             ],
+#         )
+#         self.best_examples = RecordedTrainerExamples(
+#             epochs=trainer_result.best_examples.epochs[
+#                 best_success_trainer_indices
+#             ],
+#             losses=trainer_result.best_examples.losses[
+#                 best_success_trainer_indices
+#             ],
+#             perturbations=trainer_result.best_examples.perturbations[
+#                 best_success_trainer_indices, :, :
+#             ],
+#         )
+#         self.first_perts_summary = PerturbationSummary(
+#             padded_perts=self.first_examples.perturbations,
+#             input_seq_lengths=self.input_seq_lengths,
+#         )
+#         self.best_perts_summary = PerturbationSummary(
+#             padded_perts=self.best_examples.perturbations,
+#             input_seq_lengths=self.input_seq_lengths,
+#         )
+#
+#     def get_filtered_perts(
+#         self,
+#         perts_type: str = None,
+#         seq_length: int = None,
+#         orig_label: int = None,
+#     ) -> torch.tensor:
+#         assert perts_type == "first" or perts_type == "best"
+#         full_examples = (
+#             self.first_examples
+#             if perts_type == "first"
+#             else self.best_examples
+#         )
+#
+#         if seq_length is not None:
+#             match_seq_length_summary_indices = torch.where(
+#                 self.input_seq_lengths == seq_length
+#             )[0]
+#         else:
+#             match_seq_length_summary_indices = torch.arange(
+#                 len(self.input_seq_lengths)
+#             )
+#
+#         label_tensor = torch.tensor(self.dataset[:][2])
+#         success_orig_labels = label_tensor[self.success_dataset_indices]
+#         if orig_label is not None:
+#             match_label_dataset_indices = torch.where(
+#                 success_orig_labels == orig_label
+#             )[0]
+#         else:
+#             match_label_dataset_indices = torch.arange(
+#                 len(self.success_dataset_indices)
+#             )
+#
+#         filtered_indices = np.intersect1d(
+#             match_seq_length_summary_indices, match_label_dataset_indices
+#         )
+#
+#         filtered_perts = full_examples.perturbations[filtered_indices, :, :]
+#         filtered_seq_lengths = self.input_seq_lengths[filtered_indices]
+#
+#         return filtered_perts

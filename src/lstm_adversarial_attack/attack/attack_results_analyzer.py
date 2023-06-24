@@ -4,7 +4,7 @@ import lstm_adversarial_attack.config_settings as lcs
 
 
 def calc_gmp_ij(perts: torch.tensor) -> torch.tensor:
-    return torch.max(perts, dim=0).values
+    return torch.max(torch.abs(perts), dim=0).values
 
 def calc_gap_ij(perts: torch.tensor) -> torch.tensor:
     return torch.sum(torch.abs(perts), dim=0) / perts.shape[0]

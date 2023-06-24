@@ -149,9 +149,9 @@ def resume_tuning(
 
 
 if __name__ == "__main__":
-    # initial_study = start_new_tuning(
-    #     num_trials=50,
-    #     target_model_assessment_type=amr.ModelAssessmentType.KFOLD,
-    # )
+    initial_study = start_new_tuning(
+        num_trials=50,
+        target_model_assessment_type=amr.ModelAssessmentType.KFOLD,
+    )
 
-    continued_study = resume_tuning(num_trials=60)
+    # continued_study = resume_tuning(num_trials=60)

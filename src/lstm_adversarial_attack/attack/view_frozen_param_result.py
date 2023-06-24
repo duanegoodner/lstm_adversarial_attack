@@ -8,16 +8,11 @@ import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.attack.attack_results_analyzer as ara
 
 
-study_out_dir = (
-    cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-06-22_07_32_01.590696"
+result_path = (
+    cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+    / "2023-06-24_16_30_10.505396"
+    / "2023-06-24_18_31_50.279321_final_attack_result.pickle"
 )
 
-importer = rio.ResourceImporter()
-
-tuner = importer.import_pickle_to_object(
-    path=study_out_dir / "attack_hyperparameter_tuner.pickle"
-)
-driver = importer.import_pickle_to_object(
-    path=study_out_dir
-)
-
+trainer_result = rio.ResourceImporter().import_pickle_to_object(path=result_path)
+success_summary = ads.TrainerSuccessSummary(trainer_result=trainer_result)
