@@ -163,58 +163,104 @@ class PerturbationSummary:
     ):
         self.padded_perts = padded_perts
         self.input_seq_lengths = input_seq_lengths
-        self.actual_perts = [
-            padded_perts[i, : input_seq_lengths[i], :]
-            for i in range(input_seq_lengths.shape[0])
-        ]
-        self.abs_perts = [torch.abs(item) for item in self.actual_perts]
 
-        self.sum_abs_perts = torch.tensor(
-            [torch.sum(item) for item in self.abs_perts]
-        )
+    @property
+    def actual_perts(self):
+        return [
+        self.padded_perts[i, : self.input_seq_lengths[i], :]
+        for i in range(self.input_seq_lengths.shape[0])
+    ]
+    @property
+    def abs_perts(self):
+        return [torch.abs(item) for item in self.actual_perts]
 
-        self.mean_pert_magnitudes = torch.tensor(
-            [torch.mean(item) for item in self.abs_perts]
-        )
-        self.stdev_pert_magnitudes = torch.tensor(
-            [torch.std(item) for item in self.abs_perts]
-        )
-        self.min_pert_magnitudes = torch.tensor(
-            [torch.min(item) for item in self.abs_perts]
-        )
-        self.max_pert_magnitudes = torch.tensor(
-            [torch.max(item) for item in self.abs_perts]
-        )
-        self.mean_of_means = torch.mean(self.mean_pert_magnitudes)
-        self.num_actual_elements = input_seq_lengths * padded_perts.shape[2]
-        self.num_nonzero = torch.tensor(
-            [torch.count_nonzero(item) for item in self.actual_perts]
-        )
-        self.fraction_nonzero = (
-            self.num_nonzero.float() / self.num_actual_elements.float()
-        )
+    @property
+    def sum_abs_perts(self):
+        return torch.tensor(
+        [torch.sum(item) for item in self.abs_perts]
+    )
+
+    @property
+    def pert_magnitude_mean_vals(self):
+        return torch.tensor(
+        [torch.mean(item) for item in self.abs_perts]
+    )
+
+    @property
+    def pert_magnitude_min_vals(self):
+        return torch.tensor(
+        [torch.min(item) for item in self.abs_perts]
+    )
+    @property
+    def pert_magnitude_max_vals(self):
+        return torch.tensor(
+        [torch.max(item) for item in self.abs_perts]
+    )
+
+    @property
+    def pert_magnitude_global_mean(self):
+        return torch.mean(self.pert_magnitude_mean_vals)
+
+    @property
+    def pert_magnitude_global_mean_max(self):
+        return torch.mean(self.pert_magnitude_max_vals)
+
+    @property
+    def num_actual_elements(self):
+        return self.input_seq_lengths * self.padded_perts.shape[2]
+
+    @property
+    def num_nonzero(self):
+        return torch.tensor(
+        [torch.count_nonzero(item) for item in self.actual_perts]
+    )
+
+    def num_examples_with_num_nonzero_less_than(self, cutoff: int):
+        return torch.where(self.num_nonzero < cutoff)[0].shape[0]
+
+    @property
+    def fraction_nonzero(self):
+        return self.num_nonzero.float() / self.num_actual_elements.float()
+
+    @property
+    def fraction_nonzero_mean(self):
+        return torch.mean(self.fraction_nonzero)
+
+    @property
+    def fraction_nonzero_stdev(self):
+        return torch.std(self.fraction_nonzero)
+
+    @property
+    def fraction_nonzero_min(self):
 
         if len(self.fraction_nonzero) == 0:
-            self.sparsity = torch.tensor([], dtype=torch.float32)
+            return torch.tensor([], dtype=torch.float32)
         else:
-            self.sparsity = 1 - self.fraction_nonzero
+            return torch.min(self.fraction_nonzero)
 
+    @property
+    def sparsity(self):
         if len(self.fraction_nonzero) == 0:
-            self.sparse_small_scores = torch.tensor([], dtype=torch.float32)
+            return torch.tensor([], dtype=torch.float32)
         else:
-            self.sparse_small_scores = (
+            return 1 - self.fraction_nonzero
+
+    @property
+    def sparsity_mean(self):
+        return torch.mean(self.sparsity)
+
+    @property
+    def sparsity_stdev(self):
+        return torch.std(self.sparsity)
+
+    @property
+    def sparse_small_scores(self):
+        if len(self.fraction_nonzero) == 0:
+            return torch.tensor([], dtype=torch.float32)
+        else:
+            return (
                 1 - self.fraction_nonzero
             ) / self.sum_abs_perts
-
-        self.fraction_nonzero_mean = torch.mean(self.fraction_nonzero)
-        self.fraction_nonzero_stdev = torch.std(self.fraction_nonzero)
-        if len(self.fraction_nonzero) == 0:
-            self.fraction_nonzero_min = torch.tensor([], dtype=torch.float32)
-        else:
-            self.fraction_nonzero_min = torch.min(self.fraction_nonzero)
-
-    # @property
-    # def actual_perts(self) -> list[torch.tensor]:
 
 
 class TrainerSuccessSummary:

@@ -73,3 +73,6 @@ ATTACK_OUTPUT_DIR = DATA_DIR / "attack"
 ATTACK_HYPERPARAMETER_TUNING = (
     ATTACK_OUTPUT_DIR / "attack_hyperparameter_tuning"
 )
+FROZEN_HYPERPARAMETER_ATTACK = (
+    ATTACK_OUTPUT_DIR / "frozen_hyperparameter_attack"
+)

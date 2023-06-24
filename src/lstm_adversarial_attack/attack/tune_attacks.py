@@ -38,6 +38,8 @@ class AttackTunerDriver:
             output_dir = rio.create_timestamped_dir(
                 parent_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
             )
+        self.epochs_per_batch = cfg_settings.ATTACK_TUNING_EPOCHS
+        self.max_num_samples = cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES
         self.output_dir = output_dir
         rio.ResourceExporter().export(
             resource=self, path=self.output_dir / "attack_tuner_driver.pickle"
@@ -87,8 +89,8 @@ class AttackTunerDriver:
             device=self.device,
             model_path=self.target_model_path,
             checkpoint=self.target_model_checkpoint,
-            epochs_per_batch=cfg_settings.ATTACK_TUNING_EPOCHS,
-            max_num_samples=cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
+            epochs_per_batch=self.epochs_per_batch,
+            max_num_samples=self.max_num_samples,
             tuning_ranges=self.tuning_ranges,
             continue_study_path=output_dir / "optuna_study.pickle",
             output_dir=output_dir,
@@ -124,7 +126,9 @@ def start_new_tuning(
     return tuner_driver.run(num_trials=num_trials)
 
 
-def resume_tuning(ongoing_tuning_dir: Path = None) -> optuna.Study:
+def resume_tuning(
+    num_trials: int, ongoing_tuning_dir: Path = None
+) -> optuna.Study:
     if ongoing_tuning_dir is None:
         ongoing_tuning_dir = cvs.get_newest_sub_dir(
             path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
@@ -135,19 +139,19 @@ def resume_tuning(ongoing_tuning_dir: Path = None) -> optuna.Study:
     )
 
     print(
-        f"Resuming Attack Hyperparameter Tuning study data in:\n"
+        "Resuming Attack Hyperparameter Tuning study data in:\n"
         f"{reloaded_tuner_driver.output_dir}\n"
     )
 
     return reloaded_tuner_driver.restart(
-        output_dir=ongoing_tuning_dir, num_trials=20
+        output_dir=ongoing_tuning_dir, num_trials=num_trials
     )
 
 
 if __name__ == "__main__":
-    initial_study = start_new_tuning(
-        num_trials=50,
-        target_model_assessment_type=amr.ModelAssessmentType.KFOLD,
-    )
+    # initial_study = start_new_tuning(
+    #     num_trials=50,
+    #     target_model_assessment_type=amr.ModelAssessmentType.KFOLD,
+    # )
 
-    # continued_study = resume_tuning()
+    continued_study = resume_tuning(num_trials=60)

@@ -207,7 +207,8 @@ class AdversarialAttackTrainer:
                         ),
                         dtype=torch.float32,
                     ),
-                ), dim=1
+                ),
+                dim=1,
             )
 
         self.reset_perturbation()
@@ -247,14 +248,14 @@ class AdversarialAttackTrainer:
         return batch_result
 
     def display_attack_info(self):
-        print(f"Running attacks with:\n"
-              f"batch_size = {self.batch_size}\n"
-              f"kappa = {self.kappa}\n"
-              f"lambda_1 = {self.lambda_1}\n"
-              f"optimizer = {self.optimizer_constructor}\n"
-              f"optimizer constructor kwargs = {self.optimizer_constructor}\n"
-              f"epochs per batch = {self.epochs_per_batch}\n"
-              f"max number of samples = {len(self.dataset)}\n")
+        print(
+            f"Running attacks with:\nbatch_size = {self.batch_size}\nkappa ="
+            f" {self.kappa}\nlambda_1 = {self.lambda_1}\noptimizer ="
+            f" {self.optimizer_constructor}\noptimizer constructor kwargs ="
+            f" {self.optimizer_constructor_kwargs}\nepochs per batch ="
+            f" {self.epochs_per_batch}\nmax number of samples ="
+            f" {len(self.dataset)}\n"
+        )
 
     def train_attacker(self):
         data_loader = self.build_data_loader()

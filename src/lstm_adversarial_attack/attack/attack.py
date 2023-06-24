@@ -8,8 +8,10 @@ import lstm_adversarial_attack.attack.adv_attack_trainer as aat
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.attack.best_checkpoint_retriever as bcr
+import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.config_paths as cfg_paths
+import lstm_adversarial_attack.config_settings as cfg_settings
 
 from lstm_adversarial_attack.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex,
@@ -23,17 +25,18 @@ class AttackDriver:
         device: torch.device,
         model_path: Path,
         checkpoint: dict,
-        batch_size: int = 128,
-        epochs_per_batch: int = 100,
-        kappa: float = 0.0,
-        lambda_1: float = 3e-2,
-        optimizer_constructor: Callable = torch.optim.SGD,
+        batch_size: int,
+        epochs_per_batch: int,
+        kappa: float,
+        lambda_1: float,
+        optimizer_constructor: Callable,
         optimizer_constructor_kwargs: dict = None,
         max_num_samples=None,
         sample_selection_seed=None,
         attack_misclassified_samples: bool = False,
-        output_dir: Path = cfg_paths.ATTACK_OUTPUT_DIR,
-        result_file_prefix: str = None,
+        output_dir: Path = None,
+        result_file_prefix: str = "",
+        save_attack_driver: bool = False,
     ):
         self.device = device
         self.model_path = model_path
@@ -48,6 +51,8 @@ class AttackDriver:
         self.optimizer_constructor_kwargs = optimizer_constructor_kwargs
         self.max_num_samples = max_num_samples
         self.sample_selection_seed = sample_selection_seed
+        if self.sample_selection_seed is not None:
+            torch.manual_seed(self.sample_selection_seed)
         self.dataset = (
             X19MGeneralDatasetWithIndex.from_feature_finalizer_output(
                 max_num_samples=max_num_samples,
@@ -56,9 +61,20 @@ class AttackDriver:
         )
         self.collate_fn = x19m_with_index_collate_fn
         self.attack_misclassified_samples = attack_misclassified_samples
-        self.output_dir = output_dir
         self.result_file_prefix = result_file_prefix
-        # self.save_train_result = save_train_result
+        self.save_attack_driver = save_attack_driver
+        self.output_dir = self.initialize_output_dir(output_dir=output_dir)
+
+    def initialize_output_dir(self, output_dir: Path | None):
+        if output_dir is None:
+            output_dir = rio.create_timestamped_dir(
+                parent_path=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+            )
+        if self.save_attack_driver:
+            rio.ResourceExporter().export(
+                resource=self, path=output_dir / "attack_driver.pickle"
+            )
+        return output_dir
 
     @classmethod
     def from_attack_hyperparameter_settings(
@@ -67,10 +83,12 @@ class AttackDriver:
         model_path: Path,
         checkpoint: dict,
         settings: ads.AttackHyperParameterSettings,
+        epochs_per_batch: int = None,
         max_num_samples: int = None,
         sample_selection_seed: int = None,
         attack_misclassified_samples: bool = False,
-        output_dir: Path = cfg_paths.ATTACK_OUTPUT_DIR,
+        output_dir: Path = None,
+        save_attack_driver: bool = False,
     ):
         return cls(
             device=device,
@@ -87,6 +105,44 @@ class AttackDriver:
             sample_selection_seed=sample_selection_seed,
             attack_misclassified_samples=attack_misclassified_samples,
             output_dir=output_dir,
+            epochs_per_batch=epochs_per_batch,
+            save_attack_driver=save_attack_driver,
+        )
+
+    @classmethod
+    def from_attack_hyperparameter_tuning(
+        cls,
+        device: torch.device,
+        tuning_output_dir: Path = None,
+        max_num_samples: int = None,
+        epochs_per_batch: int = None,
+        sample_selection_seed: int = None,
+        save_attack_driver: bool = True,
+    ):
+        if tuning_output_dir is None:
+            tuning_output_dir = ps.subdir_with_latest_content_modification(
+                root_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
+            )
+        optuna_study = rio.ResourceImporter().import_pickle_to_object(
+            path=tuning_output_dir / "optuna_study.pickle"
+        )
+        tuner_driver = rio.ResourceImporter().import_pickle_to_object(
+            path=tuning_output_dir / "attack_tuner_driver.pickle"
+        )
+        if epochs_per_batch is None:
+            epochs_per_batch = tuner_driver.epochs_per_batch
+
+        return cls.from_attack_hyperparameter_settings(
+            device=device,
+            model_path=tuner_driver.target_model_path,
+            checkpoint=tuner_driver.target_model_checkpoint,
+            settings=ads.AttackHyperParameterSettings(
+                **optuna_study.best_params
+            ),
+            epochs_per_batch=epochs_per_batch,
+            max_num_samples=max_num_samples,
+            sample_selection_seed=sample_selection_seed,
+            save_attack_driver=save_attack_driver,
         )
 
     def __call__(self) -> aat.AdversarialAttackTrainer | ards.TrainerResult:
@@ -110,14 +166,16 @@ class AttackDriver:
 
         train_result = attack_trainer.train_attacker()
 
-        if self.result_file_prefix is not None:
+        if self.result_file_prefix:
             train_result_output_path = (
                 self.output_dir
                 / f"{self.result_file_prefix}_attack_result.pickle"
             )
         else:
             train_result_output_path = rio.create_timestamped_filepath(
-                parent_path=self.output_dir, file_extension="pickle"
+                parent_path=self.output_dir,
+                file_extension="pickle",
+                suffix="_attack_result",
             )
 
         rio.ResourceExporter().export(
@@ -132,33 +190,38 @@ if __name__ == "__main__":
     else:
         cur_device = torch.device("cpu")
 
-    checkpoint_retriever = bcr.BestCheckpointRetriever.from_checkpoints_dir(
-        checkpoints_dir=cfg_paths.SINGLE_FOLD_OUTPUT_DIR
-        / "2023-06-14_14_40_10.365521"
-        / "checkpoints"
-    )
-    best_checkpoint = checkpoint_retriever.get_extreme_checkpoint(
-        metric=bcr.EvalMetric.VALIDATION_LOSS,
-        direction=bcr.OptimizeDirection.MIN,
+    attack_driver = AttackDriver.from_attack_hyperparameter_tuning(
+        device=cur_device,
+        max_num_samples=330,
+        epochs_per_batch=1000,
+        sample_selection_seed=2023,
     )
 
-    attack_driver = AttackDriver(
-        device=cur_device,
-        kappa=0.25555773805539084,
-        lambda_1=0.00016821459273891898,
-        optimizer_constructor=torch.optim.RMSprop,
-        optimizer_constructor_kwargs={"lr": 0.01340580859093695},
-        batch_size=16,
-        epochs_per_batch=500,
-        model_path=cfg_paths.SINGLE_FOLD_OUTPUT_DIR
-        / "2023-06-14_14_40_10.365521"
-        / "model.pickle",
-        checkpoint=best_checkpoint,
-        # checkpoint_path=checkpoint_path,
-        max_num_samples=500,
-        sample_selection_seed=13579,
-        # save_train_result=False,
-    )
+    # checkpoint_retriever = bcr.BestCheckpointRetriever.from_checkpoints_dir(
+    #     checkpoints_dir=cfg_paths.SINGLE_FOLD_OUTPUT_DIR
+    #     / "2023-06-14_14_40_10.365521"
+    #     / "checkpoints"
+    # )
+    # best_checkpoint = checkpoint_retriever.get_extreme_checkpoint(
+    #     metric=bcr.EvalMetric.VALIDATION_LOSS,
+    #     direction=bcr.OptimizeDirection.MIN,
+    # )
+    #
+    # attack_driver = AttackDriver(
+    #     device=cur_device,
+    #     kappa=0.25555773805539084,
+    #     lambda_1=0.00016821459273891898,
+    #     optimizer_constructor=torch.optim.RMSprop,
+    #     optimizer_constructor_kwargs={"lr": 0.01340580859093695},
+    #     batch_size=16,
+    #     epochs_per_batch=500,
+    #     model_path=cfg_paths.SINGLE_FOLD_OUTPUT_DIR
+    #     / "2023-06-14_14_40_10.365521"
+    #     / "model.pickle",
+    #     checkpoint=best_checkpoint,
+    #     max_num_samples=500,
+    #     sample_selection_seed=13579,
+    # )
 
     trainer_result = attack_driver()
     success_summary = ards.TrainerSuccessSummary(trainer_result=trainer_result)

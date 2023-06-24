@@ -32,7 +32,7 @@ class AttackHyperParameterTuner:
         self.epoch_per_batch = epochs_per_batch
         self.max_num_samples = max_num_samples
         self.tuning_ranges = tuning_ranges
-        self.sample_selection_seed = (sample_selection_seed,)
+        self.sample_selection_seed = sample_selection_seed
         self.pruner = pruner
         self.hyperparameter_sampler = hyperparameter_sampler
         self.output_dir, self.attack_results_dir = self.initialize_output_dir(
@@ -96,14 +96,16 @@ class AttackHyperParameterTuner:
         #         success_summary.best_perts_summary.sparse_small_scores
         #     ).item()
 
-        if len(success_summary.best_perts_summary.sparsity) == 0:
-            return 0.0
-        else:
-            return torch.sum(
-                success_summary.best_perts_summary.sparsity
-            ).item()
+        # if len(success_summary.best_perts_summary.sparsity) == 0:
+        #     return 0.0
+        # else:
+        #     return torch.sum(
+        #         success_summary.best_perts_summary.sparsity
+        #     ).item()
 
-
+        return success_summary.best_perts_summary.num_examples_with_num_nonzero_less_than(
+            cutoff=2
+        )
 
     def export_study(self, study: optuna.Study):
         study_filename = "optuna_study.pickle"

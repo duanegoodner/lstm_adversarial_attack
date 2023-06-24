@@ -17,8 +17,10 @@ def create_timestamped_dir(parent_path: Path) -> Path:
     return new_dir_path
 
 
-def create_timestamped_filepath(parent_path: Path, file_extension: str):
-    filename = f"{datetime.now()}.{file_extension}".replace(" ", "_").replace(
+def create_timestamped_filepath(
+    parent_path: Path, file_extension: str, prefix: str = "", suffix: str = ""
+):
+    filename = f"{prefix}{datetime.now()}{suffix}.{file_extension}".replace(" ", "_").replace(
         ":", "_"
     )
     return parent_path / filename
@@ -69,7 +71,6 @@ class ResourceImporter:
         with path.open(mode="rb") as p:
             result = cu.load(p)
         return result
-
 
 
 class ResourceExporter:
