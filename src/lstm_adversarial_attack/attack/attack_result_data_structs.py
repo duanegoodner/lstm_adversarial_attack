@@ -3,6 +3,7 @@ import torch
 from torch.utils.data import Dataset
 from dataclasses import dataclass
 from enum import Enum, auto
+from functools import cached_property
 from typing import Callable
 import lstm_adversarial_attack.dataset_with_index as dsi
 
@@ -282,17 +283,17 @@ class RecordedExampleType(Enum):
 class ExamplesSummary:
     def __init__(
         self,
-        discoverty_epoch: np.array,
+        discovery_epoch: np.array,
         losses: np.array,
         seq_lengths: np.array,
         padded_perts: np.array,
     ):
-        self.discoverty_epoch = discoverty_epoch
+        self.discovery_epoch = discovery_epoch
         self.losses = losses
         self.seq_lengths = seq_lengths
         self.padded_perts = padded_perts
 
-    @property
+    @cached_property
     def mask(self) -> np.array:
         time_indices = np.arange(self.padded_perts.shape[1])
         time_is_in_range = time_indices.reshape(
@@ -304,34 +305,83 @@ class ExamplesSummary:
         )
         return ~np.moveaxis(time_is_in_range_bcast, 0, -1)
 
-    @property
+    @cached_property
     def masked_perts(self) -> np.ma.MaskedArray:
         return np.ma.array(self.padded_perts, mask=self.mask)
 
-    @property
+    @cached_property
     def masked_perts_abs_val(self):
         return np.abs(self.masked_perts)
 
-    @property
+    @cached_property
+    def masked_perts_abs_val_sum(self):
+        return np.sum(self.masked_perts_abs_val.data)
+
+    @cached_property
     def masked_perts_mean_abs_val(self):
         return np.mean(self.masked_perts_abs_val, axis=(1, 2))
 
-    @property
-    def padded_perts_abs_val(self) -> np.array:
-        return np.abs(self.padded_perts)
+    @cached_property
+    def masked_perts_min_nonzero_abs_val(self):
+        zeros_replaced_by_inf = np.where(
+            self.masked_perts_abs_val.data != 0,
+            self.masked_perts_abs_val.data,
+            np.inf,
+        )
+        return np.min(zeros_replaced_by_inf, axis=(1, 2))
 
-    @property
+    @cached_property
+    def masked_perts_max_abs_val(self):
+        return np.max(self.masked_perts_abs_val, axis=(1, 2))
+
+    @cached_property
+    def masked_perts_mean_max_abs_val(self):
+        return np.mean(self.masked_perts_max_abs_val).item()
+
+    @cached_property
+    def masked_perts_num_actual_elements(self):
+        return self.seq_lengths * self.padded_perts.shape[2]
+
+    @cached_property
+    def num_nonzero_elements(self):
+        return np.count_nonzero(self.masked_perts_abs_val.data, axis=(1, 2))
+
+    def num_examples_with_num_nonzero_less_than(self, cutoff: int):
+        return np.where(self.num_nonzero_elements < cutoff)[0].shape[0]
+
+    @cached_property
+    def fraction_nonzero(self):
+        return self.num_nonzero_elements.astype(
+            "float"
+        ) / self.masked_perts_num_actual_elements.astype(np.float32)
+
+    @cached_property
+    def sparsity(self):
+        if len(self.fraction_nonzero) == 0:
+            return np.array([], dtype=np.float32)
+        else:
+            return 1 - self.fraction_nonzero
+
+    @cached_property
+    def sparse_small_scores(self):
+        if len(self.fraction_nonzero) == 0:
+            return np.array([], dtype=torch.float32)
+        else:
+            return (1 - self.fraction_nonzero) / self.masked_perts_abs_val_sum
+
+
+    @cached_property
     def perts_actual(self) -> list[np.array]:
         return [
             self.padded_perts[example_idx, : self.seq_lengths[example_idx], :]
             for example_idx in range(self.seq_lengths.shape[0])
         ]
 
-    @property
+    @cached_property
     def perts_abs_val(self) -> list[np.array]:
         return [np.abs(perts_array) for perts_array in self.perts_actual]
 
-    @property
+    @cached_property
     def perts_mean_abs_val(self) -> np.array:
         return np.array(
             [
@@ -340,44 +390,26 @@ class ExamplesSummary:
             ]
         )
 
-    # @property
-    # def perts_mean_abs_val_no_list(self) -> np.array:
-
-    @property
+    @cached_property
     def perts_max_abs_val(self) -> np.array:
         return np.array(
             [np.max(abs_perts_array) for abs_perts_array in self.perts_abs_val]
         )
 
-    @property
+    @cached_property
     def perts_mean_max_abs_val(self) -> float:
         return np.mean(self.perts_max_abs_val).item()
-
-    @property
-    def perts_nonzero_indices(self) -> list[tuple[np.array, np.array]]:
-        return [
-            np.argwhere(abs_val_array) for abs_val_array in self.perts_abs_val
-        ]
-
-    # @property
-    # def perts_nonzero_vals(self):
-
-    # @property
-    # def perts_min_nonzero_abs_val(self) -> np.array:
-    #     return np.array(
-    #         [np.min(self.perts_abs_val[np.where(self.perts_abs_val != 0)])]
-    #     )
 
 
 class TrainerSuccessSummary:
     def __init__(self, trainer_result: TrainerResult):
         self.trainer_result = trainer_result
 
-    @property
+    @cached_property
     def indices_dataset_attacked(self) -> np.array:
         return np.array(self.trainer_result.dataset_indices)
 
-    @property
+    @cached_property
     def indices_trainer_success(self) -> np.array:
         first_indices_success_trainer = np.where(
             self.trainer_result.first_examples.epochs != -1
@@ -392,31 +424,31 @@ class TrainerSuccessSummary:
         )
         return best_indices_success_trainer
 
-    @property
+    @cached_property
     def indices_dataset_success(self) -> np.array:
         return self.indices_dataset_attacked[self.indices_trainer_success]
 
-    @property
+    @cached_property
     def orig_labels_attacked(self) -> np.array:
         return np.array(self.trainer_result.dataset[:][2])[
             self.indices_dataset_attacked
         ]
 
-    @property
+    @cached_property
     def orig_labels_success(self) -> np.array:
         return np.array(self.trainer_result.dataset[:][2])[
             self.indices_dataset_success
         ]
 
-    @property
+    @cached_property
     def input_seq_lengths_attacked(self) -> np.array:
         return np.array(self.trainer_result.input_seq_lengths)
 
-    @property
+    @cached_property
     def inputs_seq_lengths_success(self) -> np.array:
         return self.input_seq_lengths_attacked[self.indices_trainer_success]
 
-    @property
+    @cached_property
     def recorded_examples_first(self) -> RecordedTrainerExamplesNP:
         return RecordedTrainerExamplesNP(
             epochs=np.array(
@@ -436,7 +468,7 @@ class TrainerSuccessSummary:
             ),
         )
 
-    @property
+    @cached_property
     def recorded_examples_best(self) -> RecordedTrainerExamplesNP:
         return RecordedTrainerExamplesNP(
             epochs=np.array(
@@ -456,10 +488,10 @@ class TrainerSuccessSummary:
             ),
         )
 
-    @property
+    @cached_property
     def examples_summary_first(self) -> ExamplesSummary:
         return ExamplesSummary(
-            discoverty_epoch=np.array(
+            discovery_epoch=np.array(
                 self.trainer_result.first_examples.epochs[
                     self.indices_trainer_success
                 ]
@@ -477,10 +509,10 @@ class TrainerSuccessSummary:
             ),
         )
 
-    @property
+    @cached_property
     def examples_summary_best(self) -> ExamplesSummary:
         return ExamplesSummary(
-            discoverty_epoch=np.array(
+            discovery_epoch=np.array(
                 self.trainer_result.best_examples.epochs[
                     self.indices_trainer_success
                 ]
