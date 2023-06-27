@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -101,7 +103,7 @@ class RecordedTrainerExamples:
     epochs: torch.tensor = None
     losses: torch.tensor = None
     perturbations: torch.tensor = None
-    device: torch.device = torch.device("cpu")
+    # device: torch.device = torch.device("cpu")
 
     def __post_init__(self):
         if self.epochs is None:
@@ -116,24 +118,6 @@ class RecordedTrainerExamples:
         self.losses = torch.cat((self.losses, batch_examples.losses), dim=0)
         self.perturbations = torch.cat(
             (self.perturbations, batch_examples.perturbations), dim=0
-        )
-
-
-@dataclass
-class RecordedTrainerExamplesNP:
-    epochs: np.array
-    losses: np.array
-    perturbations: np.array
-
-    @classmethod
-    def from_recorded_trainer_examples_torch(
-        cls,
-        recorded_trainer_examples_torch: RecordedTrainerExamples,
-    ):
-        return cls(
-            epochs=recorded_trainer_examples_torch.epochs,
-            losses=recorded_trainer_examples_torch.losses,
-            perturbations=recorded_trainer_examples_torch.perturbations,
         )
 
 
@@ -178,123 +162,31 @@ class TrainerResult:
         )
 
 
-class PerturbationSummaryOld:
-    def __init__(
-        self, padded_perts: torch.tensor, input_seq_lengths: torch.tensor
-    ):
-        self.padded_perts = padded_perts
-        self.input_seq_lengths = input_seq_lengths
-
-    @property
-    def actual_perts(self):
-        return [
-            self.padded_perts[i, : self.input_seq_lengths[i], :]
-            for i in range(self.input_seq_lengths.shape[0])
-        ]
-
-    @property
-    def abs_perts(self):
-        return [torch.abs(item) for item in self.actual_perts]
-
-    @property
-    def sum_abs_perts(self):
-        return torch.tensor([torch.sum(item) for item in self.abs_perts])
-
-    @property
-    def pert_magnitude_mean_vals(self):
-        return torch.tensor([torch.mean(item) for item in self.abs_perts])
-
-    @property
-    def pert_magnitude_min_vals(self):
-        return torch.tensor([torch.min(item) for item in self.abs_perts])
-
-    @property
-    def pert_magnitude_max_vals(self):
-        return torch.tensor([torch.max(item) for item in self.abs_perts])
-
-    @property
-    def pert_magnitude_global_mean(self):
-        return torch.mean(self.pert_magnitude_mean_vals)
-
-    @property
-    def pert_magnitude_global_mean_max(self):
-        return torch.mean(self.pert_magnitude_max_vals)
-
-    @property
-    def num_actual_elements(self):
-        return self.input_seq_lengths * self.padded_perts.shape[2]
-
-    @property
-    def num_nonzero(self):
-        return torch.tensor(
-            [torch.count_nonzero(item) for item in self.actual_perts]
-        )
-
-    def num_examples_with_num_nonzero_less_than(self, cutoff: int):
-        return torch.where(self.num_nonzero < cutoff)[0].shape[0]
-
-    @property
-    def fraction_nonzero(self):
-        return self.num_nonzero.float() / self.num_actual_elements.float()
-
-    @property
-    def fraction_nonzero_mean(self):
-        return torch.mean(self.fraction_nonzero)
-
-    @property
-    def fraction_nonzero_stdev(self):
-        return torch.std(self.fraction_nonzero)
-
-    @property
-    def fraction_nonzero_min(self):
-        if len(self.fraction_nonzero) == 0:
-            return torch.tensor([], dtype=torch.float32)
-        else:
-            return torch.min(self.fraction_nonzero)
-
-    @property
-    def sparsity(self):
-        if len(self.fraction_nonzero) == 0:
-            return torch.tensor([], dtype=torch.float32)
-        else:
-            return 1 - self.fraction_nonzero
-
-    @property
-    def sparsity_mean(self):
-        return torch.mean(self.sparsity)
-
-    @property
-    def sparsity_stdev(self):
-        return torch.std(self.sparsity)
-
-    @property
-    def sparse_small_scores(self):
-        if len(self.fraction_nonzero) == 0:
-            return torch.tensor([], dtype=torch.float32)
-        else:
-            return (1 - self.fraction_nonzero) / self.sum_abs_perts
-
-
 class RecordedExampleType(Enum):
     FIRST = auto()
     BEST = auto()
 
 
-class ExamplesSummary:
+class PertsSummary:
     def __init__(
         self,
-        discovery_epoch: np.array,
-        losses: np.array,
         seq_lengths: np.array,
         padded_perts: np.array,
     ):
-        self.discovery_epoch = discovery_epoch
-        self.losses = losses
         self.seq_lengths = seq_lengths
         self.padded_perts = padded_perts
+        self.mask = self.create_mask()
+        self.perts = np.ma.array(self.padded_perts, mask=self.mask)
 
-    @cached_property
-    def mask(self) -> np.array:
+    def create_filtered_perts_summary(
+        self, indices_to_keep: np.array
+    ) -> PertsSummary:
+        return PertsSummary(
+            seq_lengths=self.seq_lengths[indices_to_keep],
+            padded_perts=self.padded_perts[indices_to_keep, :, :],
+        )
+
+    def create_mask(self) -> np.array:
         time_indices = np.arange(self.padded_perts.shape[1])
         time_is_in_range = time_indices.reshape(
             1, -1
@@ -306,110 +198,78 @@ class ExamplesSummary:
         return ~np.moveaxis(time_is_in_range_bcast, 0, -1)
 
     @cached_property
-    def masked_perts(self) -> np.ma.MaskedArray:
-        return np.ma.array(self.padded_perts, mask=self.mask)
+    def perts_abs(self) -> np.array:
+        return np.abs(self.perts)
 
-    @cached_property
-    def masked_perts_abs_val(self):
-        return np.abs(self.masked_perts)
+    @property
+    def perts_abs_sum(self) -> float:
+        return np.sum(self.perts_abs.data, axis=(1, 2))
 
-    @cached_property
-    def masked_perts_abs_val_sum(self):
-        return np.sum(self.masked_perts_abs_val.data)
+    @property
+    def perts_mean_abs(self) -> np.array:
+        return np.mean(self.perts_abs, axis=(1, 2)).data
 
-    @cached_property
-    def masked_perts_mean_abs_val(self):
-        return np.mean(self.masked_perts_abs_val, axis=(1, 2))
-
-    @cached_property
-    def masked_perts_min_nonzero_abs_val(self):
+    @property
+    def perts_min_nonzero_abs(self) -> np.array:
         zeros_replaced_by_inf = np.where(
-            self.masked_perts_abs_val.data != 0,
-            self.masked_perts_abs_val.data,
+            self.perts_abs.data != 0,
+            self.perts_abs.data,
             np.inf,
         )
         return np.min(zeros_replaced_by_inf, axis=(1, 2))
 
-    @cached_property
-    def masked_perts_max_abs_val(self):
-        return np.max(self.masked_perts_abs_val, axis=(1, 2))
+    @property
+    def perts_max_abs(self) -> np.array:
+        return np.max(self.perts_abs, axis=(1, 2)).data
 
-    @cached_property
-    def masked_perts_mean_max_abs_val(self):
-        return np.mean(self.masked_perts_max_abs_val).item()
+    @property
+    def perts_mean_max_abs(self) -> float:
+        return np.mean(self.perts_max_abs).item()
 
-    @cached_property
-    def masked_perts_num_actual_elements(self):
+    @property
+    def perts_num_actual_elements(self) -> np.array:
         return self.seq_lengths * self.padded_perts.shape[2]
 
-    @cached_property
-    def num_nonzero_elements(self):
-        return np.count_nonzero(self.masked_perts_abs_val.data, axis=(1, 2))
+    @property
+    def num_nonzero_elements(self) -> np.array:
+        return np.count_nonzero(self.perts_abs.data, axis=(1, 2))
 
-    def num_examples_with_num_nonzero_less_than(self, cutoff: int):
+    def num_examples_with_num_nonzero_less_than(self, cutoff: int) -> np.array:
         return np.where(self.num_nonzero_elements < cutoff)[0].shape[0]
 
-    @cached_property
-    def fraction_nonzero(self):
+    @property
+    def fraction_nonzero(self) -> np.array:
         return self.num_nonzero_elements.astype(
             "float"
-        ) / self.masked_perts_num_actual_elements.astype(np.float32)
+        ) / self.perts_num_actual_elements.astype(np.float32)
 
-    @cached_property
-    def sparsity(self):
+    @property
+    def sparsity(self) -> np.array:
         if len(self.fraction_nonzero) == 0:
             return np.array([], dtype=np.float32)
         else:
             return 1 - self.fraction_nonzero
 
-    @cached_property
-    def sparse_small_scores(self):
+    @property
+    def sparse_small_scores(self) -> np.array:
         if len(self.fraction_nonzero) == 0:
             return np.array([], dtype=torch.float32)
         else:
-            return (1 - self.fraction_nonzero) / self.masked_perts_abs_val_sum
-
-
-    @cached_property
-    def perts_actual(self) -> list[np.array]:
-        return [
-            self.padded_perts[example_idx, : self.seq_lengths[example_idx], :]
-            for example_idx in range(self.seq_lengths.shape[0])
-        ]
-
-    @cached_property
-    def perts_abs_val(self) -> list[np.array]:
-        return [np.abs(perts_array) for perts_array in self.perts_actual]
-
-    @cached_property
-    def perts_mean_abs_val(self) -> np.array:
-        return np.array(
-            [
-                np.mean(abs_perts_array)
-                for abs_perts_array in self.perts_abs_val
-            ]
-        )
-
-    @cached_property
-    def perts_max_abs_val(self) -> np.array:
-        return np.array(
-            [np.max(abs_perts_array) for abs_perts_array in self.perts_abs_val]
-        )
-
-    @cached_property
-    def perts_mean_max_abs_val(self) -> float:
-        return np.mean(self.perts_max_abs_val).item()
+            return (1 - self.fraction_nonzero) / self.perts_abs_sum
 
 
 class TrainerSuccessSummary:
     def __init__(self, trainer_result: TrainerResult):
         self.trainer_result = trainer_result
 
-    @cached_property
+    def __len__(self):
+        return len(self.indices_trainer_success)
+
+    @property
     def indices_dataset_attacked(self) -> np.array:
         return np.array(self.trainer_result.dataset_indices)
 
-    @cached_property
+    @property
     def indices_trainer_success(self) -> np.array:
         first_indices_success_trainer = np.where(
             self.trainer_result.first_examples.epochs != -1
@@ -424,7 +284,7 @@ class TrainerSuccessSummary:
         )
         return best_indices_success_trainer
 
-    @cached_property
+    @property
     def indices_dataset_success(self) -> np.array:
         return self.indices_dataset_attacked[self.indices_trainer_success]
 
@@ -434,74 +294,24 @@ class TrainerSuccessSummary:
             self.indices_dataset_attacked
         ]
 
-    @cached_property
+    @property
     def orig_labels_success(self) -> np.array:
         return np.array(self.trainer_result.dataset[:][2])[
             self.indices_dataset_success
         ]
 
-    @cached_property
-    def input_seq_lengths_attacked(self) -> np.array:
+    @property
+    def seq_lengths_attacked(self) -> np.array:
         return np.array(self.trainer_result.input_seq_lengths)
 
-    @cached_property
-    def inputs_seq_lengths_success(self) -> np.array:
-        return self.input_seq_lengths_attacked[self.indices_trainer_success]
+    @property
+    def seq_lengths_success(self) -> np.array:
+        return self.seq_lengths_attacked[self.indices_trainer_success]
 
     @cached_property
-    def recorded_examples_first(self) -> RecordedTrainerExamplesNP:
-        return RecordedTrainerExamplesNP(
-            epochs=np.array(
-                self.trainer_result.first_examples.epochs[
-                    self.indices_trainer_success
-                ]
-            ),
-            losses=np.array(
-                self.trainer_result.first_examples.losses[
-                    self.indices_trainer_success
-                ]
-            ),
-            perturbations=np.array(
-                self.trainer_result.first_examples.perturbations[
-                    self.indices_trainer_success, :, :
-                ]
-            ),
-        )
-
-    @cached_property
-    def recorded_examples_best(self) -> RecordedTrainerExamplesNP:
-        return RecordedTrainerExamplesNP(
-            epochs=np.array(
-                self.trainer_result.best_examples.epochs[
-                    self.indices_trainer_success
-                ]
-            ),
-            losses=np.array(
-                self.trainer_result.best_examples.losses[
-                    self.indices_trainer_success
-                ]
-            ),
-            perturbations=np.array(
-                self.trainer_result.best_examples.perturbations[
-                    self.indices_trainer_success, :, :
-                ]
-            ),
-        )
-
-    @cached_property
-    def examples_summary_first(self) -> ExamplesSummary:
-        return ExamplesSummary(
-            discovery_epoch=np.array(
-                self.trainer_result.first_examples.epochs[
-                    self.indices_trainer_success
-                ]
-            ),
-            losses=np.array(
-                self.trainer_result.first_examples.losses[
-                    self.indices_trainer_success
-                ]
-            ),
-            seq_lengths=self.inputs_seq_lengths_success,
+    def examples_summary_first(self) -> PertsSummary:
+        return PertsSummary(
+            seq_lengths=self.seq_lengths_success,
             padded_perts=np.array(
                 self.trainer_result.first_examples.perturbations[
                     self.indices_trainer_success, :, :
@@ -510,19 +320,9 @@ class TrainerSuccessSummary:
         )
 
     @cached_property
-    def examples_summary_best(self) -> ExamplesSummary:
-        return ExamplesSummary(
-            discovery_epoch=np.array(
-                self.trainer_result.best_examples.epochs[
-                    self.indices_trainer_success
-                ]
-            ),
-            losses=np.array(
-                self.trainer_result.best_examples.losses[
-                    self.indices_trainer_success
-                ]
-            ),
-            seq_lengths=self.inputs_seq_lengths_success,
+    def examples_summary_best(self) -> PertsSummary:
+        return PertsSummary(
+            seq_lengths=self.seq_lengths_success,
             padded_perts=np.array(
                 self.trainer_result.best_examples.perturbations[
                     self.indices_trainer_success, :, :
@@ -530,204 +330,73 @@ class TrainerSuccessSummary:
             ),
         )
 
-    # @property
-    # def recorded_examples_best(self) -> RecordedTrainerExamplesNP:
-    #     return RecordedTrainerExamplesNP(
-    #         epochs=self.trainer_result.best_examples.epochs[
-    #             self.indices_trainer_success
-    #         ],
-    #         losses=self.trainer_result.best_examples.losses[
-    #             self.indices_trainer_success
-    #         ],
-    #         perturbations=self.trainer_result.best_examples.perturbations[
-    #                       self.indices_trainer_success, :, :
-    #                       ]
-    #     )
+    def filtered_examples_summary(
+        self,
+        recorded_example_type: RecordedExampleType,
+        seq_length_min: int = None,
+        seq_length_max: int = None,
+        orig_label: int = None,
+        min_num_nonzero_perts: int = None,
+        max_num_nonzero_perts: int = None,
+    ) -> PertsSummary:
+        dispatch = {
+            RecordedExampleType.FIRST: self.examples_summary_first,
+            RecordedExampleType.BEST: self.examples_summary_best,
+        }
 
-    # @property
-    # def indices_success_trainer(self) -> torch.tensor:
-    #     best_indices_success_trainer = torch.where(
-    #         self.trainer_result.best_examples.epochs != -1
-    #     )[0]
-    #     first_indices_success_trainer = torch.where(
-    #         self.trainer_result.first_examples.epochs != -1
-    #     )[0]
-    #     assert (
-    #         (best_indices_success_trainer == first_indices_success_trainer)
-    #         .all()
-    #         .item()
-    #     )
-    #     return best_indices_success_trainer
-    #
-    # @property
-    # def indices_success_dataset(self) -> torch.tensor:
-    #     return self.trainer_result.dataset_indices[
-    #         self.indices_success_trainer
-    #     ]
-    #
-    # @property
-    # def orig_labels_attacked(self) -> torch.tensor:
-    #     return self.trainer_result.dataset[:][2]
-    #
-    # @property
-    # def orig_labels_success(self) -> torch.tensor:
-    #
-    #
-    #
-    #
-    # @property
-    # def input_seq_lengths(self) -> torch.tensor:
-    #     return self.trainer_result.input_seq_lengths[
-    #         self.indices_success_trainer
-    #     ]
-    #
-    # @property
-    # def first_recorded_examples(self) -> RecordedTrainerExamples:
-    #     return RecordedTrainerExamples(
-    #         epochs=self.trainer_result.first_examples.epochs[
-    #             self.indices_success_trainer
-    #         ],
-    #         losses=self.trainer_result.first_examples.losses[
-    #             self.indices_success_trainer
-    #         ],
-    #         perturbations=self.trainer_result.first_examples.perturbations[
-    #             self.indices_success_trainer, :, :
-    #         ],
-    #     )
-    #
-    # @property
-    # def best_recorded_examples(self) -> RecordedTrainerExamples:
-    #     return RecordedTrainerExamples(
-    #         epochs=self.trainer_result.best_examples.epochs[
-    #             self.indices_success_trainer
-    #         ],
-    #         losses=self.trainer_result.best_examples.losses[
-    #             self.indices_success_trainer
-    #         ],
-    #         perturbations=self.trainer_result.best_examples.perturbations[
-    #             self.indices_success_trainer, :, :
-    #         ],
-    #     )
-    #
-    # @property
-    # def first_examples_perts_summary(self) -> PerturbationSummary:
-    #     return PerturbationSummary(
-    #         padded_perts=self.first_recorded_examples.perturbations,
-    #         input_seq_lengths=self.input_seq_lengths,
-    #     )
-    #
-    # @property
-    # def best_examples_perts_summary(self) -> PerturbationSummary:
-    #     return PerturbationSummary(
-    #         padded_perts=self.best_recorded_examples.perturbations,
-    #         input_seq_lengths=self.input_seq_lengths,
-    #     )
-    #
-    # def trainer_indices_for_samples_of_length(self, n: int) -> torch.tensor:
-    #     return self.indices_success_trainer[
-    #         torch.where(self.input_seq_lengths == n)[0]
-    #     ]
+        success_idx_filtered_by_min_seq_length = (
+            np.where(self.seq_lengths_success >= seq_length_min)[0]
+            if seq_length_min is not None
+            else np.arange(len(self))
+        )
 
-    # def trainer_indices_for_samples_of_orig_label(
-    #     self, orig_label: int
-    # ) -> torch.tensor:
-    #     torch.where[]
+        success_idx_filtered_by_max_seq_length = (
+            np.where(self.seq_lengths_success <= seq_length_max)[0]
+            if seq_length_max is not None
+            else np.arange(len(self))
+        )
 
+        success_idx_length_filtered = np.intersect1d(
+            ar1=success_idx_filtered_by_min_seq_length,
+            ar2=success_idx_filtered_by_max_seq_length,
+        )
 
-# class TrainerSuccessSummary:
-#     def __init__(self, trainer_result: TrainerResult):
-#         best_success_trainer_indices = torch.where(
-#             trainer_result.best_examples.epochs != -1
-#         )[0]
-#         first_success_trainer_indices = torch.where(
-#             trainer_result.first_examples.epochs != -1
-#         )[0]
-#         assert (
-#             (best_success_trainer_indices == first_success_trainer_indices)
-#             .all()
-#             .item()
-#         )
-#
-#         self.dataset = trainer_result.dataset
-#         self.attacked_dataset_indices = trainer_result.dataset_indices
-#         self.success_dataset_indices = trainer_result.dataset_indices[
-#             best_success_trainer_indices
-#         ]
-#         self.epochs_run = trainer_result.epochs_run[
-#             best_success_trainer_indices
-#         ]
-#         self.input_seq_lengths = trainer_result.input_seq_lengths[
-#             best_success_trainer_indices
-#         ]
-#         self.first_examples = RecordedTrainerExamples(
-#             epochs=trainer_result.first_examples.epochs[
-#                 first_success_trainer_indices
-#             ],
-#             losses=trainer_result.first_examples.losses[
-#                 first_success_trainer_indices
-#             ],
-#             perturbations=trainer_result.first_examples.perturbations[
-#                 first_success_trainer_indices, :, :
-#             ],
-#         )
-#         self.best_examples = RecordedTrainerExamples(
-#             epochs=trainer_result.best_examples.epochs[
-#                 best_success_trainer_indices
-#             ],
-#             losses=trainer_result.best_examples.losses[
-#                 best_success_trainer_indices
-#             ],
-#             perturbations=trainer_result.best_examples.perturbations[
-#                 best_success_trainer_indices, :, :
-#             ],
-#         )
-#         self.first_perts_summary = PerturbationSummary(
-#             padded_perts=self.first_examples.perturbations,
-#             input_seq_lengths=self.input_seq_lengths,
-#         )
-#         self.best_perts_summary = PerturbationSummary(
-#             padded_perts=self.best_examples.perturbations,
-#             input_seq_lengths=self.input_seq_lengths,
-#         )
-#
-#     def get_filtered_perts(
-#         self,
-#         perts_type: str = None,
-#         seq_length: int = None,
-#         orig_label: int = None,
-#     ) -> torch.tensor:
-#         assert perts_type == "first" or perts_type == "best"
-#         full_examples = (
-#             self.first_examples
-#             if perts_type == "first"
-#             else self.best_examples
-#         )
-#
-#         if seq_length is not None:
-#             match_seq_length_summary_indices = torch.where(
-#                 self.input_seq_lengths == seq_length
-#             )[0]
-#         else:
-#             match_seq_length_summary_indices = torch.arange(
-#                 len(self.input_seq_lengths)
-#             )
-#
-#         label_tensor = torch.tensor(self.dataset[:][2])
-#         success_orig_labels = label_tensor[self.success_dataset_indices]
-#         if orig_label is not None:
-#             match_label_dataset_indices = torch.where(
-#                 success_orig_labels == orig_label
-#             )[0]
-#         else:
-#             match_label_dataset_indices = torch.arange(
-#                 len(self.success_dataset_indices)
-#             )
-#
-#         filtered_indices = np.intersect1d(
-#             match_seq_length_summary_indices, match_label_dataset_indices
-#         )
-#
-#         filtered_perts = full_examples.perturbations[filtered_indices, :, :]
-#         filtered_seq_lengths = self.input_seq_lengths[filtered_indices]
-#
-#         return filtered_perts
+        success_idx_filtered_orig_label = (
+            np.where(self.orig_labels_success == orig_label)
+            if orig_label is not None
+            else np.arange(len(self))
+        )
+
+        success_idx_len_label_filtered = np.intersect1d(
+            ar1=success_idx_length_filtered,
+            ar2=success_idx_filtered_orig_label,
+        )
+
+        full_summary = dispatch[recorded_example_type]
+
+        success_idx_min_num_nonzero_filtered = np.where(
+            full_summary.num_nonzero_elements >= min_num_nonzero_perts
+            if min_num_nonzero_perts is not None
+            else np.arange(len(self))
+        )
+
+        success_idx_max_num_nonzero_filtered = np.where(
+            full_summary.num_nonzero_elements <= max_num_nonzero_perts
+            if max_num_nonzero_perts is not None
+            else np.arange(len(self))
+        )
+
+        success_idx_num_nonzero_filtered = np.intersect1d(
+            ar1=success_idx_min_num_nonzero_filtered,
+            ar2=success_idx_max_num_nonzero_filtered
+        )
+
+        success_idx_filtered = np.intersect1d(
+            ar1=success_idx_len_label_filtered,
+            ar2=success_idx_num_nonzero_filtered,
+        )
+
+        return full_summary.create_filtered_perts_summary(
+            indices_to_keep=success_idx_filtered
+        )
+
