@@ -1,3 +1,4 @@
+from enum import Enum, auto
 from functools import cached_property
 
 import numpy as np
@@ -6,9 +7,9 @@ from torch.nn.utils.rnn import pad_sequence
 import lstm_adversarial_attack.attack.attack_result_data_structs as ads
 
 
-class PaddedFeatures:
-    features: np.array
-    seq_lengths: np.array
+class RecordedExampleType(Enum):
+    FIRST = auto()
+    BEST = auto()
 
 
 class AttackResults:
@@ -23,7 +24,7 @@ class AttackResults:
         self._best_examples_raw = trainer_result.best_examples
 
     @cached_property
-    def _attacked_features_padded(self) -> np.array:
+    def attacked_features_padded(self) -> np.array:
         torch_attacked_features_padded = pad_sequence(
             self._dataset[:][1], batch_first=True
         )[self._dataset_indices_attacked]
@@ -53,9 +54,9 @@ class AttackResults:
         )
         return np.array(torch_padded_features)
 
-    @property
+    @cached_property
     def padded_features_success(self) -> np.array:
-        return self._attacked_features_padded[
+        return self.attacked_features_padded[
             self._successful_attack_indices, :, :
         ]
 
@@ -86,48 +87,63 @@ class AttackResults:
             ],
         )
 
-    @property
+    @cached_property
     def first_examples_padded_perts(self) -> np.array:
         return np.array(self._first_examples_raw.perturbations)[
             self._successful_attack_indices
         ]
 
-    @property
+    @cached_property
     def first_perts_summary(self) -> ads.PertsSummary:
         return ads.PertsSummary(
             seq_lengths=self._seq_lengths[self._successful_attack_indices],
             padded_perts=self.first_examples_padded_perts,
         )
 
-    @property
+    @cached_property
     def best_examples_padded_perts(self) -> np.array:
         return np.array(self._best_examples_raw.perturbations)[
             self._successful_attack_indices
         ]
 
-    @property
+    @cached_property
     def best_perts_summary(self) -> ads.PertsSummary:
         return ads.PertsSummary(
             seq_lengths=self._seq_lengths[self._successful_attack_indices],
             padded_perts=self.best_examples_padded_perts,
         )
 
-    @property
-    def first_examples_df(self) -> pd.DataFrame:
+    def build_examples_summary_df(
+        self,
+        example_type: RecordedExampleType,
+    ):
+        examples_dispatch = {
+            RecordedExampleType.FIRST: self._first_examples_raw,
+            RecordedExampleType.BEST: self._best_examples_raw,
+        }
+
+        perts_summary_dispatch = {
+            RecordedExampleType.FIRST: self.first_perts_summary,
+            RecordedExampleType.BEST: self.best_perts_summary,
+        }
+
+        trainer_examples = examples_dispatch[example_type]
+        perts_summary = perts_summary_dispatch[example_type]
+
         data_array = np.stack(
             (
                 self._dataset_indices_attacked[
                     self._successful_attack_indices
                 ],
                 self._orig_labels[self._successful_attack_indices],
-                np.array(self._first_examples_raw.epochs)[
+                np.array(trainer_examples.epochs)[
                     self._successful_attack_indices
                 ],
-                np.array(self._first_examples_raw.losses)[
+                np.array(trainer_examples.losses)[
                     self._successful_attack_indices
                 ],
                 np.array(self._seq_lengths)[self._successful_attack_indices],
-                self.first_perts_summary.num_nonzero_elements,
+                perts_summary.num_nonzero_elements,
             ),
             axis=1,
         )
@@ -143,33 +159,14 @@ class AttackResults:
             ],
         )
 
-    @property
-    def best_examples_df(self) -> pd.DataFrame:
-        data_array = np.stack(
-            (
-                self._dataset_indices_attacked[
-                    self._successful_attack_indices
-                ],
-                self._orig_labels[self._successful_attack_indices],
-                np.array(self._best_examples_raw.epochs)[
-                    self._successful_attack_indices
-                ],
-                np.array(self._best_examples_raw.losses)[
-                    self._successful_attack_indices
-                ],
-                np.array(self._seq_lengths)[self._successful_attack_indices],
-                self.best_perts_summary.num_nonzero_elements,
-            ),
-            axis=1,
+    @cached_property
+    def first_examples_df(self) -> pd.DataFrame:
+        return self.build_examples_summary_df(
+            example_type=RecordedExampleType.FIRST
         )
-        return pd.DataFrame(
-            data=data_array,
-            columns=[
-                "dataset_index",
-                "orig_label",
-                "epoch_found",
-                "loss",
-                "seq_lengths",
-                "num_nonzero_perts",
-            ],
+
+    @cached_property
+    def best_examples_df(self) -> pd.DataFrame:
+        return self.build_examples_summary_df(
+            example_type=RecordedExampleType.BEST
         )

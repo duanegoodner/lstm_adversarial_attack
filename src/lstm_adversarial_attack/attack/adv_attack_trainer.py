@@ -161,8 +161,7 @@ class AdversarialAttackTrainer:
         # TODO Create setter methods so trainer does not need to
         #  directly access perturbations
         zero_mask = torch.abs(
-            self.attacker.feature_perturber.perturbation <= self.lambda_1
-        )
+            self.attacker.feature_perturber.perturbation) <= self.lambda_1
         self.attacker.feature_perturber.perturbation.data[zero_mask] = 0
         pos_mask = self.attacker.feature_perturber.perturbation > self.lambda_1
         self.attacker.feature_perturber.perturbation.data[
@@ -183,6 +182,7 @@ class AdversarialAttackTrainer:
             clamped_perturbation
         )
 
+    # TODO Refactor. Method is too long.
     def attack_batch(
         self,
         indices: torch.tensor,

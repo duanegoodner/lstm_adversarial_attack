@@ -162,9 +162,21 @@ class TrainerResult:
         )
 
 
-class RecordedExampleType(Enum):
-    FIRST = auto()
-    BEST = auto()
+class FeaturesMaskBuilder:
+    def __init__(self, padded_features_array: np.array, seq_lengths: np.array):
+        self._padded_features_array = padded_features_array
+        self._seq_lengths = seq_lengths
+
+    def build(self) -> np.array:
+        time_indices = np.arange(self._padded_features_array.shape[1])
+        time_is_in_range = time_indices.reshape(
+            1, -1
+        ) < self._seq_lengths.reshape(-1, 1)
+        time_is_in_range_bcast = np.broadcast_to(
+            time_is_in_range,
+            (self._padded_features_array.shape[2], *time_is_in_range.shape),
+        )
+        return ~np.moveaxis(time_is_in_range_bcast, 0, -1)
 
 
 class PertsSummary:
@@ -175,41 +187,25 @@ class PertsSummary:
     ):
         self.seq_lengths = seq_lengths
         self.padded_perts = padded_perts
-        self.mask = self.create_mask()
+        self.mask = FeaturesMaskBuilder(
+            padded_features_array=self.padded_perts,
+            seq_lengths=self.seq_lengths,
+        ).build()
         self.perts = np.ma.array(self.padded_perts, mask=self.mask)
-
-    def create_filtered_perts_summary(
-        self, indices_to_keep: np.array
-    ) -> PertsSummary:
-        return PertsSummary(
-            seq_lengths=self.seq_lengths[indices_to_keep],
-            padded_perts=self.padded_perts[indices_to_keep, :, :],
-        )
-
-    def create_mask(self) -> np.array:
-        time_indices = np.arange(self.padded_perts.shape[1])
-        time_is_in_range = time_indices.reshape(
-            1, -1
-        ) < self.seq_lengths.reshape(-1, 1)
-        time_is_in_range_bcast = np.broadcast_to(
-            time_is_in_range,
-            (self.padded_perts.shape[2], *time_is_in_range.shape),
-        )
-        return ~np.moveaxis(time_is_in_range_bcast, 0, -1)
 
     @cached_property
     def perts_abs(self) -> np.array:
         return np.abs(self.perts)
 
-    @property
+    @cached_property
     def perts_abs_sum(self) -> float:
         return np.sum(self.perts_abs.data, axis=(1, 2))
 
-    @property
+    @cached_property
     def perts_mean_abs(self) -> np.array:
         return np.mean(self.perts_abs, axis=(1, 2)).data
 
-    @property
+    @cached_property
     def perts_min_nonzero_abs(self) -> np.array:
         zeros_replaced_by_inf = np.where(
             self.perts_abs.data != 0,
@@ -218,39 +214,39 @@ class PertsSummary:
         )
         return np.min(zeros_replaced_by_inf, axis=(1, 2))
 
-    @property
+    @cached_property
     def perts_max_abs(self) -> np.array:
         return np.max(self.perts_abs, axis=(1, 2)).data
 
-    @property
+    @cached_property
     def perts_mean_max_abs(self) -> float:
         return np.mean(self.perts_max_abs).item()
 
-    @property
+    @cached_property
     def perts_num_actual_elements(self) -> np.array:
         return self.seq_lengths * self.padded_perts.shape[2]
 
-    @property
+    @cached_property
     def num_nonzero_elements(self) -> np.array:
         return np.count_nonzero(self.perts_abs.data, axis=(1, 2))
 
     def num_examples_with_num_nonzero_less_than(self, cutoff: int) -> np.array:
         return np.where(self.num_nonzero_elements < cutoff)[0].shape[0]
 
-    @property
+    @cached_property
     def fraction_nonzero(self) -> np.array:
         return self.num_nonzero_elements.astype(
             "float"
         ) / self.perts_num_actual_elements.astype(np.float32)
 
-    @property
+    @cached_property
     def sparsity(self) -> np.array:
         if len(self.fraction_nonzero) == 0:
             return np.array([], dtype=np.float32)
         else:
             return 1 - self.fraction_nonzero
 
-    @property
+    @cached_property
     def sparse_small_scores(self) -> np.array:
         if len(self.fraction_nonzero) == 0:
             return np.array([], dtype=torch.float32)
@@ -328,75 +324,5 @@ class TrainerSuccessSummary:
                     self.indices_trainer_success, :, :
                 ]
             ),
-        )
-
-    def filtered_examples_summary(
-        self,
-        recorded_example_type: RecordedExampleType,
-        seq_length_min: int = None,
-        seq_length_max: int = None,
-        orig_label: int = None,
-        min_num_nonzero_perts: int = None,
-        max_num_nonzero_perts: int = None,
-    ) -> PertsSummary:
-        dispatch = {
-            RecordedExampleType.FIRST: self.examples_summary_first,
-            RecordedExampleType.BEST: self.examples_summary_best,
-        }
-
-        success_idx_filtered_by_min_seq_length = (
-            np.where(self.seq_lengths_success >= seq_length_min)[0]
-            if seq_length_min is not None
-            else np.arange(len(self))
-        )
-
-        success_idx_filtered_by_max_seq_length = (
-            np.where(self.seq_lengths_success <= seq_length_max)[0]
-            if seq_length_max is not None
-            else np.arange(len(self))
-        )
-
-        success_idx_length_filtered = np.intersect1d(
-            ar1=success_idx_filtered_by_min_seq_length,
-            ar2=success_idx_filtered_by_max_seq_length,
-        )
-
-        success_idx_filtered_orig_label = (
-            np.where(self.orig_labels_success == orig_label)
-            if orig_label is not None
-            else np.arange(len(self))
-        )
-
-        success_idx_len_label_filtered = np.intersect1d(
-            ar1=success_idx_length_filtered,
-            ar2=success_idx_filtered_orig_label,
-        )
-
-        full_summary = dispatch[recorded_example_type]
-
-        success_idx_min_num_nonzero_filtered = np.where(
-            full_summary.num_nonzero_elements >= min_num_nonzero_perts
-            if min_num_nonzero_perts is not None
-            else np.arange(len(self))
-        )
-
-        success_idx_max_num_nonzero_filtered = np.where(
-            full_summary.num_nonzero_elements <= max_num_nonzero_perts
-            if max_num_nonzero_perts is not None
-            else np.arange(len(self))
-        )
-
-        success_idx_num_nonzero_filtered = np.intersect1d(
-            ar1=success_idx_min_num_nonzero_filtered,
-            ar2=success_idx_max_num_nonzero_filtered
-        )
-
-        success_idx_filtered = np.intersect1d(
-            ar1=success_idx_len_label_filtered,
-            ar2=success_idx_num_nonzero_filtered,
-        )
-
-        return full_summary.create_filtered_perts_summary(
-            indices_to_keep=success_idx_filtered
         )
 
