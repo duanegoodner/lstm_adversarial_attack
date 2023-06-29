@@ -103,7 +103,7 @@ class AttackHyperParameterTuner:
         #         success_summary.best_perts_summary.sparsity
         #     ).item()
 
-        return success_summary.best_perts_summary.num_examples_with_num_nonzero_less_than(
+        return success_summary.examples_summary_best.num_examples_with_num_nonzero_less_than(
             cutoff=2
         )
 

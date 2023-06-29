@@ -198,6 +198,48 @@ class PertsSummary:
         return np.abs(self.perts)
 
     @cached_property
+    def perts_max_positive(self) -> np.array:
+        return np.max(self.perts, axis=(1, 2)).data
+
+    @cached_property
+    def perts_max_negative(self) -> np.array:
+        return np.min(self.perts, axis=(1, 2)).data
+
+    @cached_property
+    def perts_max_abs(self) -> np.array:
+        return np.max(self.perts_abs, axis=(1, 2)).data
+
+    # https://stackoverflow.com/a/41990983: argmax each sub-array along axis=0
+    # @cached_property
+    # def perts_abs_argmax(self) -> tuple:
+    #     idx = self.perts_abs.reshape(self.perts_abs.shape[0], -1).argmax(axis=-1)
+    #     return np.unravel_index(idx, self.perts_abs.shape[-2:])
+
+    # @cached_property
+    # def perts_max_abs(self) -> np.array:
+    #     return np.max(self.perts_abs, axis=(1, 2)).data
+
+    # @cached_property
+    # def perts_max_abs(self) -> np.array:
+    #     return self.perts_abs[
+    #         np.arange(self.perts_abs.shape[0]),
+    #         self.perts_abs_argmax[0],
+    #         self.perts_abs_argmax[1]
+    #     ].data
+
+    # @cached_property
+    # def perts_max_signed(self) -> np.array:
+    #     return self.perts[
+    #         np.arange(self.perts_abs.shape[0]),
+    #         self.perts_abs_argmax[0],
+    #         self.perts_abs_argmax[1]
+    #     ].data
+    #
+    # @cached_property
+    # def perts_max_abs(self) -> np.array:
+    #     return np.abs(self.perts_max_signed)
+
+    @cached_property
     def perts_abs_sum(self) -> float:
         return np.sum(self.perts_abs.data, axis=(1, 2))
 
@@ -215,10 +257,6 @@ class PertsSummary:
         return np.min(zeros_replaced_by_inf, axis=(1, 2))
 
     @cached_property
-    def perts_max_abs(self) -> np.array:
-        return np.max(self.perts_abs, axis=(1, 2)).data
-
-    @cached_property
     def perts_mean_max_abs(self) -> float:
         return np.mean(self.perts_max_abs).item()
 
@@ -227,8 +265,17 @@ class PertsSummary:
         return self.seq_lengths * self.padded_perts.shape[2]
 
     @cached_property
+    def num_negative_perts(self) -> int:
+        return np.sum(self.perts < 0, axis=(1, 2))
+
+    @cached_property
+    def num_positive_perts(self) -> int:
+        return np.sum(self.perts > 0, axis=(1, 2))
+
+    @cached_property
     def num_nonzero_elements(self) -> np.array:
-        return np.count_nonzero(self.perts_abs.data, axis=(1, 2))
+        return self.num_negative_perts + self.num_positive_perts
+        # return np.count_nonzero(self.perts_abs.data, axis=(1, 2))
 
     def num_examples_with_num_nonzero_less_than(self, cutoff: int) -> np.array:
         return np.where(self.num_nonzero_elements < cutoff)[0].shape[0]

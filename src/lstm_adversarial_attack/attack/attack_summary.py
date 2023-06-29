@@ -144,6 +144,10 @@ class AttackResults:
                 ],
                 np.array(self._seq_lengths)[self._successful_attack_indices],
                 perts_summary.num_nonzero_elements,
+                perts_summary.num_negative_perts,
+                perts_summary.perts_max_negative,
+                perts_summary.num_positive_perts,
+                perts_summary.perts_max_positive
             ),
             axis=1,
         )
@@ -155,9 +159,24 @@ class AttackResults:
                 "epoch_found",
                 "loss",
                 "seq_length",
-                "num_nonzero_perts",
-            ],
-        )
+                "num_perts_total",
+                "num_negative_perts",
+                "pert_max_negative",
+                "num_positive_perts",
+                "pert_max_positive"
+            ]
+        ).astype(dtype={
+                "dataset_index": "int",
+                "orig_label": "int",
+                "epoch_found" : "int",
+                "loss": "float32",
+                "seq_length": "int",
+                "num_perts_total": "int",
+                "num_negative_perts": "int",
+                "pert_max_negative": "float32",
+                "num_positive_perts": "int",
+                "pert_max_positive": "float32"
+            })
 
     @cached_property
     def first_examples_df(self) -> pd.DataFrame:
