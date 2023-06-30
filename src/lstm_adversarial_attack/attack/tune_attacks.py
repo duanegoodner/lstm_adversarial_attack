@@ -2,9 +2,11 @@ import sys
 import optuna
 import torch
 from pathlib import Path
+from typing import Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_data_structs as ads
+import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.attack.attack_hyperparameter_tuner as aht
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
@@ -18,12 +20,14 @@ class AttackTunerDriver:
         self,
         device: torch.device,
         target_model_path: Path,
+        objective: Callable[[ards.TrainerSuccessSummary], float],
         target_model_checkpoint: dict,
         tuning_ranges: ads.AttackTuningRanges = None,
         output_dir: Path = None,
     ):
         self.device = device
         self.target_model_path = target_model_path
+        self.objective = objective
         self.target_model_checkpoint = target_model_checkpoint
         if tuning_ranges is None:
             tuning_ranges = ads.AttackTuningRanges(
@@ -52,8 +56,21 @@ class AttackTunerDriver:
         assessment_type: amr.ModelAssessmentType,
         selection_metric: cvs.EvalMetric,
         optimize_direction: cvs.OptimizeDirection,
+        objective: Callable[[ards.TrainerSuccessSummary], float],
         training_output_dir: Path = None,
     ):
+        """
+
+        :param device: device to run on
+        :param assessment_type: single fold or cv assessment of target model
+        :param selection_metric: metric for choosing which target
+        model checkpoint to use
+        :param optimize_direction: min or max
+        :param objective: function that calculates return val of
+        AttackHyperparameterTuner objective_fn
+        :param training_output_dir: directory where tuning data is saved
+        :return: an AttackTunerDriver instance
+        """
         model_retriever = amr.ModelRetriever(
             assessment_type=assessment_type,
             training_output_dir=training_output_dir,
@@ -69,6 +86,7 @@ class AttackTunerDriver:
             device=device,
             target_model_path=model_path_checkpoint_pair.model_path,
             target_model_checkpoint=model_path_checkpoint_pair.checkpoint,
+            objective=objective,
         )
 
     def run(self, num_trials: int) -> optuna.Study:
@@ -80,6 +98,7 @@ class AttackTunerDriver:
             max_num_samples=cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
             tuning_ranges=self.tuning_ranges,
             output_dir=self.output_dir,
+            objective=self.objective,
         )
 
         return tuner.tune(num_trials=num_trials)
@@ -94,6 +113,7 @@ class AttackTunerDriver:
             tuning_ranges=self.tuning_ranges,
             continue_study_path=output_dir / "optuna_study.pickle",
             output_dir=output_dir,
+            objective=self.objective,
         )
 
         return tuner.tune(num_trials=num_trials)
@@ -102,6 +122,7 @@ class AttackTunerDriver:
 def start_new_tuning(
     num_trials: int,
     target_model_assessment_type: amr.ModelAssessmentType,
+    objective: Callable[[ards.TrainerSuccessSummary], float],
     target_model_assessment_dir: Path = None,
 ) -> optuna.Study:
     if torch.cuda.is_available():
@@ -115,6 +136,7 @@ def start_new_tuning(
         selection_metric=cvs.EvalMetric.VALIDATION_LOSS,
         optimize_direction=cvs.OptimizeDirection.MIN,
         training_output_dir=target_model_assessment_dir,
+        objective=objective,
     )
 
     print(
@@ -149,9 +171,10 @@ def resume_tuning(
 
 
 if __name__ == "__main__":
-    # initial_study = start_new_tuning(
-    #     num_trials=100,
-    #     target_model_assessment_type=amr.ModelAssessmentType.KFOLD,
-    # )
+    initial_study = start_new_tuning(
+        num_trials=100,
+        target_model_assessment_type=amr.ModelAssessmentType.KFOLD,
+        objective=aht.AttackTunerObjectivesBuilder.sparsity(),
+    )
 
-    continued_study = resume_tuning(num_trials=60)
+    # continued_study = resume_tuning(num_trials=60)

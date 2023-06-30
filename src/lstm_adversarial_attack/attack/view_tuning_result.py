@@ -8,7 +8,7 @@ import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.attack.attack_results_analyzer as ara
 
 optuna_output_dir = (
-    cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-06-23_23_47_16.816868"
+    cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-06-30_10_52_24.059982"
 )
 study_path = optuna_output_dir / "optuna_study.pickle"
 trial_result_paths = sorted((optuna_output_dir / "attack_trial_results").iterdir(), key=lambda x: x.stat().st_mtime)
@@ -24,39 +24,39 @@ success_summaries = [
     ads.TrainerSuccessSummary(trainer_result=item) for item in trial_results
 ]
 
-perts_best_48_0 = [
-    item.get_filtered_perts(perts_type="best", seq_length=48, orig_label=0)
-    for item in success_summaries
-]
-
-perts_first_48_0 = [
-item.get_filtered_perts(perts_type="first", seq_length=48, orig_label=0)
-    for item in success_summaries
-]
-
-perts_best_48_1 = [
-    item.get_filtered_perts(perts_type="best", seq_length=48, orig_label=1)
-    for item in success_summaries
-]
-
-perts_first_48_1 = [
-item.get_filtered_perts(perts_type="first", seq_length=48, orig_label=1)
-    for item in success_summaries
-]
-
-susceptibilities_first_48_0 = [
-    ara.AttackSusceptibilityMetrics(perts=item) for item in perts_first_48_0
-]
-
-susceptibilities_first_48_1 = [
-    ara.AttackSusceptibilityMetrics(perts=item) for item in perts_first_48_1
-]
-
-susceptibilities_best_48_0 = [
-    ara.AttackSusceptibilityMetrics(perts=item) for item in perts_best_48_0
-]
-
-susceptibilities_best_48_1 = [
-    ara.AttackSusceptibilityMetrics(perts=item) for item in perts_best_48_1
-]
-
+# perts_best_48_0 = [
+#     item.get_filtered_perts(perts_type="best", seq_length=48, orig_label=0)
+#     for item in success_summaries
+# ]
+#
+# perts_first_48_0 = [
+# item.get_filtered_perts(perts_type="first", seq_length=48, orig_label=0)
+#     for item in success_summaries
+# ]
+#
+# perts_best_48_1 = [
+#     item.get_filtered_perts(perts_type="best", seq_length=48, orig_label=1)
+#     for item in success_summaries
+# ]
+#
+# perts_first_48_1 = [
+# item.get_filtered_perts(perts_type="first", seq_length=48, orig_label=1)
+#     for item in success_summaries
+# ]
+#
+# susceptibilities_first_48_0 = [
+#     ara.AttackSusceptibilityMetrics(perts=item) for item in perts_first_48_0
+# ]
+#
+# susceptibilities_first_48_1 = [
+#     ara.AttackSusceptibilityMetrics(perts=item) for item in perts_first_48_1
+# ]
+#
+# susceptibilities_best_48_0 = [
+#     ara.AttackSusceptibilityMetrics(perts=item) for item in perts_best_48_0
+# ]
+#
+# susceptibilities_best_48_1 = [
+#     ara.AttackSusceptibilityMetrics(perts=item) for item in perts_best_48_1
+# ]
+#

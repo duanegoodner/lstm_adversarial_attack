@@ -193,7 +193,7 @@ if __name__ == "__main__":
     attack_driver = AttackDriver.from_attack_hyperparameter_tuning(
         device=cur_device,
         # max_num_samples=330,
-        epochs_per_batch=1000,
+        # epochs_per_batch=1000,
         sample_selection_seed=2023,
         checkpoint_interval=50,
     )

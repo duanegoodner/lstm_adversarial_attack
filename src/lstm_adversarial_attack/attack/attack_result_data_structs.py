@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import torch
-from torch.utils.data import Dataset
 from dataclasses import dataclass
-from enum import Enum, auto
 from functools import cached_property
 from typing import Callable
 import lstm_adversarial_attack.dataset_with_index as dsi
@@ -296,7 +294,7 @@ class PertsSummary:
     @cached_property
     def sparse_small_scores(self) -> np.array:
         if len(self.fraction_nonzero) == 0:
-            return np.array([], dtype=torch.float32)
+            return np.array([], dtype=np.float32)
         else:
             return (1 - self.fraction_nonzero) / self.perts_abs_sum
 

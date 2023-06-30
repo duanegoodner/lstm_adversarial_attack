@@ -2,9 +2,6 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import seaborn as sns
 import torch
-from torch.utils.data import DataLoader
-
-# from cv_trainer import WeightedRandomSamplerBuilder
 from weighted_dataloader_builder import WeightedDataLoaderBuilder
 from x19_mort_dataset import X19MortalityDataset
 
