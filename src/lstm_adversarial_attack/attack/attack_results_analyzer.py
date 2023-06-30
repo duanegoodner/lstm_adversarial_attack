@@ -1,48 +1,26 @@
+from dataclasses import dataclass
+
 import numpy as np
 import pandas as pd
-import torch
-from pathlib import Path
-import lstm_adversarial_attack.attack.attack_result_data_structs as ads
 import lstm_adversarial_attack.attack.attack_summary as asu
-import lstm_adversarial_attack.config_settings as cfg_set
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.resource_io as rio
-
-
-# def calc_gmp_ij(perts: torch.tensor) -> torch.tensor:
-#     return torch.max(torch.abs(perts), dim=0).values
 
 
 def calc_gmp_ij(perts: np.array) -> np.array:
     return np.max(np.abs(perts), axis=0)
 
 
-# def calc_gap_ij(perts: torch.tensor) -> torch.tensor:
-#     return torch.sum(torch.abs(perts), dim=0) / perts.shape[0]
-
-
 def calc_gap_ij(perts: np.array) -> np.array:
     return np.sum(np.abs(perts), axis=0) / perts.shape[0]
-
-
-# def calc_gpp_ij(perts: torch.tensor) -> torch.tensor:
-#     return torch.count_nonzero(perts, dim=0) / perts.shape[0]
 
 
 def calc_gpp_ij(perts: np.array) -> np.array:
     return np.count_nonzero(perts, axis=0) / perts.shape[0]
 
 
-# def calc_s_ij(gmp: torch.tensor, gpp: torch.tensor) -> torch.tensor:
-#     return torch.mul(gmp, gpp)
-
-
 def calc_s_ij(gmp: np.array, gpp: np.array) -> np.array:
     return gmp * gpp
-
-
-# def calc_s_j(s_ij: torch.tensor) -> torch.tensor:
-#     return torch.sum(s_ij, dim=0)
 
 
 def calc_s_j(s_ij: np.array) -> np.array:
@@ -86,15 +64,16 @@ class AttackSusceptibilityMetrics:
             self._s_ij = None
             self._s_j = None
 
-    # @property
-    # def gap_ij(self) -> pd.DataFrame:
-    #     if self._gap_ij is not None:
-    #         return pd.DataFrame(
-    #             data=self._gap_ij, columns=self.measurement_labels
-    #         )
+
+@dataclass
+class AttackAnalysis:
+    filtered_examples_df: pd.DataFrame
+    susceptibility_metrics: AttackSusceptibilityMetrics
 
 
-class SusceptibilityCalculator:
+
+
+class AttackResultAnalyzer:
     def __init__(self, attack_summary: asu.AttackResults):
         self._attack_summary = attack_summary
 
@@ -146,15 +125,15 @@ class SusceptibilityCalculator:
 
         return filtered_df
 
-    def get_susceptibility_metrics(
+    def get_attack_analysis(
         self,
         example_type: asu.RecordedExampleType,
         seq_length: int,
         orig_label: int,
         min_num_perts: int = None,
         max_num_perts: int = None,
-    ) -> AttackSusceptibilityMetrics:
-        filtered_df = self._get_filtered_examples_df(
+    ) -> AttackAnalysis:
+        filtered_examples_df = self._get_filtered_examples_df(
             example_type=example_type,
             seq_length=seq_length,
             orig_label=orig_label,
@@ -164,8 +143,11 @@ class SusceptibilityCalculator:
 
         perts_summary = self._perts_summary_dispatch[example_type]
 
-        metrics = AttackSusceptibilityMetrics(
-            perts=perts_summary.padded_perts[filtered_df.index, :, :]
+        susceptibility_metrics = AttackSusceptibilityMetrics(
+            perts=perts_summary.padded_perts[filtered_examples_df.index, :, :]
         )
 
-        return metrics
+        return AttackAnalysis(
+            filtered_examples_df=filtered_examples_df,
+            susceptibility_metrics=susceptibility_metrics
+        )
