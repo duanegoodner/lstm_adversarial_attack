@@ -246,6 +246,10 @@ class PertsSummary:
         return np.mean(self.perts_abs, axis=(1, 2)).data
 
     @cached_property
+    def perts_mean_nonzero_abs(self) -> np.array:
+        return (self.perts_abs_sum / self.num_nonzero_elements).data
+
+    @cached_property
     def perts_min_nonzero_abs(self) -> np.array:
         zeros_replaced_by_inf = np.where(
             self.perts_abs.data != 0,
@@ -297,6 +301,13 @@ class PertsSummary:
             return np.array([], dtype=np.float32)
         else:
             return (1 - self.fraction_nonzero) / self.perts_abs_sum
+
+    @cached_property
+    def sparse_small_max_scores(self) -> np.array:
+        if len(self.fraction_nonzero) == 0:
+            return np.array([], dtype=np.float32)
+        else:
+            return self.sparsity / self.perts_max_abs
 
 
 class TrainerSuccessSummary:

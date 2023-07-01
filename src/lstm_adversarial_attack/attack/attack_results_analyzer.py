@@ -81,10 +81,10 @@ class AttackResultAnalyzer:
     def _examples_df_dispatch(self) -> dict:
         return {
             asu.RecordedExampleType.FIRST: (
-                self._attack_summary.best_examples_df
+                self._attack_summary.first_examples_df
             ),
             asu.RecordedExampleType.BEST: (
-                self._attack_summary.first_examples_df
+                self._attack_summary.best_examples_df
             ),
         }
 
@@ -92,10 +92,10 @@ class AttackResultAnalyzer:
     def _perts_summary_dispatch(self) -> dict:
         return {
             asu.RecordedExampleType.FIRST: (
-                self._attack_summary.best_perts_summary
+                self._attack_summary.first_perts_summary
             ),
             asu.RecordedExampleType.BEST: (
-                self._attack_summary.first_perts_summary
+                self._attack_summary.best_perts_summary
             ),
         }
 

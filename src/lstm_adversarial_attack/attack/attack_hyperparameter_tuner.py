@@ -35,8 +35,24 @@ class AttackTunerObjectivesBuilder:
         return objective
 
     @staticmethod
-    def sparsity() -> Callable[[ards.TrainerSuccessSummary], float]:
+    def sparse_small_max() -> Callable[[ards.TrainerSuccessSummary], float]:
+        def objective(success_summary: ards.TrainerSuccessSummary) -> float:
+            if (
+                len(
+                    success_summary.examples_summary_best.sparse_small_max_scores
+                )
+                == 0
+            ):
+                return 0.0
+            else:
+                return np.sum(
+                    success_summary.examples_summary_best.sparse_small_max_scores
+                ).item()
 
+        return objective
+
+    @staticmethod
+    def sparsity() -> Callable[[ards.TrainerSuccessSummary], float]:
         def objective(success_summary: ards.TrainerSuccessSummary) -> float:
             if len(success_summary.examples_summary_best.sparsity) == 0:
                 return 0.0
@@ -55,6 +71,7 @@ class AttackTunerObjectivesBuilder:
             return success_summary.examples_summary_best.num_examples_with_num_nonzero_less_than(
                 cutoff=(max_perts + 1)
             )
+
         return objective
 
 

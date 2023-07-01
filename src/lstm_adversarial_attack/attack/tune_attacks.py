@@ -174,7 +174,7 @@ if __name__ == "__main__":
     initial_study = start_new_tuning(
         num_trials=100,
         target_model_assessment_type=amr.ModelAssessmentType.KFOLD,
-        objective=aht.AttackTunerObjectivesBuilder.sparsity(),
+        objective=aht.AttackTunerObjectivesBuilder.sparse_small_max(),
     )
 
     # continued_study = resume_tuning(num_trials=60)

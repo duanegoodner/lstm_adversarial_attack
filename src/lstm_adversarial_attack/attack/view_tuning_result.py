@@ -8,7 +8,7 @@ import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.attack.attack_results_analyzer as ara
 
 optuna_output_dir = (
-    cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-06-30_10_52_24.059982"
+    cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-07-01_11_03_13.591090"
 )
 study_path = optuna_output_dir / "optuna_study.pickle"
 trial_result_paths = sorted((optuna_output_dir / "attack_trial_results").iterdir(), key=lambda x: x.stat().st_mtime)
