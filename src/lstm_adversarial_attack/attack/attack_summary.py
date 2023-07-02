@@ -12,7 +12,7 @@ class RecordedExampleType(Enum):
     BEST = auto()
 
 
-class AttackResults:
+class FullAttackResults:
     def __init__(self, trainer_result: ads.TrainerResult):
         self._dataset = trainer_result.dataset
         self._dataset_indices_attacked = np.array(
@@ -144,6 +144,7 @@ class AttackResults:
                 ],
                 np.array(self._seq_lengths)[self._successful_attack_indices],
                 perts_summary.num_nonzero_elements,
+                perts_summary.perts_mean_nonzero_abs,
                 perts_summary.perts_max_abs,
                 perts_summary.num_negative_perts,
                 perts_summary.perts_max_negative,
@@ -161,6 +162,7 @@ class AttackResults:
                 "loss",
                 "seq_length",
                 "num_perts",
+                "pert_mean_nonzero_abs",
                 "pert_max_abs",
                 "num_negative_perts",
                 "pert_max_negative",
@@ -174,6 +176,7 @@ class AttackResults:
                 "loss": "float32",
                 "seq_length": "int",
                 "num_perts": "int",
+                "pert_mean_nonzero_abs": "float32",
                 "pert_max_abs": "float32",
                 "num_negative_perts": "int",
                 "pert_max_negative": "float32",
@@ -192,3 +195,5 @@ class AttackResults:
         return self.build_examples_summary_df(
             example_type=RecordedExampleType.BEST
         )
+
+

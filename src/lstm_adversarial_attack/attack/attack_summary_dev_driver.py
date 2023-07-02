@@ -2,6 +2,7 @@ import lstm_adversarial_attack.attack.attack_summary as asu
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.attack.attack_results_analyzer as ara
+import lstm_adversarial_attack.attack.perts_histogram_plotter as php
 import lstm_adversarial_attack.attack.susceptibility_plotter as ssp
 
 # build attack summary
@@ -21,7 +22,7 @@ result_path = (
 trainer_result = rio.ResourceImporter().import_pickle_to_object(
     path=result_path
 )
-attack_summary = asu.AttackResults(trainer_result=trainer_result)
+full_attack_results = asu.FullAttackResults(trainer_result=trainer_result)
 
 
 # get measurement names
@@ -32,28 +33,51 @@ measurement_names = rio.ResourceImporter().import_pickle_to_object(
     path=measurement_names_path
 )
 
-attack_result_analyzer = ara.AttackResultAnalyzer(
-    attack_summary=attack_summary
+attack_analyses = ara.StandardAttackAnalyses(
+    full_attack_results=full_attack_results,
+    seq_length=48,
+    min_num_perts=None,
+    max_num_perts=None,
 )
 
-
-zto_48hr_all_pert_counts_first = attack_result_analyzer.get_attack_analysis(
-    example_type=asu.RecordedExampleType.FIRST, seq_length=48, orig_label=0
+susceptibility_plotter = (
+    ssp.SusceptibilityPlotter.from_standard_attack_analyses(
+        attack_analyses=attack_analyses,
+        main_plot_title="Perturbation Susceptibility Scores",
+    )
 )
 
-otz_48hr_all_pert_counts_first = attack_result_analyzer.get_attack_analysis(
-    example_type=asu.RecordedExampleType.FIRST, seq_length=48, orig_label=1
+susceptibility_plotter.plot_susceptibilities()
+
+histogram_plotter = (
+    php.PerturbationHistogramPlotter.from_standard_attack_analyses(
+        attack_analyses=attack_analyses
+    )
 )
 
-zto_48hr_all_pert_counts_best = attack_result_analyzer.get_attack_analysis(
-    example_type=asu.RecordedExampleType.BEST, seq_length=48, orig_label=0
-)
-
-otz_48hr_all_pert_counts_best = attack_result_analyzer.get_attack_analysis(
-    example_type=asu.RecordedExampleType.BEST, seq_length=48, orig_label=1
-)
+histogram_plotter.plot_histograms()
 
 
+# attack_result_analyzer = ara.AttackConditionAnalyzer(
+#     attack_summary=full_attack_results
+# )
+
+
+# zto_48hr_all_pert_counts_first = attack_result_analyzer.get_attack_analysis(
+#     example_type=asu.RecordedExampleType.FIRST, seq_length=48, orig_label=0
+# )
+#
+# otz_48hr_all_pert_counts_first = attack_result_analyzer.get_attack_analysis(
+#     example_type=asu.RecordedExampleType.FIRST, seq_length=48, orig_label=1
+# )
+#
+# zto_48hr_all_pert_counts_best = attack_result_analyzer.get_attack_analysis(
+#     example_type=asu.RecordedExampleType.BEST, seq_length=48, orig_label=0
+# )
+#
+# otz_48hr_all_pert_counts_best = attack_result_analyzer.get_attack_analysis(
+#     example_type=asu.RecordedExampleType.BEST, seq_length=48, orig_label=1
+# )
 
 
 # KEEP THIS. Just commenting out while work on other plots
@@ -80,4 +104,3 @@ otz_48hr_all_pert_counts_best = attack_result_analyzer.get_attack_analysis(
 #     main_plot_title="Perturbation Susceptibility Scores"
 # )
 # plotter.plot_susceptibilities()
-

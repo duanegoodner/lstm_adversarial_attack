@@ -5,6 +5,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.colors import LogNorm
 from typing import Any
+import lstm_adversarial_attack.attack.attack_results_analyzer as ara
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.config_paths as cfg_paths
 
@@ -50,6 +51,34 @@ class SusceptibilityPlotter:
         self.measurement_names = self.susceptibility_dfs[0][0].columns
         self.yticks_labels = self.susceptibility_dfs[0][0].columns
         self.yticks_positions = np.arange(len(self.yticks_labels) + 0.5)
+
+    @classmethod
+    def from_standard_attack_analyses(
+        cls, attack_analyses: ara.StandardAttackAnalyses, main_plot_title: str
+    ):
+        return cls(
+            susceptibility_dfs=[
+                [
+                    attack_analyses.one_to_zero_first.susceptibility_metrics.s_ij,
+                    attack_analyses.one_to_zero_best.susceptibility_metrics.s_ij,
+                ],
+                [
+                    attack_analyses.zero_to_one_first.susceptibility_metrics.s_ij,
+                    attack_analyses.zero_to_one_best.susceptibility_metrics.s_ij,
+                ],
+            ],
+            df_titles=[
+                [
+                    "0 \u2192 1 Attack, First Examples",
+                    "0 \u2192 1 Attack, Best Examples",
+                ],
+                [
+                    "1 \u2192 0 Attack, First Examples",
+                    "1 \u2192 0 Attack, Best Examples",
+                ],
+            ],
+            main_plot_title=main_plot_title
+        )
 
     def _set_figure_layout(self):
         fig, axes = plt.subplots(
@@ -131,7 +160,7 @@ class SusceptibilityPlotter:
                     ax=axes[plot_row, plot_col],
                     plot_title=f"{self.df_titles[plot_row][plot_col]}",
                     heatmap=cur_plot,
-                    source_df=cur_df
+                    source_df=cur_df,
                 )
 
         plt.show()
