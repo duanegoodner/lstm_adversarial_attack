@@ -5,18 +5,29 @@ import lstm_adversarial_attack.attack.attack_results_analyzer as ara
 import lstm_adversarial_attack.attack.perts_histogram_plotter as php
 import lstm_adversarial_attack.attack.susceptibility_plotter as ssp
 
-# build attack summary
-result_path = (
-    cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
-    / "2023-06-28_17_50_46.701620"
-    / "2023-06-28_19_02_16.499026_final_attack_result.pickle"
-)
-
+# max number single element perturbations
 # result_path = (
 #     cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
-#     / "2023-06-30_12_05_34.834996"
-#     / "2023-06-30_14_20_57.875925_final_attack_result.pickle"
+#     / "2023-06-28_17_50_46.701620"
+#     / "2023-06-28_19_02_16.499026_final_attack_result.pickle"
 # )
+
+# sparsity
+result_path = (
+    cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+    / "2023-06-30_12_05_34.834996"
+    / "2023-06-30_14_20_57.875925_final_attack_result.pickle"
+)
+
+
+# sparse small max
+result_path = (
+    cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+    / "2023-07-01_12_01_25.552909"
+    / "2023-07-01_13_17_06.787795_final_attack_result.pickle"
+)
+
+
 
 
 trainer_result = rio.ResourceImporter().import_pickle_to_object(
@@ -51,7 +62,10 @@ susceptibility_plotter.plot_susceptibilities()
 
 histogram_plotter = (
     php.PerturbationHistogramPlotter.from_standard_attack_analyses(
-        attack_analyses=attack_analyses
+        attack_analyses=attack_analyses,
+        title="Perturbation density and magnitude distributions",
+        subtitle="Tuning objective: Maximize # of perturbation elements with "
+                 "exactly one non-zero element",
     )
 )
 
