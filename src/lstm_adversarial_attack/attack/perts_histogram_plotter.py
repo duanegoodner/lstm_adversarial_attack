@@ -2,53 +2,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from enum import Enum, auto
-from typing import Callable
+from typing import Callable, NamedTuple
 
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.resource_io as rio
-import lstm_adversarial_attack.attack.attack_results_analyzer as ara
-
-
-# @dataclass
-# class PerturbationHistogramInfo:
-#     title: str
-#     subtitle: str
-#     source_dfs: list[list[pd.DataFrame]]
-#     data_col_names: tuple[str] = (
-#         "num_perts",
-#         "pert_mean_nonzero_abs",
-#         "pert_max_abs",
-#     )
-#     num_bins: tuple[int] = (30, 50, 50)
-#     plot_ranges: tuple[tuple[int | float]] = (
-#         (0, 30),
-#         (0, 1.0),
-#         (0, 1.0),
-#     )
-#     subplot_col_titles: tuple[str] = (
-#         "Number of non-zero\nperturbation elements",
-#         "Mean of magnitude of\nnon-zero perturbations",
-#         "Max magnitude of\nnon-zero perturbations",
-#     )
-#     subplot_xlabels: tuple[str] = (
-#         "# non-zero elements",
-#         "Mean perturbation magnitude",
-#         "Max perturbation magnitude",
-#     )
-#     subplot_row_titles: tuple[str] = (
-#         "0 \u2192 1 attack counts",
-#         "1 \u2192 0 attack counts",
-#     )
-#
-#     def __post_init__(self):
-#         assert len(self.source_dfs) == len(self.subplot_row_titles)
-#         assert (
-#             len(self.data_col_names)
-#             == len(self.num_bins)
-#             == len(self.plot_ranges)
-#             == len(self.subplot_col_titles)
-#             == len(self.subplot_xlabels)
-#         )
 
 
 class DataPairDisplayType(Enum):
@@ -56,51 +13,76 @@ class DataPairDisplayType(Enum):
     DELTA = auto()
 
 
+class PlotLimits(NamedTuple):
+    x_min: float
+    x_max: float
+    y_min: float
+    y_max: float
+
+
+class InsetSpec(NamedTuple):
+    bounds: list[float]
+    plot_limits: PlotLimits
+
+
 class PerturbationHistogramPlotter:
     def __init__(
         self,
-        pert_summary_dfs: list[list[pd.DataFrame]],
+        pert_summary_dfs: tuple[tuple[pd.DataFrame, ...], ...],
         title: str,
         subtitle: str,
-        data_col_names: tuple[str] = (
+        data_col_names: tuple[str, ...] = (
             "num_perts",
             "pert_mean_nonzero_abs",
             "pert_max_abs",
-            # "epoch_found",
-            # "loss",
         ),
         data_pair_display_types: tuple[DataPairDisplayType] = (
             DataPairDisplayType.OVERLAY,
             DataPairDisplayType.OVERLAY,
             DataPairDisplayType.OVERLAY,
-            # DataPairDisplayType.DELTA,
-            # DataPairDisplayType.OVERLAY,
         ),
-        histogram_num_bins: tuple[int] = (30, 50, 50),
-        histogram_plot_ranges: tuple[tuple[int | float]] = (
+        histogram_num_bins: tuple[int, ...] = (30, 50, 50),
+        histogram_plot_ranges: tuple[tuple[int | float, ...], ...] = (
             (0, 30),
-            (0, 1.),
-            (0, 1.),
-            # (0, 100),
-            # (-1.2, 0.0),
+            (0, 1.0),
+            (0, 1.0),
         ),
         subplot_col_titles: tuple[str] = (
             "Number of non-zero\nperturbation elements",
             "Mean of magnitude of\nnon-zero perturbations",
             "Max magnitude of\nnon-zero perturbations",
-            # "Epoch when example found",
-            # "Regularized adversarial loss",
         ),
         subplot_xlabels: tuple[str] = (
             "# non-zero elements",
             "Mean perturbation magnitude",
             "Max perturbation magnitude",
-            # "Epoch #",
-            # "Loss",
         ),
         subplot_row_titles: tuple[str] = (
             "0 \u2192 1 attack counts",
             "1 \u2192 0 attack counts",
+        ),
+        create_insets: tuple[tuple[bool, ...], ...] = (
+            (False, False, False),
+            (False, False, False),
+        ),
+        # TODO These specs are for sparse-small-max. Move to
+        #  PerturbationHistogramPlotter constructor args for those results.
+        inset_specs: tuple[tuple[InsetSpec | None, ...], ...] = (
+            (
+                None,
+                InsetSpec(
+                    bounds=[0.3, 0.15, 0.65, 0.82],
+                    plot_limits=PlotLimits(
+                        x_min=0.0, x_max=0.05, y_min=0.65, y_max=3000
+                    ),
+                ),
+                None,
+            ),
+            (
+                None,
+                None,
+                None,
+            ),
         ),
         fig_size: tuple[int, int] = (10, 7),
         subplot_left_adjust: float = 0.1,
@@ -130,6 +112,8 @@ class PerturbationHistogramPlotter:
         self.subplot_col_titles = subplot_col_titles
         self.subplot_xlabels = subplot_xlabels
         self.subplot_row_titles = subplot_row_titles
+        self.create_insets = create_insets
+        self.inset_specs = inset_specs
         self.subplot_num_rows = len(self.pert_summary_dfs)
         self.subplot_num_cols = len(self.data_col_names)
         self.fig_size = fig_size
@@ -149,36 +133,6 @@ class PerturbationHistogramPlotter:
         self.subtitle_y_offset = subtitle_y_offset
         self.subtitle_fontsize = subtitle_fontsize
         self.histogram_bar_transparency = histogram_bar_transparency
-
-    @classmethod
-    def from_standard_attack_analyses(
-        cls,
-        attack_analyses: ara.StandardAttackAnalyses,
-        title: str,
-        subtitle: str,
-        histogram_num_bins: tuple[int] = (30, 50, 50),
-        histogram_plot_ranges: tuple[tuple[int | float]] = (
-                (0, 30),
-                (0, 1.),
-                (0, 1.),
-        ),
-    ):
-        return cls(
-            pert_summary_dfs=[
-                [
-                    attack_analyses.zero_to_one_first.filtered_examples_df,
-                    attack_analyses.zero_to_one_best.filtered_examples_df,
-                ],
-                [
-                    attack_analyses.one_to_zero_first.filtered_examples_df,
-                    attack_analyses.one_to_zero_best.filtered_examples_df,
-                ],
-            ],
-            title=title,
-            subtitle=subtitle,
-            histogram_num_bins=histogram_num_bins,
-            histogram_plot_ranges=histogram_plot_ranges,
-        )
 
     @property
     def _display_type_histogram_dispatch(
@@ -315,15 +269,42 @@ class PerturbationHistogramPlotter:
         if add_legend:
             ax.legend(loc="upper right", bbox_to_anchor=(1.3, -0.25), ncol=2)
 
+    def _add_inset(
+        self,
+        ax: plt.Axes,
+        plotting_method: Callable,
+        plot_row: int,
+        plot_col: int,
+        bounds: list[float],
+        plot_limits: PlotLimits,
+    ):
+        ax_inset = ax.inset_axes(bounds=bounds)
+        ax_inset.set_xlim(plot_limits.x_min, plot_limits.x_max)
+        ax_inset.set_ylim(plot_limits.y_min, plot_limits.y_max)
+        ax_inset.set_yticklabels([])
+        ax.indicate_inset_zoom(inset_ax=ax_inset, edgecolor="black")
+
+        plotting_method(
+            ax=ax_inset,
+            first_df=self.pert_summary_dfs[plot_row][0],
+            best_df=self.pert_summary_dfs[plot_row][1],
+            col_name=self.data_col_names[plot_col],
+            bins=self.histogram_num_bins[plot_col],
+            plot_range=self.histogram_plot_ranges[plot_col],
+            add_legend=False,
+        )
+
     def plot_histograms(self):
         fig, axes = self._set_figure_layout()
         self._decorate_subplots(axes=axes)
 
         for plot_row in range(self.subplot_num_rows):
             for plot_col in range(self.subplot_num_cols):
-                self._display_type_histogram_dispatch[
+                plotting_method = self._display_type_histogram_dispatch[
                     self.data_pair_display_types[plot_col]
-                ](
+                ]
+
+                plotting_method(
                     ax=axes[plot_row][plot_col],
                     first_df=self.pert_summary_dfs[plot_row][0],
                     best_df=self.pert_summary_dfs[plot_row][1],
@@ -334,16 +315,17 @@ class PerturbationHistogramPlotter:
                     and (plot_col == self.subplot_num_cols // 2),
                 )
 
-                # self._plot_first_best_overlay(
-                #     ax=axes[plot_row][plot_col],
-                #     first_df=self.pert_summary_dfs[plot_row][0],
-                #     best_df=self.pert_summary_dfs[plot_row][1],
-                #     col_name=self.data_col_names[plot_col],
-                #     bins=self.histogram_num_bins[plot_col],
-                #     plot_range=self.histogram_plot_ranges[plot_col],
-                #     add_legend=(plot_row == self.subplot_num_rows - 1)
-                #     and (plot_col == self.subplot_num_cols // 2),
-                # )
+                if self.create_insets[plot_row][plot_col]:
+                    self._add_inset(
+                        ax=axes[plot_row][plot_col],
+                        plotting_method=plotting_method,
+                        plot_row=plot_row,
+                        plot_col=plot_col,
+                        bounds=self.inset_specs[plot_row][plot_col].bounds,
+                        plot_limits=self.inset_specs[plot_row][
+                            plot_col
+                        ].plot_limits,
+                    )
 
         plt.show()
 

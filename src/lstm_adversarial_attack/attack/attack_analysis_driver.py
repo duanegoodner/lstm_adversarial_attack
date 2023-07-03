@@ -1,5 +1,8 @@
 from functools import cached_property
 from pathlib import Path
+
+import pandas as pd
+
 import lstm_adversarial_attack.attack.attack_result_data_structs as ads
 import lstm_adversarial_attack.attack.attack_summary as asu
 import lstm_adversarial_attack.config_paths as cfg_paths
@@ -13,7 +16,6 @@ class AttackAnalysesBuilder:
     def __init__(self, trainer_result_path: Path, seq_length: int = 48):
         self.trainer_result_path = trainer_result_path
         self.seq_length = seq_length
-
 
     @cached_property
     def trainer_result(self) -> ads.TrainerResult:
@@ -29,8 +31,14 @@ class AttackAnalysesBuilder:
     def standard_attack_analyses(self) -> ara.StandardAttackAnalyses:
         return ara.StandardAttackAnalyses(
             full_attack_results=self.full_attack_results,
-            seq_length=self.seq_length
+            seq_length=self.seq_length,
         )
+
+    @cached_property
+    def df_tuple_for_histogram_plotter(
+        self,
+    ) -> tuple[tuple[pd.DataFrame, ...], ...]:
+        return self.standard_attack_analyses.df_tuple_for_histogram_plotter
 
 
 if __name__ == "__main__":
@@ -40,16 +48,19 @@ if __name__ == "__main__":
     #     / "2023-06-28_19_02_16.499026_final_attack_result.pickle"
     # )
     # max_single_element_analyses_builder = AttackAnalysesBuilder(
-    #     trainer_result_path=max_single_element_result_path,
-    #     seq_length=48
+    #     trainer_result_path=max_single_element_result_path, seq_length=48
     # )
-    # max_single_element_hist_plotter = php.PerturbationHistogramPlotter.from_standard_attack_analyses(
-    #     attack_analyses=max_single_element_analyses_builder.standard_attack_analyses,
+    # max_single_element_hist_plotter = php.PerturbationHistogramPlotter(
+    #     pert_summary_dfs=max_single_element_analyses_builder.df_tuple_for_histogram_plotter,
     #     title="Perturbation density and magnitude distributions",
-    #     subtitle="Tuning objective: Maximize # of perturbation elements with "
-    #              "exactly one non-zero element",
+    #     subtitle=(
+    #         "Tuning objective: Maximize # of perturbation elements with "
+    #         "exactly one non-zero element"
+    #     ),
+    #     histogram_num_bins=(912, 50, 50),
+    #     histogram_plot_ranges=((0, 912), (0, 1.0), (0, 1.0)),
     # )
-
+    # max_single_element_hist_plotter.plot_histograms()
 
     # max_sparsity_result_path = (
     #     cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
@@ -60,15 +71,14 @@ if __name__ == "__main__":
     #     trainer_result_path=max_sparsity_result_path,
     #     seq_length=48
     # )
-    # max_sparsity_hist_plotter = php.PerturbationHistogramPlotter.from_standard_attack_analyses(
-    #     attack_analyses=max_sparsity_analyses_builder.standard_attack_analyses,
+    # max_sparsity_hist_plotter = php.PerturbationHistogramPlotter(
+    #     pert_summary_dfs=max_sparsity_analyses_builder.df_tuple_for_histogram_plotter,
     #     title="Perturbation density and magnitude distributions",
     #     subtitle="Tuning objective: Maximize sparsity",
     #     histogram_num_bins=(912, 50, 50),
     #     histogram_plot_ranges=((0, 912), (0, 1.), (0, 1.))
-    #
     # )
-
+    # max_sparsity_hist_plotter.plot_histograms()
 
     max_sparse_small_max_result_path = (
         cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
@@ -79,11 +89,14 @@ if __name__ == "__main__":
         trainer_result_path=max_sparse_small_max_result_path,
         seq_length=48
     )
-    max_sparse_small_hist_plotter = php.PerturbationHistogramPlotter.from_standard_attack_analyses(
-        attack_analyses=max_sparse_small_analyses_builder.standard_attack_analyses,
+
+    max_sparse_small_hist_plotter = php.PerturbationHistogramPlotter(
+        pert_summary_dfs=max_sparse_small_analyses_builder.df_tuple_for_histogram_plotter,
         title="Perturbation density and magnitude distributions",
         subtitle="Tuning objective: Maximize sparse-small-max score",
-        histogram_num_bins=(912, 50, 50),
-        histogram_plot_ranges=((0, 912), (0, 0.05), (0, 1.))
+        histogram_num_bins=(912, 1000, 50),
+        histogram_plot_ranges=((0, 912), (0, 1.), (0, 1.)),
+        create_insets=((False, True, False), (False, False, False))
     )
 
+    max_sparse_small_hist_plotter.plot_histograms()

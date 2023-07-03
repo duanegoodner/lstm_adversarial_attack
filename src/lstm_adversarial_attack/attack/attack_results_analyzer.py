@@ -151,118 +151,13 @@ class AttackConditionAnalysis:
         )
 
 
-    # def _get_filtered_examples_df(
-    #     self,
-    #     example_type: asu.RecordedExampleType,
-    #     seq_length: int,
-    #     orig_label: int,
-    #     min_num_perts: int = None,
-    #     max_num_perts: int = None,
-    # ):
-    #     orig_df = self._examples_df_dispatch[example_type]
-    #     filtered_df = orig_df[
-    #         (orig_df["seq_length"] == seq_length)
-    #         & (orig_df["orig_label"] == orig_label)
-    #     ]
-    #
-    #     if min_num_perts is not None:
-    #         filtered_df = filtered_df[
-    #             filtered_df["num_perts"] >= min_num_perts
-    #         ]
-    #
-    #     if max_num_perts is not None:
-    #         filtered_df = filtered_df[
-    #             filtered_df["num_perts"] <= max_num_perts
-    #         ]
-    #
-    #     return filtered_df
-    #
-    # @cached_property
-    # def perts_summary(self):
-    #     return self._perts_summary_dispatch[self.example_type]
-    #
-    # @cached_property
-    # def susceptibility_metrics(self) -> AttackSusceptibilityMetrics:
-    #     return AttackSusceptibilityMetrics(
-    #         perts=self.perts_summary.padded_perts[
-    #             self.filtered_examples_df.index, :, :
-    #         ]
-    #     )
-    #
-    # def get_attack_analysis(
-    #     self,
-    #     example_type: asu.RecordedExampleType,
-    #     seq_length: int,
-    #     orig_label: int,
-    #     min_num_perts: int = None,
-    #     max_num_perts: int = None,
-    # ) -> AttackAnalysis:
-    #     filtered_examples_df = self._get_filtered_examples_df(
-    #         example_type=example_type,
-    #         seq_length=seq_length,
-    #         orig_label=orig_label,
-    #         min_num_perts=min_num_perts,
-    #         max_num_perts=max_num_perts,
-    #     )
-    #
-    #     perts_summary = self._perts_summary_dispatch[example_type]
-    #
-    #     susceptibility_metrics = AttackSusceptibilityMetrics(
-    #         perts=perts_summary.padded_perts[filtered_examples_df.index, :, :]
-    #     )
-    #
-    #     return AttackAnalysis(
-    #         filtered_examples_df=filtered_examples_df,
-    #         susceptibility_metrics=susceptibility_metrics,
-    #     )
-    #
-    # def get_standard_attack_analyses(
-    #     self,
-    #     seq_length: int,
-    #     min_num_perts: int = None,
-    #     max_num_perts: int = None,
-    # ) -> StandardAttackAnalyses:
-    #     return StandardAttackAnalyses(
-    #         zero_to_one_first=self.get_attack_analysis(
-    #             example_type=asu.RecordedExampleType.FIRST,
-    #             seq_length=seq_length,
-    #             orig_label=0,
-    #             min_num_perts=min_num_perts,
-    #             max_num_perts=max_num_perts,
-    #         ),
-    #         zero_to_one_best=self.get_attack_analysis(
-    #             example_type=asu.RecordedExampleType.BEST,
-    #             seq_length=seq_length,
-    #             orig_label=0,
-    #             min_num_perts=min_num_perts,
-    #             max_num_perts=max_num_perts,
-    #         ),
-    #         one_to_zero_first=self.get_attack_analysis(
-    #             example_type=asu.RecordedExampleType.FIRST,
-    #             seq_length=seq_length,
-    #             orig_label=1,
-    #             min_num_perts=min_num_perts,
-    #             max_num_perts=max_num_perts,
-    #         ),
-    #         one_to_zero_best=self.get_attack_analysis(
-    #             example_type=asu.RecordedExampleType.BEST,
-    #             seq_length=seq_length,
-    #             orig_label=1,
-    #             min_num_perts=min_num_perts,
-    #             max_num_perts=max_num_perts,
-    #         ),
-    #         seq_length=seq_length,
-    #         min_num_perts=min_num_perts,
-    #         max_num_perts=max_num_perts,
-    #     )
-
 class StandardAttackAnalyses:
     def __init__(
         self,
         full_attack_results: asu.FullAttackResults,
         seq_length: int,
         min_num_perts: int = None,
-        max_num_perts: int = None
+        max_num_perts: int = None,
     ):
         self._full_attack_results = full_attack_results
         self.seq_length = seq_length
@@ -277,7 +172,7 @@ class StandardAttackAnalyses:
             example_type=asu.RecordedExampleType.FIRST,
             orig_label=0,
             min_num_perts=self.min_num_perts,
-            max_num_perts=self.max_num_perts
+            max_num_perts=self.max_num_perts,
         )
 
     @cached_property
@@ -288,7 +183,7 @@ class StandardAttackAnalyses:
             example_type=asu.RecordedExampleType.BEST,
             orig_label=0,
             min_num_perts=self.min_num_perts,
-            max_num_perts=self.max_num_perts
+            max_num_perts=self.max_num_perts,
         )
 
     @cached_property
@@ -299,7 +194,7 @@ class StandardAttackAnalyses:
             example_type=asu.RecordedExampleType.FIRST,
             orig_label=1,
             min_num_perts=self.min_num_perts,
-            max_num_perts=self.max_num_perts
+            max_num_perts=self.max_num_perts,
         )
 
     @cached_property
@@ -310,5 +205,20 @@ class StandardAttackAnalyses:
             example_type=asu.RecordedExampleType.BEST,
             orig_label=1,
             min_num_perts=self.min_num_perts,
-            max_num_perts=self.max_num_perts
+            max_num_perts=self.max_num_perts,
+        )
+
+    @cached_property
+    def df_tuple_for_histogram_plotter(
+        self,
+    ) -> tuple[tuple[pd.DataFrame, ...], ...]:
+        return (
+            (
+                self.zero_to_one_first.filtered_examples_df,
+                self.zero_to_one_best.filtered_examples_df,
+            ),
+            (
+                self.one_to_zero_first.filtered_examples_df,
+                self.one_to_zero_best.filtered_examples_df,
+            ),
         )
