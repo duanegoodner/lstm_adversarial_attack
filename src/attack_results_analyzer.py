@@ -132,26 +132,26 @@ class AttackResultsAnalyzer:
             "SPO2",
         ]
 
-    def plot_time_series_overlays(
-        self,
-        features: torch.tensor,
-        x_label: str,
-        y_label: str,
-        plot_title: str,
-    ):
-        fig, ax = plt.subplots(1, 1)
-        meas_times = torch.arange(0, 48)
-        for meas_idx in range(features.shape[0]):
-            ax.plot(
-                meas_times, features[meas_idx], label=self.col_names[meas_idx]
-            )
-        ax.set_xlabel(xlabel=x_label)
-        ax.set_ylabel(ylabel=y_label)
-        ax.set_title(plot_title)
-        ax.legend(bbox_to_anchor=(1.35, 0.5), loc="right")
-        fig.subplots_adjust(right=0.75)
-
-        plt.show()
+    # def plot_time_series_overlays(
+    #     self,
+    #     features: torch.tensor,
+    #     x_label: str,
+    #     y_label: str,
+    #     plot_title: str,
+    # ):
+    #     fig, ax = plt.subplots(1, 1)
+    #     meas_times = torch.arange(0, 48)
+    #     for meas_idx in range(features.shape[0]):
+    #         ax.plot(
+    #             meas_times, features[meas_idx], label=self.col_names[meas_idx]
+    #         )
+    #     ax.set_xlabel(xlabel=x_label)
+    #     ax.set_ylabel(ylabel=y_label)
+    #     ax.set_title(plot_title)
+    #     ax.legend(bbox_to_anchor=(1.35, 0.5), loc="right")
+    #     fig.subplots_adjust(right=0.75)
+    #
+    #     plt.show()
 
 
 if __name__ == "__main__":

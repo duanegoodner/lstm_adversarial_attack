@@ -41,9 +41,9 @@ class PerturbationHistogramPlotter:
             DataPairDisplayType.OVERLAY,
             DataPairDisplayType.OVERLAY,
         ),
-        histogram_num_bins: tuple[int, ...] = (30, 50, 50),
+        histogram_num_bins: tuple[int, ...] = (912, 50, 50),
         histogram_plot_ranges: tuple[tuple[int | float, ...], ...] = (
-            (0, 30),
+            (0, 912),
             (0, 1.0),
             (0, 1.0),
         ),
@@ -68,21 +68,8 @@ class PerturbationHistogramPlotter:
         # TODO These specs are for sparse-small-max. Move to
         #  PerturbationHistogramPlotter constructor args for those results.
         inset_specs: tuple[tuple[InsetSpec | None, ...], ...] = (
-            (
-                None,
-                InsetSpec(
-                    bounds=[0.3, 0.15, 0.65, 0.82],
-                    plot_limits=PlotLimits(
-                        x_min=0.0, x_max=0.05, y_min=0.65, y_max=3000
-                    ),
-                ),
-                None,
-            ),
-            (
-                None,
-                None,
-                None,
-            ),
+            (None, None, None),
+            (None, None, None),
         ),
         fig_size: tuple[int, int] = (10, 7),
         subplot_left_adjust: float = 0.1,
@@ -336,8 +323,9 @@ if __name__ == "__main__":
         / "plot_practice"
         / "attack_analyses.pickle"
     )
-    plotter = PerturbationHistogramPlotter.from_standard_attack_analyses(
-        attack_analyses=my_attack_analyses,
+
+    plotter = PerturbationHistogramPlotter(
+        my_attack_analyses.df_tuple_for_histogram_plotter,
         title="Perturbation density and magnitude distributions",
         subtitle=(
             "Tuning objective: Maximize # of perturbation elements with "

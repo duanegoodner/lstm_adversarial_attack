@@ -13,9 +13,18 @@ import lstm_adversarial_attack.config_paths as cfg_paths
 class SusceptibilityPlotter:
     def __init__(
         self,
-        susceptibility_dfs: list[list[pd.DataFrame]],
-        df_titles: list[list[str]],
+        susceptibility_dfs: tuple[tuple[pd.DataFrame, ...], ...],
         main_plot_title: str,
+        df_titles: tuple[tuple[str, ...], ...] = (
+                (
+                    "0 \u2192 1 Attack, First Examples",
+                    "0 \u2192 1 Attack, Best Examples",
+                ),
+                (
+                    "1 \u2192 0 Attack, First Examples",
+                    "1 \u2192 0 Attack, Best Examples",
+                ),
+            ),
         fig_size: tuple[int, int] = (10, 7),
         xtick_major: int = 12,
         xtick_minor: int = 4,
@@ -51,34 +60,6 @@ class SusceptibilityPlotter:
         self.measurement_names = self.susceptibility_dfs[0][0].columns
         self.yticks_labels = self.susceptibility_dfs[0][0].columns
         self.yticks_positions = np.arange(len(self.yticks_labels) + 0.5)
-
-    @classmethod
-    def from_standard_attack_analyses(
-        cls, attack_analyses: ara.StandardAttackAnalyses, main_plot_title: str
-    ):
-        return cls(
-            susceptibility_dfs=[
-                [
-                    attack_analyses.one_to_zero_first.susceptibility_metrics.s_ij,
-                    attack_analyses.one_to_zero_best.susceptibility_metrics.s_ij,
-                ],
-                [
-                    attack_analyses.zero_to_one_first.susceptibility_metrics.s_ij,
-                    attack_analyses.zero_to_one_best.susceptibility_metrics.s_ij,
-                ],
-            ],
-            df_titles=[
-                [
-                    "0 \u2192 1 Attack, First Examples",
-                    "0 \u2192 1 Attack, Best Examples",
-                ],
-                [
-                    "1 \u2192 0 Attack, First Examples",
-                    "1 \u2192 0 Attack, Best Examples",
-                ],
-            ],
-            main_plot_title=main_plot_title
-        )
 
     def _set_figure_layout(self):
         fig, axes = plt.subplots(
@@ -178,20 +159,20 @@ if __name__ == "__main__":
     )
 
     plotter = SusceptibilityPlotter(
-        susceptibility_dfs=[
-            [first_examples_s_ij, best_examples_s_ij],
-            [first_examples_s_ij, best_examples_s_ij],
-        ],
-        df_titles=[
-            [
+        susceptibility_dfs=(
+            (first_examples_s_ij, best_examples_s_ij),
+            (first_examples_s_ij, best_examples_s_ij),
+        ),
+        df_titles=(
+            (
                 "0 \u2192 1 Attack, First Examples",
                 "0 \u2192 1 Attack, Best Examples",
-            ],
-            [
+            ),
+            (
                 "1 \u2192 0 Attack, First Examples",
                 "1 \u2192 0 Attack, Best Examples",
-            ],
-        ],
+            ),
+        ),
         main_plot_title="Perturbation Susceptibility Scores",
     )
     plotter.plot_susceptibilities()

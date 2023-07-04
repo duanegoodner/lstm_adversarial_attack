@@ -40,27 +40,72 @@ class AttackAnalysesBuilder:
     ) -> tuple[tuple[pd.DataFrame, ...], ...]:
         return self.standard_attack_analyses.df_tuple_for_histogram_plotter
 
+    def plot_histograms(self, title: str, subtitle: str, **kwargs):
+        histogram_plotter = php.PerturbationHistogramPlotter(
+            pert_summary_dfs=self.df_tuple_for_histogram_plotter,
+            title=title,
+            subtitle=subtitle,
+            **kwargs
+        )
+        histogram_plotter.plot_histograms()
+
+    def plot_susceptibility_metric(self, metric: str, title: str):
+        susceptibility_dfs = self.standard_attack_analyses.susceptibility_metric_tuple_for_plotting(
+            metric=metric
+        )
+        plotter = ssp.SusceptibilityPlotter(
+            susceptibility_dfs=susceptibility_dfs,
+            main_plot_title=title
+        )
+        plotter.plot_susceptibilities()
+
 
 if __name__ == "__main__":
-    # max_single_element_result_path = (
-    #     cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
-    #     / "2023-06-28_17_50_46.701620"
-    #     / "2023-06-28_19_02_16.499026_final_attack_result.pickle"
-    # )
-    # max_single_element_analyses_builder = AttackAnalysesBuilder(
-    #     trainer_result_path=max_single_element_result_path, seq_length=48
-    # )
-    # max_single_element_hist_plotter = php.PerturbationHistogramPlotter(
-    #     pert_summary_dfs=max_single_element_analyses_builder.df_tuple_for_histogram_plotter,
-    #     title="Perturbation density and magnitude distributions",
-    #     subtitle=(
-    #         "Tuning objective: Maximize # of perturbation elements with "
-    #         "exactly one non-zero element"
-    #     ),
-    #     histogram_num_bins=(912, 50, 50),
-    #     histogram_plot_ranges=((0, 912), (0, 1.0), (0, 1.0)),
-    # )
-    # max_single_element_hist_plotter.plot_histograms()
+    max_single_element_result_path = (
+        cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+        / "2023-06-28_17_50_46.701620"
+        / "2023-06-28_19_02_16.499026_final_attack_result.pickle"
+    )
+    max_single_element_analyses_builder = AttackAnalysesBuilder(
+        trainer_result_path=max_single_element_result_path, seq_length=48
+    )
+
+    max_single_element_analyses_builder.plot_histograms(
+        title="Perturbation density and magnitude distributions",
+        subtitle=(
+            "Tuning objective: Maximize # of perturbation elements with "
+            "exactly one non-zero element"
+        ),
+        histogram_num_bins=(912, 50, 50),
+        create_insets=((True, False, False), (True, False, False)),
+        inset_specs=(
+            (
+                php.InsetSpec(
+                    bounds=[0.2, 0.15, 0.6, 0.82],
+                    plot_limits=php.PlotLimits(
+                        x_min=1, x_max=20, y_min=0, y_max=2000
+                    ),
+                ),
+                None,
+                None,
+            ),
+            (
+                php.InsetSpec(
+                    bounds=[0.2, 0.15, 0.6, 0.82],
+                    plot_limits=php.PlotLimits(
+                        x_min=1, x_max=20, y_min=0, y_max=100
+                    ),
+                ),
+                None,
+                None,
+            ),
+        ),
+    )
+
+    max_single_element_analyses_builder.plot_susceptibility_metric(
+        metric="s_ganzp_ij",
+        title="gpp_ij when tuned to maximize # of single-element perturbations"
+    )
 
     # max_sparsity_result_path = (
     #     cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
@@ -68,35 +113,71 @@ if __name__ == "__main__":
     #     / "2023-06-30_14_20_57.875925_final_attack_result.pickle"
     # )
     # max_sparsity_analyses_builder = AttackAnalysesBuilder(
-    #     trainer_result_path=max_sparsity_result_path,
-    #     seq_length=48
+    #     trainer_result_path=max_sparsity_result_path, seq_length=48
     # )
-    # max_sparsity_hist_plotter = php.PerturbationHistogramPlotter(
-    #     pert_summary_dfs=max_sparsity_analyses_builder.df_tuple_for_histogram_plotter,
+    # max_sparsity_analyses_builder.plot_histograms(
     #     title="Perturbation density and magnitude distributions",
     #     subtitle="Tuning objective: Maximize sparsity",
-    #     histogram_num_bins=(912, 50, 50),
-    #     histogram_plot_ranges=((0, 912), (0, 1.), (0, 1.))
+    #     histogram_num_bins=(912, 200, 50),
+    #     create_insets=((True, False, False), (True, False, False)),
+    #     inset_specs=(
+    #         (
+    #             php.InsetSpec(
+    #                 bounds=[0.2, 0.15, 0.6, 0.82],
+    #                 plot_limits=php.PlotLimits(
+    #                     x_min=1, x_max=20, y_min=0.0, y_max=1500
+    #                 ),
+    #             ),
+    #             None,
+    #             None,
+    #         ),
+    #         (
+    #             php.InsetSpec(
+    #                 bounds=[0.2, 0.15, 0.6, 0.82],
+    #                 plot_limits=php.PlotLimits(
+    #                     x_min=1, x_max=20, y_min=0, y_max=80
+    #                 ),
+    #             ),
+    #             None,
+    #             None,
+    #         ),
+    #     ),
     # )
-    # max_sparsity_hist_plotter.plot_histograms()
-
-    max_sparse_small_max_result_path = (
-        cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
-        / "2023-07-01_12_01_25.552909"
-        / "2023-07-01_13_17_06.787795_final_attack_result.pickle"
-    )
-    max_sparse_small_analyses_builder = AttackAnalysesBuilder(
-        trainer_result_path=max_sparse_small_max_result_path,
-        seq_length=48
-    )
-
-    max_sparse_small_hist_plotter = php.PerturbationHistogramPlotter(
-        pert_summary_dfs=max_sparse_small_analyses_builder.df_tuple_for_histogram_plotter,
-        title="Perturbation density and magnitude distributions",
-        subtitle="Tuning objective: Maximize sparse-small-max score",
-        histogram_num_bins=(912, 1000, 50),
-        histogram_plot_ranges=((0, 912), (0, 1.), (0, 1.)),
-        create_insets=((False, True, False), (False, False, False))
-    )
-
-    max_sparse_small_hist_plotter.plot_histograms()
+    #
+    #
+    # max_sparse_small_max_result_path = (
+    #     cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+    #     / "2023-07-01_12_01_25.552909"
+    #     / "2023-07-01_13_17_06.787795_final_attack_result.pickle"
+    # )
+    # max_sparse_small_analyses_builder = AttackAnalysesBuilder(
+    #     trainer_result_path=max_sparse_small_max_result_path, seq_length=48
+    # )
+    # max_sparse_small_analyses_builder.plot_histograms(
+    #     title="Perturbation density and magnitude distributions",
+    #     subtitle="Tuning objective: Maximize sparse-small-max score",
+    #     histogram_num_bins = (912, 1000, 50),
+    #     create_insets=((False, True, False), (False, True, False)),
+    #     inset_specs=(
+    #         (
+    #             None,
+    #             php.InsetSpec(
+    #                 bounds=[0.3, 0.15, 0.65, 0.82],
+    #                 plot_limits=php.PlotLimits(
+    #                     x_min=0, x_max=0.05, y_min=0, y_max=3000
+    #                 ),
+    #             ),
+    #             None,
+    #         ),
+    #         (
+    #             None,
+    #             php.InsetSpec(
+    #                 bounds=[0.3, 0.15, 0.65, 0.82],
+    #                 plot_limits=php.PlotLimits(
+    #                     x_min=0, x_max=0.05, y_min=0, y_max=500
+    #                 ),
+    #             ),
+    #             None,
+    #         ),
+    #     ),
+    # )
