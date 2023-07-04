@@ -23,13 +23,13 @@ class AttackTunerObjectivesBuilder:
     def sparse_small() -> Callable[[ards.TrainerSuccessSummary], float]:
         def objective(success_summary: ards.TrainerSuccessSummary) -> float:
             if (
-                len(success_summary.examples_summary_best.sparse_small_scores)
+                len(success_summary.perts_summary_best.sparse_small_scores)
                 == 0
             ):
                 return 0.0
             else:
                 return np.sum(
-                    success_summary.examples_summary_best.sparse_small_scores
+                    success_summary.perts_summary_best.sparse_small_scores
                 ).item()
 
         return objective
@@ -39,14 +39,14 @@ class AttackTunerObjectivesBuilder:
         def objective(success_summary: ards.TrainerSuccessSummary) -> float:
             if (
                 len(
-                    success_summary.examples_summary_best.sparse_small_max_scores
+                    success_summary.perts_summary_best.sparse_small_max_scores
                 )
                 == 0
             ):
                 return 0.0
             else:
                 return np.sum(
-                    success_summary.examples_summary_best.sparse_small_max_scores
+                    success_summary.perts_summary_best.sparse_small_max_scores
                 ).item()
 
         return objective
@@ -54,11 +54,11 @@ class AttackTunerObjectivesBuilder:
     @staticmethod
     def sparsity() -> Callable[[ards.TrainerSuccessSummary], float]:
         def objective(success_summary: ards.TrainerSuccessSummary) -> float:
-            if len(success_summary.examples_summary_best.sparsity) == 0:
+            if len(success_summary.perts_summary_best.sparsity) == 0:
                 return 0.0
             else:
                 return np.sum(
-                    success_summary.examples_summary_best.sparsity
+                    success_summary.perts_summary_best.sparsity
                 ).item()
 
         return objective
@@ -68,7 +68,7 @@ class AttackTunerObjectivesBuilder:
         max_perts: int,
     ) -> Callable[[ards.TrainerSuccessSummary], float]:
         def objective(success_summary: ards.TrainerSuccessSummary) -> float:
-            return success_summary.examples_summary_best.num_examples_with_num_nonzero_less_than(
+            return success_summary.perts_summary_best.num_examples_with_num_nonzero_less_than(
                 cutoff=(max_perts + 1)
             )
 
@@ -157,7 +157,7 @@ class AttackHyperParameterTuner:
 
         return self.objective(success_summary)
 
-        # return success_summary.examples_summary_best.num_examples_with_num_nonzero_less_than(
+        # return success_summary.perts_summary_best.num_examples_with_num_nonzero_less_than(
         #     cutoff=2
         # )
 

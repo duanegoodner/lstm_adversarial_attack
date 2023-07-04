@@ -24,8 +24,15 @@ class AttackAnalysesBuilder:
         )
 
     @cached_property
+    def success_summary(self) -> ads.TrainerSuccessSummary:
+        return ads.TrainerSuccessSummary(trainer_result=self.trainer_result)
+
+    @cached_property
     def full_attack_results(self) -> asu.FullAttackResults:
-        return asu.FullAttackResults(trainer_result=self.trainer_result)
+        return asu.FullAttackResults(
+            # trainer_result=self.trainer_result,
+            success_summary=self.success_summary,
+        )
 
     @cached_property
     def standard_attack_analyses(self) -> ara.StandardAttackAnalyses:
@@ -35,10 +42,34 @@ class AttackAnalysesBuilder:
         )
 
     @cached_property
+    def standard_attack_analyses_new(self) -> asu.StandardAttackAnalysesNew:
+        return asu.StandardAttackAnalysesNew(
+            zero_to_one_first=self.full_attack_results.get_attack_condition_data(
+                seq_length=self.seq_length,
+                example_type=asu.RecordedExampleType.FIRST,
+                orig_label=0
+            ),
+            zero_to_one_best=self.full_attack_results.get_attack_condition_data(
+                seq_length=self.seq_length,
+                example_type=asu.RecordedExampleType.BEST,
+                orig_label=0
+            ),
+            one_to_zero_first=self.full_attack_results.get_attack_condition_data(
+                seq_length=self.seq_length,
+                example_type=asu.RecordedExampleType.FIRST,
+            ),
+            one_to_zero_best=self.full_attack_results.get_attack_condition_data(
+                seq_length=self.seq_length,
+                example_type=asu.RecordedExampleType.BEST
+            )
+        )
+
+    @cached_property
     def df_tuple_for_histogram_plotter(
         self,
     ) -> tuple[tuple[pd.DataFrame, ...], ...]:
-        return self.standard_attack_analyses.df_tuple_for_histogram_plotter
+        # return self.standard_attack_analyses.df_tuple_for_histogram_plotter
+        return self.standard_attack_analyses_new.data_struct_for_histogram_plotter
 
     def plot_histograms(self, title: str, subtitle: str, **kwargs):
         histogram_plotter = php.PerturbationHistogramPlotter(
@@ -50,12 +81,14 @@ class AttackAnalysesBuilder:
         histogram_plotter.plot_histograms()
 
     def plot_susceptibility_metric(self, metric: str, title: str):
-        susceptibility_dfs = self.standard_attack_analyses.susceptibility_metric_tuple_for_plotting(
+        # susceptibility_dfs = self.standard_attack_analyses.susceptibility_metric_tuple_for_plotting(
+        #     metric=metric
+        # )
+        susceptibility_dfs = self.standard_attack_analyses_new.data_struct_for_susceptibility_plotter(
             metric=metric
         )
         plotter = ssp.SusceptibilityPlotter(
-            susceptibility_dfs=susceptibility_dfs,
-            main_plot_title=title
+            susceptibility_dfs=susceptibility_dfs, main_plot_title=title
         )
         plotter.plot_susceptibilities()
 
@@ -104,7 +137,9 @@ if __name__ == "__main__":
 
     max_single_element_analyses_builder.plot_susceptibility_metric(
         metric="s_ganzp_ij",
-        title="gpp_ij when tuned to maximize # of single-element perturbations"
+        title=(
+            "gpp_ij when tuned to maximize # of single-element perturbations"
+        ),
     )
 
     # max_sparsity_result_path = (

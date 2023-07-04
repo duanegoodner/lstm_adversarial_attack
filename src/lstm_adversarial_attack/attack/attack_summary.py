@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum, auto
 from functools import cached_property
 
@@ -5,6 +6,7 @@ import numpy as np
 import pandas as pd
 from torch.nn.utils.rnn import pad_sequence
 import lstm_adversarial_attack.attack.attack_result_data_structs as ads
+import lstm_adversarial_attack.attack.attack_susceptibility_metrics as asm
 
 
 class RecordedExampleType(Enum):
@@ -12,106 +14,103 @@ class RecordedExampleType(Enum):
     BEST = auto()
 
 
-class FullAttackResults:
-    def __init__(self, trainer_result: ads.TrainerResult):
-        self._dataset = trainer_result.dataset
-        self._dataset_indices_attacked = np.array(
-            trainer_result.dataset_indices
+@dataclass
+class AttackConditionAnalysisNew:
+    examples_df: pd.DataFrame
+    perts: np.array
+
+    def __post_init__(self):
+        assert len(self.examples_df == self.perts.shape[0])
+
+    @cached_property
+    def susceptibility_metrics(self) -> asm.AttackSusceptibilityMetrics:
+        return asm.AttackSusceptibilityMetrics(perts=self.perts)
+
+
+@dataclass
+class StandardAttackAnalysesNew:
+    zero_to_one_first: AttackConditionAnalysisNew
+    zero_to_one_best: AttackConditionAnalysisNew
+    one_to_zero_first: AttackConditionAnalysisNew
+    one_to_zero_best: AttackConditionAnalysisNew
+
+    @cached_property
+    def data_struct_for_histogram_plotter(
+        self,
+    ) -> tuple[tuple[pd.DataFrame, ...], ...]:
+        return (
+            (
+                self.zero_to_one_first.examples_df,
+                self.zero_to_one_best.examples_df,
+            ),
+            (
+                self.one_to_zero_first.examples_df,
+                self.one_to_zero_best.examples_df,
+            ),
         )
-        self._epochs_run = np.array(trainer_result.epochs_run)
-        self._seq_lengths = np.array(trainer_result.input_seq_lengths)
-        self._first_examples_raw = trainer_result.first_examples
-        self._best_examples_raw = trainer_result.best_examples
+
+    def data_struct_for_susceptibility_plotter(
+        self, metric: str
+    ) -> tuple[tuple[pd.DataFrame | pd.Series, ...], ...]:
+        return (
+            (
+                getattr(self.zero_to_one_first.susceptibility_metrics, metric),
+                getattr(self.zero_to_one_best.susceptibility_metrics, metric),
+            ),
+            (
+                getattr(self.one_to_zero_first.susceptibility_metrics, metric),
+                getattr(self.one_to_zero_best.susceptibility_metrics, metric),
+            ),
+        )
+
+
+class FullAttackResults:
+    def __init__(
+        self,
+        success_summary: ads.TrainerSuccessSummary,
+    ):
+        self._dataset = success_summary.dataset
+        self.all_attacks_df = success_summary.all_attacks_df
+        self.successful_attack_df = success_summary.successful_attacks_df
+        self._first_examples_raw = success_summary.first_examples
+        self._best_examples_raw = success_summary.best_examples
+        self.first_perts_summary = success_summary.perts_summary_first
+        self.best_perts_summary = success_summary.perts_summary_best
 
     @cached_property
     def attacked_features_padded(self) -> np.array:
         torch_attacked_features_padded = pad_sequence(
             self._dataset[:][1], batch_first=True
-        )[self._dataset_indices_attacked]
+        )[self.all_attacks_df.dataset_index]
         return np.array(torch_attacked_features_padded)
-
-    @cached_property
-    def _successful_attack(self) -> np.array:
-        first_success_attack_indices = np.where(
-            self._first_examples_raw.epochs != -1, True, False
-        )
-        best_success_attack_indices = np.where(
-            self._best_examples_raw.epochs != -1, True, False
-        )
-        assert np.all(
-            first_success_attack_indices == best_success_attack_indices
-        )
-        return first_success_attack_indices
-
-    @cached_property
-    def _successful_attack_indices(self) -> np.array:
-        return np.where(self._successful_attack)[0]
-
-    @cached_property
-    def padded_features(self) -> np.array:
-        torch_padded_features = pad_sequence(
-            self._dataset[:][1], batch_first=True
-        )
-        return np.array(torch_padded_features)
 
     @cached_property
     def padded_features_success(self) -> np.array:
         return self.attacked_features_padded[
-            self._successful_attack_indices, :, :
+            self.successful_attack_df["attacked_samples_index"], :, :
         ]
 
     @cached_property
     def _orig_labels(self) -> np.array:
-        return np.array(self._dataset[:][2])[self._dataset_indices_attacked]
+        return np.array(self._dataset[:][2])[self.all_attacks_df.dataset_index]
 
-    @cached_property
-    def attacked_samples_df(self) -> pd.DataFrame:
-        data_array = np.stack(
-            (
-                self._dataset_indices_attacked,
-                self._orig_labels,
-                self._seq_lengths,
-                self._epochs_run,
-                self._successful_attack,
-            ),
-            axis=-1,
-        )
-        return pd.DataFrame(
-            data=data_array,
-            columns=[
-                "dataset_index",
-                "orig_label",
-                "seq_length",
-                "num_epochs_run",
-                "successful_attack",
-            ],
-        )
+    # TODO replace all downstream refs to self.attacked_samples_df w/
+    #  self.all_attacks_df then remove self.attacked_samples_df
+    # @cached_property
+    # def attacked_samples_df(self) -> pd.DataFrame:
+    #     return self.all_attacks_df
 
     @cached_property
     def first_examples_padded_perts(self) -> np.array:
         return np.array(self._first_examples_raw.perturbations)[
-            self._successful_attack_indices
+            self.successful_attack_df["attacked_samples_index"]
         ]
-
-    @cached_property
-    def first_perts_summary(self) -> ads.PertsSummary:
-        return ads.PertsSummary(
-            seq_lengths=self._seq_lengths[self._successful_attack_indices],
-            padded_perts=self.first_examples_padded_perts,
-        )
 
     @cached_property
     def best_examples_padded_perts(self) -> np.array:
         return np.array(self._best_examples_raw.perturbations)[
-            self._successful_attack_indices
+            self.successful_attack_df["attacked_samples_index"]
         ]
-
-    @cached_property
-    def best_perts_summary(self) -> ads.PertsSummary:
-        return ads.PertsSummary(
-            seq_lengths=self._seq_lengths[self._successful_attack_indices],
-            padded_perts=self.best_examples_padded_perts,
-        )
 
     def build_examples_summary_df(
         self,
@@ -128,61 +127,47 @@ class FullAttackResults:
         }
 
         trainer_examples = examples_dispatch[example_type]
-        perts_summary = perts_summary_dispatch[example_type]
+        perts_summary_df = perts_summary_dispatch[example_type].df
 
-        data_array = np.stack(
+        example_summary_data_array = np.stack(
             (
-                self._dataset_indices_attacked[
-                    self._successful_attack_indices
+                self.all_attacks_df.dataset_index[
+                    self.successful_attack_df["attacked_samples_index"]
                 ],
-                self._orig_labels[self._successful_attack_indices],
+                self.successful_attack_df["attacked_samples_index"],
+                self._orig_labels[
+                    self.successful_attack_df["attacked_samples_index"]
+                ],
                 np.array(trainer_examples.epochs)[
-                    self._successful_attack_indices
+                    self.successful_attack_df["attacked_samples_index"]
                 ],
                 np.array(trainer_examples.losses)[
-                    self._successful_attack_indices
+                    self.successful_attack_df["attacked_samples_index"]
                 ],
-                np.array(self._seq_lengths)[self._successful_attack_indices],
-                perts_summary.num_nonzero_elements,
-                perts_summary.perts_mean_nonzero_abs,
-                perts_summary.perts_max_abs,
-                perts_summary.num_negative_perts,
-                perts_summary.perts_max_negative,
-                perts_summary.num_positive_perts,
-                perts_summary.perts_max_positive
             ),
             axis=1,
         )
-        return pd.DataFrame(
-            data=data_array,
+
+        example_summary_df = pd.DataFrame(
+            data=example_summary_data_array,
             columns=[
                 "dataset_index",
+                "attacked_samples_index",
                 "orig_label",
                 "epoch_found",
                 "loss",
-                "seq_length",
-                "num_perts",
-                "pert_mean_nonzero_abs",
-                "pert_max_abs",
-                "num_negative_perts",
-                "pert_max_negative",
-                "num_positive_perts",
-                "pert_max_positive"
-            ]
-        ).astype(dtype={
+            ],
+        ).astype(
+            dtype={
                 "dataset_index": "int",
+                "attacked_samples_index": "int",
                 "orig_label": "int",
-                "epoch_found" : "int",
+                "epoch_found": "int",
                 "loss": "float32",
-                "seq_length": "int",
-                "num_perts": "int",
-                "pert_mean_nonzero_abs": "float32",
-                "pert_max_abs": "float32",
-                "num_negative_perts": "int",
-                "pert_max_negative": "float32",
-                "num_positive_perts": "int",
-                "pert_max_positive": "float32"
-            })
+            }
+        )
+
+        return pd.concat([example_summary_df, perts_summary_df], axis=1)
 
     @cached_property
     def first_examples_df(self) -> pd.DataFrame:
@@ -196,4 +181,59 @@ class FullAttackResults:
             example_type=RecordedExampleType.BEST
         )
 
+    def get_attack_condition_data(
+        self,
+        seq_length: int,
+        example_type: RecordedExampleType,
+        orig_label: int = None,
+        min_num_perts: int = None,
+        max_num_perts: int = None,
+    ) -> AttackConditionAnalysisNew:
+        example_type_dispatch = {
+            RecordedExampleType.FIRST: self.first_examples_df,
+            RecordedExampleType.BEST: self.best_examples_df,
+        }
 
+        pert_summary_dispatch = {
+            RecordedExampleType.FIRST: self.first_perts_summary,
+            RecordedExampleType.BEST: self.best_perts_summary,
+        }
+
+        starting_df = example_type_dispatch[example_type]
+        filtered_df = starting_df[starting_df["seq_length"] == seq_length]
+        if orig_label is not None:
+            filtered_df = filtered_df[filtered_df["orig_label"] == orig_label]
+        if min_num_perts is not None:
+            filtered_df = filtered_df[
+                filtered_df["num_perts"] >= min_num_perts
+            ]
+        if max_num_perts is not None:
+            filtered_df = filtered_df[
+                filtered_df["num_perts"] <= max_num_perts
+            ]
+
+        perts = pert_summary_dispatch[example_type].padded_perts[
+            filtered_df.index, :, :
+        ]
+
+        return AttackConditionAnalysisNew(examples_df=filtered_df, perts=perts)
+
+    @cached_property
+    def zto_first_examples_df(self) -> pd.DataFrame:
+        return self.first_examples_df[
+            self.first_examples_df["orig_label"] == 0
+        ]
+
+    @cached_property
+    def otz_first_examples_df(self) -> pd.DataFrame:
+        return self.first_examples_df[
+            self.first_examples_df["orig_label"] == 1
+        ]
+
+    @cached_property
+    def zto_best_examples_df(self) -> pd.DataFrame:
+        return self.best_examples_df[self.best_examples_df["orig_label"] == 0]
+
+    @cached_property
+    def otz_best_examples_df(self) -> pd.DataFrame:
+        return self.best_examples_df[self.best_examples_df["orig_label"] == 1]
