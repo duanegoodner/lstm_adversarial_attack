@@ -5,7 +5,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.attack.attack_result_data_structs as ads
 import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.attack.attack_results_analyzer as ara
+# import lstm_adversarial_attack.attack.attack_results_analyzer as ara
 
 
 result_path = (

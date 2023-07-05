@@ -1,42 +1,9 @@
-from dataclasses import dataclass
 from functools import cached_property
 
 import numpy as np
 import pandas as pd
-import lstm_adversarial_attack.attack.attack_summary as asu
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.resource_io as rio
-
-
-def calc_gmp_ij(perts: np.array) -> np.array:
-    return np.max(np.abs(perts), axis=0)
-
-
-def calc_gap_ij(perts: np.array) -> np.array:
-    return np.sum(np.abs(perts), axis=0) / perts.shape[0]
-
-
-def calc_ganzp_ij(perts: np.array) -> np.ma.MaskedArray:
-    masked_perts = np.ma.masked_equal(np.abs(perts), 0)
-    return masked_perts.mean(axis=0)
-
-
-def calc_gpp_ij(perts: np.array) -> np.array:
-    return np.count_nonzero(perts, axis=0) / perts.shape[0]
-
-
-def calc_s_ij(gmp: np.array, gpp: np.array) -> np.array:
-    return gmp * gpp
-
-
-def calc_s_ganzp_ij(
-    ganzp: np.ma.MaskedArray, gpp: np.array
-) -> np.ma.MaskedArray:
-    return gpp / ganzp
-
-
-def calc_s_j(s_ij: np.array) -> np.array:
-    return np.sum(s_ij, axis=0)
 
 
 class AttackSusceptibilityMetrics:
@@ -50,40 +17,68 @@ class AttackSusceptibilityMetrics:
                 )
             )
         self.measurement_labels = measurement_labels
-        if perts.shape[0] != 0:
-            self._gmp_ij = calc_gmp_ij(perts=perts)
-            self._gap_ij = calc_gap_ij(perts=perts)
-            self._ganzp_ij = calc_ganzp_ij(perts=perts)
-            self._gpp_ij = calc_gpp_ij(perts=perts)
-            self._s_ij = calc_s_ij(gmp=self._gmp_ij, gpp=self._gpp_ij)
-            self._s_j = calc_s_j(s_ij=self._s_ij)
-            self.gmp_ij = pd.DataFrame(
-                data=self._gmp_ij, columns=self.measurement_labels
-            )
-            self.gap_ij = pd.DataFrame(
-                data=self._gap_ij, columns=self.measurement_labels
-            )
-            self.ganzp_ij = pd.DataFrame(
-                data=np.ma.filled(self._ganzp_ij, 0),
-                columns=self.measurement_labels,
-            )
-            self.gpp_ij = pd.DataFrame(
-                data=self._gpp_ij, columns=self.measurement_labels
-            )
-            self.s_ij = pd.DataFrame(
-                data=self._s_ij, columns=self.measurement_labels
-            )
-            self._s_ganzp_ij = calc_s_ganzp_ij(
-                ganzp=self._ganzp_ij, gpp=self._gpp_ij
-            )
-            self.s_ganzp_ij = pd.DataFrame(
-                data=np.ma.filled(self._s_ganzp_ij, 0),
-                columns=self.measurement_labels,
-            )
-            self.s_j = pd.Series(data=self._s_j, index=self.measurement_labels)
-        else:
-            self._gmp_ij = None
-            self._gap_ij = None
-            self._gpp_ij = None
-            self._s_ij = None
-            self._s_j = None
+
+    @cached_property
+    def _abs_perts(self) -> np.array:
+        return np.abs(self.perts)
+
+    @cached_property
+    def _gmp_ij(self) -> np.array:
+        return np.max(self._abs_perts, axis=0)
+
+    @cached_property
+    def _gap_ij(self) -> np.array:
+        return np.sum(self._abs_perts) / self.perts.shape[0]
+        # return self._abs_perts.mean(axis=0)
+
+    @cached_property
+    def _ganzp_ij(self) -> np.ma.MaskedArray:
+        masked_perts = np.ma.masked_equal(self._abs_perts, 0)
+        return masked_perts.mean(axis=0)
+
+    @cached_property
+    def ganzp_ij(self) -> pd.DataFrame:
+        return pd.DataFrame(
+            data=np.ma.filled(self._ganzp_ij, 0),
+            columns=self.measurement_labels,
+        )
+
+    @cached_property
+    def _gpp_ij(self) -> np.array:
+        return np.count_nonzero(self.perts, axis=0) / self.perts.shape[0]
+
+    @cached_property
+    def gpp_ij(self) -> pd.DataFrame:
+        return pd.DataFrame(data=self._gpp_ij, columns=self.measurement_labels)
+
+    @cached_property
+    def _s_ij(self) -> np.array:
+        return self._gmp_ij * self._gpp_ij
+
+    @cached_property
+    def _s_j(self) -> np.array:
+        return np.sum(self._s_ij, axis=0)
+
+    @cached_property
+    def _sensitivity_ij(self) -> np.ma.masked_array:
+        return self._gpp_ij / self._ganzp_ij
+
+    @cached_property
+    def sensitivity_ij(self) -> pd.DataFrame:
+        unmasked_data = np.ma.filled(self._sensitivity_ij, 0)
+        return pd.DataFrame(
+            data=unmasked_data, columns=self.measurement_labels
+        )
+
+    @cached_property
+    def _sensitivity_j(self) -> np.ma.masked_array:
+        return np.sum(self._sensitivity_ij, axis=0)
+
+    @cached_property
+    def sensitivity_j(self) -> pd.Series:
+        unmasked_data = np.ma.filled(self._sensitivity_j, 0)
+        return pd.Series(data=unmasked_data, index=self.measurement_labels)
+
+    @cached_property
+    def _num_nonzero_elements(self) -> np.array:
+        return np.sum(self.perts != 0, axis=(1, 2))

@@ -1,21 +1,26 @@
 from functools import cached_property
 from pathlib import Path
-
 import pandas as pd
-
 import lstm_adversarial_attack.attack.attack_result_data_structs as ads
-import lstm_adversarial_attack.attack.attack_summary as asu
+import lstm_adversarial_attack.attack.attack_analysis as ata
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.resource_io as rio
-import lstm_adversarial_attack.attack.attack_results_analyzer as ara
 import lstm_adversarial_attack.attack.perts_histogram_plotter as php
 import lstm_adversarial_attack.attack.susceptibility_plotter as ssp
 
 
 class AttackAnalysesBuilder:
-    def __init__(self, trainer_result_path: Path, seq_length: int = 48):
+    def __init__(
+            self,
+            trainer_result_path: Path,
+            seq_length: int = 48,
+            min_num_perts: int = None,
+            max_num_perts: int = None
+    ):
         self.trainer_result_path = trainer_result_path
         self.seq_length = seq_length
+        self.min_num_perts = min_num_perts
+        self.max_num_perts = max_num_perts
 
     @cached_property
     def trainer_result(self) -> ads.TrainerResult:
@@ -28,39 +33,41 @@ class AttackAnalysesBuilder:
         return ads.TrainerSuccessSummary(trainer_result=self.trainer_result)
 
     @cached_property
-    def full_attack_results(self) -> asu.FullAttackResults:
-        return asu.FullAttackResults(
-            # trainer_result=self.trainer_result,
+    def attack_results(self) -> ata.FullAttackResults:
+        return ata.FullAttackResults(
             success_summary=self.success_summary,
         )
 
     @cached_property
-    def standard_attack_analyses(self) -> ara.StandardAttackAnalyses:
-        return ara.StandardAttackAnalyses(
-            full_attack_results=self.full_attack_results,
-            seq_length=self.seq_length,
-        )
-
-    @cached_property
-    def standard_attack_analyses_new(self) -> asu.StandardAttackAnalysesNew:
-        return asu.StandardAttackAnalysesNew(
-            zero_to_one_first=self.full_attack_results.get_attack_condition_data(
+    def standard_attack_analyses(self) -> ata.StandardAttackAnalyses:
+        return ata.StandardAttackAnalyses(
+            zero_to_one_first=self.attack_results.get_condition_analysis(
                 seq_length=self.seq_length,
-                example_type=asu.RecordedExampleType.FIRST,
-                orig_label=0
+                example_type=ata.RecordedExampleType.FIRST,
+                orig_label=0,
+                min_num_perts=self.min_num_perts,
+                max_num_perts=self.max_num_perts
             ),
-            zero_to_one_best=self.full_attack_results.get_attack_condition_data(
+            zero_to_one_best=self.attack_results.get_condition_analysis(
                 seq_length=self.seq_length,
-                example_type=asu.RecordedExampleType.BEST,
-                orig_label=0
+                example_type=ata.RecordedExampleType.BEST,
+                orig_label=0,
+                min_num_perts=self.min_num_perts,
+                max_num_perts=self.max_num_perts
             ),
-            one_to_zero_first=self.full_attack_results.get_attack_condition_data(
+            one_to_zero_first=self.attack_results.get_condition_analysis(
                 seq_length=self.seq_length,
-                example_type=asu.RecordedExampleType.FIRST,
+                example_type=ata.RecordedExampleType.FIRST,
+                orig_label=1,
+                min_num_perts=self.min_num_perts,
+                max_num_perts=self.max_num_perts
             ),
-            one_to_zero_best=self.full_attack_results.get_attack_condition_data(
+            one_to_zero_best=self.attack_results.get_condition_analysis(
                 seq_length=self.seq_length,
-                example_type=asu.RecordedExampleType.BEST
+                example_type=ata.RecordedExampleType.BEST,
+                orig_label=1,
+                min_num_perts=self.min_num_perts,
+                max_num_perts=self.max_num_perts
             )
         )
 
@@ -68,8 +75,7 @@ class AttackAnalysesBuilder:
     def df_tuple_for_histogram_plotter(
         self,
     ) -> tuple[tuple[pd.DataFrame, ...], ...]:
-        # return self.standard_attack_analyses.df_tuple_for_histogram_plotter
-        return self.standard_attack_analyses_new.data_struct_for_histogram_plotter
+        return self.standard_attack_analyses.data_for_histogram_plotter
 
     def plot_histograms(self, title: str, subtitle: str, **kwargs):
         histogram_plotter = php.PerturbationHistogramPlotter(
@@ -81,10 +87,7 @@ class AttackAnalysesBuilder:
         histogram_plotter.plot_histograms()
 
     def plot_susceptibility_metric(self, metric: str, title: str):
-        # susceptibility_dfs = self.standard_attack_analyses.susceptibility_metric_tuple_for_plotting(
-        #     metric=metric
-        # )
-        susceptibility_dfs = self.standard_attack_analyses_new.data_struct_for_susceptibility_plotter(
+        susceptibility_dfs = self.standard_attack_analyses.data_for_susceptibility_plotter(
             metric=metric
         )
         plotter = ssp.SusceptibilityPlotter(
@@ -136,11 +139,27 @@ if __name__ == "__main__":
     )
 
     max_single_element_analyses_builder.plot_susceptibility_metric(
-        metric="s_ganzp_ij",
+        metric="ganzp_ij",
+        title=(
+            "ganzp_ij when tuned to maximize # of single-element perturbations"
+        ),
+    )
+
+    max_single_element_analyses_builder.plot_susceptibility_metric(
+        metric="gpp_ij",
         title=(
             "gpp_ij when tuned to maximize # of single-element perturbations"
         ),
     )
+
+    max_single_element_analyses_builder.plot_susceptibility_metric(
+        metric="sensitivity_ij",
+        title=(
+            "sensitivity_ij when tuned to maximize # of single-element perturbations"
+        ),
+    )
+
+
 
     # max_sparsity_result_path = (
     #     cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
@@ -192,10 +211,15 @@ if __name__ == "__main__":
     #     title="Perturbation density and magnitude distributions",
     #     subtitle="Tuning objective: Maximize sparse-small-max score",
     #     histogram_num_bins = (912, 1000, 50),
-    #     create_insets=((False, True, False), (False, True, False)),
+    #     create_insets=((True, True, False), (True, True, False)),
     #     inset_specs=(
     #         (
-    #             None,
+    #             php.InsetSpec(
+    #                 bounds=[0.2, 0.15, 0.6, 0.82],
+    #                 plot_limits=php.PlotLimits(
+    #                     x_min=1, x_max=20, y_min=0, y_max=20
+    #                 ),
+    #             ),
     #             php.InsetSpec(
     #                 bounds=[0.3, 0.15, 0.65, 0.82],
     #                 plot_limits=php.PlotLimits(
@@ -205,7 +229,12 @@ if __name__ == "__main__":
     #             None,
     #         ),
     #         (
-    #             None,
+    #             php.InsetSpec(
+    #                 bounds=[0.2, 0.15, 0.6, 0.82],
+    #                 plot_limits=php.PlotLimits(
+    #                     x_min=1, x_max=20, y_min=0, y_max=20
+    #                 ),
+    #             ),
     #             php.InsetSpec(
     #                 bounds=[0.3, 0.15, 0.65, 0.82],
     #                 plot_limits=php.PlotLimits(

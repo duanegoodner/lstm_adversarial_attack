@@ -1,4 +1,4 @@
-import lstm_adversarial_attack.attack.attack_summary as asu
+import lstm_adversarial_attack.attack.attack_analysis as asu
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.attack.attack_results_analyzer as ara

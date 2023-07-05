@@ -15,7 +15,7 @@ class RecordedExampleType(Enum):
 
 
 @dataclass
-class AttackConditionAnalysisNew:
+class AttackConditionAnalysis:
     examples_df: pd.DataFrame
     perts: np.array
 
@@ -28,14 +28,14 @@ class AttackConditionAnalysisNew:
 
 
 @dataclass
-class StandardAttackAnalysesNew:
-    zero_to_one_first: AttackConditionAnalysisNew
-    zero_to_one_best: AttackConditionAnalysisNew
-    one_to_zero_first: AttackConditionAnalysisNew
-    one_to_zero_best: AttackConditionAnalysisNew
+class StandardAttackAnalyses:
+    zero_to_one_first: AttackConditionAnalysis
+    zero_to_one_best: AttackConditionAnalysis
+    one_to_zero_first: AttackConditionAnalysis
+    one_to_zero_best: AttackConditionAnalysis
 
     @cached_property
-    def data_struct_for_histogram_plotter(
+    def data_for_histogram_plotter(
         self,
     ) -> tuple[tuple[pd.DataFrame, ...], ...]:
         return (
@@ -49,7 +49,7 @@ class StandardAttackAnalysesNew:
             ),
         )
 
-    def data_struct_for_susceptibility_plotter(
+    def data_for_susceptibility_plotter(
         self, metric: str
     ) -> tuple[tuple[pd.DataFrame | pd.Series, ...], ...]:
         return (
@@ -93,12 +93,6 @@ class FullAttackResults:
     @cached_property
     def _orig_labels(self) -> np.array:
         return np.array(self._dataset[:][2])[self.all_attacks_df.dataset_index]
-
-    # TODO replace all downstream refs to self.attacked_samples_df w/
-    #  self.all_attacks_df then remove self.attacked_samples_df
-    # @cached_property
-    # def attacked_samples_df(self) -> pd.DataFrame:
-    #     return self.all_attacks_df
 
     @cached_property
     def first_examples_padded_perts(self) -> np.array:
@@ -181,14 +175,14 @@ class FullAttackResults:
             example_type=RecordedExampleType.BEST
         )
 
-    def get_attack_condition_data(
+    def get_condition_analysis(
         self,
         seq_length: int,
         example_type: RecordedExampleType,
         orig_label: int = None,
         min_num_perts: int = None,
         max_num_perts: int = None,
-    ) -> AttackConditionAnalysisNew:
+    ) -> AttackConditionAnalysis:
         example_type_dispatch = {
             RecordedExampleType.FIRST: self.first_examples_df,
             RecordedExampleType.BEST: self.best_examples_df,
@@ -216,7 +210,7 @@ class FullAttackResults:
             filtered_df.index, :, :
         ]
 
-        return AttackConditionAnalysisNew(examples_df=filtered_df, perts=perts)
+        return AttackConditionAnalysis(examples_df=filtered_df, perts=perts)
 
     @cached_property
     def zto_first_examples_df(self) -> pd.DataFrame:
