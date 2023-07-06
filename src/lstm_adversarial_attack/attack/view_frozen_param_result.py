@@ -1,6 +1,9 @@
+"""
+Dev script for viewing results of attack on model with fixed hyperparams
+"""
+
 import sys
 from pathlib import Path
-
 sys.path.append(str(Path(__file__).parent.parent))
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.attack.attack_result_data_structs as ads

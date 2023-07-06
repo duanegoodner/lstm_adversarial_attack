@@ -1,3 +1,7 @@
+"""
+Dev script for viewing results of attack hyperparameter tuning
+"""
+
 import sys
 from pathlib import Path
 
@@ -5,7 +9,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.attack.attack_result_data_structs as ads
 import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.attack.attack_results_analyzer as ara
+# import lstm_adversarial_attack.attack.attack_results_analyzer as ara
 
 optuna_output_dir = (
     cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-07-01_11_03_13.591090"

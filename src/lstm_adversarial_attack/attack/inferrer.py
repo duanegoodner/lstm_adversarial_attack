@@ -10,6 +10,14 @@ import lstm_adversarial_attack.dataset_with_index as dsi
 
 @dataclass
 class StandardInferenceResults:
+    """
+    Data container to hold results of running all samples in dataset through
+    forward pass of a classification model.
+    :param dataset: dataset with samples that ran through model
+    :param y_pred: predicted classes
+    :param y_score: values output by final activation layer of model
+    :param y_true: actual classes
+    """
     dataset: dsi.DatasetWithIndex
     y_pred: torch.tensor
     y_score: torch.tensor
@@ -17,24 +25,51 @@ class StandardInferenceResults:
 
     @property
     def correct_prediction_indices(self) -> np.ndarray:
+        """
+        Indices of correctly classified samples
+        :return: array of ints
+        """
         return np.where(self.y_pred == self.y_true)[0]
 
     @property
     def incorrect_prediction_indices(self) -> np.ndarray:
+        """
+        Indices of misclassified samples
+        :return: array of ints
+        """
         return np.where(self.y_pred != self.y_true)[0]
 
     @property
     def confusion_matrix(self) -> np.ndarray:
+        """
+        Confusion matrix based on y_pred and y_true
+        :return: sklearn.metrics.confusion_matrix
+        """
         return confusion_matrix(y_true=self.y_true, y_pred=self.y_pred)
 
     def indices_true_of_predicted_class(self, class_num: int) -> np.ndarray:
+        """
+        Gets indices of samples that are correctly predicted and belong to
+        particular class.
+        :param class_num: a sample class (0 or 1 for binary classification)
+        :return: array of ints
+        """
         return np.where((self.y_pred == class_num == self.y_true))[0]
 
     def indices_false_of_predicted_class(self, class_num: int) -> np.ndarray:
+        """
+        Indices of incorrectly classified samples of particular class.
+        :param class_num: a sample class
+        :return: array of ints
+        """
         return np.where((self.y_pred == class_num != self.y_true))[0]
 
 
 class StandardModelInferrer:
+    """
+    Runs all samples in dataset through forward pass of a model and obtains
+    inference results
+    """
     def __init__(
         self,
         device: torch.device,
@@ -43,6 +78,13 @@ class StandardModelInferrer:
         collate_fn: Callable,
         batch_size: int = 128,
     ):
+        """
+        :param device: device to run on
+        :param model: model used for inference
+        :param dataset: dataset used for inference
+        :param collate_fn: converts dataset elements to batches
+        :param batch_size: num samples per batch
+        """
         self.device = device
         self.model = model
         self.dataset = dataset
@@ -58,10 +100,20 @@ class StandardModelInferrer:
     # extract this from evaluate function so it can be easily overridden
     @staticmethod
     def interpret_output(model_output: torch.tensor) -> torch.tensor:
+        """
+        Converts model outputs to predicted class
+        :param model_output: final output tensor from forward pass
+        :return: integer corresponding to predicted class
+        """
         return torch.argmax(input=model_output, dim=1)
 
     @torch.no_grad()
     def infer(self):
+        """
+        Runs all samples in dataloader through forward pass, obtains class
+        prediction, and calcs StandardInferenceResults
+        :return: StandardInferenceResults
+        """
         self.model.to(self.device)
         self.model.eval()
         all_indices = torch.LongTensor()

@@ -10,6 +10,10 @@ import lstm_adversarial_attack.config_paths as cfg_paths
 
 
 class SusceptibilityPlotter:
+    """
+    Plots heatmaps of susceptibility metrics for perturbations causing
+    adversarial examples
+    """
     def __init__(
         self,
         susceptibility_dfs: tuple[tuple[pd.DataFrame, ...], ...],
@@ -61,6 +65,9 @@ class SusceptibilityPlotter:
         self.yticks_positions = np.arange(len(self.yticks_labels) + 0.5)
 
     def _set_figure_layout(self):
+        """
+         Sets overall layout of figue (subplots, and figure labels)
+         """
         fig, axes = plt.subplots(
             nrows=self.subplot_num_rows,
             ncols=self.subplot_num_cols,
@@ -94,6 +101,9 @@ class SusceptibilityPlotter:
         plot_title: str,
         source_df: pd.DataFrame,
     ):
+        """
+        Adds titles and labels to individual subplots
+        """
         # x-axis tick marks and title
         ax.xaxis.set_major_locator(ticker.IndexLocator(self.xtick_major, 0))
         ax.xaxis.set_major_formatter("{x:.0f}")
@@ -120,6 +130,9 @@ class SusceptibilityPlotter:
         heatmap.axvline(x=source_df.index.max() + 1, color="k", linewidth=2)
 
     def plot_susceptibilities(self, color_bar_title: str = ""):
+        """
+        Generates all heatmap susceptibility plots in figure
+        """
         fig, axes, colorbar_axes = self._set_figure_layout()
 
         for plot_row in range(self.subplot_num_rows):

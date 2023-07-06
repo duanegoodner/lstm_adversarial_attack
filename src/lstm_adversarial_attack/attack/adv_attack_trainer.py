@@ -15,6 +15,11 @@ import lstm_adversarial_attack.weighted_dataloader_builder as wdb
 
 
 class AdversarialAttackTrainer:
+    """
+    Finds adversarial examples for a classification model
+    """
+    # TODO consolidate params that are part of hyperparams into single object
+    #  (large number of constructor args is messy)
     def __init__(
         self,
         device: torch.device,
@@ -34,6 +39,35 @@ class AdversarialAttackTrainer:
         checkpoint_interval: int = None,
         output_dir: Path = None,
     ):
+        """
+
+        :param device: device to run on
+        :param model: original classification model to attack
+        :param state_dict: state dict obtained from previous training of model
+        :param batch_size: num samples per batch during attack
+        :param epochs_per_batch: number of attack iterations to run per batch
+        :param kappa: arameter from Equation 1 in Sun et al
+        (https://arxiv.org/abs/1802.04822). Defines a margin by which alternate
+        class logit value needs to exceed original class logit value in order
+        to reduce loss function.
+        :param lambda_1: L1 regularization constant (to encourage examples due
+        to sparse perturbations)
+        :param optimizer_constructor: constructor for optimizer used during
+        search for adversarial examples
+        :param optimizer_constructor_kwargs: kwargs passed to optimizer
+        constructor
+        :param dataset: unfiltered dataset potential samples to use for attacks
+        :param collate_fn: method used by dataloader to organize dataset
+        elements into batches
+        :param attack_misclassified_samples: whether to run attacks on
+        samples that original model misclassifies
+        :param inference_batch_size: batch size to use when running inference
+        with full dataset and original model
+        :param use_weighted_data_loader: during attack, do we use dataloader
+        that oversamples from minority class?
+        :param checkpoint_interval: number of attack batches per checkpoint
+        :param output_dir: directory where checkpoint .pickles get saved
+        """
         self.device = device
         self.model = model
         self.state_dict = state_dict
@@ -66,29 +100,62 @@ class AdversarialAttackTrainer:
 
     @property
     def batch_size(self) -> int:
+        """
+        Convenience getter.
+        :return: batch size of .attacker's FeaturePerturber
+        """
         return self.attacker.feature_perturber.batch_size
 
     @property
     def max_seq_length(self) -> int:
+        """
+        Convenience getter.
+        :return: Max sequence length of .attacker's feature perturber.
+        Corresponds to num rows in perturbation tensor.
+        """
         return self.attacker.feature_perturber.max_sequence_length
 
     @property
     def input_size(self) -> int:
+        """
+        Convenience getter.
+        :return: Input size of .attacker's feature perturber. Corresponds to
+        number of columns in perturbation tensor.
+        """
         return self.attacker.feature_perturber.input_size
 
     @property
     def perturbation(self) -> torch.tensor:
+        """
+        Convenience getter.
+        :return: .attacker's FeaturePerturber's perturbation tensor
+        """
         return self.attacker.feature_perturber.perturbation
 
     def reset_perturbation(self):
+        """
+        Resets parameters perturbation tensor
+        """
         self.attacker.feature_perturber.reset_parameters()
 
     def set_attacker_train_mode(self):
+        """
+        Sets attacker to train mode which sets module parameters requires
+        grad to true. Turns off grad in the predictive model portion of the
+        overall attacker + predictor model. Tried setting predictive model to
+        eval() mode, but that prevented backprop of attacker params.
+        """
         self.attacker.train()
         for param in self.attacker.logit_no_dropout_model.parameters():
             param.requires_grad = False
 
     def get_target_dataset(self) -> dsi.DatasetWithIndex | Subset:
+        """
+        Creates dataset of samples to be attacked. Typical params will
+        result in dataset with all of the correctly predicted samples from
+        orig_dataset.
+        :return: either the full self.dataset or subset of it
+        """
         target_dataset_builder = ath.TargetDatasetBuilder(
             device=self.device,
             model=self.attacker.logit_no_dropout_model,
@@ -99,6 +166,10 @@ class AdversarialAttackTrainer:
         return target_dataset_builder.build()
 
     def build_data_loader(self) -> DataLoader:
+        """
+        Creates a dataloader to be used during training.
+        :return: a DataLoader (either "regular" or "weighted")
+        """
         target_dataset = self.get_target_dataset()
         if self.use_weighted_data_loader:
             return wdb.WeightedDataLoaderBuilder(
@@ -120,6 +191,19 @@ class AdversarialAttackTrainer:
         orig_labels: torch.tensor,
         sample_losses: torch.tensor,
     ) -> ads.EpochSuccesses:
+        """
+        Gets info for samples within batch that are successfully attacked
+        during an attack epoch.
+        :param epoch_num: epoch number within training session
+        :param logits: Model outputs of each sample in batch. When
+        training/using predictive model for normal use, these logits are the
+        values fed into final activation function. But when running attack,
+        we don't use the final activation.
+        :param orig_labels: class predicted by original model (for each sample
+        in batch)
+        :param sample_losses: attack loss for each sample in batch
+        :return:
+        """
         if logits.dim() == 1:
             logits = logits[None, :]
         attack_is_successful = torch.argmax(input=logits, dim=1) != orig_labels
@@ -137,6 +221,12 @@ class AdversarialAttackTrainer:
         )
 
     def rebuild_attacker(self, batch_size: int):
+        """
+        Creates a new AdversarialAttacker. Used when current attacker batch
+        size does not match size of current batch (e.g. final batch of dataset)
+        :param batch_size:
+        :type batch_size:
+        """
         self.attacker = aat.AdversarialAttacker(
             full_model=self.model,
             state_dict=self.state_dict,
@@ -153,6 +243,11 @@ class AdversarialAttackTrainer:
     def apply_soft_bounded_threshold(
         self, orig_inputs: ds.VariableLengthFeatures
     ):
+        """
+        Applies thresholding perturbation for Iterative Soft Threshold
+        Algorithm (ISTA) implementation of adversarial loss regularization.
+        :param orig_inputs: batch of sample input features
+        """
         perturbation_min = -1 * orig_inputs.features
         perturbation_max = (
             torch.ones_like(orig_inputs.features) - orig_inputs.features
@@ -188,7 +283,17 @@ class AdversarialAttackTrainer:
         indices: torch.tensor,
         orig_features: ds.VariableLengthFeatures,
         orig_labels: torch.tensor,
-    ):
+    ) -> ads.BatchResult:
+        """
+        Attacks batch of samples for self.num_epochs.
+        :param indices: dataset indices of samples in batch
+        :param orig_features: input features of samples in batch
+        :param orig_labels: target model's class predictions
+        :return: a BatchResult object containing first and best (lowest loss)
+        EpochSuccess info for each sample. Samples with no adversarial examples
+        found are included in this but have orig initialized values that can
+        be interpreted as no example found.
+        """
         # if batch size less than size of perturbations dim 1, re-build
         # FeaturePerturber to match current batch size
         if indices.shape[0] != self.attacker.batch_size:
@@ -256,6 +361,9 @@ class AdversarialAttackTrainer:
         return batch_result
 
     def display_attack_info(self):
+        """
+        Displays attack details to terminal
+        """
         print(
             f"Running attacks with:\nbatch_size = {self.batch_size}\nkappa ="
             f" {self.kappa}\nlambda_1 = {self.lambda_1}\noptimizer ="
@@ -268,6 +376,14 @@ class AdversarialAttackTrainer:
     def save_checkpoint(
         self, trainer_result: ads.TrainerResult, num_batches: int
     ):
+        """
+        Saves TrainerResult, which contains info from all BatchResults, to
+        .pickle file. (TrainerResult gets updated after at end of each
+        batch loop in .train_attacker().)
+        :param trainer_result:
+        :param num_batches:
+        :return:
+        """
         checkpoint_path = rio.create_timestamped_filepath(
             parent_path=self.output_dir,
             file_extension="pickle",
@@ -278,6 +394,16 @@ class AdversarialAttackTrainer:
         )
 
     def train_attacker(self):
+        """
+        Trains AdversarialAttacker for all samples in batch. "Training" the
+        attacker means searching for perturbations that minimize its loss
+        function. Each sample that has adversarial example(s) found
+        will have information for its first found example and its lowest loss
+        (aka "best") example.
+        :return: TrainerResult containing info on first and best adversarial
+        examples. See TrainerResult docstring for description of values stored
+        for samples that have no example found.
+        """
         data_loader = self.build_data_loader()
         self.attacker.to(self.device)
         self.set_attacker_train_mode()

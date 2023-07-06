@@ -15,8 +15,9 @@ import lstm_adversarial_attack.resource_io as rio
 
 class AttackTunerObjectivesBuilder:
     """
-    Each method returns a Callable that can be to calculate the return value of
-    an AttackHyperParameterTuner's .objective_fn method.
+    Class of static methods for organization purposes. Each method returns a
+    Callable that can be to calculate the return value of an
+    AttackHyperParameterTuner's .objective_fn method.
     """
 
     @staticmethod
@@ -76,6 +77,11 @@ class AttackTunerObjectivesBuilder:
 
 
 class AttackHyperParameterTuner:
+    """
+    Tunes hyperparameters of AdversarialAttackTrainers and their associated
+    Adversarial Attackers. (Each test of a new set of params instantiates new
+    AttackDriver, AdversarialAttackTrainer and model)
+    """
     def __init__(
         self,
         device: torch.device,
@@ -91,6 +97,30 @@ class AttackHyperParameterTuner:
         output_dir: Path = None,
         continue_study_path: Path = None,
     ):
+        """
+        :param device: device to run on
+        :param model_path: pickle file containing predictive model to attack
+        :param checkpoint: params (from prev training) to load into model
+        :param epochs_per_batch: number of times to run attack algo (run by
+        AdversarialAttackTrainer / Adversarial Attacker) runs on each batch
+        :param max_num_samples: Number candidate samples to take from a dataset
+        for attack. Default behavior of AdversarialAttackTrainer is to not
+        attack samples misclassified by target model, so not all candidat
+        samples get attacked.
+        :param tuning_ranges: parameter ranges to explore during tuning
+        :param objective: function / method used to convert a TrainerResult
+        from attack w/ single set of params to scalar value quantifying
+        effectiveness of that set of params.
+        :param sample_selection_seed: random seed set
+        :param pruner: Causes unpromising trials to stop early. Sublclass of
+        optuna.samplers.BasePruner.
+        :param hyperparameter_sampler: Selects hyperparameters to test.
+        Subclass of optuna.samplers.BaseSampler.
+        :param output_dir: (optional) Directory where trial results are saved.
+        New directory automatically created if not specified.
+        :param continue_study_path: (optional) pickle of pre-existing study to
+        add on to
+        """
         self.device = device
         self.model_path = model_path
         self.checkpoint = checkpoint
@@ -106,9 +136,17 @@ class AttackHyperParameterTuner:
         )
         self.continue_study_path = continue_study_path
 
+    # TODO Simplify this method with `parents` and `exist_ok` args of mkdir().
     def initialize_output_dir(
         self, output_dir: Path = None
     ) -> tuple[Path, Path]:
+        """
+        :param output_dir: Directory where tuning results are saved. If None,
+        a new directory gets created
+        :return: Tuple of the output directory and its subdirectory. Subdir
+        will hold trial results. Parent store .pickles of TunerDriver and
+        Optuna Study.
+        """
         if output_dir is None:
             initialized_output_dir = rio.create_timestamped_dir(
                 parent_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
@@ -125,6 +163,11 @@ class AttackHyperParameterTuner:
         return initialized_output_dir, attack_results_dir
 
     def build_attack_driver(self, trial: optuna.Trial) -> atk.AttackDriver:
+        """
+        Builds AttackDriver for attack with a single set of hyperparams.
+        :param trial:
+        :return: an AttackDriver
+        """
         settings = ads.AttackHyperParameterSettings.from_optuna_active_trial(
             trial=trial, tuning_ranges=self.tuning_ranges
         )
@@ -148,7 +191,13 @@ class AttackHyperParameterTuner:
 
         return attack_driver
 
-    def objective_fn(self, trial) -> float:
+    def objective_fn(self, trial: optuna.Trial) -> float:
+        """
+        Runs attack for a single trial. Result gets converted to scalar that
+        Optuna uses to quantify effectiveness of attack.
+        :param trial: current Optuna trial.
+        :return: value quantifying success of attack
+        """
         attack_driver = self.build_attack_driver(trial=trial)
         trainer_result = attack_driver()
         success_summary = ards.TrainerSuccessSummary(
@@ -157,11 +206,11 @@ class AttackHyperParameterTuner:
 
         return self.objective(success_summary)
 
-        # return success_summary.perts_summary_best.num_examples_with_num_nonzero_less_than(
-        #     cutoff=2
-        # )
-
     def export_study(self, study: optuna.Study):
+        """
+        Saves optuna Study object (contains info for all trials) to pickle.
+        :param study: the Study object to save
+        """
         study_filename = "optuna_study.pickle"
         study_export_path = self.output_dir / study_filename
         rio.ResourceExporter().export(resource=study, path=study_export_path)
@@ -169,6 +218,13 @@ class AttackHyperParameterTuner:
     def tune(
         self, num_trials: int, timeout: int | None = None
     ) -> optuna.Study:
+        """
+        Runs an optuna Study consisting of Trials (one set of hyperparameters
+        per trial)
+        :param num_trials: number of trials to run
+        :param timeout: max time for study (default of None means no limit)
+        :return: an optuna Study object
+        """
         if self.continue_study_path is not None:
             study = rio.ResourceImporter().import_pickle_to_object(
                 path=self.continue_study_path

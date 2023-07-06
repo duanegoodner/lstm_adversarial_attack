@@ -14,6 +14,9 @@ class DataPairDisplayType(Enum):
 
 
 class PlotLimits(NamedTuple):
+    """
+    Used for inset definition
+    """
     x_min: float
     x_max: float
     y_min: float
@@ -21,11 +24,19 @@ class PlotLimits(NamedTuple):
 
 
 class InsetSpec(NamedTuple):
+    """
+    Specs that define an inset
+    """
     bounds: list[float]
     plot_limits: PlotLimits
 
 
 class PerturbationHistogramPlotter:
+    """
+    Plots histograms of perturbation-related info: num non-zero elements
+    per example, mean perturbation element magnitude, and max perturbation
+    element magnitude.
+    """
     def __init__(
         self,
         pert_summary_dfs: tuple[tuple[pd.DataFrame, ...], ...],
@@ -125,12 +136,20 @@ class PerturbationHistogramPlotter:
     def _display_type_histogram_dispatch(
         self,
     ) -> dict[DataPairDisplayType, Callable]:
+        """
+        Determines which type of histogram to plot for a first example / best
+        example pair (overlay or delta)
+        :return: dispatch dictionary
+        """
         return {
             DataPairDisplayType.OVERLAY: self._plot_first_best_overlay,
             DataPairDisplayType.DELTA: self._plot_first_best_delta,
         }
 
     def _set_figure_layout(self):
+        """
+        Sets overall layout of figue (subplots, and figure labels)
+        """
         fig, axes = plt.subplots(
             nrows=self.subplot_num_rows,
             ncols=self.subplot_num_cols,
@@ -167,6 +186,9 @@ class PerturbationHistogramPlotter:
         return fig, axes
 
     def _decorate_subplots(self, axes: plt.Axes):
+        """
+        Adds titles and labels to individual subplots
+        """
         for plot_row in range(self.subplot_num_rows):
             # first plot in row gets ylabel
             axes[plot_row][0].set_ylabel(self.subplot_row_titles[plot_row])
@@ -198,6 +220,9 @@ class PerturbationHistogramPlotter:
         label: str,
         plot_range: tuple[int, int] = None,
     ):
+        """
+        Plots a single histogram
+        """
         counts, bins = np.histogram(a=data, bins=bins, range=plot_range)
         ax.hist(
             bins[:-1],
@@ -217,6 +242,9 @@ class PerturbationHistogramPlotter:
         plot_range: tuple[int, int] = None,
         add_legend: bool = False,
     ):
+        """
+        Plots two histograms on single axes.
+        """
         self._plot_histogram(
             ax=ax,
             data=first_df[col_name],
@@ -245,6 +273,9 @@ class PerturbationHistogramPlotter:
         plot_range: tuple[int, int] = None,
         add_legend: bool = False,
     ):
+        """
+        Plots difference between two analogous data series
+        """
         self._plot_histogram(
             ax=ax,
             data=best_df[col_name] - first_df[col_name],
@@ -265,6 +296,9 @@ class PerturbationHistogramPlotter:
         bounds: list[float],
         plot_limits: PlotLimits,
     ):
+        """
+        Adds inset to histogram
+        """
         ax_inset = ax.inset_axes(bounds=bounds)
         ax_inset.set_xlim(plot_limits.x_min, plot_limits.x_max)
         ax_inset.set_ylim(plot_limits.y_min, plot_limits.y_max)
@@ -282,6 +316,9 @@ class PerturbationHistogramPlotter:
         )
 
     def plot_histograms(self):
+        """
+        Plots all histograms in figure
+        """
         fig, axes = self._set_figure_layout()
         self._decorate_subplots(axes=axes)
 

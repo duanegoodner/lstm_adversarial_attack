@@ -13,6 +13,21 @@ class AttackTuningRanges:
 
 @dataclass
 class AttackHyperParameterSettings:
+    """
+    Container for hyperparameters used by AdversarialAttackTrainer
+    :param kappa: arameter from Equation 1 in Sun et al
+        (https://arxiv.org/abs/1802.04822). Defines a margin by which alternate
+        class logit value needs to exceed original class logit value in order
+        to reduce loss function.
+    :param lambda_1: L1 regularization constant applied to perturbations
+    :param optimizer_name: name of optimizer (must match an attribute of
+    torch.optim)
+    :param learning_rate: learning rate to use during search for adversarial
+    examples
+    :param log_batch_size: log (base 2) of batch size. Use log for easy
+    Optuna param selection.
+
+    """
     kappa: float
     lambda_1: float
     optimizer_name: str
@@ -23,6 +38,13 @@ class AttackHyperParameterSettings:
     def from_optuna_active_trial(
         cls, trial: optuna.Trial, tuning_ranges: AttackTuningRanges
     ):
+        """
+        Creates an AttackDriver using an active optuna Trial. Uses methods of
+        trial to select specific hyperparams from tuning ranges.
+        :param trial: an optuna Trial ()
+        :param tuning_ranges: AttackTuningRanges dataclass object with range
+        of hyperparameters to search
+        """
         return cls(
             kappa=trial.suggest_float(
                 "kappa", *tuning_ranges.kappa, log=False

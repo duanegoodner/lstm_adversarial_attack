@@ -18,6 +18,10 @@ from lstm_adversarial_attack.x19_mort_general_dataset import (
 
 
 class AttackDriver:
+    """
+    Instantiates and runs an AdversarialAttackTrainer
+    """
+
     def __init__(
         self,
         device: torch.device,
@@ -37,6 +41,35 @@ class AttackDriver:
         save_attack_driver: bool = False,
         checkpoint_interval: int = None,
     ):
+        """
+        :param device: device to run on
+        :param model_path: path to pickle file with model to be attacked
+        :param checkpoint: Info saved during training classifier. Contents
+        include model params.
+        :param batch_size: num samples per batch
+        :param epochs_per_batch: number of attack iterations per batch
+        :param kappa: Parameter from Equation 1 in Sun et al
+        (https://arxiv.org/abs/1802.04822). Defines a margin by which alternate
+        class logit value needs to exceed original class logit value in order
+        to reduce loss function.
+        :param lambda_1: L1 regularization constant applied to perturbations
+        :param optimizer_constructor: constructor of optimizer used when
+        searching for adversarial examples
+        :param optimizer_constructor_kwargs: kwargs passed to optimizer
+        constructor
+        :param max_num_samples: Number candidate samples to take from a dataset
+        for attack. Default behavior of AdversarialAttackTrainer is to not
+        attack samples misclassified by target model, so not all candidate
+        samples get attacked.
+        :param sample_selection_seed: random seed to use when selecting subset
+        of samples from original dataset
+        :param attack_misclassified_samples: whether to run attacks on samples
+        that original model misclassifies
+        :param output_dir: directory where attack results are saved
+        :param result_file_prefix: prefix to use in result file output
+        :param save_attack_driver: whether to save AttackDriver .pickle
+        :param checkpoint_interval: number of batches per checkpoint
+        """
         self.device = device
         self.model_path = model_path
         self.checkpoint = checkpoint
@@ -66,6 +99,13 @@ class AttackDriver:
         self.checkpoint_interval = checkpoint_interval
 
     def initialize_output_dir(self, output_dir: Path | None):
+        """
+        Initializes directory where results of attacked will be saved
+        :param output_dir: Path of output directory. If None, a directory
+        will be created
+        :return: path to output dir (either same as output_dir in arg, or
+        path to newly create directory)
+        """
         if output_dir is None:
             output_dir = rio.create_timestamped_dir(
                 parent_path=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
@@ -91,6 +131,23 @@ class AttackDriver:
         save_attack_driver: bool = False,
         checkpoint_interval: int = None,
     ):
+        """
+        Creates AttackDriver from AttackHyperParameterSettings object
+        :param device: device to run on
+        :param model_path: path to pickle with model to attack
+        :param checkpoint: Info saved during training classifier. Contents
+        include model params.
+        :param settings: hyperparameters to be used by AttackTrainer
+        :param epochs_per_batch: num attack iterations per batch
+        :param max_num_samples: number of candidate samples for attack
+        :param sample_selection_seed: random seed to use when selecting subset
+        of samples from original dataset
+        :param attack_misclassified_samples: whether to run attacks on samples
+        that original model misclassifies
+        :param save_attack_driver: whether to save AttackDriver .pickle
+        :param checkpoint_interval: number of batches per checkpoint
+        :return:
+        """
         return cls(
             device=device,
             model_path=model_path,
@@ -122,6 +179,18 @@ class AttackDriver:
         save_attack_driver: bool = True,
         checkpoint_interval: int = None,
     ):
+        """
+        Creates AttackDriver using output from previous hyperparameter tuning
+        :param device: device to run on
+        :param tuning_output_dir: directory where tuning data is saved
+        :param max_num_samples: number of candidate samples for attack
+        :param epochs_per_batch: num attack iterations per batch
+        :param sample_selection_seed: random seed to use when selecting subset
+        of samples from original dataset
+        :param save_attack_driver: whether to save AttackDriver .pickle
+        :param checkpoint_interval: number of batches per checkpoint
+        :return:
+        """
         if tuning_output_dir is None:
             tuning_output_dir = ps.subdir_with_latest_content_modification(
                 root_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
@@ -150,6 +219,10 @@ class AttackDriver:
         )
 
     def __call__(self) -> aat.AdversarialAttackTrainer | ards.TrainerResult:
+        """
+        Imports model to attack, then trains and runs attack driver
+        :return: TrainerResult (dataclass with attack results)
+        """
         model = rio.ResourceImporter().import_pickle_to_object(
             path=self.model_path
         )
@@ -184,7 +257,16 @@ class AttackDriver:
         return train_result
 
 
-def attack_with_tuned_params(sample_selection_seed: int = 2023, checkpoint_interval: int = 50):
+def attack_with_tuned_params(
+    sample_selection_seed: int = 2023, checkpoint_interval: int = 50
+):
+    """
+    Runs attack on dataset using best hyperparameters from tuning session(s)
+    :param sample_selection_seed:
+    :param checkpoint_interval:
+    :return: TrainerSuccessSummary with attack results and initial analysis
+    of perturbations that produced adversarial examples
+    """
     if torch.cuda.is_available():
         cur_device = torch.device("cuda:0")
     else:
@@ -192,8 +274,8 @@ def attack_with_tuned_params(sample_selection_seed: int = 2023, checkpoint_inter
 
     attack_driver = AttackDriver.from_attack_hyperparameter_tuning(
         device=cur_device,
-        sample_selection_seed=2023,
-        checkpoint_interval=50,
+        sample_selection_seed=sample_selection_seed,
+        checkpoint_interval=checkpoint_interval,
     )
     trainer_result = attack_driver()
     success_summary = ards.TrainerSuccessSummary(trainer_result=trainer_result)
@@ -203,4 +285,3 @@ def attack_with_tuned_params(sample_selection_seed: int = 2023, checkpoint_inter
 
 if __name__ == "__main__":
     cur_success_summary = attack_with_tuned_params()
-
