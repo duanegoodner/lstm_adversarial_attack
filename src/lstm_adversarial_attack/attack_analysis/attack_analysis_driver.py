@@ -2,13 +2,13 @@ from functools import cached_property
 from pathlib import Path
 import pandas as pd
 import lstm_adversarial_attack.attack.attack_result_data_structs as ads
-import lstm_adversarial_attack.attack.attack_analysis as ata
+import lstm_adversarial_attack.attack_analysis.attack_analysis as ata
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.path_searches as ps
-import lstm_adversarial_attack.attack.perts_histogram_plotter as php
-import lstm_adversarial_attack.attack.susceptibility_plotter as ssp
+import lstm_adversarial_attack.attack_analysis.perts_histogram_plotter as php
+import lstm_adversarial_attack.attack_analysis.susceptibility_plotter as ssp
 
 
 class AttackAnalysesBuilder:

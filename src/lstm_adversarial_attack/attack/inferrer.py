@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from sklearn.metrics import confusion_matrix
 from typing import Callable
 import lstm_adversarial_attack.dataset_with_index as dsi
-# from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
 
 
 @dataclass

@@ -17,6 +17,10 @@ class ModelPathCheckpointPair:
 
 
 class ModelRetriever:
+    """
+    Retrieves model and best checkpoint info from CV assessment or single-fold
+    assessment (training) of model.
+    """
     _dispatch_dict = {
         ModelAssessmentType.KFOLD: lcp.CV_ASSESSMENT_OUTPUT_DIR,
         ModelAssessmentType.SINGLE_FOLD: lcp.SINGLE_FOLD_OUTPUT_DIR,
@@ -27,6 +31,12 @@ class ModelRetriever:
         assessment_type: ModelAssessmentType,
         training_output_dir: Path = None,
     ):
+        """
+        :param assessment_type: enum corresponding to the type of assessment
+        we will pull data from (single fold or CV)
+        :param training_output_dir: directory containing the assessment
+        (training) results
+        """
         self.assessment_type = assessment_type
         if training_output_dir is None:
             training_output_dir = cvs.get_newest_sub_dir(
@@ -49,6 +59,14 @@ class ModelRetriever:
         eval_metric: cvs.EvalMetric,
         optimize_direction: cvs.OptimizeDirection,
     ) -> ModelPathCheckpointPair:
+        """
+        Calls appropriate method for model and checkpoint retrieval (depends
+        on type of assessment we are pulling data from)
+        :param assessment_type: CV or single fold
+        :param eval_metric: the metric to use as checkpoint selection criteria
+        :param optimize_direction: min or max (val of selection criteria)
+        :return: a ModelPathCheckpointPair
+        """
         return self._retriever_dispatch[assessment_type](
             eval_metric, optimize_direction
         )
@@ -57,7 +75,14 @@ class ModelRetriever:
         self,
         eval_metric: cvs.EvalMetric,
         optimization_direction: cvs.OptimizeDirection,
-    ):
+    ) -> ModelPathCheckpointPair:
+        """
+        Gets a ModelPathCheckPointPair corresponding to selected model &
+        checkpoint from single fold evaluation.
+        :param eval_metric: metric to use as checkpoint selection criteria
+        :param optimization_direction: min or max (val of selection criteria)
+        :return: a ModelPathCheckpointPair
+        """
         fold_summarizer = cvs.FoldSummarizer.from_fold_checkpoint_dir(
             fold_checkpoint_dir=self.checkpoints_dir, fold_num=0
         )
@@ -75,6 +100,15 @@ class ModelRetriever:
         metric: cvs.EvalMetric,
         optimize_direction: cvs.OptimizeDirection,
     ):
+        """
+         Gets a ModelPathCheckPointPair corresponding to selected model &
+        checkpoint from cross validation model assessment. Gets best
+        checkpoint from fold with median performance (or "near median" if
+        have even number of folds)
+        :param metric: metric to use as selection criteria
+        :param optimize_direction: min or max (val of selection criteria)
+        :return:
+        """
         cv_summarizer = cvs.CrossValidationSummarizer.from_cv_checkpoints_dir(
             cv_checkpoints_dir=self.checkpoints_dir
         )

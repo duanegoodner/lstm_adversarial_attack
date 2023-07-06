@@ -45,9 +45,6 @@ PREPROCESS_OUTPUT_FILES = {
 
 
 HYPERPARAMETER_OUTPUT_DIR = DATA_DIR / "hyperparameter_tuning"
-# BEST_TRIAL_RESULT_PATH = (
-#     HYPERPARAMETER_OUTPUT_DIR / "best_trial" / "best_trial.pickle"
-# )
 
 # ##### Model Hyperparameter Tuning
 ONGOING_TUNING_STUDY_DIR = HYPERPARAMETER_OUTPUT_DIR / "continued_trials"

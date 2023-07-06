@@ -16,6 +16,10 @@ import lstm_adversarial_attack.attack.model_retriever as amr
 
 
 class AttackTunerDriver:
+    """
+    Instantiates and runs (or re-starts) an AttackHyperParameterTuner
+    """
+
     def __init__(
         self,
         device: torch.device,
@@ -25,6 +29,19 @@ class AttackTunerDriver:
         tuning_ranges: ads.AttackTuningRanges = None,
         output_dir: Path = None,
     ):
+        """
+        :param device: the device to run on
+        :param target_model_path: path to .pickle file w/ model to attack
+        :param objective: method to user for computation of Optuna tuner
+        objective function (typically use one of the methods in
+        AttackTunerObjectivesBuilder)
+        :param target_model_checkpoint: checkpoint file w/ params to load into
+        model under attack
+        :param tuning_ranges: hyperparamter tuning ranges (for use by Optuna)
+        :param output_dir: directory where results will be saved. If not
+        specified, default is timestamped dir under
+        data/attack/attack_hyperparamter_tuning
+        """
         self.device = device
         self.target_model_path = target_model_path
         self.objective = objective
@@ -60,7 +77,8 @@ class AttackTunerDriver:
         training_output_dir: Path = None,
     ):
         """
-
+        Creates an AttackTunerDriver using info from either a cross-validation
+        or single-fold assessment of model to be attacked.
         :param device: device to run on
         :param assessment_type: single fold or cv assessment of target model
         :param selection_metric: metric for choosing which target
@@ -90,6 +108,11 @@ class AttackTunerDriver:
         )
 
     def run(self, num_trials: int) -> optuna.Study:
+        """
+        Instantiates and runs an AttackHyperParameterTuner
+        :param num_trials:
+        :return: an Optuna Study object (this also gets saved in .output_dir)
+        """
         tuner = aht.AttackHyperParameterTuner(
             device=self.device,
             model_path=self.target_model_path,
@@ -104,6 +127,15 @@ class AttackTunerDriver:
         return tuner.tune(num_trials=num_trials)
 
     def restart(self, output_dir: Path, num_trials: int) -> optuna.Study:
+        """
+        Restarts tuning using params of self. Uses existing AttackDriver.
+        Creates new AttackHyperParamterTuner
+        :param output_dir: directory containing previous output and where new
+        output will be written.
+        :param num_trials: max number of trials to run (OK to stop early with
+        CTRL-C since results get saved after each trial)
+        :return: Optuna Study object
+        """
         tuner = aht.AttackHyperParameterTuner(
             device=self.device,
             model_path=self.target_model_path,
@@ -125,6 +157,17 @@ def start_new_tuning(
     objective: Callable[[ards.TrainerSuccessSummary], float],
     target_model_assessment_dir: Path = None,
 ) -> optuna.Study:
+    """
+    Creates a new AttackTunerDriver. Causes new Optuna Study to be created via
+    AttackHyperParamteterTuner that the driver creates.
+    :param num_trials: max num Optuna trials to run
+    :param target_model_assessment_type: single fold or cross validation
+    :param objective: method for calculating return val of tuner objective_fn
+    from an attack TrainerResult
+    :param target_model_assessment_dir: directory containing model and params
+    files for model to be attacked.
+    :return: an Optuna study object (which also get saved as pickle)
+    """
     if torch.cuda.is_available():
         device = torch.device("cuda:0")
     else:
@@ -151,6 +194,15 @@ def start_new_tuning(
 def resume_tuning(
     num_trials: int, ongoing_tuning_dir: Path = None
 ) -> optuna.Study:
+    """
+    Resumes training using params of a previously used AttackTunerDriver and
+    its associated Optuna Study. Default behavior saves new results to
+    same directory as results of previous runs.
+    :param num_trials: max # of trials to run
+    :param ongoing_tuning_dir: directory where previous run data is saved
+    and (under default settings) where new data will be saved.
+    :return: an Optuna Study object (which also gets saved as .pickle)
+    """
     if ongoing_tuning_dir is None:
         ongoing_tuning_dir = cvs.get_newest_sub_dir(
             path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING

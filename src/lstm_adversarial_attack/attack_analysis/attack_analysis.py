@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from torch.nn.utils.rnn import pad_sequence
 import lstm_adversarial_attack.attack.attack_result_data_structs as ads
-import lstm_adversarial_attack.attack.attack_susceptibility_metrics as asm
+import lstm_adversarial_attack.attack_analysis.attack_susceptibility_metrics as asm
 
 
 class RecordedExampleType(Enum):
