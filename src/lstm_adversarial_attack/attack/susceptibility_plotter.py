@@ -5,7 +5,6 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.colors import LogNorm
 from typing import Any
-# import lstm_adversarial_attack.attack.attack_results_analyzer as ara
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.config_paths as cfg_paths
 
@@ -16,20 +15,20 @@ class SusceptibilityPlotter:
         susceptibility_dfs: tuple[tuple[pd.DataFrame, ...], ...],
         main_plot_title: str,
         df_titles: tuple[tuple[str, ...], ...] = (
-                (
-                    "0 \u2192 1 Attack, First Examples",
-                    "0 \u2192 1 Attack, Best Examples",
-                ),
-                (
-                    "1 \u2192 0 Attack, First Examples",
-                    "1 \u2192 0 Attack, Best Examples",
-                ),
+            (
+                "0 \u2192 1 Attack, First Examples",
+                "0 \u2192 1 Attack, Best Examples",
             ),
+            (
+                "1 \u2192 0 Attack, First Examples",
+                "1 \u2192 0 Attack, Best Examples",
+            ),
+        ),
         fig_size: tuple[int, int] = (10, 7),
         xtick_major: int = 12,
         xtick_minor: int = 4,
         color_bar_coords: tuple[float, float, float, float] = (
-            0.9,
+            0.88,
             0.3,
             0.02,
             0.4,
@@ -71,7 +70,7 @@ class SusceptibilityPlotter:
         plt.subplots_adjust(
             left=self.subplot_left_adjust,
             right=self.subplot_right_adjust,
-            hspace=0.45,
+            hspace=0.4,
             wspace=0.35,
         )
 
@@ -99,7 +98,7 @@ class SusceptibilityPlotter:
         ax.xaxis.set_major_locator(ticker.IndexLocator(self.xtick_major, 0))
         ax.xaxis.set_major_formatter("{x:.0f}")
         ax.xaxis.set_minor_locator(ticker.IndexLocator(self.xtick_minor, 0))
-        ax.set_label("Measurement ID")
+        ax.set_ylabel("Measurement ID")
 
         # y-axis tick marks and title
         yticks_positions = np.arange(len(self.yticks_labels)) + 0.5
@@ -120,7 +119,7 @@ class SusceptibilityPlotter:
         heatmap.axvline(x=0, color="k", linewidth=2)
         heatmap.axvline(x=source_df.index.max() + 1, color="k", linewidth=2)
 
-    def plot_susceptibilities(self):
+    def plot_susceptibilities(self, color_bar_title: str = ""):
         fig, axes, colorbar_axes = self._set_figure_layout()
 
         for plot_row in range(self.subplot_num_rows):
@@ -136,6 +135,13 @@ class SusceptibilityPlotter:
                     norm=LogNorm(),
                     edgecolor="black",
                 )
+
+                if (plot_row == self.subplot_num_rows - 1) and (
+                    plot_col == self.subplot_num_cols - 1
+                ):
+                    cur_plot.collections[0].colorbar.set_label(
+                        color_bar_title
+                    )
 
                 self._decorate_subplot(
                     ax=axes[plot_row, plot_col],

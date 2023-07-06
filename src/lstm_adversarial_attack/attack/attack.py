@@ -184,7 +184,7 @@ class AttackDriver:
         return train_result
 
 
-if __name__ == "__main__":
+def attack_with_tuned_params(sample_selection_seed: int = 2023, checkpoint_interval: int = 50):
     if torch.cuda.is_available():
         cur_device = torch.device("cuda:0")
     else:
@@ -192,11 +192,15 @@ if __name__ == "__main__":
 
     attack_driver = AttackDriver.from_attack_hyperparameter_tuning(
         device=cur_device,
-        # max_num_samples=330,
-        # epochs_per_batch=1000,
         sample_selection_seed=2023,
         checkpoint_interval=50,
     )
-
     trainer_result = attack_driver()
     success_summary = ards.TrainerSuccessSummary(trainer_result=trainer_result)
+
+    return success_summary
+
+
+if __name__ == "__main__":
+    cur_success_summary = attack_with_tuned_params()
+
