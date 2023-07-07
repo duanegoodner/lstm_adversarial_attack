@@ -3,38 +3,33 @@
 
 ## 1. Overview
 
-This project builds on work by [Sun et al.](https://dl.acm.org/doi/10.1145/3219819.3219909) , and [Tang et al.](https://academic.oup.com/jamiaopen/article/1/1/87/5032901) that used Long Short-Term Memory (LSTM) time series models to predict Intensive Care Unit (ICU) patient outcomes and (in Sun et al) performed adversarial attacks on these models.
+This project builds upon work in [[1](#ref_01)] and [[2](#ref_02)] that used Long Short-Term Memory (LSTM) time series models of lab and vital sign measurements from the  Medical Information Mart for Intensive Care (MIMIC-III) database [[3](#ref_03), [4](ref_04)] to predict Intensive Care Unit (ICU) patient outcomes. The work in [[1](#ref_01)] also included adversarial attacks on a trained LSTM model.
 
-The original papers trained LSTM models using data from the Medical Information Mart for Intensive Care (MIMIC-III) database. Input features consisted of 13 lab measurements and 6 vital signs, and a binary variable representing in-hospital mortality was the prediction target. In [Sun et al.](https://dl.acm.org/doi/10.1145/3219819.3219909), an adversarial attack algorithm was used to identify small perturbations which, when applied to a real, correctly-classified input features, caused the trained model to misclassify the perturbed input. L1 regularization was applied to the adversarial attack loss function to favor adversarial examples with sparse perturbations that resemble the structure of data entry errors most likely to occur in real medical data. Attack susceptibility calculations were then performed to input feature space regions most vulnerable to adversarial attack.
 
-The current work uses methods similar to those employed in [Sun et al.](https://dl.acm.org/doi/10.1145/3219819.3219909) and [Tang et al.](https://academic.oup.com/jamiaopen/article/1/1/87/5032901) , with following modifications / enhancements:
 
-- A vectorized `preprocess` package that provides a 90% reduction in the time needed to convert database query output to model input features.
+The current work follows the general approach of the prior studies, with the following modifications / enhancements
 
-- Extensive hyperparameter tuning of the predictive model
 
-- Improved predictive performance of the LSTM model, as indicated in the following table:
+  -  Predictive performance of the LSTM is improved (Prior work F1 scores: 0.53 - 0.63. Current study: > 0.96). This improvement is primarily due to hyperparameter tuning of the predictive model..
+  - A preprocess package that reduces the time needed to convert database query output to model input features by 90%
+  - A GPU-compatible implementation of the adversarial attack algorithm
+  - The attack algorithm was allowed to continue running after the first adversarial example was found for a given input. In most cases, these additional search iterations led to the discovery of adversarial examples that exhibited greater sparsity and smaller perturbations than the initially discovered examples.
+- Exploration of multiple parameters and objective functions during hyperparameter tuning of the attack algorithm
+- Implementation in PyTorch (instead of Keras).
 
-  |                 | AUC             | F1              | Precision       | Recall          |
-  | --------------- | --------------- | --------------- | --------------- | --------------- |
-  | Sun et al.      | 0.9094 (0.0053) | 0.5429 (0.0194) | 0.4100 (0.0272) | 0.8071 (0.0269) |
-  | Current Project | 0.9657 (0.0035) | 0.9669 (0.0038) | 0.9888 (0.0009) | 0.9459 (0.0072) |
 
-- A larger number of sample (41,951 patient ICU stays vs 37,559 in the original studies). For patients with multiple ICU stays, the original studies' code filtered out all stays after the initial stay. This removal appears to have been inadvertent.
 
-- A GPU-compatible implementation of the adversarial attack algorithm to enable running attacks on batches of samples
+## 2. Documentation
 
-- Tuning of attack algorithm hyperparameters to maximize the number of adversarial examples found and the sparsity of their perturbations.
+See the Jupyter notebook [here](https://github.com/duanegoodner/lstm_adversarial_attack/blob/main/notebooks/lstm_adversarial_attack.ipynb) for additional background information, implementation details, and results.
 
-- The attack algorithm was allowed to continue running after the first adversarial example was found for a given input. In most cases, these additional search iterations led to new adversarial examples that exhibited greater sparsity and smaller perturbations than the initially discovered examples.
+> **Note**  Some of the cell outputs included in this notebook are quite long. Instead of just going to the Github link in a browser, it is recommended to use Jupyter Lab, Jupyter Notebook, VS Code with the Jupyter extension, or some other program with features for managing how cell output is displayed.
 
-- Implementation in PyTorch (instead of Tensorflow).
 
-Further information can be found by running the code and reading the documentation in [this Jupyter notebook](https://github.com/duanegoodner/lstm_adversarial_attack/blob/main/notebooks/lstm_adversarial_attack.ipynb).
 
-## 2. How to run this project
+## 3. How to run this project
 
-This section contains instructions on how to set up a development environment to run the project code. (These steps are not necessary if you just want to review the results in the completed Jupyter notebook [link])
+Follow the instructions in this section if you want to run the project code. (These steps are not necessary if you just want to view documentation and results in this Jupyter notebook).
 
 ### 2.1 Requirements
 
@@ -63,9 +58,7 @@ $ git clone https://github.com/duanegoodner/lstm_adversarial_attack
 
 ### 2.4 Set the `LOCAL_PROJECT_ROOT` environment variable (to be used by Docker)
 
-
-
-In file `lstm_adversarial_attack/docker/app/.env`, set the value of `LOCAL_PROJECT_ROOT` to the absolute path of the `lstm_adversarial_attack` root directory. Leave the values of `PROJECT_NAME`, `CONTAINER_DEVSPACE`, and `CONTAINER_PROJECT_ROOT` unchanged. For example, if in you ran the command in step 3 from directory `/home/my_user/projects` causing the cloned repo root to be `/home/my_user/projects/lstm_adversarial_attack`  your `lstm_adversarial_attack/docker/app/.env` file would look like this:
+In file `lstm_adversarial_attack/docker/app/.env`, set the value of `LOCAL_PROJECT_ROOT` to the absolute path of the `lstm_adversarial_attack` root directory. Leave the values of `PROJECT_NAME`, `CONTAINER_DEVSPACE`, and `CONTAINER_PROJECT_ROOT` unchanged. For example, if in you ran the command in step 2.3 from directory `/home/my_user/projects` causing the cloned repo root to be `/home/my_user/projects/lstm_adversarial_attack`  your `lstm_adversarial_attack/docker/app/.env` file would look like this:
 
 ```shell
 LOCAL_PROJECT_ROOT=/home/my_user/projects/lstm_adversarial_attack
@@ -154,11 +147,15 @@ In the Jupyter Lab file explorer, navigate to the `/notebooks` directory, and op
 
 # References
 
-1. [Sun, M., Tang, F., Yi, J., Wang, F. and Zhou, J., 2018, July. Identify susceptible locations in medical records via adversarial attacks on deep predictive models. In *Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining* (pp. 793-801).](https://dl.acm.org/doi/10.1145/3219819.3219909)
-2. [Johnson, A., Pollard, T., and Mark, R. (2016) 'MIMIC-III Clinical Database' (version 1.4), *PhysioNet*.](https://doi.org/10.13026/C2XW26) 
-3. [Johnson, A. E. W., Pollard, T. J., Shen, L., Lehman, L. H., Feng, M., Ghassemi, M., Moody, B., Szolovits, P., Celi, L. A., & Mark, R. G. (2016). MIMIC-III, a freely accessible critical care database. Scientific Data, 3, 160035.](https://www.nature.com/articles/sdata201635)
 
-4. [Tang, F., Xiao, C., Wang, F. and Zhou, J., 2018. Predictive modeling in urgent care: a comparative study of machine learning approaches. *Jamia Open*, *1*(1), pp.87-98.](https://academic.oup.com/jamiaopen/article/1/1/87/5032901)
+
+<a id="ref_01">1.</a> [Sun, M., Tang, F., Yi, J., Wang, F. and Zhou, J., 2018, July. Identify susceptible locations in medical records via adversarial attacks on deep predictive models. In *Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining* (pp. 793-801).](https://dl.acm.org/doi/10.1145/3219819.3219909)
+
+<a id="ref_02">2.</a> [Tang, F., Xiao, C., Wang, F. and Zhou, J., 2018. Predictive modeling in urgent care: a comparative study of machine learning approaches. *Jamia Open*, *1*(1), pp.87-98.](https://academic.oup.com/jamiaopen/article/1/1/87/5032901)
+
+<a><a id="ref_03">3.</a> </a>[Johnson, A., Pollard, T., and Mark, R. (2016) 'MIMIC-III Clinical Database' (version 1.4), *PhysioNet*.](https://doi.org/10.13026/C2XW26) 
+
+<a id="ref_04">4.</a> [Johnson, A. E. W., Pollard, T. J., Shen, L., Lehman, L. H., Feng, M., Ghassemi, M., Moody, B., Szolovits, P., Celi, L. A., & Mark, R. G. (2016). MIMIC-III, a freely accessible critical care database. Scientific Data, 3, 160035.](https://www.nature.com/articles/sdata201635)
 
 
 

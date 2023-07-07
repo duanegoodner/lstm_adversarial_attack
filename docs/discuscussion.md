@@ -2,19 +2,25 @@
 
 
 
-## 3. Database Queries
-We need to run four queries on the MIMIC-III PostgreSQL database. The paths to files containing the queries are stored in a list as `DB_QUERIES` in the project `config_paths` file:
+This project reproduces and expands upon work published in [1] and [2] on Long Short-Term Memory (LSTM) predictive models and adversarial attacks on those models.  The previous studies used Long Short-Term Memory (LSTM) time series classification models trained with data from the Medical Information Mart for Intensive Care (MIMIC-III) database to predict Intensive Care Unit (ICU) patient outcomes. Input features to the classification models consisted of 13 lab measurements and 6 vital signs. A binary variable representing in-hospital mortality was the prediction target.
+
+In [1], an adversarial attack algorithm was used to identify small perturbations which, when applied to a real, correctly-classified input features, caused a trained model to misclassify the perturbed input. L1 regularization was applied to the adversarial attack loss function to favor adversarial examples with sparse perturbations that resemble the structure of data entry errors most likely to occur in real medical data. Samples were attacked serially (one a time), and the attack process on a sample was stopped upon finding a single adversarial perturbation to that samples input features. After attacking a full dataset, susceptibility calculations were  performed to identify input feature space regions most vulnerable to adversarial attack.
+
+The current study follows an approach similar to that of the previous studies. We use the same dataset, input features, and prediction targets to train a LSTM binary classification model and subsequently search for adversarial examples using an L1 regularized attack algorithm. Aspects of the current work that expand upon the previous studies include a vectorized (faster) approach to data preprocessing, extensive hyperparameter tuning (of both the predictive model and attack algorithm), improved performance of the predictive model, implementation of a GPU-compatible attack algorithm that enables attacking samples in batches, and not halting the attack process upon finding a single adversarial perturbation for a sample (so that additional, lower loss adversarial perturbations can be discovered).
 
 
 
-These queries are modified versions  of  `.sql` files (originally written for Google Big Query) from https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iii/concepts/pivot . 
 
-## 2. Preprocessing
 
-* Brief description of preprocess module base class. 
-* Avoid returning large objects to global scope (save checkpoints instead)
-* Reasons why faster than original
-* Filtering criteria (> 18 yrs, > 1 day LOS)
+
+
+## 
+
+
+
+
+
+
 
 ## 3. Dataset Details
 
@@ -61,7 +67,7 @@ $$
 max\{[Logit(\widetilde{X})]_{t_c} - [Logit(\widetilde{X})]_{\neg{t_c}}, - \kappa \}
 $$
 
-When running perturbed input $\widetilde{X}$ through a forward pass, $[Logit(\widetilde{X})]_{t_c}$ and $[Logit(\widetilde{X})]_{\neg{t_c}}$ are the **pre-activation** values of the 2-node final layer. We use $\kappa > 0$. $[Logit(\widetilde{X})]_{t_c} - [Logit(\widetilde{X})]_{\neg{t_c}} > \kappa$ corresponds to a successful adversarial attack.
+When running perturbed input $\widetilde{X}$ through a forward pass, $[Logit(\widetilde{X})]_{t_c}$ and $[Logit(\widetilde{X})]_{\neg{t_c}}$ are the **pre-activation** values at the nodes corresponding to $t_c$ and $\neg{t_c}$ the in 2-node final layer. We use $\kappa > 0$. $[Logit(\widetilde{X})]_{t_c} - [Logit(\widetilde{X})]_{\neg{t_c}} > \kappa$ corresponds to a successful adversarial attack.
 
 
 $$

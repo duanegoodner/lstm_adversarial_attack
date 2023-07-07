@@ -141,7 +141,7 @@ class X19LSTMBuilder:
         :return: a nn.Sequential model (takes VariableLengthFeatures as input)
         """
         return nn.Sequential(
-            lms.BidirectionalLSTMX19(
+            lms.BidirectionalX19LSTM(
                 input_size=19,
                 lstm_hidden_size=2**self.log_lstm_hidden_size,
             ),
