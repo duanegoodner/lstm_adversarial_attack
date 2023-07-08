@@ -7,22 +7,19 @@ strict digraph model {
                     CELLSPACING="0" CELLPADDING="4">
                         <TR><TD>input-tensor<BR/>depth:0</TD><TD>(32, 19)</TD></TR>
                     </TABLE>> fillcolor=lightyellow]
-	subgraph cluster_2 {
-		fontsize=12 label=BidirectionalLSTMX19Graph labeljust=l style=dashed
-		1 [label=<
+	1 [label=<
                     <TABLE BORDER="0" CELLBORDER="1"
                     CELLSPACING="0" CELLPADDING="4">
                     <TR>
                         <TD ROWSPAN="2">LSTM<BR/>depth:2</TD>
                         <TD COLSPAN="2">input:</TD>
-                        <TD COLSPAN="2">(32, 19) </TD>
+                        <TD COLSPAN="2">(<B>batch_size</B>, 19) </TD>
                     </TR>
                     <TR>
                         <TD COLSPAN="2">output: </TD>
                         <TD COLSPAN="2">(32, 256), 2 x (2, 128) </TD>
                     </TR>
                     </TABLE>> fillcolor=darkseagreen1]
-	}
 	2 [label=<
                     <TABLE BORDER="0" CELLBORDER="1"
                     CELLSPACING="0" CELLPADDING="4">

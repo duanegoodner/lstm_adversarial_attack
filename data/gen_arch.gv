@@ -1,0 +1,114 @@
+strict digraph model {
+    graph [ordering="in", rankdir="TB", size="12.0,12.0"];
+    node [align="left", fontname="Linux libertine", fontsize=10, height=0.2, margin=0, ranksep=0.1, shape="plaintext", style="filled"];
+    edge [fontsize=10];
+    0 [label=<
+                    <TABLE BORDER="0" CELLBORDER="1"
+                    CELLSPACING="0" CELLPADDING="4">
+                        <TR><TD>input-tensor<BR/></TD><TD>(<b><font color="red">B</font></b>, S_m, N)</TD></TR>
+                    </TABLE>>, fillcolor="lightyellow"];
+    1 [label=<
+                    <TABLE BORDER="0" CELLBORDER="1"
+                    CELLSPACING="0" CELLPADDING="4">
+                    <TR>
+                        <TD ROWSPAN="2">Bidirectional LSTM<BR/></TD>
+                        <TD COLSPAN="2">input:</TD>
+                        <TD COLSPAN="2">(<b><font color="red">B</font></b>, S_m, N) </TD>
+                    </TR>
+                    <TR>
+                        <TD COLSPAN="2">output: </TD>
+                        <TD COLSPAN="2">(<b><font color="red">B</font></b>, S_m, 2<b><font color="red">L_h</font></b>), 2 x (2, <b><font color="red">B</font></b>, <b><font color="red">L_h</font></b>) </TD>
+                    </TR>
+                    </TABLE>>, fillcolor="darkseagreen1"];
+    2 [label=<
+                    <TABLE BORDER="0" CELLBORDER="1"
+                    CELLSPACING="0" CELLPADDING="4">
+                    <TR>
+                        <TD ROWSPAN="2"><b><font color="red">Tanh</font></b><BR/></TD>
+                        <TD COLSPAN="2">input:</TD>
+                        <TD COLSPAN="2">(<b><font color="red">B</font></b>, S_m, 2<b><font color="red">L_h</font></b>) </TD>
+                    </TR>
+                    <TR>
+                        <TD COLSPAN="2">output: </TD>
+                        <TD COLSPAN="2">(<b><font color="red">B</font></b>, S_m, 2<b><font color="red">L_h</font></b>), 2 x (2, <b><font color="red">B</font></b>, <b><font color="red">L_h</font></b>) </TD>
+                    </TR>
+                    </TABLE>>, fillcolor="darkseagreen1"];
+    3 [label=<
+                    <TABLE BORDER="0" CELLBORDER="1"
+                    CELLSPACING="0" CELLPADDING="4">
+                    <TR>
+                        <TD ROWSPAN="2">Dropout (<b><font color="red">P_dropout</font></b>)<BR/></TD>
+                        <TD COLSPAN="2">input:</TD>
+                        <TD COLSPAN="2">(<b><font color="red">B</font></b>, S_m, 2<b><font color="red">L_h</font></b>) </TD>
+                    </TR>
+                    <TR>
+                        <TD COLSPAN="2">output: </TD>
+                        <TD COLSPAN="2">(<b><font color="red">B</font></b>, S_m, 2<b><font color="red">L_h</font></b>) </TD>
+                    </TR>
+                    </TABLE>>, fillcolor="darkseagreen1"];
+    4 [label=<
+                    <TABLE BORDER="0" CELLBORDER="1"
+                    CELLSPACING="0" CELLPADDING="4">
+                    <TR>
+                        <TD ROWSPAN="2">FC1<BR/></TD>
+                        <TD COLSPAN="2">input:</TD>
+                        <TD COLSPAN="2">(<b><font color="red">B</font></b>, S_m, 2<b><font color="red">L_h</font></b>) </TD>
+                    </TR>
+                    <TR>
+                        <TD COLSPAN="2">output: </TD>
+                        <TD COLSPAN="2">(<b><font color="red">B</font></b>, S_m, <b><font color="red">FC1_h</font></b>) </TD>
+                    </TR>
+                    </TABLE>>, fillcolor="darkseagreen1"];
+    5 [label=<
+                    <TABLE BORDER="0" CELLBORDER="1"
+                    CELLSPACING="0" CELLPADDING="4">
+                    <TR>
+                        <TD ROWSPAN="2"><b><font color="red">FC1_activation</font></b><BR/></TD>
+                        <TD COLSPAN="2">input:</TD>
+                        <TD COLSPAN="2">(<b><font color="red">B</font></b>, S_m, <b><font color="red">FC1_h</font></b>) </TD>
+                    </TR>
+                    <TR>
+                        <TD COLSPAN="2">output: </TD>
+                        <TD COLSPAN="2">(<b><font color="red">B</font></b>, S_m, <b><font color="red">FC1_h</font></b>) </TD>
+                    </TR>
+                    </TABLE>>, fillcolor="darkseagreen1"];
+    6 [label=<
+                    <TABLE BORDER="0" CELLBORDER="1"
+                    CELLSPACING="0" CELLPADDING="4">
+                    <TR>
+                        <TD ROWSPAN="2">FC2<BR/></TD>
+                        <TD COLSPAN="2">input:</TD>
+                        <TD COLSPAN="2">(<b><font color="red">B</font></b>, S_m, <b><font color="red">FC1_h</font></b>) </TD>
+                    </TR>
+                    <TR>
+                        <TD COLSPAN="2">output: </TD>
+                        <TD COLSPAN="2">(<b><font color="red">B</font></b>, S_m, 2) </TD>
+                    </TR>
+                    </TABLE>>, fillcolor="darkseagreen1"];
+    7 [label=<
+                    <TABLE BORDER="0" CELLBORDER="1"
+                    CELLSPACING="0" CELLPADDING="4">
+                    <TR>
+                        <TD ROWSPAN="2">Softmax<BR/></TD>
+                        <TD COLSPAN="2">input:</TD>
+                        <TD COLSPAN="2">(<b><font color="red">B</font></b>, S_m, 2) </TD>
+                    </TR>
+                    <TR>
+                        <TD COLSPAN="2">output: </TD>
+                        <TD COLSPAN="2">(<b><font color="red">B</font></b>, S_m, 2) </TD>
+                    </TR>
+                    </TABLE>>, fillcolor="darkseagreen1"];
+    8 [label=<
+                    <TABLE BORDER="0" CELLBORDER="1"
+                    CELLSPACING="0" CELLPADDING="4">
+                        <TR><TD>output-tensor<BR/></TD><TD>(<b><font color="red">B</font></b>, 2)</TD></TR>
+                    </TABLE>>, fillcolor="lightyellow"];
+    0 -> 1;
+    1 -> 2;
+    2 -> 3;
+    3 -> 4;
+    4 -> 5;
+    5 -> 6;
+    6 -> 7;
+    7 -> 8;
+}

@@ -11,28 +11,28 @@ __pycache__/
 data/attack/*
 !data/attack/.gitkeep
 
-data/model_assessments/cross_validation/*
-!data/model_assessments/cross_validation/.gitkeep
-data/model_assessments/single_fold_training/*
-!data/model_assessments/single_fold_training/.gitkeep
+data/tune_train/model_assessments/cross_validation/*
+!data/tune_train/model_assessments/cross_validation/.gitkeep
+data/tune_train/model_assessments/single_fold_training/*
+!data/tune_train/model_assessments/single_fold_training/.gitkeep
 
-data/mimiciii_query_results/*
-!data/mimiciii_query_results/.gitkeep
+data/query_db/*
+!data/query_db/.gitkeep
 
 data/model_training/*
 !data/model_training/.gitkeep
 
-data/output_feature_finalizer/*
-!data/output_feature_finalizer/.gitkeep
+data/preprocess/final_output/*
+!data/preprocess/final_output/.gitkeep
 
-data/preprocess_checkpoints/1_prefilter/*
-!data/preprocess_checkpoints/1_prefilter/.gitkeep
-data/preprocess_checkpoints/2_merged_stay_measurements/*
-!data/preprocess_checkpoints/2_merged_stay_measurements/.gitkeep
-data/preprocess_checkpoints/3_full_admission_list/*
-!data/preprocess_checkpoints/3_full_admission_list/.gitkeep
-data/preprocess_checkpoints/4_feature_builder/*
-!data/preprocess_checkpoints/4_feature_builder/.gitkeep
+data/preprocess/checkpoints/1_prefilter/*
+!data/preprocess/checkpoints/1_prefilter/.gitkeep
+data/preprocess/checkpoints/2_merged_stay_measurements/*
+!data/preprocess/checkpoints/2_merged_stay_measurements/.gitkeep
+data/preprocess/checkpoints/3_full_admission_list/*
+!data/preprocess/checkpoints/3_full_admission_list/.gitkeep
+data/preprocess/checkpoints/4_feature_builder/*
+!data/preprocess/checkpoints/4_feature_builder/.gitkeep
 
 
 

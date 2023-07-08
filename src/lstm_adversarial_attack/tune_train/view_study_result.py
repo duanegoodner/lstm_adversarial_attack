@@ -26,8 +26,8 @@ cur_model = tuh.X19LSTMBuilder(
 ).build_for_model_graph()
 
 cur_model_graph = draw_graph(
-    model=cur_model, input_size=(32, 19), device="meta"
+    model=cur_model, input_size=(32, 48, 19), device="meta"
 )
 cur_model_graph.visual_graph.render(
-    cfg_paths.DATA_DIR / "test_graph", format="png"
+    cfg_paths.DATA_DIR / "new_test_graph", format="png"
 )

@@ -1,6 +1,8 @@
 import numpy as np
+import pandas as pd
 import sys
 import torch
+from IPython.display import display, HTML
 from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
 from pathlib import Path
 from torch.nn.utils.rnn import (
@@ -14,8 +16,6 @@ from lstm_adversarial_attack.config_paths import (
     PREPROCESS_OUTPUT_FILES,
 )
 from lstm_adversarial_attack.data_structures import VariableLengthFeatures
-
-# import project_config_old as pc
 import lstm_adversarial_attack.resource_io as rio
 
 
@@ -56,7 +56,7 @@ class X19MGeneralDataset(Dataset):
         in_hospital_mort_path: Path = PREPROCESS_OUTPUT_DIR
         / PREPROCESS_OUTPUT_FILES["in_hospital_mortality_list"],
         max_num_samples: int = None,
-        random_seed: int = None
+        random_seed: int = None,
     ):
         importer = rio.ResourceImporter()
         measurements_np_list = importer.import_pickle_to_object(
@@ -78,7 +78,7 @@ class X19MGeneralDataset(Dataset):
             measurements=features_tensor_list,
             in_hosp_mort=labels_tensor_list,
             max_num_samples=max_num_samples,
-            random_seed=random_seed
+            random_seed=random_seed,
         )
 
 
@@ -92,6 +92,7 @@ def x19m_collate_fn(batch):
         features=padded_features, lengths=lengths
     ), torch.tensor(labels, dtype=torch.long)
     # return padded_features, torch.tensor(labels, dtype=torch.long), lengths
+
 
 class X19MGeneralDatasetWithIndex(X19MGeneralDataset, DatasetWithIndex):
     def __getitem__(self, idx: int):
@@ -109,6 +110,68 @@ def x19m_with_index_collate_fn(batch):
         VariableLengthFeatures(features=padded_features, lengths=lengths),
         torch.tensor(labels, dtype=torch.long),
     )
+
+
+class DatasetInspector:
+    """
+    Provides methods for displaying basic dataset info.
+    Intended for use in a Jupyter notebook
+    """
+
+    def __init__(self, dataset: Dataset):
+        self.dataset = dataset
+
+    def view_basic_info(self):
+        dataset_size = len(self.dataset)
+        dataset_entry_type = type(self.dataset[0]).__name__
+        dataset_entry_length = len(self.dataset[0])
+        input_feature_data_struct = type(self.dataset[0][0]).__name__
+        input_feature_dims = self.dataset[0][0].dim()
+        input_size = self.dataset[0][0].shape[1]
+        input_feature_dtype = self.dataset[0][0].dtype
+        label_data_struct = type(self.dataset[0][1]).__name__
+        label_dims = self.dataset[0][1].dim()
+        label_dtype = self.dataset[0][1].dtype
+
+        summary = (
+            f"There are {dataset_size} samples in the Dataset.\nCalling"
+            f" `__getitem__` on the Dataset returns a {dataset_entry_type} of"
+            f" length {dataset_entry_length}.\nThe first element of this tuple"
+            f" is a {input_feature_dims}-D {input_feature_data_struct} with"
+            f" {input_size} columns and data type {input_feature_dtype}.\nThe"
+            f" second element is a {label_dims}-D {label_data_struct} with"
+            f" data type {label_dtype}"
+        )
+
+        print(summary)
+
+    def view_seq_length_summary(self):
+        unique_sequence_lengths, sequence_length_counts = np.unique(
+            [item.shape[0] for item in self.dataset[:][0]],
+            return_counts=True,
+        )
+
+        summary_df = pd.DataFrame(
+            data=np.stack(
+                (unique_sequence_lengths, sequence_length_counts), axis=1
+            ),
+            columns=["seq_length", "num_samples"],
+        )
+
+        summary_df.set_index("seq_length", inplace=True)
+        display(HTML(summary_df.T.to_html()))
+
+    def view_label_summary(self):
+        unique_labels, label_counts = np.unique(
+            [self.dataset[:][1]], return_counts=True
+        )
+        summary_df = pd.DataFrame(
+            data=np.stack((unique_labels, label_counts), axis=1),
+            columns=["class_label", "nunm_samples"],
+        )
+
+        summary_df.set_index("class_label", inplace=True)
+        display(HTML(summary_df.T.to_html()))
 
 
 if __name__ == "__main__":
