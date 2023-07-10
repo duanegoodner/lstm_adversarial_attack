@@ -103,3 +103,18 @@ Two key points worth noting in the above procedure are: (1) Unlike the procedure
 
 
 
+| objective                                                   | maximizes                                                    |
+| ----------------------------------------------------------- | ------------------------------------------------------------ |
+| `aht.AttackTunerObjectivesBuilder.sparse_sparsity()`        | Sum of the perturbation sparsities of the lowest loss adversarial example of each sample |
+| `aht.AttackTunerObjectivesBuilder.max_num_nonzero_perts():` | Number of adversarial perturbations with only one non-zero element |
+| `aht.AttackTunerObjectivesBuilder.sparse_small()`           |                                                              |
+| `aht.AttackTunerObjectivesBuilder.sparse_small_max()`       |                                                              |
+
+
+
+
+
+
+
+
+

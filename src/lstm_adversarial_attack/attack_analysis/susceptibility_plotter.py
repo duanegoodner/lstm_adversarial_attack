@@ -14,6 +14,7 @@ class SusceptibilityPlotter:
     Plots heatmaps of susceptibility metrics for perturbations causing
     adversarial examples
     """
+
     def __init__(
         self,
         susceptibility_dfs: tuple[tuple[pd.DataFrame, ...], ...],
@@ -31,15 +32,19 @@ class SusceptibilityPlotter:
         fig_size: tuple[int, int] = (10, 7),
         xtick_major: int = 12,
         xtick_minor: int = 4,
+        ytick_major: int = 2,
+        ytick_minor: int = 1,
         color_bar_coords: tuple[float, float, float, float] = (
-            0.88,
+            0.85,
             0.3,
             0.02,
             0.4,
         ),
         color_scheme: str = "RdYlBu_r",
-        subplot_left_adjust: float = 0.1,
-        subplot_right_adjust: float = 0.85,
+        subplot_top_adjust: float = 0.80,
+        subplot_bottom_adjust: float = 0.15,
+        subplot_left_adjust: float = 0.15,
+        subplot_right_adjust: float = 0.80,
     ):
         self.susceptibility_dfs = susceptibility_dfs
         self.subplot_num_rows = len(self.susceptibility_dfs)
@@ -49,8 +54,12 @@ class SusceptibilityPlotter:
         self.fig_size = fig_size
         self.xtick_major = xtick_major
         self.xtick_minor = xtick_minor
+        self.ytick_major = ytick_major
+        self.ytick_minor = ytick_minor
         self.color_bar_coords = color_bar_coords
         self.color_scheme = color_scheme
+        self.subplot_top_adjust = subplot_top_adjust
+        self.subplot_bottom_adjust = subplot_bottom_adjust
         self.subplot_left_adjust = subplot_left_adjust
         self.subplot_right_adjust = subplot_right_adjust
 
@@ -66,8 +75,8 @@ class SusceptibilityPlotter:
 
     def _set_figure_layout(self):
         """
-         Sets overall layout of figue (subplots, and figure labels)
-         """
+        Sets overall layout of figue (subplots, and figure labels)
+        """
         fig, axes = plt.subplots(
             nrows=self.subplot_num_rows,
             ncols=self.subplot_num_cols,
@@ -77,13 +86,15 @@ class SusceptibilityPlotter:
         plt.subplots_adjust(
             left=self.subplot_left_adjust,
             right=self.subplot_right_adjust,
-            hspace=0.4,
+            top=self.subplot_top_adjust,
+            bottom=self.subplot_bottom_adjust,
+            hspace=0.5,
             wspace=0.35,
         )
 
         fig.text(
             0.5,
-            0.95,
+            0.9,
             self.main_plot_title,
             ha="center",
             rotation="horizontal",
@@ -94,36 +105,58 @@ class SusceptibilityPlotter:
 
         return fig, axes, colorbar_axes
 
-    def _decorate_subplot(
+    def _decorate_subplots(
         self,
-        ax: plt.Axes,
-        heatmap: Any,
-        plot_title: str,
-        source_df: pd.DataFrame,
+        axes: plt.Axes,
     ):
         """
         Adds titles and labels to individual subplots
         """
         # x-axis tick marks and title
-        ax.xaxis.set_major_locator(ticker.IndexLocator(self.xtick_major, 0))
-        ax.xaxis.set_major_formatter("{x:.0f}")
-        ax.xaxis.set_minor_locator(ticker.IndexLocator(self.xtick_minor, 0))
-        ax.set_ylabel("Measurement ID")
+        for plot_row in range(self.subplot_num_rows):
+            for plot_col in range(self.subplot_num_cols):
+                ax = axes[plot_row][plot_col]
 
-        # y-axis tick marks and title
-        yticks_positions = np.arange(len(self.yticks_labels)) + 0.5
-        ax.set_yticks(yticks_positions)
-        ax.set_yticklabels(np.arange(len(self.measurement_names)), rotation=0)
-        ax.set_xlabel("Elapsed Time (hours)")
+                ax.xaxis.set_major_locator(
+                    ticker.IndexLocator(self.xtick_major, 0)
+                )
+                ax.xaxis.set_major_formatter("{x:.0f}")
+                ax.xaxis.set_minor_locator(
+                    ticker.IndexLocator(self.xtick_minor, 0)
+                )
+                ax.tick_params(axis="x", labelsize=9)
+                ax.set_xlabel("Elapsed Time (hours)")
 
-        # subplot title
-        ax.set_title(
-            plot_title,
-            x=0.45,
-            y=1.0,
-        )
 
-        # Draw the frame
+
+                # y-axis tick marks and title
+                # yticks_positions = np.arange(len(self.yticks_labels)) + 0.5
+                # ax.set_yticks(yticks_positions)
+                # ax.set_yticklabels(
+                #     np.arange(len(self.measurement_names)),
+                #     fontsize=8,
+                #     rotation=0,
+                # )
+                ax.yaxis.set_major_locator(
+                    ticker.IndexLocator(self.ytick_major, 0)
+                )
+                ax.yaxis.set_major_formatter("{x:.0f}")
+                ax.yaxis.set_minor_locator(
+                    ticker.IndexLocator(self.ytick_minor, 9)
+                )
+                ax.tick_params(axis="y", labelsize=8)
+                ax.set_ylabel("Measurement ID")
+
+
+                # subplot title
+                ax.set_title(
+                    f"{self.df_titles[plot_row][plot_col]}",
+                    x=0.45,
+                    y=1.0,
+                )
+
+    @staticmethod
+    def decorate_heatmap(heatmap: sns.heatmap, source_df: pd.DataFrame):
         heatmap.axhline(y=0, color="k", linewidth=2)
         heatmap.axhline(y=len(source_df.columns), color="k", linewidth=2)
         heatmap.axvline(x=0, color="k", linewidth=2)
@@ -149,19 +182,17 @@ class SusceptibilityPlotter:
                     edgecolor="black",
                 )
 
+                self.decorate_heatmap(heatmap=cur_plot, source_df=cur_df)
+
                 if (plot_row == self.subplot_num_rows - 1) and (
                     plot_col == self.subplot_num_cols - 1
                 ):
-                    cur_plot.collections[0].colorbar.set_label(
-                        color_bar_title
-                    )
+                    cur_plot.collections[0].colorbar.set_label(color_bar_title)
 
-                self._decorate_subplot(
-                    ax=axes[plot_row, plot_col],
-                    plot_title=f"{self.df_titles[plot_row][plot_col]}",
-                    heatmap=cur_plot,
-                    source_df=cur_df,
-                )
+        self._decorate_subplots(
+            axes=axes,
+            # plot_title=f"{self.df_titles[plot_row][plot_col]}",
+        )
 
         plt.show()
 

@@ -82,7 +82,7 @@ class PerturbationHistogramPlotter:
             (None, None, None),
             (None, None, None),
         ),
-        fig_size: tuple[int, int] = (10, 7),
+        fig_size: tuple[int, int] = (10, 8),
         subplot_left_adjust: float = 0.1,
         subplot_right_adjust: float = 0.9,
         subplot_top_adjust: float = 0.78,
