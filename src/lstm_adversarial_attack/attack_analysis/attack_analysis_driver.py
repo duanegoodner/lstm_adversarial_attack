@@ -221,70 +221,70 @@ def plot_latest_result():
     )
 
 if __name__ == "__main__":
-    plot_latest_result()
+    # plot_latest_result()
 
-    # max_single_element_result_path = (
-    #     cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
-    #     / "2023-06-28_17_50_46.701620"
-    #     / "2023-06-28_19_02_16.499026_final_attack_result.pickle"
-    # )
-    # max_single_element_analyses_builder = AttackAnalysesBuilder(
-    #     trainer_result_path=max_single_element_result_path, seq_length=48
-    # )
-    #
-    # max_single_element_analyses_builder.plot_histograms(
-    #     title="Perturbation density and magnitude distributions",
-    #     subtitle=(
-    #         "Tuning objective: Maximize # of perturbation elements with "
-    #         "exactly one non-zero element"
-    #     ),
-    #     histogram_num_bins=(912, 50, 50),
-    #     create_insets=((True, False, False), (True, False, False)),
-    #     inset_specs=(
-    #         (
-    #             php.InsetSpec(
-    #                 bounds=[0.2, 0.15, 0.6, 0.82],
-    #                 plot_limits=php.PlotLimits(
-    #                     x_min=1, x_max=20, y_min=0, y_max=2000
-    #                 ),
-    #             ),
-    #             None,
-    #             None,
-    #         ),
-    #         (
-    #             php.InsetSpec(
-    #                 bounds=[0.2, 0.15, 0.6, 0.82],
-    #                 plot_limits=php.PlotLimits(
-    #                     x_min=1, x_max=20, y_min=0, y_max=100
-    #                 ),
-    #             ),
-    #             None,
-    #             None,
-    #         ),
-    #     ),
-    # )
-    #
-    # max_single_element_analyses_builder.plot_susceptibility_metric(
-    #     metric="ganzp_ij",
-    #     title=(
-    #         "ganzp_ij when tuned to maximize # of single-element perturbations"
-    #     ),
-    # )
-    #
-    # max_single_element_analyses_builder.plot_susceptibility_metric(
-    #     metric="gpp_ij",
-    #     title=(
-    #         "gpp_ij when tuned to maximize # of single-element perturbations"
-    #     ),
-    # )
-    #
-    # max_single_element_analyses_builder.plot_susceptibility_metric(
-    #     metric="sensitivity_ij",
-    #     title=(
-    #         "sensitivity_ij when tuned to maximize # of single-element"
-    #         " perturbations"
-    #     ),
-    # )
+    max_single_element_result_path = (
+        cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+        / "2023-06-28_17_50_46.701620"
+        / "2023-06-28_19_02_16.499026_final_attack_result.pickle"
+    )
+    max_single_element_analyses_builder = AttackAnalysesBuilder(
+        trainer_result_path=max_single_element_result_path, seq_length=48
+    )
+
+    max_single_element_analyses_builder.plot_histograms(
+        title="Perturbation density and magnitude distributions",
+        subtitle=(
+            "Tuning objective: Maximize # of perturbation elements with "
+            "exactly one non-zero element"
+        ),
+        histogram_num_bins=(912, 50, 50),
+        create_insets=((True, False, False), (True, False, False)),
+        inset_specs=(
+            (
+                php.InsetSpec(
+                    bounds=[0.2, 0.15, 0.6, 0.82],
+                    plot_limits=php.PlotLimits(
+                        x_min=1, x_max=20, y_min=0, y_max=2000
+                    ),
+                ),
+                None,
+                None,
+            ),
+            (
+                php.InsetSpec(
+                    bounds=[0.2, 0.15, 0.6, 0.82],
+                    plot_limits=php.PlotLimits(
+                        x_min=1, x_max=20, y_min=0, y_max=100
+                    ),
+                ),
+                None,
+                None,
+            ),
+        ),
+    )
+
+    max_single_element_analyses_builder.plot_susceptibility_metric(
+        metric="ganzp_ij",
+        title=(
+            "ganzp_ij when tuned to maximize # of single-element perturbations"
+        ),
+    )
+
+    max_single_element_analyses_builder.plot_susceptibility_metric(
+        metric="gpp_ij",
+        title=(
+            "gpp_ij when tuned to maximize # of single-element perturbations"
+        ),
+    )
+
+    max_single_element_analyses_builder.plot_susceptibility_metric(
+        metric="sensitivity_ij",
+        title=(
+            "sensitivity_ij when tuned to maximize # of single-element"
+            " perturbations"
+        ),
+    )
 
     # max_sparsity_result_path = (
     #     cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
