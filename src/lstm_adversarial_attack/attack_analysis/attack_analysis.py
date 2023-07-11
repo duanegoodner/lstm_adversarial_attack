@@ -7,6 +7,9 @@ import pandas as pd
 from torch.nn.utils.rnn import pad_sequence
 import lstm_adversarial_attack.attack.attack_result_data_structs as ads
 import lstm_adversarial_attack.attack_analysis.attack_susceptibility_metrics as asm
+import lstm_adversarial_attack.config_paths as cfg_paths
+import lstm_adversarial_attack.path_searches as ps
+import lstm_adversarial_attack.resource_io as rio
 
 
 class RecordedExampleType(Enum):
@@ -15,7 +18,7 @@ class RecordedExampleType(Enum):
 
 
 @dataclass
-class AttackConditionAnalysis:
+class AttackConditionSummary:
     """
     Container to dataframe with summary of first or best examples and the
     perturbations corresponding to those examples.
@@ -24,6 +27,7 @@ class AttackConditionAnalysis:
     :param perts: perturbations that resulted in the adversarial examples
     summarized in examples_df.
     """
+
     examples_df: pd.DataFrame
     perts: np.array
 
@@ -42,24 +46,28 @@ class AttackConditionAnalysis:
         return asm.AttackSusceptibilityMetrics(perts=self.perts)
 
 
+
+
+
 @dataclass
-class StandardAttackAnalyses:
+class StandardAttackConditionSummaries:
     """
     Holds results for standard adversarial example categories (from attacks)
     on single dataset, and provides methods to convert results into format
     expected by plotting classes.
     """
-    zero_to_one_first: AttackConditionAnalysis
-    zero_to_one_best: AttackConditionAnalysis
-    one_to_zero_first: AttackConditionAnalysis
-    one_to_zero_best: AttackConditionAnalysis
+
+    zero_to_one_first: AttackConditionSummary
+    zero_to_one_best: AttackConditionSummary
+    one_to_zero_first: AttackConditionSummary
+    one_to_zero_best: AttackConditionSummary
 
     @cached_property
     def data_for_histogram_plotter(
         self,
     ) -> tuple[tuple[pd.DataFrame, ...], ...]:
         """
-        Returns dataframe from each AttackConditionAnalysis member arranged
+        Returns dataframe from each AttackConditionSummary member arranged
         in tuple of tuples of dataframes. PerturbationHitstogramPlotter
         uses this data struct.
         :return: tuple of tuple of Pandas dataframes
@@ -96,17 +104,30 @@ class StandardAttackAnalyses:
         )
 
 
+@dataclass
+class SusceptibilityPlotterData:
+    zero_to_one_first: pd.DataFrame
+    zero_to_one_best: pd.DataFrame
+    one_to_zero_first: pd.DataFrame
+    one_to_zero_best: pd.DataFrame
+
+
 class FullAttackResults:
     """
     Provides full summary of results of attack on a model & dataset
     """
+
     def __init__(
         self,
-        success_summary: ads.TrainerSuccessSummary,
+        trainer_result: ads.TrainerResult,
+        # success_summary: ads.TrainerSuccessSummary,
     ):
         """
         :param success_summary: a TrainerSuccessSummary produced by attack
         """
+        success_summary = ads.TrainerSuccessSummary(
+            trainer_result=trainer_result
+        )
         self._dataset = success_summary.dataset
         self.all_attacks_df = success_summary.all_attacks_df
         self.successful_attack_df = success_summary.successful_attacks_df
@@ -115,16 +136,35 @@ class FullAttackResults:
         self.first_perts_summary = success_summary.perts_summary_first
         self.best_perts_summary = success_summary.perts_summary_best
 
+    @classmethod
+    def from_trainer_result_path(cls, trainer_result_path):
+        trainer_result = rio.ResourceImporter().import_pickle_to_object(
+            path=trainer_result_path
+        )
+        return cls(trainer_result=trainer_result)
+
+    @classmethod
+    def from_most_recent_attack(cls):
+        result_dir = ps.subdir_with_latest_content_modification(
+            root_path=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+        )
+        final_results = list(result_dir.glob("*final_attack_result.pickle"))
+        assert len(final_results) == 1
+        trainer_result_path = final_results[0]
+        return cls.from_trainer_result_path(
+            trainer_result_path=trainer_result_path
+        )
+
     @cached_property
-    def attacked_features_padded(self) -> np.array:
+    def padded_features_attacked(self) -> np.array:
         """
         padded array of input features of attacked samples
         :return: array of floats
         """
-        torch_attacked_features_padded = pad_sequence(
+        torch_padded_features_attacked = pad_sequence(
             self._dataset[:][1], batch_first=True
         )[self.all_attacks_df.dataset_index]
-        return np.array(torch_attacked_features_padded)
+        return np.array(torch_padded_features_attacked)
 
     @cached_property
     def padded_features_success(self) -> np.array:
@@ -132,7 +172,7 @@ class FullAttackResults:
         padded array of input features of successfully attacked samples
         :return: array of floats
         """
-        return self.attacked_features_padded[
+        return self.padded_features_attacked[
             self.successful_attack_df["attacked_samples_index"], :, :
         ]
 
@@ -255,9 +295,9 @@ class FullAttackResults:
         orig_label: int = None,
         min_num_perts: int = None,
         max_num_perts: int = None,
-    ) -> AttackConditionAnalysis:
+    ) -> AttackConditionSummary:
         """
-        Builds an AttackConditionAnalysis object for examples with specified
+        Builds an AttackConditionSummary object for examples with specified
         sequence length and example type. Data can be further filtered using
         other optional params
         :param seq_length: input seq length of examples to summarize
@@ -296,24 +336,43 @@ class FullAttackResults:
             filtered_df.index, :, :
         ]
 
-        return AttackConditionAnalysis(examples_df=filtered_df, perts=perts)
+        return AttackConditionSummary(examples_df=filtered_df, perts=perts)
 
-    # @cached_property
-    # def zto_first_examples_df(self) -> pd.DataFrame:
-    #     return self.first_examples_df[
-    #         self.first_examples_df["orig_label"] == 0
-    #     ]
-    #
-    # @cached_property
-    # def otz_first_examples_df(self) -> pd.DataFrame:
-    #     return self.first_examples_df[
-    #         self.first_examples_df["orig_label"] == 1
-    #     ]
-    #
-    # @cached_property
-    # def zto_best_examples_df(self) -> pd.DataFrame:
-    #     return self.best_examples_df[self.best_examples_df["orig_label"] == 0]
-    #
-    # @cached_property
-    # def otz_best_examples_df(self) -> pd.DataFrame:
-    #     return self.best_examples_df[self.best_examples_df["orig_label"] == 1]
+
+
+    def get_standard_attack_condition_summaries(
+        self,
+        seq_length: int,
+        min_num_perts: int = None,
+        max_num_perts: int = None,
+    ) -> StandardAttackConditionSummaries:
+        return StandardAttackConditionSummaries(
+            zero_to_one_first=self.get_condition_analysis(
+                seq_length=seq_length,
+                example_type=RecordedExampleType.FIRST,
+                orig_label=0,
+                min_num_perts=min_num_perts,
+                max_num_perts=max_num_perts,
+            ),
+            zero_to_one_best=self.get_condition_analysis(
+                seq_length=seq_length,
+                example_type=RecordedExampleType.BEST,
+                orig_label=0,
+                min_num_perts=min_num_perts,
+                max_num_perts=max_num_perts,
+            ),
+            one_to_zero_first=self.get_condition_analysis(
+                seq_length=seq_length,
+                example_type=RecordedExampleType.FIRST,
+                orig_label=1,
+                min_num_perts=min_num_perts,
+                max_num_perts=max_num_perts,
+            ),
+            one_to_zero_best=self.get_condition_analysis(
+                seq_length=seq_length,
+                example_type=RecordedExampleType.BEST,
+                orig_label=1,
+                min_num_perts=min_num_perts,
+                max_num_perts=max_num_perts,
+            ),
+        )

@@ -13,7 +13,7 @@ import lstm_adversarial_attack.attack_analysis.susceptibility_plotter as ssp
 
 class AttackAnalysesBuilder:
     """
-    Builds a StandardAttackAnalyses object from a TrainerResult, and provides
+    Builds a StandardAttackConditionSummaries object from a TrainerResult, and provides
     methods for plotting data.
     """
     def __init__(
@@ -48,7 +48,7 @@ class AttackAnalysesBuilder:
         self.max_num_perts = max_num_perts
 
     @cached_property
-    def trainer_result(self) -> ads.TrainerResult:
+    def _trainer_result(self) -> ads.TrainerResult:
         """
         TrainerResult imported from self.trainer_result_path
         :return: TrainerResult
@@ -57,13 +57,6 @@ class AttackAnalysesBuilder:
             path=self.trainer_result_path
         )
 
-    @cached_property
-    def success_summary(self) -> ads.TrainerSuccessSummary:
-        """
-        TrainerSuccessSummary computed from self.trainer_result
-        :return: TrainerSuccessSummary
-        """
-        return ads.TrainerSuccessSummary(trainer_result=self.trainer_result)
 
     @cached_property
     def attack_results(self) -> ata.FullAttackResults:
@@ -72,16 +65,16 @@ class AttackAnalysesBuilder:
         :return: FullAttackResults
         """
         return ata.FullAttackResults(
-            success_summary=self.success_summary,
+            trainer_result=self._trainer_result
         )
 
     @cached_property
-    def standard_attack_analyses(self) -> ata.StandardAttackAnalyses:
+    def standard_attack_summaries(self) -> ata.StandardAttackConditionSummaries:
         """
-        Gets StandardAttackAnalyses from self.attack_results
-        :return: StandardAttackAnalyses
+        Gets StandardAttackConditionSummaries from self.attack_results
+        :return: StandardAttackConditionSummaries
         """
-        return ata.StandardAttackAnalyses(
+        return ata.StandardAttackConditionSummaries(
             zero_to_one_first=self.attack_results.get_condition_analysis(
                 seq_length=self.seq_length,
                 example_type=ata.RecordedExampleType.FIRST,
@@ -122,21 +115,19 @@ class AttackAnalysesBuilder:
         :return: tuple of Dataframes in format needed by
         PerturbationHistogramPlotter
         """
-        return self.standard_attack_analyses.data_for_histogram_plotter
+        return self.standard_attack_summaries.data_for_histogram_plotter
 
-    def plot_histograms(self, title: str, subtitle: str, **kwargs):
+    def plot_histograms(self, title: str, **kwargs):
         """
         Plots histograms of nonzero perturbation elements and perturbation
         element magnitudes.
         :param title: Title of plot figure
-        :param subtitle: Subtitle of plot figure
         :param kwargs: any optional key word args accepted by
         PerturbationHistogramPlotter
         """
         histogram_plotter = php.PerturbationHistogramPlotter(
             pert_summary_dfs=self.df_tuple_for_histogram_plotter,
             title=title,
-            subtitle=subtitle,
             **kwargs
         )
         histogram_plotter.plot_histograms()
@@ -151,7 +142,7 @@ class AttackAnalysesBuilder:
         :param color_bar_title: colorbar (scale) label
         """
         susceptibility_dfs = (
-            self.standard_attack_analyses.data_for_susceptibility_plotter(
+            self.standard_attack_summaries.data_for_susceptibility_plotter(
                 metric=metric
             )
         )
@@ -183,45 +174,19 @@ def plot_latest_result():
     )
     latest_attack_analysis_builder.plot_histograms(
         title="Perturbation density and magnitude distributions",
-        subtitle="Attack: Latest",
         histogram_num_bins=(912, 1000, 50),
-        create_insets=((True, True, False), (True, True, False)),
-        inset_specs=(
-            (
-                php.InsetSpec(
-                    bounds=[0.2, 0.15, 0.6, 0.82],
-                    plot_limits=php.PlotLimits(
-                        x_min=1, x_max=20, y_min=0, y_max=20
-                    ),
-                ),
-                php.InsetSpec(
-                    bounds=[0.3, 0.15, 0.65, 0.82],
-                    plot_limits=php.PlotLimits(
-                        x_min=0, x_max=0.05, y_min=0, y_max=3000
-                    ),
-                ),
-                None,
-            ),
-            (
-                php.InsetSpec(
-                    bounds=[0.2, 0.15, 0.6, 0.82],
-                    plot_limits=php.PlotLimits(
-                        x_min=1, x_max=20, y_min=0, y_max=20
-                    ),
-                ),
-                php.InsetSpec(
-                    bounds=[0.3, 0.15, 0.65, 0.82],
-                    plot_limits=php.PlotLimits(
-                        x_min=0, x_max=0.05, y_min=0, y_max=500
-                    ),
-                ),
-                None,
-            ),
-        ),
     )
 
 if __name__ == "__main__":
-    plot_latest_result()
+    analyses_builder = AttackAnalysesBuilder()
+    hist_plotter = php.PerturbationHistogramPlotter(
+        pert_summary_dfs=analyses_builder.df_tuple_for_histogram_plotter,
+        title="Latest frozen hyperparam attack"
+    )
+    hist_plotter.plot_histograms()
+
+
+    # plot_latest_result()
 
     # max_single_element_result_path = (
     #     cfg_paths.FROZEN_HYPERPARAMETER_ATTACK

@@ -5,6 +5,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.colors import LogNorm
 from typing import Any
+import lstm_adversarial_attack.attack_analysis.attack_analysis as ata
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.config_paths as cfg_paths
 
@@ -198,31 +199,18 @@ class SusceptibilityPlotter:
 
 
 if __name__ == "__main__":
-    first_examples_s_ij = rio.ResourceImporter().import_pickle_to_object(
-        path=cfg_paths.ATTACK_OUTPUT_DIR
-        / "plot_practice"
-        / "first_s_ij.pickle"
-    )
 
-    best_examples_s_ij = rio.ResourceImporter().import_pickle_to_object(
-        path=cfg_paths.ATTACK_OUTPUT_DIR / "plot_practice" / "best_s_ij.pickle"
+    full_attack_results = ata.FullAttackResults.from_most_recent_attack()
+    attack_condition_summaries = (
+        full_attack_results.get_standard_attack_condition_summaries(
+            seq_length=48,
+        )
     )
 
     plotter = SusceptibilityPlotter(
-        susceptibility_dfs=(
-            (first_examples_s_ij, best_examples_s_ij),
-            (first_examples_s_ij, best_examples_s_ij),
+        susceptibility_dfs=attack_condition_summaries.data_for_susceptibility_plotter(
+            metric="gpp_ij"
         ),
-        df_titles=(
-            (
-                "0 \u2192 1 Attack, First Examples",
-                "0 \u2192 1 Attack, Best Examples",
-            ),
-            (
-                "1 \u2192 0 Attack, First Examples",
-                "1 \u2192 0 Attack, Best Examples",
-            ),
-        ),
-        main_plot_title="Perturbation Susceptibility Scores",
+        main_plot_title="Perturbation Probabilities from Latest Attack",
     )
     plotter.plot_susceptibilities()
