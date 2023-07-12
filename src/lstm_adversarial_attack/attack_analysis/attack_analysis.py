@@ -36,6 +36,7 @@ class StandardDataFramesForPlotter:
         ).all()
 
 
+
 @dataclass
 class AttackConditionSummary:
     """
@@ -78,48 +79,17 @@ class StandardAttackConditionSummaries:
     one_to_zero_first: AttackConditionSummary
     one_to_zero_best: AttackConditionSummary
 
-    @cached_property
-    def data_for_histogram_plotter(
-        self,
-    ) -> tuple[tuple[pd.DataFrame, ...], ...]:
-        """
-        Returns dataframe from each AttackConditionSummary member arranged
-        in tuple of tuples of dataframes. PerturbationHitstogramPlotter
-        uses this data struct.
-        :return: tuple of tuple of Pandas dataframes
-        """
-        return (
-            (
-                self.zero_to_one_first.examples_df,
-                self.zero_to_one_best.examples_df,
-            ),
-            (
-                self.one_to_zero_first.examples_df,
-                self.one_to_zero_best.examples_df,
-            ),
+    @property
+    def data_for_histogram_plotter(self) -> StandardDataFramesForPlotter:
+        return StandardDataFramesForPlotter(
+            zero_to_one_first=self.zero_to_one_first.examples_df,
+            zero_to_one_best=self.zero_to_one_best.examples_df,
+            one_to_zero_first=self.one_to_zero_first.examples_df,
+            one_to_zero_best=self.one_to_zero_best.examples_df
         )
+
 
     def data_for_susceptibility_plotter(
-        self, metric: str
-    ) -> tuple[tuple[pd.DataFrame | pd.Series, ...], ...]:
-        """
-        Gets values for member "metric" of each AttackSusceptibilityMetric
-        and arranges into tuple of tuples needed for SusceptibilityPlotter.
-        :param metric: Name of AttackSusceptibilityMetric param to plot
-        :return: tuple of tuple of dataframes of metric
-        """
-        return (
-            (
-                getattr(self.zero_to_one_first.susceptibility_metrics, metric),
-                getattr(self.zero_to_one_best.susceptibility_metrics, metric),
-            ),
-            (
-                getattr(self.one_to_zero_first.susceptibility_metrics, metric),
-                getattr(self.one_to_zero_best.susceptibility_metrics, metric),
-            ),
-        )
-
-    def data_for_susceptibility_plotter_new(
         self, metric
     ) -> StandardDataFramesForPlotter:
         return StandardDataFramesForPlotter(

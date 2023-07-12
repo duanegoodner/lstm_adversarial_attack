@@ -63,17 +63,15 @@ class SusceptibilityPlotter:
 
     def __init__(
         self,
-        susceptibility_dfs_new: ata.StandardDataFramesForPlotter,
+        susceptibility_dfs: ata.StandardDataFramesForPlotter,
         main_plot_title: str,
     ):
-        self.susceptibility_dfs_new = susceptibility_dfs_new
+        self.susceptibility_dfs = susceptibility_dfs
         self.main_plot_title = main_plot_title
         self.measurement_names = (
-            self.susceptibility_dfs_new.zero_to_one_first.columns
+            self.susceptibility_dfs.zero_to_one_first.columns
         )
-        self.yticks_labels = (
-            self.susceptibility_dfs_new.zero_to_one_first.columns
-        )
+        self.yticks_labels = self.susceptibility_dfs.zero_to_one_first.columns
         self.yticks_positions = np.arange(len(self.yticks_labels) + 0.5)
 
     @property
@@ -84,12 +82,12 @@ class SusceptibilityPlotter:
     ]:
         return (
             (
-                self.susceptibility_dfs_new.zero_to_one_first,
-                self.susceptibility_dfs_new.zero_to_one_best,
+                self.susceptibility_dfs.zero_to_one_first,
+                self.susceptibility_dfs.zero_to_one_best,
             ),
             (
-                self.susceptibility_dfs_new.one_to_zero_first,
-                self.susceptibility_dfs_new.one_to_zero_best,
+                self.susceptibility_dfs.one_to_zero_first,
+                self.susceptibility_dfs.one_to_zero_best,
             ),
         )
 
@@ -158,7 +156,9 @@ class SusceptibilityPlotter:
                 ax.yaxis.set_minor_locator(
                     ticker.IndexLocator(FIXED_SETTINGS.ytick_minor, 0.5)
                 )
-                ax.tick_params(axis="y", labelsize=FIXED_SETTINGS.yticklabel_fontsize)
+                ax.tick_params(
+                    axis="y", labelsize=FIXED_SETTINGS.yticklabel_fontsize
+                )
                 ax.set_ylabel(FIXED_SETTINGS.y_axis_label)
 
                 # subplot title
@@ -209,18 +209,45 @@ class SusceptibilityPlotter:
         plt.show()
 
 
-if __name__ == "__main__":
-    full_attack_results = ata.FullAttackResults.from_most_recent_attack()
+def plot_metric_maps(
+    seq_length: int,
+    metric: str,
+    plot_title: str,
+    colorbar_title: str,
+    full_attack_results: ata.FullAttackResults = None,
+):
+    if full_attack_results is None:
+        full_attack_results = ata.FullAttackResults.from_most_recent_attack()
     attack_condition_summaries = (
         full_attack_results.get_standard_attack_condition_summaries(
-            seq_length=48,
+            seq_length=seq_length,
         )
     )
-
     plotter = SusceptibilityPlotter(
-        susceptibility_dfs_new=attack_condition_summaries.data_for_susceptibility_plotter_new(
-            metric="gpp_ij"
+        susceptibility_dfs=attack_condition_summaries.data_for_susceptibility_plotter(
+            metric=metric,
         ),
-        main_plot_title="Perturbation Probabilities from Latest Attack",
+        main_plot_title=plot_title,
     )
-    plotter.plot_susceptibilities(color_bar_title="Perturbation Probability")
+    plotter.plot_susceptibilities(color_bar_title=colorbar_title)
+
+
+if __name__ == "__main__":
+    plot_metric_maps(
+        seq_length=48,
+        metric="gpp_ij",
+        plot_title="Perturbation Probability",
+        colorbar_title="Perturbation Probability",
+    )
+    plot_metric_maps(
+        seq_length=48,
+        metric="ganzp_ij",
+        plot_title="Mean Magnitude of Non-zero Perturbation Elements",
+        colorbar_title="Perturbation Element Magnitude",
+    )
+    plot_metric_maps(
+        seq_length=48,
+        metric="sensitivity_ij",
+        plot_title="Perturbation Sensitivity",
+        colorbar_title="Perturbation Sensitivity"
+    )

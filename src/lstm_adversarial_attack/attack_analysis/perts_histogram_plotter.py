@@ -1,125 +1,171 @@
+from dataclasses import dataclass
+from functools import cached_property
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-# from enum import Enum, auto
-from typing import NamedTuple
-
 import lstm_adversarial_attack.attack_analysis.attack_analysis as ata
 
 
-class PlotLimits(NamedTuple):
-    """
-    Used for inset definition
-    """
-
-    x_min: float
-    x_max: float
-    y_min: float
-    y_max: float
+@dataclass
+class HistLegendInfo:
+    loc: str
+    bbox_to_anchor: tuple[float, float]
+    ncol: int
 
 
-class PerturbationHistogramPlotter:
-    """
-    Plots histograms of perturbation-related info: num non-zero elements
-    per example, mean perturbation element magnitude, and max perturbation
-    element magnitude.
-    """
+@dataclass
+class HistogramInfo:
+    dfs: tuple[pd.DataFrame, ...]
+    df_labels: tuple[str, ...]
+    data_col_name: str
+    title: str
+    x_label: str
+    y_label: str
+    default_num_bins: int
+    default_x_min: int
+    default_x_max: int
 
+    @cached_property
+    def data_series(self) -> tuple[pd.Series, ...]:
+        return tuple([df[self.data_col_name] for df in self.dfs])
+
+    def plot(
+        self,
+        ax: plt.Axes,
+        num_bins: int = None,
+        x_min: int | float = None,
+        x_max: int | float = None,
+        transparency: float = 0.5,
+    ):
+        if num_bins is None:
+            num_bins = self.default_num_bins
+        if x_min is None:
+            x_min = self.default_x_min
+        if x_max is None:
+            x_max = self.default_x_max
+
+        for idx, series in enumerate(self.data_series):
+            counts_array, bins_array = np.histogram(
+                a=series, bins=num_bins, range=(x_min, x_max)
+            )
+            ax.hist(
+                x=bins_array[:-1],
+                bins=bins_array,
+                alpha=transparency,
+                weights=counts_array,
+                label=self.df_labels[idx],
+            )
+
+
+@dataclass
+class HistogramPlotterFixedSettings:
+    df_labels: tuple[str, ...] = ("First examples", "Best examples")
+    num_plot_rows: int = 2
+    num_plot_cols: int = 3
+    fig_size: tuple[int, int] = (10, 7)
+    ylabels: tuple[str, ...] = (
+        "Counts from 0 \u2192 1 Attacks",
+        "Counts from 1 \u2192 0 Attacks",
+    )
+    xlabels: tuple[str, ...] = (
+        "# Non-Zero Elements",
+        "Perturbation Element Magnitude",
+        "Perturbation Element Magnitude",
+    )
+
+    default_num_bins: tuple[int, ...] = (912, 50, 50)
+    default_x_min_vals: tuple[int, ...] = (0, 0, 0)
+    default_x_max_vals: tuple[int, ...] = (912, 1, 1)
+    data_col_names: tuple[str, ...] = (
+        "num_perts",
+        "pert_mean_nonzero_abs",
+        "pert_max_abs",
+    )
+    plot_titles: tuple[str, ...] = (
+        "Non-zero Perturbation\nElements",
+        "Mean Non-zero Perturbation\nElement Magnitude",
+        "Max Perturbation\nElement Magnitudes",
+    )
+    subplot_left_adjust: float = 0.1
+    subplot_right_adjust: float = 0.9
+    subplot_top_adjust: float = 0.78
+    subplot_bottom_adjust: float = 0.17
+    title_x_position: float = 0.05
+    title_y_position: float = 0.93
+    title_fontsize: int = 18
+    title_horizontal_alignment: float = "left"
+    hspace: float = 0.05
+    wspace: float = 0.3
+
+
+class HistogramPlotter:
     def __init__(
         self,
-        pert_summary_dfs: tuple[tuple[pd.DataFrame, ...], ...],
         title: str,
-        data_col_names: tuple[str, ...] = (
-            "num_perts",
-            "pert_mean_nonzero_abs",
-            "pert_max_abs",
-        ),
-        histogram_num_bins: tuple[int, ...] = (912, 50, 50),
-        histogram_plot_ranges: tuple[tuple[int | float, ...], ...] = (
-            (0, 912),
-            (0, 1.0),
-            (0, 1.0),
-        ),
-        subplot_col_titles: tuple[str] = (
-            "Number of non-zero\nperturbation elements",
-            "Mean of magnitude of\nnon-zero perturbations",
-            "Max magnitude of\nnon-zero perturbations",
-        ),
-        subplot_xlabels: tuple[str] = (
-            "# non-zero elements",
-            "Mean perturbation magnitude",
-            "Max perturbation magnitude",
-        ),
-        subplot_row_titles: tuple[str] = (
-            "0 \u2192 1 attack counts",
-            "1 \u2192 0 attack counts",
-        ),
-        fig_size: tuple[int, int] = (10, 8),
-        subplot_left_adjust: float = 0.1,
-        subplot_right_adjust: float = 0.9,
-        subplot_top_adjust: float = 0.78,
-        subplot_bottom_adjust: float = 0.17,
-        subplot_hspace: float = 0.05,
-        subplot_wspace: float = 0.3,
-        subplot_title_x_position: float = 0.45,
-        subplot_title_y_position: float = 1.0,
-        title_x_position: float = 0.05,
-        title_y_position: float = 0.93,
-        title_fontsize: int = 18,
-        title_horizontal_alignment: float = "left",
-        histogram_bar_transparency: float = 0.5,
+        perts_dfs: ata.StandardDataFramesForPlotter,
+        cfg: HistogramPlotterFixedSettings = None,
     ):
-        self.pert_summary_dfs = pert_summary_dfs
         self.title = title
-        self.data_col_names = data_col_names
-        self.histogram_num_bins = histogram_num_bins
-        self.histogram_plot_ranges = histogram_plot_ranges
-        self.subplot_col_titles = subplot_col_titles
-        self.subplot_xlabels = subplot_xlabels
-        self.subplot_row_titles = subplot_row_titles
-        self.subplot_num_rows = len(self.pert_summary_dfs)
-        self.subplot_num_cols = len(self.data_col_names)
-        self.fig_size = fig_size
-        self.subplot_left_adjust = subplot_left_adjust
-        self.subplot_right_adjust = subplot_right_adjust
-        self.subplot_top_adjust = subplot_top_adjust
-        self.subplot_bottom_adjust = subplot_bottom_adjust
-        self.subplot_hspace = subplot_hspace
-        self.subplot_wspace = subplot_wspace
-        self.subplot_title_x_position = subplot_title_x_position
-        self.subplot_title_y_position = subplot_title_y_position
-        self.title_x_position = title_x_position
-        self.title_y_position = title_y_position
-        self.title_fontsize = title_fontsize
-        self.title_horizontal_alignment = title_horizontal_alignment
-        self.histogram_bar_transparency = histogram_bar_transparency
+        self.perts_dfs = perts_dfs
+        if cfg is None:
+            self.cfg = HistogramPlotterFixedSettings()
+
+    @property
+    def _df_pairs(
+        self,
+    ) -> tuple[
+        tuple[pd.DataFrame, pd.DataFrame], tuple[pd.DataFrame, pd.DataFrame]
+    ]:
+        return (
+            self.perts_dfs.zero_to_one_first,
+            self.perts_dfs.zero_to_one_best,
+        ), (self.perts_dfs.one_to_zero_first, self.perts_dfs.one_to_zero_best)
+
+    @property
+    def hist_info_grid(self):
+        my_grid = [
+            [
+                HistogramInfo(
+                    dfs=self._df_pairs[row_idx],
+                    df_labels=self.cfg.df_labels,
+                    data_col_name=self.cfg.data_col_names[col_idx],
+                    title=self.cfg.plot_titles[col_idx],
+                    x_label=self.cfg.xlabels[col_idx],
+                    y_label=self.cfg.ylabels[row_idx],
+                    default_num_bins=self.cfg.default_num_bins[col_idx],
+                    default_x_min=self.cfg.default_x_min_vals[col_idx],
+                    default_x_max=self.cfg.default_x_max_vals[col_idx],
+                )
+                for col_idx in range(self.cfg.num_plot_cols)
+            ]
+            for row_idx in range(self.cfg.num_plot_rows)
+        ]
+
+        return my_grid
 
     def _set_figure_layout(self):
-        """
-        Sets overall layout of figue (subplots, and figure labels)
-        """
         fig, axes = plt.subplots(
-            nrows=self.subplot_num_rows,
-            ncols=self.subplot_num_cols,
-            figsize=self.fig_size,
+            figsize=self.cfg.fig_size,
+            nrows=self.cfg.num_plot_rows,
+            ncols=self.cfg.num_plot_cols,
         )
 
         plt.subplots_adjust(
-            left=self.subplot_left_adjust,
-            right=self.subplot_right_adjust,
-            top=self.subplot_top_adjust,
-            bottom=self.subplot_bottom_adjust,
-            hspace=self.subplot_hspace,
-            wspace=self.subplot_wspace,
+            left=self.cfg.subplot_left_adjust,
+            right=self.cfg.subplot_right_adjust,
+            top=self.cfg.subplot_top_adjust,
+            bottom=self.cfg.subplot_bottom_adjust,
+            hspace=self.cfg.hspace,
+            wspace=self.cfg.wspace,
         )
 
         fig.text(
-            x=self.title_x_position,
-            y=self.title_y_position,
+            x=self.cfg.title_x_position,
+            y=self.cfg.title_y_position,
             s=self.title,
-            ha=self.title_horizontal_alignment,
+            ha=self.cfg.title_horizontal_alignment,
             rotation="horizontal",
-            fontsize=self.title_fontsize,
+            fontsize=self.cfg.title_fontsize,
         )
 
         return fig, axes
@@ -128,99 +174,58 @@ class PerturbationHistogramPlotter:
         """
         Adds titles and labels to individual subplots
         """
-        for plot_row in range(self.subplot_num_rows):
-            axes[plot_row][0].set_ylabel(self.subplot_row_titles[plot_row])
+        for plot_row in range(self.cfg.num_plot_rows):
+            axes[plot_row][0].set_ylabel(self.cfg.ylabels[plot_row])
 
             # if not bottom row, remove x-axis ticklabels
-            if plot_row != self.subplot_num_rows - 1:
-                for plot_col in range(self.subplot_num_cols):
+            if plot_row != self.cfg.num_plot_rows - 1:
+                for plot_col in range(self.cfg.num_plot_cols):
                     axes[plot_row][plot_col].set_xticklabels([])
 
             # top row subplots gets titles
             if plot_row == 0:
-                for plot_col in range(self.subplot_num_cols):
+                for plot_col in range(self.cfg.num_plot_cols):
                     axes[plot_row][plot_col].set_title(
-                        self.subplot_col_titles[plot_col]
+                        label=self.cfg.plot_titles[plot_col], loc="left"
                     )
 
             # bottom row gets xlabels
-            if plot_row == self.subplot_num_rows - 1:
-                for plot_col in range(self.subplot_num_cols):
+            if plot_row == self.cfg.num_plot_rows - 1:
+                for plot_col in range(self.cfg.num_plot_cols):
                     axes[plot_row][plot_col].set_xlabel(
-                        self.subplot_xlabels[plot_col]
+                        self.cfg.xlabels[plot_col]
                     )
 
-    def _plot_histogram(
-        self,
-        ax: plt.Axes,
-        data: pd.Series,
-        bins: int,
-        label: str,
-        plot_range: tuple[int, int] = None,
-    ):
-        """
-        Plots a single histogram
-        """
-        counts, bins = np.histogram(a=data, bins=bins, range=plot_range)
-        ax.hist(
-            bins[:-1],
-            bins,
-            alpha=self.histogram_bar_transparency,
-            weights=counts,
-            label=label,
-        )
-
-    def _plot_first_best_overlay(
-        self,
-        ax: plt.Axes,
-        first_df: pd.DataFrame,
-        best_df: pd.DataFrame,
-        col_name: str,
-        bins: int,
-        plot_range: tuple[int, int] = None,
-        add_legend: bool = False,
-    ):
-        """
-        Plots two histograms on single axes.
-        """
-        self._plot_histogram(
-            ax=ax,
-            data=first_df[col_name],
-            bins=bins,
-            plot_range=plot_range,
-            label="First examples found",
-        )
-        self._plot_histogram(
-            ax=ax,
-            data=best_df[col_name],
-            bins=bins,
-            plot_range=plot_range,
-            label="Examples with lowest loss",
-        )
-
-        if add_legend:
-            ax.legend(loc="upper right", bbox_to_anchor=(1.3, -0.25), ncol=2)
-
     def plot_all_histograms(self):
-        """
-        Plots all histograms in figure
-        """
         fig, axes = self._set_figure_layout()
+        for plot_row in range(self.cfg.num_plot_rows):
+            for plot_col in range(self.cfg.num_plot_cols):
+                ax = axes[plot_row][plot_col]
+                self.hist_info_grid[plot_row][plot_col].plot(ax=ax)
+
         self._decorate_subplots(axes=axes)
 
-        for plot_row in range(self.subplot_num_rows):
-            for plot_col in range(self.subplot_num_cols):
-                self._plot_first_best_overlay(
-                    ax=axes[plot_row][plot_col],
-                    first_df=self.pert_summary_dfs[plot_row][0],
-                    best_df=self.pert_summary_dfs[plot_row][1],
-                    col_name=self.data_col_names[plot_col],
-                    bins=self.histogram_num_bins[plot_col],
-                    plot_range=self.histogram_plot_ranges[plot_col],
-                    add_legend=(plot_row == self.subplot_num_rows - 1)
-                    and (plot_col == self.subplot_num_cols // 2),
-                )
+        plt.show()
 
+    def plot_single_histogram(
+        self,
+        plot_indices: tuple[int, int],
+        num_bins: int,
+        x_min: int | float,
+        x_max: int | float,
+        title: str = None,
+    ):
+        if title is None:
+            title = self.cfg.plot_titles[plot_indices[1]]
+
+        fig, axes = plt.subplots(nrows=1, ncols=1)
+        self.hist_info_grid[plot_indices[0]][plot_indices[1]].plot(
+            ax=axes, num_bins=num_bins, x_min=x_min, x_max=x_max
+        )
+
+        axes.set_ylabel(self.cfg.ylabels[plot_indices[0]])
+        axes.set_xlabel(self.cfg.xlabels[plot_indices[1]])
+        axes.set_title(title, loc="left")
         plt.show()
 
 
@@ -231,10 +236,20 @@ if __name__ == "__main__":
             seq_length=48,
         )
     )
-    hist_plotter = PerturbationHistogramPlotter(
-        pert_summary_dfs=attack_condition_summaries.data_for_histogram_plotter,
-        title="Perturbation Distributions from Most Recent Attack",
+
+    new_plotter = HistogramPlotter(
+        title="Perturbation Element Histograms from Latest Attack",
+        perts_dfs=attack_condition_summaries.data_for_histogram_plotter,
     )
+    new_plotter.plot_all_histograms()
 
-    hist_plotter.plot_all_histograms()
-
+    new_plotter.plot_single_histogram(
+        plot_indices=(0, 1),
+        num_bins=100,
+        x_min=0,
+        x_max=0.05,
+        title=(
+            "Mean Non-zero Perturbation Element Magnitude\nfor 0 \u2192 1"
+            " Attacks"
+        ),
+    )
