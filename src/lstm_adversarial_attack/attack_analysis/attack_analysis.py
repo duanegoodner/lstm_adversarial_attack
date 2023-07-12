@@ -18,6 +18,25 @@ class RecordedExampleType(Enum):
 
 
 @dataclass
+class StandardDataFramesForPlotter:
+    zero_to_one_first: pd.DataFrame
+    zero_to_one_best: pd.DataFrame
+    one_to_zero_first: pd.DataFrame
+    one_to_zero_best: pd.DataFrame
+
+    def __post_init__(self):
+        assert (
+            self.zero_to_one_first.columns == self.one_to_zero_best.columns
+        ).all()
+        assert (
+            self.zero_to_one_first.columns == self.one_to_zero_first.columns
+        ).all()
+        assert (
+            self.zero_to_one_first.columns == self.one_to_zero_best.columns
+        ).all()
+
+
+@dataclass
 class AttackConditionSummary:
     """
     Container to dataframe with summary of first or best examples and the
@@ -44,9 +63,6 @@ class AttackConditionSummary:
         :return: an AttackSusceptibilityMetrics object
         """
         return asm.AttackSusceptibilityMetrics(perts=self.perts)
-
-
-
 
 
 @dataclass
@@ -103,13 +119,23 @@ class StandardAttackConditionSummaries:
             ),
         )
 
-
-@dataclass
-class SusceptibilityPlotterData:
-    zero_to_one_first: pd.DataFrame
-    zero_to_one_best: pd.DataFrame
-    one_to_zero_first: pd.DataFrame
-    one_to_zero_best: pd.DataFrame
+    def data_for_susceptibility_plotter_new(
+        self, metric
+    ) -> StandardDataFramesForPlotter:
+        return StandardDataFramesForPlotter(
+            zero_to_one_first=getattr(
+                self.zero_to_one_first.susceptibility_metrics, metric
+            ),
+            zero_to_one_best=getattr(
+                self.zero_to_one_best.susceptibility_metrics, metric
+            ),
+            one_to_zero_first=getattr(
+                self.one_to_zero_first.susceptibility_metrics, metric
+            ),
+            one_to_zero_best=getattr(
+                self.one_to_zero_best.susceptibility_metrics, metric
+            ),
+        )
 
 
 class FullAttackResults:
@@ -288,6 +314,33 @@ class FullAttackResults:
             example_type=RecordedExampleType.BEST
         )
 
+    def get_summary_df_for_condition(
+        self,
+        seq_length: int,
+        example_type: RecordedExampleType,
+        orig_label: int = None,
+        min_num_perts: int = None,
+        max_num_perts: int = None,
+    ) -> pd.DataFrame:
+        example_type_dispatch = {
+            RecordedExampleType.FIRST: self.first_examples_df,
+            RecordedExampleType.BEST: self.best_examples_df,
+        }
+        starting_df = example_type_dispatch[example_type]
+        filtered_df = starting_df[starting_df["seq_length"] == seq_length]
+        if orig_label is not None:
+            filtered_df = filtered_df[filtered_df["orig_label"] == orig_label]
+        if min_num_perts is not None:
+            filtered_df = filtered_df[
+                filtered_df["num_perts"] >= min_num_perts
+            ]
+        if max_num_perts is not None:
+            filtered_df = filtered_df[
+                filtered_df["num_perts"] <= max_num_perts
+            ]
+
+        return filtered_df
+
     def get_condition_analysis(
         self,
         seq_length: int,
@@ -309,36 +362,25 @@ class FullAttackResults:
         elements required of examples to summarize
         :return:
         """
-        example_type_dispatch = {
-            RecordedExampleType.FIRST: self.first_examples_df,
-            RecordedExampleType.BEST: self.best_examples_df,
-        }
 
         pert_summary_dispatch = {
             RecordedExampleType.FIRST: self.first_perts_summary,
             RecordedExampleType.BEST: self.best_perts_summary,
         }
 
-        starting_df = example_type_dispatch[example_type]
-        filtered_df = starting_df[starting_df["seq_length"] == seq_length]
-        if orig_label is not None:
-            filtered_df = filtered_df[filtered_df["orig_label"] == orig_label]
-        if min_num_perts is not None:
-            filtered_df = filtered_df[
-                filtered_df["num_perts"] >= min_num_perts
-            ]
-        if max_num_perts is not None:
-            filtered_df = filtered_df[
-                filtered_df["num_perts"] <= max_num_perts
-            ]
+        summary_df = self.get_summary_df_for_condition(
+            seq_length=seq_length,
+            example_type=example_type,
+            orig_label=orig_label,
+            min_num_perts=min_num_perts,
+            max_num_perts=max_num_perts,
+        )
 
         perts = pert_summary_dispatch[example_type].padded_perts[
-            filtered_df.index, :, :
+            summary_df.index, :, :
         ]
 
-        return AttackConditionSummary(examples_df=filtered_df, perts=perts)
-
-
+        return AttackConditionSummary(examples_df=summary_df, perts=perts)
 
     def get_standard_attack_condition_summaries(
         self,
@@ -376,3 +418,10 @@ class FullAttackResults:
                 max_num_perts=max_num_perts,
             ),
         )
+
+    # def get_data_for_susceptibility_plotter(self) -> SusceptibilityPlotterData:
+    #     return SusceptibilityPlotterData(
+    #         zero_to_one_first=asm.AttackSusceptibilityMetrics(
+    #
+    #         )
+    #     )
