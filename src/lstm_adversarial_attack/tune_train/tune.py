@@ -21,8 +21,8 @@ def main():
 
     tuner_driver = td.TunerDriver(
         device=cur_device,
-        continue_study_path=cfg_paths.ONGOING_TUNING_STUDY_PICKLE,
-        output_dir=cfg_paths.ONGOING_TUNING_STUDY_DIR,
+        # continue_study_path=cfg_paths.ONGOING_TUNING_STUDY_PICKLE,
+        # output_dir=cfg_paths.ONGOING_TUNING_STUDY_DIR,
     )
     my_completed_study = tuner_driver(num_trials=30)
 

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
+import lstm_adversarial_attack.config_paths as cfg_path
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.tune_train.hyperparameter_tuner as htu
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
@@ -26,6 +27,8 @@ class TunerDriver:
         self.device = device
         self.collate_fn = collate_fn
         self.continue_study_path = continue_study_path
+        if output_dir is None:
+            output_dir = rio.create_timestamped_dir(parent_path=cfg_path.HYPERPARAMETER_OUTPUT_DIR)
         self.output_dir = output_dir
         self.tuning_ranges = tuh.X19MLSTMTuningRanges()
 
