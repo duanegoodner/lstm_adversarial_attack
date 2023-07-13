@@ -12,7 +12,7 @@ from torch.utils.tensorboard import SummaryWriter
 from typing import Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_settings as cs
+import lstm_adversarial_attack.config_settings as cfg_set
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.config_paths as cfg_paths
@@ -34,18 +34,20 @@ class HyperParameterTuner:
         dataset: Dataset,
         collate_fn: Callable,
         tuning_ranges: tuh.X19MLSTMTuningRanges,
-        num_folds: int = cs.TUNER_NUM_FOLDS,
-        num_cv_epochs: int = cs.TUNER_NUM_CV_EPOCHS,
-        epochs_per_fold: int = cs.TUNER_EPOCHS_PER_FOLD,
-        fold_class: Callable = StratifiedKFold,
-        kfold_random_seed: int = cs.TUNER_KFOLD_RANDOM_SEED,
+        num_folds: int,
+        num_cv_epochs: int,
+        epochs_per_fold: int,
+        fold_class: Callable,
+        kfold_random_seed: int,
         cv_mean_metrics_of_interest: tuple[
             str
-        ] = cs.TUNER_CV_MEAN_METRICS_OF_INTEREST,
-        performance_metric: str = cs.TUNER_PERFORMANCE_METRIC,
-        optimization_direction: optuna.study.StudyDirection = cs.TUNER_OPTIMIZATION_DIRECTION,
-        output_dir: Path = None,
-        save_trial_info: bool = True,
+        ],
+        performance_metric: str,
+        optimization_direction: optuna.study.StudyDirection,
+        pruner: BasePruner,
+        hyperparameter_sampler: BaseSampler,
+        output_dir: Path,
+        # save_trial_info: bool = True,
         trial_prefix: str = "trial_",
         continue_study_path: Path = None,
     ):
@@ -67,23 +69,20 @@ class HyperParameterTuner:
             if optimization_direction == optuna.study.StudyDirection.MINIMIZE
             else "maximize"
         )
-        self.pruner = MedianPruner(
-            n_startup_trials=cs.TUNER_PRUNER_NUM_STARTUP_TRIALS,
-            n_warmup_steps=cs.TUNER_PRUNER_NUM_WARMUP_STEPS,
-        )
+        self.pruner = pruner
         self.cv_mean_metrics_of_interest = cv_mean_metrics_of_interest
         self.tuning_ranges = tuning_ranges
-        self.hyperparameter_sampler = TPESampler()
-        if output_dir is None:
-            output_dir = rio.create_timestamped_dir(
-                parent_path=cfg_paths.HYPERPARAMETER_OUTPUT_DIR
-            )
+        self.hyperparameter_sampler = hyperparameter_sampler
+        # if output_dir is None:
+        #     output_dir = rio.create_timestamped_dir(
+        #         parent_path=cfg_paths.HYPERPARAMETER_OUTPUT_DIR
+        #     )
         self.output_dir = output_dir
         self.tensorboard_output_dir = self.output_dir / "tensorboard"
         self.trainer_checkpoint_dir = self.output_dir / "checkpoints_trainer"
         self.tuner_checkpoint_dir = self.output_dir / "checkpoints_tuner"
         self.exporter = rio.ResourceExporter()
-        self.save_trial_info = save_trial_info
+        # self.save_trial_info = save_trial_info
         self.trial_prefix = trial_prefix
         self.continue_study_path = continue_study_path
 
@@ -306,12 +305,12 @@ class HyperParameterTuner:
             if trial.should_prune():
                 raise optuna.exceptions.TrialPruned()
 
-        if self.save_trial_info:
-            self.export_trial_info(
-                trial=trial,
-                trainers=objective_tools.trainers,
-                cv_means_log=objective_tools.cv_means_log,
-            )
+        # if self.save_trial_info:
+        self.export_trial_info(
+            trial=trial,
+            trainers=objective_tools.trainers,
+            cv_means_log=objective_tools.cv_means_log,
+        )
 
         return tuh.PerformanceSelector(
             optimize_direction=self.optimization_direction
