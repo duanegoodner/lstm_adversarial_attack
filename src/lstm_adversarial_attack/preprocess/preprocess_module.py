@@ -8,6 +8,15 @@ import lstm_adversarial_attack.preprocess.preprocess_resource as pr
 import lstm_adversarial_attack.resource_io as rio
 
 
+@dataclass
+class PreprocessModuleSettings(ABC):
+    """
+    Ensure all module's settings classes have output_dir attribute
+    """
+    output_dir: Path
+
+
+
 class PreprocessModule(ABC):
     """
     Base class for all modules used by Preprocessor.
@@ -15,7 +24,7 @@ class PreprocessModule(ABC):
     def __init__(
         self,
         name: str,
-        settings: dataclass,
+        settings: PreprocessModuleSettings,
         incoming_resource_refs: dataclass,
     ):
         """
@@ -38,6 +47,16 @@ class PreprocessModule(ABC):
         :return: dictionary with references to all files exported by module
         """
         self.process()
+        self.export_resource(
+            key="resource_refs",
+            resource=self.incoming_resource_refs,
+            path=self.settings.output_dir / "resource_refs.pickle"
+        )
+        self.export_resource(
+            key="settings",
+            resource=self.settings,
+            path=self.settings.output_dir / "settings.pickle"
+        )
         return self.exported_resources
 
     def import_csv(self, path: Path) -> pd.DataFrame:

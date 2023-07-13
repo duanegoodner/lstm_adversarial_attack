@@ -228,6 +228,8 @@ class HistogramPlotter:
         axes.set_title(title, loc="left")
         plt.show()
 
+        return fig
+
 
 if __name__ == "__main__":
     full_attack_results = ata.FullAttackResults.from_most_recent_attack()

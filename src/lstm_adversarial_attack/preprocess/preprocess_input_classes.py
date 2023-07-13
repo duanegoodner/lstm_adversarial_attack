@@ -1,12 +1,13 @@
 import numpy as np
 import pandas as pd
 import sys
+from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as lcs
-
+import lstm_adversarial_attack.preprocess.preprocess_module as pm
 
 @dataclass
 class PrefilterResourceRefs:
@@ -20,7 +21,7 @@ class PrefilterResourceRefs:
 
 
 @dataclass
-class PrefilterSettings:
+class PrefilterSettings(pm.PreprocessModuleSettings):
     """
     Container for objects imported by Prefilter
     """
@@ -62,7 +63,7 @@ class ICUStayMeasurementCombinerResourceRefs:
 
 
 @dataclass
-class ICUStayMeasurementCombinerSettings:
+class ICUStayMeasurementCombinerSettings(pm.PreprocessModuleSettings):
     """
     Container for ICUStayMeasurementCombiner config settings
     """
@@ -98,7 +99,7 @@ class FullAdmissionListBuilderResourceRefs:
 
 
 @dataclass
-class FullAdmissionListBuilderSettings:
+class FullAdmissionListBuilderSettings(pm.PreprocessModuleSettings):
     """
     Container for FullAdmissionListBuilder config settings
     """
@@ -154,7 +155,7 @@ class FeatureBuilderResourceRefs:
 
 
 @dataclass
-class FeatureBuilderSettings:
+class FeatureBuilderSettings(pm.PreprocessModuleSettings):
     """
     Container for FeatureBuilder config settings
     """
@@ -179,7 +180,7 @@ class FeatureFinalizerResourceRefs:
 
 
 @dataclass
-class FeatureFinalizerSettings:
+class FeatureFinalizerSettings(pm.PreprocessModuleSettings):
     """
     Container for FeatureFinalizer config settings
     """

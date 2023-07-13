@@ -18,6 +18,7 @@ if __name__ == "__main__":
         title="Perturbation Element Histograms",
         perts_dfs=attack_condition_summaries.data_for_histogram_plotter,
     )
+
     histogram_plotter.plot_all_histograms()
     histogram_plotter.plot_single_histogram(
         plot_indices=(0, 1),

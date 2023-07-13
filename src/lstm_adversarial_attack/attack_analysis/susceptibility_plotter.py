@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -7,6 +8,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.colors import LogNorm
 import lstm_adversarial_attack.attack_analysis.attack_analysis as ata
+import lstm_adversarial_attack.resource_io as rio
 
 
 @dataclass
@@ -175,7 +177,10 @@ class SusceptibilityPlotter:
         heatmap.axvline(x=0, color="k", linewidth=2)
         heatmap.axvline(x=source_df.index.max() + 1, color="k", linewidth=2)
 
-    def plot_susceptibilities(self, color_bar_title: str = ""):
+    def plot_susceptibilities(
+        self,
+        color_bar_title: str = "",
+    ) -> plt.Figure:
         """
         Generates all heatmap susceptibility plots in figure
         """
@@ -208,6 +213,8 @@ class SusceptibilityPlotter:
 
         plt.show()
 
+        return fig
+
 
 def plot_metric_maps(
     seq_length: int,
@@ -229,25 +236,30 @@ def plot_metric_maps(
         ),
         main_plot_title=plot_title,
     )
-    plotter.plot_susceptibilities(color_bar_title=colorbar_title)
+
+    susceptibility_fig = plotter.plot_susceptibilities(
+        color_bar_title=colorbar_title
+    )
+
+    return susceptibility_fig
 
 
 if __name__ == "__main__":
-    plot_metric_maps(
+    gpp_ij_figure = plot_metric_maps(
         seq_length=48,
         metric="gpp_ij",
         plot_title="Perturbation Probability",
         colorbar_title="Perturbation Probability",
     )
-    plot_metric_maps(
+    ganzp_ij_figure = plot_metric_maps(
         seq_length=48,
         metric="ganzp_ij",
         plot_title="Mean Magnitude of Non-zero Perturbation Elements",
         colorbar_title="Perturbation Element Magnitude",
     )
-    plot_metric_maps(
+    sensitivity_ij_figure = plot_metric_maps(
         seq_length=48,
         metric="sensitivity_ij",
         plot_title="Perturbation Sensitivity",
-        colorbar_title="Perturbation Sensitivity"
+        colorbar_title="Perturbation Sensitivity",
     )
