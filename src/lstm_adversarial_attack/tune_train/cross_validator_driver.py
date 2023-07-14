@@ -2,7 +2,9 @@ import sys
 import torch
 from pathlib import Path
 from torch.utils.data import Dataset
+
 sys.path.append(str(Path(__file__).parent.parent.parent))
+import lstm_adversarial_attack.config_paths as cfg_path
 import lstm_adversarial_attack.config_settings as lcs
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.tune_train.cross_validator as cv
@@ -15,6 +17,7 @@ class CrossValidatorDriver:
 
     Use as isolation layer to avoid modifying CrossValidator code when testing.
     """
+
     def __init__(
         self,
         device: torch.device,
@@ -35,20 +38,31 @@ class CrossValidatorDriver:
 
     @classmethod
     def from_study_path(
-        cls, device: torch.device, dataset: Dataset, study_path: Path
+        cls,
+        device: torch.device,
+        dataset: Dataset,
+        study_path: Path,
+        num_folds: int = lcs.CV_DRIVER_NUM_FOLDS,
+        epochs_per_fold: int = lcs.CV_DRIVER_EPOCHS_PER_FOLD
     ):
         """
         Creates CrossValidationDriver from path to optuna.Study pickle file
         :param device: device to run on
         :param dataset: full dataset for cross validation
         :param study_path: path to optuna.Study pickle file
+        :param num_folds: number cross-validation folds
+        :param epochs_per_fold: number training epochs to run on each fold
         """
         study = rio.ResourceImporter().import_pickle_to_object(path=study_path)
         hyperparameters = tuh.X19LSTMHyperParameterSettings(
             **study.best_params
         )
         return cls(
-            device=device, dataset=dataset, hyperparameters=hyperparameters
+            device=device,
+            dataset=dataset,
+            hyperparameters=hyperparameters,
+            num_folds=num_folds,
+            epochs_per_fold=epochs_per_fold
         )
 
     def run(self):
@@ -62,6 +76,6 @@ class CrossValidatorDriver:
             num_folds=self.num_folds,
             epochs_per_fold=self.epochs_per_fold,
             eval_interval=self.eval_interval,
-            evals_per_checkpoint=self.evals_per_checkpoint
+            evals_per_checkpoint=self.evals_per_checkpoint,
         )
         cross_validator.run_all_folds()

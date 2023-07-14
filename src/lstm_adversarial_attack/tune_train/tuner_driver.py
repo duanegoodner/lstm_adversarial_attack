@@ -26,8 +26,7 @@ class TunerDriver:
         self,
         device: torch.device,
         collate_fn: Callable = xmd.x19m_collate_fn,
-        continue_study_path: Path = None,
-        # output_dir: Path = None,
+        continue_tuning_dir: Path = None,
         num_folds: int = cfg_set.TUNER_NUM_FOLDS,
         num_cv_epochs: int = cfg_set.TUNER_NUM_CV_EPOCHS,
         epochs_per_fold: int = cfg_set.TUNER_EPOCHS_PER_FOLD,
@@ -41,14 +40,13 @@ class TunerDriver:
     ):
         self.device = device
         self.collate_fn = collate_fn
-        self.continue_study_path = continue_study_path
-        if self.continue_study_path is not None:
-            self.output_dir = self.continue_study_path.parent.parent
+        self.continue_tuning_dir = continue_tuning_dir
+        if self.continue_tuning_dir is not None:
+            self.output_dir = self.continue_tuning_dir.parent.parent
         else:
             self.output_dir = rio.create_timestamped_dir(
                 parent_path=cfg_path.HYPERPARAMETER_OUTPUT_DIR
             )
-        # self.output_dir = output_dir
         self.tuning_ranges = tuh.X19MLSTMTuningRanges()
         self.num_folds = num_folds
         self.num_cv_epochs = num_cv_epochs
@@ -68,15 +66,6 @@ class TunerDriver:
         )
         self.cv_mean_metrics_of_interest = cv_mean_metrics_of_interest
         self.hyperparameter_sampler = TPESampler()
-
-        # self.tuner = htu.HyperParameterTuner(
-        #     device=device,
-        #     dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
-        #     collate_fn=collate_fn,
-        #     tuning_ranges=tuh.X19MLSTMTuningRanges(),
-        #     continue_study_path=continue_study_path,
-        #     output_dir=output_dir
-        # )
 
     def run(self, num_trials: int) -> optuna.Study:
         """
@@ -101,7 +90,7 @@ class TunerDriver:
             num_cv_epochs=self.num_cv_epochs,
             epochs_per_fold=self.epochs_per_fold,
             fold_class=self.fold_class,
-            continue_study_path=self.continue_study_path,
+            continue_tuning_dir=self.continue_tuning_dir,
             output_dir=self.output_dir,
             kfold_random_seed=self.kfold_random_seed,
             cv_mean_metrics_of_interest=self.cv_mean_metrics_of_interest,

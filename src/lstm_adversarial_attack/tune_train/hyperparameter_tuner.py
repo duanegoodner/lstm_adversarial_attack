@@ -47,9 +47,8 @@ class HyperParameterTuner:
         pruner: BasePruner,
         hyperparameter_sampler: BaseSampler,
         output_dir: Path,
-        # save_trial_info: bool = True,
         trial_prefix: str = "trial_",
-        continue_study_path: Path = None,
+        continue_tuning_dir: Path = None,
     ):
         self.device = device
         self.dataset = dataset
@@ -84,7 +83,7 @@ class HyperParameterTuner:
         self.exporter = rio.ResourceExporter()
         # self.save_trial_info = save_trial_info
         self.trial_prefix = trial_prefix
-        self.continue_study_path = continue_study_path
+        self.continue_tuning_dir = continue_tuning_dir
 
     def create_datasets(self) -> list[tuh.TrainEvalDatasetPair]:
         """
@@ -373,9 +372,9 @@ class HyperParameterTuner:
             f"{self.tuner_checkpoint_dir}\n\n"
         )
 
-        if self.continue_study_path is not None:
+        if self.continue_tuning_dir is not None:
             study = rio.ResourceImporter().import_pickle_to_object(
-                path=self.continue_study_path
+                path=self.continue_tuning_dir / "checkpoints_tuner" / "optuna_study.pickle"
             )
             assert study.direction == self.optimization_direction
         else:

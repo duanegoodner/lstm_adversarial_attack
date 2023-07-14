@@ -21,6 +21,8 @@ class SingleFoldTrainer:
         device: torch.device,
         dataset: Dataset,
         train_dataset_fraction: float,
+        study_path: Path = cfg_paths.ONGOING_TUNING_STUDY_PICKLE,
+        num_epochs: int = lcs.CV_DRIVER_EPOCHS_PER_FOLD
     ):
         """
         :param device: device to run on
@@ -30,6 +32,8 @@ class SingleFoldTrainer:
         self.device = device
         self.dataset = dataset
         self.train_dataset_fraction = train_dataset_fraction
+        self.study_path = study_path
+        self.num_epochs = num_epochs
 
     def run(self):
         """
@@ -52,7 +56,7 @@ class SingleFoldTrainer:
         driver = td.TrainerDriver.from_optuna_study_path(
             device=self.device,
             train_eval_dataset_pair=train_eval_pair,
-            study_path=cfg_paths.ONGOING_TUNING_STUDY_PICKLE,
+            study_path=self.study_path,
         )
 
         #  When trying to restart post-checkpoint w/ code below instead, get big jump in
@@ -68,7 +72,7 @@ class SingleFoldTrainer:
 
 
         driver.run(
-            num_epochs=lcs.CV_DRIVER_EPOCHS_PER_FOLD,
+            num_epochs=self.num_epochs,
             eval_interval=lcs.CV_DRIVER_EVAL_INTERVAL,
             evals_per_checkpoint=lcs.CV_DRIVER_EVALS_PER_CHECKPOINT,
             save_checkpoints=True,
