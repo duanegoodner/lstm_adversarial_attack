@@ -36,24 +36,24 @@ def main(
     else:
         cur_device = torch.device("cpu")
 
-    if num_folds > 1:
-        cv_driver = cvd.CrossValidatorDriver.from_study_path(
-            device=cur_device,
-            dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
-            study_path=study_path,
-            num_folds=num_folds,
-            epochs_per_fold=epochs_per_fold
-        )
-        cv_driver.run()
-    else:
-        single_fold_trainer = sft.SingleFoldTrainer(
-            device=cur_device,
-            dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
-            train_dataset_fraction=1 - 1 / cfg_set.CV_DRIVER_NUM_FOLDS,
-            study_path=study_path,
-            num_epochs=epochs_per_fold
-        )
-        single_fold_trainer.run()
+    # if num_folds > 1:
+    cv_driver = cvd.CrossValidatorDriver.from_study_path(
+        device=cur_device,
+        dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
+        study_path=study_path,
+        num_folds=num_folds,
+        epochs_per_fold=epochs_per_fold
+    )
+    cv_driver.run()
+    # else:
+    #     single_fold_trainer = sft.SingleFoldTrainer(
+    #         device=cur_device,
+    #         dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
+    #         train_dataset_fraction=1 - 1 / cfg_set.CV_DRIVER_NUM_FOLDS,
+    #         study_path=study_path,
+    #         num_epochs=epochs_per_fold
+    #     )
+    #     single_fold_trainer.run()
 
 
 if __name__ == "__main__":
