@@ -15,7 +15,7 @@ data/attack/*
 !data/attack/attack_hyperparameter_tuning/2023-07-01_11_03_13.591090_max_sparse_small_max
 
 
-
+data/tune_train/*
 data/tune_train/model_assessments/cross_validation/*
 !data/tune_train/model_assessments/cross_validation/.gitkeep
 data/tune_train/model_assessments/single_fold_training/*
