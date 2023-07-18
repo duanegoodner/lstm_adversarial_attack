@@ -14,7 +14,7 @@ import lstm_adversarial_attack.config_paths as cfg_paths
 
 optuna_output_dir = (
     cfg_paths.ATTACK_HYPERPARAMETER_TUNING
-    / "2023-07-01_11_03_13.591090_max_sparse_small_max"
+    / "2023-07-01_11_03_13.591090"
 )
 study_path = optuna_output_dir / "optuna_study.pickle"
 trial_result_paths = sorted(

@@ -1,7 +1,17 @@
 from dataclasses import dataclass
+from enum import auto, Enum
 from pathlib import Path
 import lstm_adversarial_attack.config_paths as lcp
 import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs
+
+
+class ModelAssessmentType(Enum):
+    """
+    No longer used, but keep here for compatibility with pickle files created
+    when ModelRetriever used ModelAssessmentType
+    """
+    KFOLD = auto()
+    SINGLE_FOLD = auto()
 
 
 @dataclass

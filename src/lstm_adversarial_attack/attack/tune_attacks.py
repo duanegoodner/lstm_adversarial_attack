@@ -1,6 +1,8 @@
+import argparse
 import sys
 import optuna
 import torch
+from os import PathLike
 from pathlib import Path
 from typing import Callable
 
@@ -150,7 +152,7 @@ class AttackTunerDriver:
 def start_new_tuning(
     num_trials: int,
     objective: Callable[[ards.TrainerSuccessSummary], float],
-    target_model_assessment_dir: Path = None,
+    target_model_dir: Path = None,
 ) -> optuna.Study:
     """
     Creates a new AttackTunerDriver. Causes new Optuna Study to be created via
@@ -158,7 +160,7 @@ def start_new_tuning(
     :param num_trials: max num Optuna trials to run
     :param objective: method for calculating return val of tuner objective_fn
     from an attack TrainerResult
-    :param target_model_assessment_dir: directory containing model and params
+    :param target_model_dir: directory containing model and params
     files for model to be attacked.
     :return: an Optuna study object (which also get saved as pickle)
     """
@@ -171,7 +173,7 @@ def start_new_tuning(
         device=device,
         selection_metric=cvs.EvalMetric.VALIDATION_LOSS,
         optimize_direction=cvs.OptimizeDirection.MIN,
-        training_output_dir=target_model_assessment_dir,
+        training_output_dir=target_model_dir,
         objective=objective,
     )
 
@@ -215,10 +217,74 @@ def resume_tuning(
     )
 
 
-if __name__ == "__main__":
-    initial_study = start_new_tuning(
-        num_trials=100,
-        objective=aht.AttackTunerObjectivesBuilder.sparse_small_max(),
+def main(target_model_dir: str, existing_study_dir: str, num_trials: int):
+    assert target_model_dir is None or existing_study_dir is None
+
+    if num_trials is None:
+        num_trials = cfg_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS
+    target_model_dir_path = (
+        None if target_model_dir is None else Path(target_model_dir)
     )
 
-    # continued_study = resume_tuning(num_trials=60)
+    if existing_study_dir is None:
+        initial_study = start_new_tuning(
+            num_trials=num_trials,
+            objective=aht.AttackTunerObjectivesBuilder.sparse_small_max(),
+            target_model_dir=target_model_dir_path,
+        )
+        return initial_study
+
+    else:
+        continued_study = resume_tuning(
+            num_trials=num_trials, ongoing_tuning_dir=Path(existing_study_dir)
+        )
+        return continued_study
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description=(
+            "Runs hyperparameter tuning on the attack algorithm. "
+            "If no args passed, will start a new Optuna study "
+            "using the model data from the most recent data saved in "
+            "data/tune_train/cross_validation (uses fold with "
+            "median or near median best performance)"
+        )
+    )
+    parser.add_argument(
+        "-m",
+        "--target_model_dir",
+        type=str,
+        action="store",
+        nargs="?",
+        help=(
+            "Path to CV assessment directory with CV data and trained params "
+            "to use for target model. If value passed for this arg, cannot "
+            "use the -s (existing_study_dir) option."
+        ),
+    )
+    parser.add_argument(
+        "-n",
+        "--num_trials",
+        type=int,
+        action="store",
+        nargs="?",
+        help="Number of trials to run",
+    )
+
+    parser.add_argument(
+        "-s",
+        "--existing_study_dir",
+        type=str,
+        action="store",
+        nargs="?",
+        help=(
+            "Path to parent directory of existing Optuna study to use as "
+            "starting point for continued (ongoing) training. If value is "
+            "provided for this arg, cannot use the -m (target_model_dir)"
+            " option."
+        ),
+    )
+
+    args_namespace = parser.parse_args()
+    main(**args_namespace.__dict__)
