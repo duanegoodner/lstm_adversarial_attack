@@ -16,7 +16,6 @@ def main() -> ards.TrainerSuccessSummary:
     """
     tua.start_new_tuning(
         num_trials=100,
-        target_model_assessment_type=amr.ModelAssessmentType.KFOLD,
         objective=aht.AttackTunerObjectivesBuilder.max_num_nonzero_perts(
             max_perts=1
         ),

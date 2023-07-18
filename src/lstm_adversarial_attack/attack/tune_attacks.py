@@ -70,7 +70,6 @@ class AttackTunerDriver:
     def from_model_assessment(
         cls,
         device: torch.device,
-        assessment_type: amr.ModelAssessmentType,
         selection_metric: cvs.EvalMetric,
         optimize_direction: cvs.OptimizeDirection,
         objective: Callable[[ards.TrainerSuccessSummary], float],
@@ -80,7 +79,6 @@ class AttackTunerDriver:
         Creates an AttackTunerDriver using info from either a cross-validation
         or single-fold assessment of model to be attacked.
         :param device: device to run on
-        :param assessment_type: single fold or cv assessment of target model
         :param selection_metric: metric for choosing which target
         model checkpoint to use
         :param optimize_direction: min or max
@@ -90,12 +88,10 @@ class AttackTunerDriver:
         :return: an AttackTunerDriver instance
         """
         model_retriever = amr.ModelRetriever(
-            assessment_type=assessment_type,
             training_output_dir=training_output_dir,
         )
 
         model_path_checkpoint_pair = model_retriever.get_model(
-            assessment_type=assessment_type,
             eval_metric=selection_metric,
             optimize_direction=optimize_direction,
         )
@@ -153,7 +149,6 @@ class AttackTunerDriver:
 
 def start_new_tuning(
     num_trials: int,
-    target_model_assessment_type: amr.ModelAssessmentType,
     objective: Callable[[ards.TrainerSuccessSummary], float],
     target_model_assessment_dir: Path = None,
 ) -> optuna.Study:
@@ -161,7 +156,6 @@ def start_new_tuning(
     Creates a new AttackTunerDriver. Causes new Optuna Study to be created via
     AttackHyperParamteterTuner that the driver creates.
     :param num_trials: max num Optuna trials to run
-    :param target_model_assessment_type: single fold or cross validation
     :param objective: method for calculating return val of tuner objective_fn
     from an attack TrainerResult
     :param target_model_assessment_dir: directory containing model and params
@@ -175,7 +169,6 @@ def start_new_tuning(
 
     tuner_driver = AttackTunerDriver.from_model_assessment(
         device=device,
-        assessment_type=target_model_assessment_type,
         selection_metric=cvs.EvalMetric.VALIDATION_LOSS,
         optimize_direction=cvs.OptimizeDirection.MIN,
         training_output_dir=target_model_assessment_dir,
@@ -225,7 +218,6 @@ def resume_tuning(
 if __name__ == "__main__":
     initial_study = start_new_tuning(
         num_trials=100,
-        target_model_assessment_type=amr.ModelAssessmentType.KFOLD,
         objective=aht.AttackTunerObjectivesBuilder.sparse_small_max(),
     )
 

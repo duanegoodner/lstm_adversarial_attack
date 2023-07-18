@@ -1,13 +1,7 @@
 from dataclasses import dataclass
-from enum import Enum, auto
 from pathlib import Path
 import lstm_adversarial_attack.config_paths as lcp
 import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs
-
-
-class ModelAssessmentType(Enum):
-    KFOLD = auto()
-    SINGLE_FOLD = auto()
 
 
 @dataclass
@@ -18,56 +12,38 @@ class ModelPathCheckpointPair:
 
 class ModelRetriever:
     """
-    Retrieves model and best checkpoint info from CV assessment or single-fold
-    assessment (training) of model.
+    Retrieves model and best checkpoint info from CV assessment of model.
     """
-    _dispatch_dict = {
-        ModelAssessmentType.KFOLD: lcp.CV_ASSESSMENT_OUTPUT_DIR,
-        ModelAssessmentType.SINGLE_FOLD: lcp.SINGLE_FOLD_OUTPUT_DIR,
-    }
 
     def __init__(
         self,
-        assessment_type: ModelAssessmentType,
         training_output_dir: Path = None,
     ):
         """
-        :param assessment_type: enum corresponding to the type of assessment
-        we will pull data from (single fold or CV)
         :param training_output_dir: directory containing the assessment
         (training) results
         """
-        self.assessment_type = assessment_type
         if training_output_dir is None:
             training_output_dir = cvs.get_newest_sub_dir(
-                path=self._dispatch_dict[assessment_type]
+                path=lcp.CV_ASSESSMENT_OUTPUT_DIR
             )
         self.training_output_dir = training_output_dir
         self.checkpoints_dir = self.training_output_dir / "checkpoints"
         self.model_path = self.training_output_dir / "model.pickle"
 
-    @property
-    def _retriever_dispatch(self) -> dict:
-        return {
-            ModelAssessmentType.SINGLE_FOLD: self.get_single_fold_trained_model,
-            ModelAssessmentType.KFOLD: self.get_cv_trained_model,
-        }
-
     def get_model(
         self,
-        assessment_type: ModelAssessmentType,
         eval_metric: cvs.EvalMetric,
         optimize_direction: cvs.OptimizeDirection,
     ) -> ModelPathCheckpointPair:
         """
         Calls appropriate method for model and checkpoint retrieval (depends
         on type of assessment we are pulling data from)
-        :param assessment_type: CV or single fold
         :param eval_metric: the metric to use as checkpoint selection criteria
         :param optimize_direction: min or max (val of selection criteria)
         :return: a ModelPathCheckpointPair
         """
-        return self._retriever_dispatch[assessment_type](
+        return self.get_cv_trained_model(
             eval_metric, optimize_direction
         )
 
@@ -124,7 +100,6 @@ class ModelRetriever:
 
 if __name__ == "__main__":
     kfold_model_retriever = ModelRetriever(
-        assessment_type=ModelAssessmentType.KFOLD
     )
     kfold_model_checkpoint_pair = kfold_model_retriever.get_cv_trained_model(
         metric=cvs.EvalMetric.VALIDATION_LOSS,
