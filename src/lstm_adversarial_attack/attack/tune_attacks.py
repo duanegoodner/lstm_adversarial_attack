@@ -4,7 +4,7 @@ import optuna
 import torch
 from os import PathLike
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Any
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_data_structs as ads
@@ -26,8 +26,9 @@ class AttackTunerDriver:
         self,
         device: torch.device,
         target_model_path: Path,
-        objective: Callable[[ards.TrainerSuccessSummary], float],
+        objective: Callable[..., float],
         target_model_checkpoint: dict,
+        objective_extra_kwargs: dict[str, Any] = None,
         tuning_ranges: ads.AttackTuningRanges = None,
         output_dir: Path = None,
     ):
@@ -47,6 +48,7 @@ class AttackTunerDriver:
         self.device = device
         self.target_model_path = target_model_path
         self.objective = objective
+        self.objective_extra_kwargs = objective_extra_kwargs
         self.target_model_checkpoint = target_model_checkpoint
         if tuning_ranges is None:
             tuning_ranges = ads.AttackTuningRanges(
@@ -75,6 +77,7 @@ class AttackTunerDriver:
         selection_metric: cvs.EvalMetric,
         optimize_direction: cvs.OptimizeDirection,
         objective: Callable[[ards.TrainerSuccessSummary], float],
+        objective_extra_kwargs: dict[str, Any] = None,
         training_output_dir: Path = None,
     ):
         """
@@ -103,6 +106,7 @@ class AttackTunerDriver:
             target_model_path=model_path_checkpoint_pair.model_path,
             target_model_checkpoint=model_path_checkpoint_pair.checkpoint,
             objective=objective,
+            objective_extra_kwargs=objective_extra_kwargs
         )
 
     def run(self, num_trials: int) -> optuna.Study:
@@ -151,7 +155,8 @@ class AttackTunerDriver:
 
 def start_new_tuning(
     num_trials: int,
-    objective: Callable[[ards.TrainerSuccessSummary], float],
+    objective: Callable[..., float],
+    objective_extra_kwargs: dict[str, Any] = None,
     target_model_dir: Path = None,
 ) -> optuna.Study:
     """
@@ -175,6 +180,7 @@ def start_new_tuning(
         optimize_direction=cvs.OptimizeDirection.MIN,
         training_output_dir=target_model_dir,
         objective=objective,
+        objective_extra_kwargs=objective_extra_kwargs
     )
 
     print(
@@ -245,7 +251,7 @@ def main(
     if existing_study_dir is None:
         initial_study = start_new_tuning(
             num_trials=num_trials,
-            objective=aht.AttackTunerObjectivesBuilder.sparse_small_max(),
+            objective=aht.AttackTunerObjectives.sparse_small_max,
             target_model_dir=target_model_dir_path,
         )
         return initial_study
