@@ -1,3 +1,4 @@
+import argparse
 import sys
 import torch
 from pathlib import Path
@@ -10,6 +11,7 @@ import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.config_paths as cfg_paths
+import lstm_adversarial_attack.config_settings as cfg_settings
 
 from lstm_adversarial_attack.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex,
@@ -172,7 +174,7 @@ class AttackDriver:
     def from_attack_hyperparameter_tuning(
         cls,
         device: torch.device,
-        tuning_output_dir: Path = None,
+        tuning_result_dir: Path = None,
         max_num_samples: int = None,
         epochs_per_batch: int = None,
         sample_selection_seed: int = None,
@@ -182,7 +184,7 @@ class AttackDriver:
         """
         Creates AttackDriver using output from previous hyperparameter tuning
         :param device: device to run on
-        :param tuning_output_dir: directory where tuning data is saved
+        :param tuning_result_dir: directory where tuning data is saved
         :param max_num_samples: number of candidate samples for attack
         :param epochs_per_batch: num attack iterations per batch
         :param sample_selection_seed: random seed to use when selecting subset
@@ -191,15 +193,15 @@ class AttackDriver:
         :param checkpoint_interval: number of batches per checkpoint
         :return:
         """
-        if tuning_output_dir is None:
-            tuning_output_dir = ps.subdir_with_latest_content_modification(
+        if tuning_result_dir is None:
+            tuning_result_dir = ps.subdir_with_latest_content_modification(
                 root_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
             )
         optuna_study = rio.ResourceImporter().import_pickle_to_object(
-            path=tuning_output_dir / "optuna_study.pickle"
+            path=tuning_result_dir / "optuna_study.pickle"
         )
         tuner_driver = rio.ResourceImporter().import_pickle_to_object(
-            path=tuning_output_dir / "attack_tuner_driver.pickle"
+            path=tuning_result_dir / "attack_tuner_driver.pickle"
         )
         if epochs_per_batch is None:
             epochs_per_batch = tuner_driver.epochs_per_batch
@@ -257,25 +259,26 @@ class AttackDriver:
         return train_result
 
 
-def attack_with_tuned_params(
-    sample_selection_seed: int = 2023, checkpoint_interval: int = 50
-):
+def main(tuning_result_dir: str) -> ards.TrainerSuccessSummary:
     """
-    Runs attack on dataset using best hyperparameters from tuning session(s)
-    :param sample_selection_seed:
-    :param checkpoint_interval:
-    :return: TrainerSuccessSummary with attack results and initial analysis
-    of perturbations that produced adversarial examples
+    Runs attack on dataset
+    :param tuning_result_dir: path to directory containing attack tuning
+    result to use for full attack
     """
     if torch.cuda.is_available():
         cur_device = torch.device("cuda:0")
     else:
         cur_device = torch.device("cpu")
 
+    tuning_result_dir_path = (
+        Path(tuning_result_dir) if tuning_result_dir is not None else None
+    )
+
     attack_driver = AttackDriver.from_attack_hyperparameter_tuning(
         device=cur_device,
-        sample_selection_seed=sample_selection_seed,
-        checkpoint_interval=checkpoint_interval,
+        sample_selection_seed=cfg_settings.ATTACK_SAMPLE_SELECTION_SEED,
+        checkpoint_interval=cfg_settings.ATTACK_CHECKPOINT_INTERVAL,
+        tuning_result_dir=tuning_result_dir_path
     )
     trainer_result = attack_driver()
     success_summary = ards.TrainerSuccessSummary(trainer_result=trainer_result)
@@ -284,4 +287,17 @@ def attack_with_tuned_params(
 
 
 if __name__ == "__main__":
-    cur_success_summary = attack_with_tuned_params()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-t",
+        "--tuning_result_dir",
+        action="store",
+        nargs="?",
+        help=(
+            "Path to directory containing attack tuning results to use for "
+            "attack on full dataset. Defaults to most recent tuning "
+            "result."
+        ),
+    )
+    args_namespace = parser.parse_args()
+    cur_success_summary = main(**args_namespace.__dict__)
