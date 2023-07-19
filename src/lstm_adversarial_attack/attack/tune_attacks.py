@@ -217,7 +217,23 @@ def resume_tuning(
     )
 
 
-def main(target_model_dir: str, existing_study_dir: str, num_trials: int):
+def main(
+    target_model_dir: str = None,
+    existing_study_dir: str = None,
+    num_trials: int = None,
+) -> optuna.Study:
+    """
+    Tunes hyperparameters of an AdversarialAttackTrainer and its
+    AdversarialAttacker. Can accept target_model_dir OR existing_study_dir or
+    neither, but not both. If no args provided, starts new study using most
+    recent cross-validation training results to build target model.
+    :param target_model_dir: Directory containing model training results to
+    use to create new attack target.
+    :param existing_study_dir: directory containing an existing optuna.Study
+    :param num_trials: number of trials to run. defaults to
+    config_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS
+    :return: an optuna.Study object with results of completed trials
+    """
     assert target_model_dir is None or existing_study_dir is None
 
     if num_trials is None:
