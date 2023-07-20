@@ -20,8 +20,8 @@ data/backups
 data/tune_train/*
 data/tune_train/cross_validation/*
 !data/tune_train/cross_validation/.gitkeep
-data/tune_train/model_assessments/single_fold_training/*
-!data/tune_train/model_assessments/single_fold_training/.gitkeep
+!data/tune_train/cross_validation/2023-06-17_23_57_23.366142
+
 
 data/query_db/*
 !data/query_db/.gitkeep
