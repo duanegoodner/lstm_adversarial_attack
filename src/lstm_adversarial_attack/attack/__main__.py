@@ -5,7 +5,7 @@ import lstm_adversarial_attack.attack.attack as atk
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.attack.attack_hyperparameter_tuner as aht
 import lstm_adversarial_attack.attack.model_retriever as amr
-import lstm_adversarial_attack.attack.tune_attacks as tua
+import lstm_adversarial_attack.attack.attack_tuner_driver as tua
 
 
 def main() -> ards.TrainerSuccessSummary:

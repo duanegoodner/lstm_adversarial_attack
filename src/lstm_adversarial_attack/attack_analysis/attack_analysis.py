@@ -141,7 +141,7 @@ class FullAttackResults:
 
     @classmethod
     def from_most_recent_attack(cls):
-        result_dir = ps.subdir_with_latest_content_modification(
+        result_dir = ps.most_recently_modified_subdir(
             root_path=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
         )
         final_results = list(result_dir.glob("*final_attack_result.pickle"))

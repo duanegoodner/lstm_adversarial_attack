@@ -47,29 +47,18 @@ PREPROCESS_OUTPUT_FILES = {
 
 TUNE_TRAIN_OUTPUT_DIR = DATA_DIR / "tune_train"
 
-
-HYPERPARAMETER_OUTPUT_DIR = TUNE_TRAIN_OUTPUT_DIR / "hyperparameter_tuning"
-
 # ##### Model Hyperparameter Tuning
+HYPERPARAMETER_OUTPUT_DIR = TUNE_TRAIN_OUTPUT_DIR / "hyperparameter_tuning"
 ONGOING_TUNING_STUDY_DIR = HYPERPARAMETER_OUTPUT_DIR / "continued_trials"
 ONGOING_TUNING_STUDY_PICKLE = (
     ONGOING_TUNING_STUDY_DIR / "checkpoints_tuner" / "optuna_study.pickle"
 )
-# CONTINUE_STUDY_PATH = (
-#     HYPERPARAMETER_OUTPUT_DIR
-#     / "continued_trials"
-#     / "checkpoints_tuner"
-#     / "optuna_study.pickle"
-# )
 
 # ##### Cross Validation Assessment Output #####
-# MODEL_ASSESSMENTS_DIR = TUNE_TRAIN_OUTPUT_DIR / "model_assessments"
 CV_ASSESSMENT_OUTPUT_DIR = TUNE_TRAIN_OUTPUT_DIR / "cross_validation"
-# SINGLE_FOLD_OUTPUT_DIR = MODEL_ASSESSMENTS_DIR / "single_fold_training"
 
 
 # DEFAULT_ATTACK_TARGET_DIR = SINGLE_FOLD_OUTPUT_DIR / "default_attack_target"
-
 ATTACK_OUTPUT_DIR = DATA_DIR / "attack"
 ATTACK_HYPERPARAMETER_TUNING = (
     ATTACK_OUTPUT_DIR / "attack_hyperparameter_tuning"

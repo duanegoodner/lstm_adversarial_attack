@@ -194,7 +194,7 @@ class AttackDriver:
         :return:
         """
         if tuning_result_dir is None:
-            tuning_result_dir = ps.subdir_with_latest_content_modification(
+            tuning_result_dir = ps.most_recently_modified_subdir(
                 root_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
             )
         optuna_study = rio.ResourceImporter().import_pickle_to_object(

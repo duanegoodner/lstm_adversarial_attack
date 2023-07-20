@@ -14,6 +14,8 @@ data/attack/*
 !data/attack/attack_hyperparameter_tuning/2023-06-30_10_52_24.059982
 !data/attack/attack_hyperparameter_tuning/2023-07-01_11_03_13.591090
 
+data/backups
+
 
 data/tune_train/*
 data/tune_train/cross_validation/*

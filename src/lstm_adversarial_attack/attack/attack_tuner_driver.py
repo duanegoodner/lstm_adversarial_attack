@@ -106,7 +106,7 @@ class AttackTunerDriver:
             target_model_path=model_path_checkpoint_pair.model_path,
             target_model_checkpoint=model_path_checkpoint_pair.checkpoint,
             objective=objective,
-            objective_extra_kwargs=objective_extra_kwargs
+            objective_extra_kwargs=objective_extra_kwargs,
         )
 
     def run(self, num_trials: int) -> optuna.Study:
@@ -180,7 +180,7 @@ def start_new_tuning(
         optimize_direction=cvs.OptimizeDirection.MIN,
         training_output_dir=target_model_dir,
         objective=objective,
-        objective_extra_kwargs=objective_extra_kwargs
+        objective_extra_kwargs=objective_extra_kwargs,
     )
 
     print(
@@ -227,20 +227,32 @@ def main(
     target_model_dir: str = None,
     existing_study_dir: str = None,
     num_trials: int = None,
+    objective_name: str = None,
+    max_perts: int = None,
 ) -> optuna.Study:
     """
     Tunes hyperparameters of an AdversarialAttackTrainer and its
     AdversarialAttacker. Can accept target_model_dir OR existing_study_dir or
     neither, but not both. If no args provided, starts new study using most
     recent cross-validation training results to build target model.
+
     :param target_model_dir: Directory containing model training results to
     use to create new attack target.
     :param existing_study_dir: directory containing an existing optuna.Study
     :param num_trials: number of trials to run. defaults to
     config_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS
+    :param objective_name: name of method to use from AttackTunerObjectives
+    :param max_perts: value to use as the max_num_perts arg when using
+    AttackTunerObjectives.max_num_nonzero_perts (not needed for other
+    objectives)
     :return: an optuna.Study object with results of completed trials
     """
     assert target_model_dir is None or existing_study_dir is None
+    if objective_name == "max_num_nonzero_perts":
+        assert max_perts > 0
+
+    # Use if ______ is None pattern instead of default args for easier
+    # integration with CLI and argparse
 
     if num_trials is None:
         num_trials = cfg_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS
@@ -248,11 +260,21 @@ def main(
         None if target_model_dir is None else Path(target_model_dir)
     )
 
+    if objective_name is None:
+        objective_name = cfg_settings.ATTACK_TUNING_DEFAULT_OBJECTIVE
+
+    objective = getattr(aht.AttackTunerObjectives, objective_name)
+
+    objective_extra_kwargs = (
+        {"max_perts": max_perts} if max_perts is not None else {}
+    )
+
     if existing_study_dir is None:
         initial_study = start_new_tuning(
             num_trials=num_trials,
-            objective=aht.AttackTunerObjectives.sparse_small_max,
+            objective=objective,
             target_model_dir=target_model_dir_path,
+            objective_extra_kwargs=objective_extra_kwargs,
         )
         return initial_study
 
@@ -295,6 +317,32 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "-o",
+        "--objective_name",
+        type=str,
+        action="store",
+        nargs="?",
+        help=(
+            "Name of method from AttackTunerObjectives to use to calculate "
+            "return value at end of optuna objective_fn. Strongly affects the"
+            " type of perturbation that tuning will favor. Defaults to value "
+            "of cfg_settings.ATTACK_TUNING_DEFAULT_OBJECTIVE"
+        ),
+    )
+
+    parser.add_argument(
+        "-p",
+        "--max_perts",
+        type=int,
+        action="store",
+        nargs="?",
+        help=(
+            "Value to use for the max_perts argument when using "
+            "'max_num_nonzero_perts' as the objective."
+        ),
+    )
+
+    parser.add_argument(
         "-s",
         "--existing_study_dir",
         type=str,
@@ -309,4 +357,5 @@ if __name__ == "__main__":
     )
 
     args_namespace = parser.parse_args()
+    args_namespace.existing_study_dir = str(cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-07-01_11_03_13.591090")
     main(**args_namespace.__dict__)
