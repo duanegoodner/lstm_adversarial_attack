@@ -20,8 +20,8 @@ def main(
 
     #  Do this instead of default args for easy argparse compatibility
     if study_path is None:
-        study_path = ps.most_recently_modified_file_named(
-            target_filename="optuna_study.pickle",
+        study_path = ps.latest_modified_file_with_name_condition(
+            component_string="optuna_study.pickle",
             root_dir=cfg_paths.HYPERPARAMETER_OUTPUT_DIR
         )
     if num_folds is None:

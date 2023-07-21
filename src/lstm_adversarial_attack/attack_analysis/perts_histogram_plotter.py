@@ -207,6 +207,10 @@ class HistogramPlotter:
 
         plt.show()
 
+
+
+        return fig
+
     def plot_single_histogram(
         self,
         plot_indices: tuple[int, int],
@@ -227,6 +231,7 @@ class HistogramPlotter:
         axes.set_xlabel(self.cfg.xlabels[plot_indices[1]])
         axes.set_title(title, loc="left")
         plt.show()
+
 
         return fig
 

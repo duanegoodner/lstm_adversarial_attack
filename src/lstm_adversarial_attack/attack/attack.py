@@ -194,9 +194,14 @@ class AttackDriver:
         :return:
         """
         if tuning_result_dir is None:
-            tuning_result_dir = ps.most_recently_modified_subdir(
-                root_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
-            )
+
+            tuning_result_dir = ps.latest_modified_file_with_name_condition(
+                component_string="optuna_study.pickle",
+                root_dir=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
+            ).parent
+            # tuning_result_dir = ps.most_recently_modified_subdir(
+            #     root_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
+            # )
         optuna_study = rio.ResourceImporter().import_pickle_to_object(
             path=tuning_result_dir / "optuna_study.pickle"
         )

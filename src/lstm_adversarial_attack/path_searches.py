@@ -1,4 +1,5 @@
 import os
+from enum import Enum, auto
 from pathlib import Path
 
 
@@ -25,15 +26,42 @@ def most_recently_modified_subdir(root_path: Path) -> Path:
     return sorted_sub_dirs[-1]
 
 
-def most_recently_modified_file_named(
-    target_filename: str, root_dir: Path
+class StringComparisonType(Enum):
+    EXACT_MATCH = auto()
+    SUFFIX = auto()
+    PREFIX = auto()
+    CONTAINS = auto()
+
+
+def compare_strings(
+    required_str: str, target_str: str, comparison_type: StringComparisonType
+):
+    comparison_dispatch = {
+        StringComparisonType.EXACT_MATCH: target_str.__eq__,
+        StringComparisonType.SUFFIX: target_str.endswith,
+        StringComparisonType.PREFIX: target_str.startswith,
+        StringComparisonType.CONTAINS: target_str.__contains__,
+    }
+
+    return comparison_dispatch[comparison_type](required_str)
+
+
+def latest_modified_file_with_name_condition(
+    component_string: str,
+    root_dir: Path,
+    comparison_type: StringComparisonType = StringComparisonType.EXACT_MATCH,
 ) -> Path:
     most_recent_file = None
     most_recent_time = 0
 
     for dirpath, _, filenames in os.walk(root_dir):
         for filename in filenames:
-            if filename == target_filename:
+            if compare_strings(
+                required_str=component_string,
+                target_str=filename,
+                comparison_type=comparison_type,
+            ):
+                # if filename == component_string:
                 file_path = os.path.join(dirpath, filename)
                 file_time = os.path.getmtime(file_path)
 

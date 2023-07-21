@@ -28,8 +28,8 @@ def resume_tuning(
         num_trials = cfg_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS
 
     if ongoing_tuning_dir is None:
-        ongoing_tuning_dir = ps.most_recently_modified_file_named(
-            target_filename="optuna_study.pickle",
+        ongoing_tuning_dir = ps.latest_modified_file_with_name_condition(
+            component_string="optuna_study.pickle",
             root_dir=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
         ).parent
 
