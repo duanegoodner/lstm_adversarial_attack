@@ -28,13 +28,26 @@ tuner_drivers = [
     for driver_path in attack_tuner_driver_paths
 ]
 
-# tuner_drivers[0].objective = aht.AttackTunerObjectivesBuilder.max_num_nonzero_perts(max_perts=1)
-# tuner_drivers[1].objective = aht.AttackTunerObjectivesBuilder.sparsity()
-# tuner_drivers[2].objective = aht.AttackTunerObjectivesBuilder.sparse_small()
-# tuner_drivers[3].objective = aht.AttackTunerObjectivesBuilder.sparse_small_max()
+for driver in tuner_drivers:
+    driver.sample_selection_seed = 13579
+
+for idx, driver in enumerate(tuner_drivers):
+    rio.ResourceExporter().export(
+        resource=driver.__dict__,
+        path=attack_tuner_driver_paths[idx].parent
+        / "tuner_driver_dict.pickle",
+    )
+
+# objective_extra_kwargs = [
+#     {"max_num_perts": 1},
+#     {},
+#     {},
+#     {}
+# ]
+#
+# for idx, driver in enumerate(tuner_drivers):
+#     driver.objective_extra_kwargs = objective_extra_kwargs[idx]
+#
 #
 # for idx, driver in enumerate(tuner_drivers):
 #     rio.ResourceExporter().export(resource=driver, path=attack_tuner_driver_paths[idx])
-
-
-

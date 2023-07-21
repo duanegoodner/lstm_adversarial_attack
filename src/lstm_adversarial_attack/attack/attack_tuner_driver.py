@@ -31,6 +31,9 @@ class AttackTunerDriver:
         objective_extra_kwargs: dict[str, Any] = None,
         tuning_ranges: ads.AttackTuningRanges = None,
         output_dir: Path = None,
+        epochs_per_batch: int = cfg_settings.ATTACK_TUNING_EPOCHS,
+        max_num_samples: int = cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
+        sample_selection_seed: int = cfg_settings.ATTACK_SAMPLE_SELECTION_SEED
     ):
         """
         :param device: the device to run on
@@ -63,12 +66,21 @@ class AttackTunerDriver:
             output_dir = rio.create_timestamped_dir(
                 parent_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
             )
-        self.epochs_per_batch = cfg_settings.ATTACK_TUNING_EPOCHS
-        self.max_num_samples = cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES
+        self.epochs_per_batch = epochs_per_batch
+        self.max_num_samples = max_num_samples
         self.output_dir = output_dir
-        rio.ResourceExporter().export(
-            resource=self, path=self.output_dir / "attack_tuner_driver.pickle"
-        )
+        self.sample_selection_seed = sample_selection_seed
+        self.export_dict()
+        # rio.ResourceExporter().export(
+        #     resource=self, path=self.output_dir / "attack_tuner_driver.pickle"
+        # )
+
+    def export_dict(self):
+        if not (self.output_dir / "attack_tuner_driver.pickle").exists():
+            rio.ResourceExporter().export(
+                resource=self,
+                path=self.output_dir / "attack_tuner_driver.pickle"
+            )
 
     @classmethod
     def from_model_assessment(
@@ -207,9 +219,16 @@ def resume_tuning(
             path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
         )
 
-    reloaded_tuner_driver = rio.ResourceImporter().import_pickle_to_object(
-        path=ongoing_tuning_dir / "attack_tuner_driver.pickle"
+    reloaded_tuner_driver_dict = (
+        rio.ResourceImporter().import_pickle_to_object(
+            path=ongoing_tuning_dir / "tuner_driver_dict.pickle"
+        )
     )
+    reloaded_tuner_driver = AttackTunerDriver(**reloaded_tuner_driver_dict)
+
+    # reloaded_tuner_driver = rio.ResourceImporter().import_pickle_to_object(
+    #     path=ongoing_tuning_dir / "attack_tuner_driver.pickle"
+    # )
 
     print(
         "Resuming Attack Hyperparameter Tuning study data in:\n"
@@ -355,5 +374,7 @@ if __name__ == "__main__":
     )
 
     args_namespace = parser.parse_args()
-    args_namespace.existing_study_dir = str(cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-06-28_12_11_46.874267")
+    args_namespace.existing_study_dir = str(
+        cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-06-28_12_11_46.874267"
+    )
     main(**args_namespace.__dict__)

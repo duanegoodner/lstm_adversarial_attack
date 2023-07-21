@@ -44,7 +44,7 @@ class AttackTunerObjectives:
 
     @staticmethod
     def max_num_nonzero_perts(
-        success_summary: ards.TrainerSuccessSummary, max_num_perts
+        success_summary: ards.TrainerSuccessSummary, max_num_perts: int
     ) -> float:
         return success_summary.perts_summary_best.num_examples_with_num_nonzero_less_than(
             cutoff=(max_num_perts + 1)
