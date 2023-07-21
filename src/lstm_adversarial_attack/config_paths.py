@@ -3,6 +3,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
+EXAMPLE_DATA_DIR = DATA_DIR / "examples"
 
 # ##### Database #####
 DB_DOTENV_PATH = PROJECT_ROOT / "config" / "mimiciii_database.env"
@@ -59,6 +60,9 @@ CV_ASSESSMENT_OUTPUT_DIR = TUNE_TRAIN_OUTPUT_DIR / "cross_validation"
 
 
 # DEFAULT_ATTACK_TARGET_DIR = SINGLE_FOLD_OUTPUT_DIR / "default_attack_target"
+ATTACK_DEFAULT_TARGET_MODEL_DIR = (
+    EXAMPLE_DATA_DIR / "cv_training_2023-06-17_23_57_23.366142"
+)
 ATTACK_OUTPUT_DIR = DATA_DIR / "attack"
 ATTACK_HYPERPARAMETER_TUNING = (
     ATTACK_OUTPUT_DIR / "attack_hyperparameter_tuning"

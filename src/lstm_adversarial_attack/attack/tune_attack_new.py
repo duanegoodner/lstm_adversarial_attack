@@ -26,11 +26,7 @@ def main(
     max_perts: int = None,
 ) -> optuna.Study:
     if target_model_dir is None:
-        target_model_dir = str(
-            ps.most_recently_modified_subdir(
-                root_path=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR
-            )
-        )
+        target_model_dir = str(cfg_paths.ATTACK_DEFAULT_TARGET_MODEL_DIR)
     if num_trials is None:
         num_trials = cfg_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS
     if objective_name is None:
@@ -61,7 +57,8 @@ if __name__ == "__main__":
         nargs="?",
         help=(
             "Directory containing training results of model to attack. Default"
-            " is most recently modified training output directory"
+            " is value saved in config_paths.ATTACK_DEFAULT_TARGET_MODEL_DIR"
+            " (cast from Path to string)"
         ),
     )
     parser.add_argument(

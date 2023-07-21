@@ -84,11 +84,9 @@ class AttackTunerDriver:
         Creates an AttackTunerDriver using info from either a cross-validation
         or single-fold assessment of model to be attacked.
         :param device: device to run on
-        :param selection_metric: metric for choosing which target
-        model checkpoint to use
+        :param selection_metric: metric for choosing which target model checkpoint to use
         :param optimize_direction: min or max
-        :param objective: function that calculates return val of
-        AttackHyperparameterTuner objective_fn
+        :param objective: function that calculates return val of AttackHyperparameterTuner objective_fn
         :param training_output_dir: directory where tuning data is saved
         :return: an AttackTunerDriver instance
         """
@@ -357,5 +355,5 @@ if __name__ == "__main__":
     )
 
     args_namespace = parser.parse_args()
-    args_namespace.existing_study_dir = str(cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-07-01_11_03_13.591090")
+    args_namespace.existing_study_dir = str(cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-06-28_12_11_46.874267")
     main(**args_namespace.__dict__)
