@@ -7,6 +7,50 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.attack.attack_tuner_driver as atd
+import lstm_adversarial_attack.path_searches as ps
+import lstm_adversarial_attack.resource_io as rio
+
+
+def resume_tuning(
+    num_trials: int, ongoing_tuning_dir: str | Path = None
+) -> optuna.Study:
+    """
+    Resumes training using params of a previously used AttackTunerDriver and
+    its associated Optuna Study. Default behavior saves new results to
+    same directory as results of previous runs.
+    :param num_trials: max # of trials to run
+    :param ongoing_tuning_dir: directory where previous run data is saved
+    and (under default settings) where new data will be saved.
+    :return: an Optuna Study object (which also gets saved as .pickle)
+    """
+
+    if num_trials is None:
+        num_trials = cfg_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS
+
+    if ongoing_tuning_dir is None:
+        ongoing_tuning_dir = ps.most_recently_modified_file_named(
+            target_filename="optuna_study.pickle",
+            root_dir=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
+        ).parent
+
+    # function accepts str or Path, but we need Path from here on
+    ongoing_tuning_dir = Path(ongoing_tuning_dir)
+
+    reloaded_tuner_driver_dict = (
+        rio.ResourceImporter().import_pickle_to_object(
+            path=ongoing_tuning_dir / "tuner_driver_dict.pickle"
+        )
+    )
+    reloaded_tuner_driver = atd.AttackTunerDriver(**reloaded_tuner_driver_dict)
+
+    print(
+        "Resuming Attack Hyperparameter Tuning study data in:\n"
+        f"{reloaded_tuner_driver.output_dir}\n"
+    )
+
+    return reloaded_tuner_driver.restart(
+        output_dir=ongoing_tuning_dir, num_trials=num_trials
+    )
 
 
 def main(
@@ -25,10 +69,8 @@ def main(
     :return: an optuna.Study object with results of completed trials
     """
 
-    if num_trials is None:
-        num_trials = cfg_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS
-    continued_study = atd.resume_tuning(
-        num_trials=num_trials, ongoing_tuning_dir=Path(existing_study_dir)
+    continued_study = resume_tuning(
+        num_trials=num_trials, ongoing_tuning_dir=existing_study_dir
     )
     return continued_study
 
@@ -67,7 +109,7 @@ if __name__ == "__main__":
     )
 
     args_namespace = parser.parse_args()
-    args_namespace.existing_study_dir = str(
-        cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-06-28_12_11_46.874267"
-    )
+    # args_namespace.existing_study_dir = str(
+    #     cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-06-28_12_11_46.874267"
+    # )
     main(**args_namespace.__dict__)

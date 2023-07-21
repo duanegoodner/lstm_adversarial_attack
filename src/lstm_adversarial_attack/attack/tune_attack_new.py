@@ -1,22 +1,51 @@
 import argparse
 import sys
 import optuna
-import torch
-from os import PathLike
 from pathlib import Path
-from typing import Callable, Any
+from typing import Any, Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.attack.attack_tuner_driver as atd
-import lstm_adversarial_attack.attack.attack_data_structs as ads
-import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.attack.attack_hyperparameter_tuner as aht
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
-import lstm_adversarial_attack.resource_io as rio
+import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs
-import lstm_adversarial_attack.attack.model_retriever as amr
+
+def start_new_tuning(
+    num_trials: int,
+    objective: Callable[..., float],
+    objective_extra_kwargs: dict[str, Any] = None,
+    target_model_dir: Path = None,
+) -> optuna.Study:
+    """
+    Creates a new AttackTunerDriver. Causes new Optuna Study to be created via
+    AttackHyperParamteterTuner that the driver creates.
+    :param num_trials: max num Optuna trials to run
+    :param objective: method for calculating return val of tuner objective_fn
+    from an attack TrainerResult
+    :param target_model_dir: directory containing model and params
+    files for model to be attacked.
+    :return: an Optuna study object (which also get saved as pickle)
+    """
+    device = gh.get_device()
+
+    tuner_driver = atd.AttackTunerDriver.from_model_assessment(
+        device=device,
+        selection_metric=cvs.EvalMetric.VALIDATION_LOSS,
+        optimize_direction=cvs.OptimizeDirection.MIN,
+        training_output_dir=target_model_dir,
+        objective=objective,
+        objective_extra_kwargs=objective_extra_kwargs,
+    )
+
+    print(
+        "Starting new Attack Hyperparameter Tuning study using trained"
+        f" predictive model in:\n {tuner_driver.target_model_path}\n\n"
+        f"Tuning results will be saved in: {tuner_driver.output_dir}\n"
+    )
+
+    return tuner_driver.run(num_trials=num_trials)
 
 
 def main(
@@ -37,7 +66,7 @@ def main(
         {"max_perts": max_perts} if max_perts is not None else {}
     )
 
-    study = atd.start_new_tuning(
+    study = start_new_tuning(
         num_trials=num_trials,
         objective=getattr(aht.AttackTunerObjectives, objective_name),
         objective_extra_kwargs=objective_extra_kwargs,
