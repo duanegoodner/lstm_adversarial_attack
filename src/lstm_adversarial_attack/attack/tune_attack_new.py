@@ -44,7 +44,7 @@ def start_new_tuning(
         {"max_perts": max_perts} if max_perts is not None else {}
     )
 
-    tuner_driver = atd.AttackTunerDriver.from_model_assessment(
+    tuner_driver = atd.AttackTunerDriver.from_cross_validation_results(
         device=device,
         selection_metric=cvs.EvalMetric.VALIDATION_LOSS,
         optimize_direction=cvs.OptimizeDirection.MIN,

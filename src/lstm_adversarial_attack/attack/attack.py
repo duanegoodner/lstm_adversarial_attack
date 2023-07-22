@@ -102,7 +102,15 @@ class AttackDriver:
         if provenance is None:
             provenance = {}
         self.provenance = provenance
+        self.update_provenance()
         self.output_dir = self.initialize_output_dir(output_dir=output_dir)
+
+    def update_provenance(self):
+        if "full_attack" not in self.provenance:
+            self.provenance["full_attack"] = {}
+        self.provenance["full_attack"][
+            "epochs_per_batch"
+        ] = self.epochs_per_batch
 
     def initialize_output_dir(self, output_dir: Path | None):
         """
@@ -121,6 +129,10 @@ class AttackDriver:
             resource=self.__dict__,
             path=output_dir / "attack_driver_dict.pickle",
         )
+        rio.ResourceExporter().export(
+            resource=self.provenance,
+            path=output_dir / "provenance.pickle"
+        )
         return output_dir
 
     @classmethod
@@ -137,6 +149,7 @@ class AttackDriver:
         output_dir: Path = None,
         save_attack_driver: bool = False,
         checkpoint_interval: int = None,
+        provenance: dict = None,
     ):
         """
         Creates AttackDriver from AttackHyperParameterSettings object
@@ -155,6 +168,11 @@ class AttackDriver:
         :param checkpoint_interval: number of batches per checkpoint
         :return:
         """
+
+        if "full_attack" not in provenance:
+            provenance["full_attack"] = {}
+        provenance["full_attack"]["hyperparameter_settings"] = settings
+
         return cls(
             device=device,
             model_path=model_path,
@@ -173,6 +191,7 @@ class AttackDriver:
             epochs_per_batch=epochs_per_batch,
             save_attack_driver=save_attack_driver,
             checkpoint_interval=checkpoint_interval,
+            provenance=provenance,
         )
 
     @classmethod
@@ -215,6 +234,17 @@ class AttackDriver:
         if epochs_per_batch is None:
             epochs_per_batch = tuner_driver.epochs_per_batch
 
+        if (tuning_result_dir / "provenance.pickle").exists():
+            provenance = rio.ResourceImporter().import_pickle_to_object(
+                path=tuning_result_dir / "provenance.pickle"
+            )
+        else:
+            provenance = {}
+
+        if "full_attack" not in provenance:
+            provenance["full_attack"] = {}
+        provenance["full_attack"]["tuning_result_dir"] = tuning_result_dir
+
         return cls.from_attack_hyperparameter_settings(
             device=device,
             model_path=tuner_driver.target_model_path,
@@ -227,6 +257,7 @@ class AttackDriver:
             sample_selection_seed=sample_selection_seed,
             save_attack_driver=save_attack_driver,
             checkpoint_interval=checkpoint_interval,
+            provenance=provenance,
         )
 
     def __call__(self) -> aat.AdversarialAttackTrainer | ards.TrainerResult:

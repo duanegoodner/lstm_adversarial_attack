@@ -14,6 +14,12 @@ mssm_dirname = "2023-07-01_11_03_13.591090"
 
 
 aht_dirs = [msn_dirname, ms_dirname, mss_dirname, mssm_dirname]
+objective_names = [
+    "max_num_nonzero_perts",
+    "sparsity",
+    "sparse_small",
+    "sparse_small_max",
+]
 attack_tuner_driver_paths = [
     (
         cfg_path.ATTACK_HYPERPARAMETER_TUNING
@@ -23,16 +29,50 @@ attack_tuner_driver_paths = [
     for dirname in aht_dirs
 ]
 
+attack_tuner_driver_dict_paths = [
+    (
+        cfg_path.ATTACK_HYPERPARAMETER_TUNING
+        / dirname
+        / "attack_tuner_driver_dict.pickle"
+    )
+    for dirname in aht_dirs
+]
+
+
+
 tuner_drivers = [
     rio.ResourceImporter().import_pickle_to_object(path=driver_path)
     for driver_path in attack_tuner_driver_paths
 ]
 
+tuner_driver_dicts =  [
+    rio.ResourceImporter().import_pickle_to_object(path=driver_dict_path)
+    for driver_dict_path in attack_tuner_driver_dict_paths
+]
+
+# for idx, driver_dict in enumerate(tuner_driver_dicts):
+#     driver_dict["provenance"]["fold"] = 0
+#     rio.ResourceExporter().export(
+#         resource=driver_dict,
+#         path=attack_tuner_driver_paths[idx].parent
+#         / "attack_tuner_driver_dict.pickle",
+#     )
+
+# for idx, driver in enumerate(tuner_drivers):
+#     driver.objective_name = objective_names[idx]
+#     delattr(driver, "objective")
+#     rio.ResourceExporter().export(
+#         resource=driver.__dict__,
+#         path=attack_tuner_driver_paths[idx].parent
+#         / "attack_tuner_driver_dict.pickle",
+#     )
+#     rio.ResourceExporter().export(
+#         resource=driver,
+#         path=attack_tuner_driver_paths[idx].parent
+#         / "attack_tuner_driver.pickle",
+#     )
 
 
-# for driver in tuner_drivers:
-#     driver.sample_selection_seed = 13579
-#
 # for idx, driver in enumerate(tuner_drivers):
 #     rio.ResourceExporter().export(
 #         resource=driver.__dict__,

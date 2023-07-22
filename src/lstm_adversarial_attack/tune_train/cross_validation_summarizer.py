@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import pandas as pd
 import sys
 import torch
@@ -167,6 +169,12 @@ class FoldSummarizer:
         return self.result_df.loc[idx].rename(self.fold_num)
 
 
+@dataclass
+class FoldCheckpointPair:
+    fold: int
+    checkpoint: dict
+
+
 class CrossValidationSummarizer:
     def __init__(self, fold_summarizers: dict[int, FoldSummarizer]):
         self.fold_summarizers = fold_summarizers
@@ -246,13 +254,17 @@ class CrossValidationSummarizer:
 
     def get_midrange_checkpoint(
         self, metric: EvalMetric, optimize_direction: OptimizeDirection
-    ):
+    ) -> FoldCheckpointPair:
         midrange_fold = self.get_midrange_fold(
             metric=metric, optimize_direction=optimize_direction
         )
-        return self.fold_summarizers[midrange_fold].get_extreme_checkpoint(
+        checkpoint = self.fold_summarizers[
+            midrange_fold
+        ].get_extreme_checkpoint(
             metric=metric, optimize_direction=optimize_direction
         )
+
+        return FoldCheckpointPair(fold=midrange_fold, checkpoint=checkpoint)
 
 
 def main():

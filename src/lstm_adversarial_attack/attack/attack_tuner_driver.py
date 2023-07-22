@@ -1,14 +1,11 @@
-import argparse
 import sys
 import optuna
 import torch
-from os import PathLike
 from pathlib import Path
-from typing import Callable, Any
+from typing import Any
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_data_structs as ads
-import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.attack.attack_hyperparameter_tuner as aht
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
@@ -34,14 +31,13 @@ class AttackTunerDriver:
         epochs_per_batch: int = cfg_settings.ATTACK_TUNING_EPOCHS,
         max_num_samples: int = cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
         sample_selection_seed: int = cfg_settings.ATTACK_SAMPLE_SELECTION_SEED,
-        provenance: dict[str, Any] = None
+        provenance: dict[str, Any] = None,
     ):
         """
         :param device: the device to run on
         :param target_model_path: path to .pickle file w/ model to attack
-        :param objective: method to user for computation of Optuna tuner
-        objective function (typically use one of the methods in
-        AttackTunerObjectivesBuilder)
+        :param objective_name: name of method in AttackTunerObjectives to user
+        for computation of Optuna tuner objective_fn return value
         :param target_model_checkpoint: checkpoint file w/ params to load into
         model under attack
         :param tuning_ranges: hyperparamter tuning ranges (for use by Optuna)
@@ -74,21 +70,40 @@ class AttackTunerDriver:
         if provenance is None:
             provenance = {}
         self.provenance = provenance
-
+        self.update_provenance()
+        self.export_provenance()
         self.export_dict()
 
-    # def update_provenance(self):
-    #     self.provenanc
+    def update_provenance(self):
+        entry_attributes = [
+            "objective_name",
+            "objective_extra_kwargs",
+            "target_model_path",
+        ]
+        for item in entry_attributes:
+            self.provenance[item] = getattr(self, item)
+
+        self.provenance["target_model_trained_to_epoch"] = (
+            self.target_model_checkpoint["epoch_num"]
+        )
+
+    def export_provenance(self):
+        provenance_for_export = {"attack_tuning": self.provenance}
+
+        rio.ResourceExporter().export(
+            resource=provenance_for_export,
+            path=self.output_dir / "provenance.pickle"
+        )
 
     def export_dict(self):
-        if not (self.output_dir / "attack_tuner_driver_dict.pickle").exists():
-            rio.ResourceExporter().export(
-                resource=self.__dict__,
-                path=self.output_dir / "attack_driver_dict.pickle"
-            )
+        # if not (self.output_dir / "attack_tuner_driver_dict.pickle").exists():
+        rio.ResourceExporter().export(
+            resource=self.__dict__,
+            path=self.output_dir / "attack_tuner_driver_dict.pickle",
+        )
 
     @classmethod
-    def from_model_assessment(
+    def from_cross_validation_results(
         cls,
         device: torch.device,
         selection_metric: cvs.EvalMetric,
@@ -103,7 +118,10 @@ class AttackTunerDriver:
         :param device: device to run on
         :param selection_metric: metric for choosing which target model checkpoint to use
         :param optimize_direction: min or max
-        :param objective: function that calculates return val of AttackHyperparameterTuner objective_fn
+        :param objective_name: name of method from AttackTunerObjectives that
+        calculates return val of AttackHyperparameterTuner objective_fn
+        :param objective_extra_kwargs: kwargs (other than a TrainerResult)
+        needed by method named AttackTunerObjectives.objective_name
         :param training_output_dir: directory where tuning data is saved
         :return: an AttackTunerDriver instance
         """
@@ -111,17 +129,18 @@ class AttackTunerDriver:
             training_output_dir=training_output_dir,
         )
 
-        model_path_checkpoint_pair = model_retriever.get_model(
+        model_path_fold_checkpoint_trio = model_retriever.get_model(
             eval_metric=selection_metric,
             optimize_direction=optimize_direction,
         )
 
         return cls(
             device=device,
-            target_model_path=model_path_checkpoint_pair.model_path,
-            target_model_checkpoint=model_path_checkpoint_pair.checkpoint,
+            target_model_path=model_path_fold_checkpoint_trio.model_path,
+            target_model_checkpoint=model_path_fold_checkpoint_trio.checkpoint,
             objective_name=objective_name,
             objective_extra_kwargs=objective_extra_kwargs,
+            provenance={"fold": model_path_fold_checkpoint_trio.fold},
         )
 
     def run(self, num_trials: int) -> optuna.Study:
@@ -139,7 +158,7 @@ class AttackTunerDriver:
             tuning_ranges=self.tuning_ranges,
             output_dir=self.output_dir,
             objective_name=self.objective_name,
-            sample_selection_seed=self.sample_selection_seed
+            sample_selection_seed=self.sample_selection_seed,
         )
 
         return tuner.tune(num_trials=num_trials)
@@ -164,7 +183,7 @@ class AttackTunerDriver:
             continue_study_path=output_dir / "optuna_study.pickle",
             output_dir=output_dir,
             objective_name=self.objective_name,
-            sample_selection_seed=self.sample_selection_seed
+            sample_selection_seed=self.sample_selection_seed,
         )
 
         return tuner.tune(num_trials=num_trials)

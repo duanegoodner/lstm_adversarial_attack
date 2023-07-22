@@ -104,14 +104,12 @@ if __name__ == "__main__":
         nargs="?",
         help=(
             "Path to parent directory of existing Optuna study to use as "
-            "starting point for continued (ongoing) training. If value is "
-            "provided for this arg, cannot use the -m (target_model_dir)"
-            " option."
+            "starting point for continued (ongoing) training."
         ),
     )
 
     args_namespace = parser.parse_args()
-    # args_namespace.existing_study_dir = str(
-    #     cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-06-28_12_11_46.874267"
-    # )
+    args_namespace.existing_study_dir = str(
+        cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-06-28_12_11_46.874267"
+    )
     main(**args_namespace.__dict__)

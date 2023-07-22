@@ -15,8 +15,9 @@ class ModelAssessmentType(Enum):
 
 
 @dataclass
-class ModelPathCheckpointPair:
+class ModelPathFoldCheckpointTrio:
     model_path: Path
+    fold: int
     checkpoint: dict
 
 
@@ -45,7 +46,7 @@ class ModelRetriever:
         self,
         eval_metric: cvs.EvalMetric,
         optimize_direction: cvs.OptimizeDirection,
-    ) -> ModelPathCheckpointPair:
+    ) -> ModelPathFoldCheckpointTrio:
         """
         Calls appropriate method for model and checkpoint retrieval (depends
         on type of assessment we are pulling data from)
@@ -61,7 +62,7 @@ class ModelRetriever:
         self,
         eval_metric: cvs.EvalMetric,
         optimization_direction: cvs.OptimizeDirection,
-    ) -> ModelPathCheckpointPair:
+    ) -> ModelPathFoldCheckpointTrio:
         """
         Gets a ModelPathCheckPointPair corresponding to selected model &
         checkpoint from single fold evaluation.
@@ -77,15 +78,17 @@ class ModelRetriever:
             metric=eval_metric, optimize_direction=optimization_direction
         )
 
-        return ModelPathCheckpointPair(
-            model_path=self.model_path, checkpoint=checkpoint
+        return ModelPathFoldCheckpointTrio(
+            model_path=self.model_path,
+            fold=0,
+            checkpoint=checkpoint
         )
 
     def get_cv_trained_model(
         self,
         metric: cvs.EvalMetric,
         optimize_direction: cvs.OptimizeDirection,
-    ):
+    ) -> ModelPathFoldCheckpointTrio:
         """
          Gets a ModelPathCheckPointPair corresponding to selected model &
         checkpoint from cross validation model assessment. Gets best
@@ -99,12 +102,14 @@ class ModelRetriever:
             cv_checkpoints_dir=self.checkpoints_dir
         )
 
-        midrange_checkpoint = cv_summarizer.get_midrange_checkpoint(
+        midrange_fold_checkpoint_pair = cv_summarizer.get_midrange_checkpoint(
             metric=metric, optimize_direction=optimize_direction
         )
 
-        return ModelPathCheckpointPair(
-            model_path=self.model_path, checkpoint=midrange_checkpoint
+        return ModelPathFoldCheckpointTrio(
+            model_path=self.model_path,
+            fold=midrange_fold_checkpoint_pair.fold,
+            checkpoint=midrange_fold_checkpoint_pair.checkpoint
         )
 
 
