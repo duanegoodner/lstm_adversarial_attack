@@ -70,3 +70,5 @@ ATTACK_HYPERPARAMETER_TUNING = (
 FROZEN_HYPERPARAMETER_ATTACK = (
     ATTACK_OUTPUT_DIR / "frozen_hyperparameter_attack"
 )
+
+ATTACK_ANALYSIS_DIR = DATA_DIR / "attack_analysis"

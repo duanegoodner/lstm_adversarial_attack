@@ -26,14 +26,15 @@ class AttackTunerDriver:
         self,
         device: torch.device,
         target_model_path: Path,
-        objective: Callable[..., float],
+        objective_name: str,
         target_model_checkpoint: dict,
         objective_extra_kwargs: dict[str, Any] = None,
         tuning_ranges: ads.AttackTuningRanges = None,
         output_dir: Path = None,
         epochs_per_batch: int = cfg_settings.ATTACK_TUNING_EPOCHS,
         max_num_samples: int = cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
-        sample_selection_seed: int = cfg_settings.ATTACK_SAMPLE_SELECTION_SEED
+        sample_selection_seed: int = cfg_settings.ATTACK_SAMPLE_SELECTION_SEED,
+        provenance: dict[str, Any] = None
     ):
         """
         :param device: the device to run on
@@ -50,7 +51,7 @@ class AttackTunerDriver:
         """
         self.device = device
         self.target_model_path = target_model_path
-        self.objective = objective
+        self.objective_name = objective_name
         self.objective_extra_kwargs = objective_extra_kwargs
         self.target_model_checkpoint = target_model_checkpoint
         if tuning_ranges is None:
@@ -70,13 +71,20 @@ class AttackTunerDriver:
         self.max_num_samples = max_num_samples
         self.output_dir = output_dir
         self.sample_selection_seed = sample_selection_seed
+        if provenance is None:
+            provenance = {}
+        self.provenance = provenance
+
         self.export_dict()
 
+    # def update_provenance(self):
+    #     self.provenanc
+
     def export_dict(self):
-        if not (self.output_dir / "tuner_driver_dict.pickle").exists():
+        if not (self.output_dir / "attack_tuner_driver_dict.pickle").exists():
             rio.ResourceExporter().export(
                 resource=self.__dict__,
-                path=self.output_dir / "tuner_driver_dict.pickle"
+                path=self.output_dir / "attack_driver_dict.pickle"
             )
 
     @classmethod
@@ -85,7 +93,7 @@ class AttackTunerDriver:
         device: torch.device,
         selection_metric: cvs.EvalMetric,
         optimize_direction: cvs.OptimizeDirection,
-        objective: Callable[[ards.TrainerSuccessSummary], float],
+        objective_name: str,
         objective_extra_kwargs: dict[str, Any] = None,
         training_output_dir: Path = None,
     ):
@@ -112,7 +120,7 @@ class AttackTunerDriver:
             device=device,
             target_model_path=model_path_checkpoint_pair.model_path,
             target_model_checkpoint=model_path_checkpoint_pair.checkpoint,
-            objective=objective,
+            objective_name=objective_name,
             objective_extra_kwargs=objective_extra_kwargs,
         )
 
@@ -130,7 +138,7 @@ class AttackTunerDriver:
             max_num_samples=cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
             tuning_ranges=self.tuning_ranges,
             output_dir=self.output_dir,
-            objective=self.objective,
+            objective_name=self.objective_name,
             sample_selection_seed=self.sample_selection_seed
         )
 
@@ -155,7 +163,7 @@ class AttackTunerDriver:
             tuning_ranges=self.tuning_ranges,
             continue_study_path=output_dir / "optuna_study.pickle",
             output_dir=output_dir,
-            objective=self.objective,
+            objective_name=self.objective_name,
             sample_selection_seed=self.sample_selection_seed
         )
 

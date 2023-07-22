@@ -28,15 +28,17 @@ tuner_drivers = [
     for driver_path in attack_tuner_driver_paths
 ]
 
-for driver in tuner_drivers:
-    driver.sample_selection_seed = 13579
 
-for idx, driver in enumerate(tuner_drivers):
-    rio.ResourceExporter().export(
-        resource=driver.__dict__,
-        path=attack_tuner_driver_paths[idx].parent
-        / "tuner_driver_dict.pickle",
-    )
+
+# for driver in tuner_drivers:
+#     driver.sample_selection_seed = 13579
+#
+# for idx, driver in enumerate(tuner_drivers):
+#     rio.ResourceExporter().export(
+#         resource=driver.__dict__,
+#         path=attack_tuner_driver_paths[idx].parent
+#         / "attack_tuner_driver_dict.pickle",
+#     )
 
 # objective_extra_kwargs = [
 #     {"max_num_perts": 1},

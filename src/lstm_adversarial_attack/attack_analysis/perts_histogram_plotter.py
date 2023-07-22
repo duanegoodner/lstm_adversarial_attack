@@ -196,7 +196,7 @@ class HistogramPlotter:
                         self.cfg.xlabels[plot_col]
                     )
 
-    def plot_all_histograms(self):
+    def plot_all_histograms(self) -> plt.Figure:
         fig, axes = self._set_figure_layout()
         for plot_row in range(self.cfg.num_plot_rows):
             for plot_col in range(self.cfg.num_plot_cols):
@@ -206,8 +206,6 @@ class HistogramPlotter:
         self._decorate_subplots(axes=axes)
 
         plt.show()
-
-
 
         return fig
 

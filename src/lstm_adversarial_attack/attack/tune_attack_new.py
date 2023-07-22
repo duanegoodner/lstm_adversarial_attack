@@ -49,7 +49,7 @@ def start_new_tuning(
         selection_metric=cvs.EvalMetric.VALIDATION_LOSS,
         optimize_direction=cvs.OptimizeDirection.MIN,
         training_output_dir=Path(target_model_dir),
-        objective=getattr(aht.AttackTunerObjectives, objective_name),
+        objective_name=objective_name,
         objective_extra_kwargs=objective_extra_kwargs,
     )
 

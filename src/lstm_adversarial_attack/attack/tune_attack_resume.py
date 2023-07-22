@@ -30,18 +30,20 @@ def resume_tuning(
     if ongoing_tuning_dir is None:
         ongoing_tuning_dir = ps.latest_modified_file_with_name_condition(
             component_string="optuna_study.pickle",
-            root_dir=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
+            root_dir=cfg_paths.ATTACK_HYPERPARAMETER_TUNING,
         ).parent
 
     # function accepts str or Path, but we need Path from here on
     ongoing_tuning_dir = Path(ongoing_tuning_dir)
 
-    reloaded_tuner_driver_dict = (
+    reloaded_attack_tuner_driver_dict = (
         rio.ResourceImporter().import_pickle_to_object(
-            path=ongoing_tuning_dir / "tuner_driver_dict.pickle"
+            path=ongoing_tuning_dir / "attack_tuner_driver_dict.pickle"
         )
     )
-    reloaded_tuner_driver = atd.AttackTunerDriver(**reloaded_tuner_driver_dict)
+    reloaded_tuner_driver = atd.AttackTunerDriver(
+        **reloaded_attack_tuner_driver_dict
+    )
 
     print(
         "Resuming Attack Hyperparameter Tuning study data in:\n"

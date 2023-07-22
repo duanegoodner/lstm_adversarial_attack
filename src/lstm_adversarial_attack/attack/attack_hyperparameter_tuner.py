@@ -127,7 +127,7 @@ class AttackHyperParameterTuner:
         epochs_per_batch: int,
         max_num_samples: int,
         tuning_ranges: ads.AttackTuningRanges,
-        objective: Callable[..., float],
+        objective_name: str,
         sample_selection_seed: int,
         objective_extra_kwargs: dict[str, Any] = None,
         pruner: BasePruner = MedianPruner(),
@@ -165,7 +165,8 @@ class AttackHyperParameterTuner:
         self.epoch_per_batch = epochs_per_batch
         self.max_num_samples = max_num_samples
         self.tuning_ranges = tuning_ranges
-        self.objective = objective
+        self.objective_name = objective_name
+        self.objective = getattr(AttackTunerObjectives, self.objective_name)
         if objective_extra_kwargs is None:
             objective_extra_kwargs = {}
         self.objective_extra_kwargs = objective_extra_kwargs

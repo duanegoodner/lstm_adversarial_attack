@@ -141,14 +141,20 @@ class FullAttackResults:
 
     @classmethod
     def from_most_recent_attack(cls):
-        result_dir = ps.most_recently_modified_subdir(
-            root_path=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+        latest_attack_result_path = ps.latest_modified_file_with_name_condition(
+            component_string="attack_result.pickle",
+            root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK,
+            comparison_type=ps.StringComparisonType.SUFFIX
         )
-        final_results = list(result_dir.glob("*final_attack_result.pickle"))
-        assert len(final_results) == 1
-        trainer_result_path = final_results[0]
+        #
+        # result_dir = ps.most_recently_modified_subdir(
+        #     root_path=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+        # )
+        # final_results = list(result_dir.glob("*final_attack_result.pickle"))
+        # assert len(final_results) == 1
+        # trainer_result_path = final_results[0]
         return cls.from_trainer_result_path(
-            trainer_result_path=trainer_result_path
+            trainer_result_path=latest_attack_result_path
         )
 
     @cached_property

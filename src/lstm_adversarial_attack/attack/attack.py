@@ -2,7 +2,7 @@ import argparse
 import sys
 import torch
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.adv_attack_trainer as aat
@@ -42,6 +42,7 @@ class AttackDriver:
         result_file_prefix: str = "",
         save_attack_driver: bool = False,
         checkpoint_interval: int = None,
+        provenance: dict[str, Any] = None,
     ):
         """
         :param device: device to run on
@@ -97,8 +98,11 @@ class AttackDriver:
         self.attack_misclassified_samples = attack_misclassified_samples
         self.result_file_prefix = result_file_prefix
         self.save_attack_driver = save_attack_driver
-        self.output_dir = self.initialize_output_dir(output_dir=output_dir)
         self.checkpoint_interval = checkpoint_interval
+        if provenance is None:
+            provenance = {}
+        self.provenance = provenance
+        self.output_dir = self.initialize_output_dir(output_dir=output_dir)
 
     def initialize_output_dir(self, output_dir: Path | None):
         """
@@ -112,10 +116,11 @@ class AttackDriver:
             output_dir = rio.create_timestamped_dir(
                 parent_path=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
             )
-        if self.save_attack_driver:
-            rio.ResourceExporter().export(
-                resource=self, path=output_dir / "attack_driver.pickle"
-            )
+        # if self.save_attack_driver:
+        rio.ResourceExporter().export(
+            resource=self.__dict__,
+            path=output_dir / "attack_driver_dict.pickle",
+        )
         return output_dir
 
     @classmethod
@@ -194,10 +199,9 @@ class AttackDriver:
         :return:
         """
         if tuning_result_dir is None:
-
             tuning_result_dir = ps.latest_modified_file_with_name_condition(
                 component_string="optuna_study.pickle",
-                root_dir=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
+                root_dir=cfg_paths.ATTACK_HYPERPARAMETER_TUNING,
             ).parent
             # tuning_result_dir = ps.most_recently_modified_subdir(
             #     root_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
@@ -283,7 +287,7 @@ def main(tuning_result_dir: str) -> ards.TrainerSuccessSummary:
         device=cur_device,
         sample_selection_seed=cfg_settings.ATTACK_SAMPLE_SELECTION_SEED,
         checkpoint_interval=cfg_settings.ATTACK_CHECKPOINT_INTERVAL,
-        tuning_result_dir=tuning_result_dir_path
+        tuning_result_dir=tuning_result_dir_path,
     )
     trainer_result = attack_driver()
     success_summary = ards.TrainerSuccessSummary(trainer_result=trainer_result)
