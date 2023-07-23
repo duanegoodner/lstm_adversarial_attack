@@ -36,6 +36,11 @@ class StandardDataFramesForPlotter:
         ).all()
 
 
+@dataclass
+class ZerosOnesDFPair:
+    zero_to_one: pd.DataFrame
+    one_to_zero: pd.DataFrame
+
 
 @dataclass
 class AttackConditionSummary:
@@ -78,6 +83,22 @@ class StandardAttackConditionSummaries:
     zero_to_one_best: AttackConditionSummary
     one_to_zero_first: AttackConditionSummary
     one_to_zero_best: AttackConditionSummary
+    all_attacked_zeros_df: pd.DataFrame
+    all_attacked_ones_df: pd.DataFrame
+
+    def __post_init__(self):
+        unique_zeros_num_epochs = np.unique(
+            self.all_attacked_zeros_df["num_epochs_run"]
+        )
+        unique_ones_num_epochs = np.unique(
+            self.all_attacked_ones_df["num_epochs_run"]
+        )
+        assert len(unique_zeros_num_epochs) == len(unique_ones_num_epochs) == 1
+        assert unique_zeros_num_epochs.item() == unique_ones_num_epochs.item()
+
+    @property
+    def num_epochs_run(self) -> int:
+        return self.all_attacked_zeros_df["num_epochs_run"][0]
 
     @property
     def data_for_histogram_plotter(self) -> StandardDataFramesForPlotter:
@@ -85,9 +106,8 @@ class StandardAttackConditionSummaries:
             zero_to_one_first=self.zero_to_one_first.examples_df,
             zero_to_one_best=self.zero_to_one_best.examples_df,
             one_to_zero_first=self.one_to_zero_first.examples_df,
-            one_to_zero_best=self.one_to_zero_best.examples_df
+            one_to_zero_best=self.one_to_zero_best.examples_df,
         )
-
 
     def data_for_susceptibility_plotter(
         self, metric
@@ -105,6 +125,70 @@ class StandardAttackConditionSummaries:
             one_to_zero_best=getattr(
                 self.one_to_zero_best.susceptibility_metrics, metric
             ),
+        )
+
+    @property
+    def condition_dispatch(
+        self,
+    ) -> dict[tuple[RecordedExampleType, int], AttackConditionSummary]:
+        return {
+            (RecordedExampleType.FIRST, 0): self.zero_to_one_first,
+            (RecordedExampleType.BEST, 0): self.zero_to_one_best,
+            (RecordedExampleType.FIRST, 1): self.one_to_zero_first,
+            (RecordedExampleType.BEST, 1): self.one_to_zero_best,
+        }
+
+    @property
+    def all_attack_dispatch(self):
+        return {0: self.all_attacked_zeros_df, 1: self.all_attacked_ones_df}
+
+    def epochfound_cdf(
+        self, orig_label: int, example_type: RecordedExampleType
+    ) -> np.array:
+        df = self.condition_dispatch[(example_type, orig_label)].examples_df
+        counts_arr, bins_arr = np.histogram(
+            a=df["epoch_found"],
+            bins=self.num_epochs_run,
+            range=(1, self.num_epochs_run),
+        )
+        cumsum_arr = np.cumsum(counts_arr) / len(
+            self.all_attack_dispatch[orig_label]
+        )
+
+        return cumsum_arr
+
+    def epochfound_cdf_first_best_df(self, orig_label: int) -> pd.DataFrame:
+        cumsum_first = self.epochfound_cdf(
+            orig_label=orig_label, example_type=RecordedExampleType.FIRST
+        )
+        cumsum_best = self.epochfound_cdf(
+            orig_label=orig_label, example_type=RecordedExampleType.BEST
+        )
+        assert len(cumsum_first) == len(cumsum_best)
+        data_arr = np.stack(
+            (np.arange(len(cumsum_first)), cumsum_first, cumsum_best),
+            axis=1,
+        )
+        return pd.DataFrame(
+            data=data_arr,
+            columns=[
+                "epoch_found",
+                "first_example_cumsum",
+                "best_example_cumsum",
+            ],
+        ).astype(
+            dtype={
+                "epoch_found": "int",
+                "first_example_cumsum": "float32",
+                "best_example_cumsum": "float32",
+            },
+        )
+
+    @property
+    def data_for_epochfound_cdf_plotter(self) -> ZerosOnesDFPair:
+        return ZerosOnesDFPair(
+            zero_to_one=self.epochfound_cdf_first_best_df(orig_label=0),
+            one_to_zero=self.epochfound_cdf_first_best_df(orig_label=1),
         )
 
 
@@ -141,10 +225,12 @@ class FullAttackResults:
 
     @classmethod
     def from_most_recent_attack(cls):
-        latest_attack_result_path = ps.latest_modified_file_with_name_condition(
-            component_string="attack_result.pickle",
-            root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK,
-            comparison_type=ps.StringComparisonType.SUFFIX
+        latest_attack_result_path = (
+            ps.latest_modified_file_with_name_condition(
+                component_string="attack_result.pickle",
+                root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK,
+                comparison_type=ps.StringComparisonType.SUFFIX,
+            )
         )
         #
         # result_dir = ps.most_recently_modified_subdir(
@@ -393,6 +479,14 @@ class FullAttackResults:
                 min_num_perts=min_num_perts,
                 max_num_perts=max_num_perts,
             ),
+            all_attacked_zeros_df=self.all_attacks_df[
+                (self.all_attacks_df["seq_length"] == seq_length)
+                & (self.all_attacks_df["orig_label"] == 0)
+            ],
+            all_attacked_ones_df=self.all_attacks_df[
+                (self.all_attacks_df["seq_length"] == seq_length)
+                & (self.all_attacks_df["orig_label"] == 1)
+            ],
         )
 
     # def get_data_for_susceptibility_plotter(self) -> SusceptibilityPlotterData:
