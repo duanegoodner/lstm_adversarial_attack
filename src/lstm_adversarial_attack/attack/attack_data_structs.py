@@ -1,14 +1,15 @@
 import optuna
 from dataclasses import dataclass
+import lstm_adversarial_attack.config_settings as cfg_set
 
 
 @dataclass
 class AttackTuningRanges:
-    kappa: tuple[float, float]
-    lambda_1: tuple[float, float]
-    optimizer_name: tuple[str, ...]
-    learning_rate: tuple[float, float]
-    log_batch_size: tuple[int, int]
+    kappa: tuple[float, float] = cfg_set.ATTACK_TUNING_KAPPA
+    lambda_1: tuple[float, float] = cfg_set.ATTACK_TUNING_LAMBDA_1
+    optimizer_name: tuple[str, ...] = cfg_set.ATTACK_TUNING_OPTIMIZER_OPTIONS
+    learning_rate: tuple[float, float] = cfg_set.ATTACK_TUNING_LEARNING_RATE
+    log_batch_size: tuple[int, int] = cfg_set.ATTACK_TUNING_LOG_BATCH_SIZE
 
 
 @dataclass

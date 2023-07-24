@@ -12,6 +12,7 @@ import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs
 import lstm_adversarial_attack.attack.model_retriever as amr
+import lstm_adversarial_attack.data_provenance as dpr
 
 
 class AttackTunerDriver:
@@ -31,7 +32,8 @@ class AttackTunerDriver:
         epochs_per_batch: int = cfg_settings.ATTACK_TUNING_EPOCHS,
         max_num_samples: int = cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
         sample_selection_seed: int = cfg_settings.ATTACK_SAMPLE_SELECTION_SEED,
-        provenance: dict[str, Any] = None,
+        target_fold_index: int = None,
+        data_provenance: dict[str, Any] = None
     ):
         """
         :param device: the device to run on
@@ -51,13 +53,7 @@ class AttackTunerDriver:
         self.objective_extra_kwargs = objective_extra_kwargs
         self.target_model_checkpoint = target_model_checkpoint
         if tuning_ranges is None:
-            tuning_ranges = ads.AttackTuningRanges(
-                kappa=cfg_settings.ATTACK_TUNING_KAPPA,
-                lambda_1=cfg_settings.ATTACK_TUNING_LAMBDA_1,
-                optimizer_name=cfg_settings.ATTACK_TUNING_OPTIMIZER_OPTIONS,
-                learning_rate=cfg_settings.ATTACK_TUNING_LEARNING_RATE,
-                log_batch_size=cfg_settings.ATTACK_TUNING_LOG_BATCH_SIZE,
-            )
+            tuning_ranges = ads.AttackTuningRanges()
         self.tuning_ranges = tuning_ranges
         if output_dir is None:
             output_dir = rio.create_timestamped_dir(
@@ -67,33 +63,29 @@ class AttackTunerDriver:
         self.max_num_samples = max_num_samples
         self.output_dir = output_dir
         self.sample_selection_seed = sample_selection_seed
-        if provenance is None:
-            provenance = {}
-        self.provenance = provenance
-        self.update_provenance()
-        self.export_provenance()
+        self.target_fold_index = target_fold_index
+        if data_provenance is None:
+            data_provenance = self.build_data_provenance()
+        self.data_provenance = data_provenance
         self.export_dict()
 
-    def update_provenance(self):
-        entry_attributes = [
-            "objective_name",
-            "objective_extra_kwargs",
-            "target_model_path",
-        ]
-        for item in entry_attributes:
-            self.provenance[item] = getattr(self, item)
+    def build_data_provenance(self) -> dict[str, Any]:
+        builder = dpr.DataProvenanceBuilder(
+                pipeline_component=self,
+                category_name="attack_tuner_driver",
+                new_items={
+                    "objective_name": self.objective_name,
+                    "objective_extra_kwargs": self.objective_extra_kwargs,
+                    "target_model_path": self.target_model_path,
+                    "target_fold_index": self.target_fold_index,
+                    "target_model_trained_to_epoch": self.target_model_checkpoint[
+                        "epoch_num"
+                    ],
+                },
+                output_dir=self.output_dir
+            )
+        return builder.build()
 
-        self.provenance["target_model_trained_to_epoch"] = (
-            self.target_model_checkpoint["epoch_num"]
-        )
-
-    def export_provenance(self):
-        provenance_for_export = {"attack_tuning": self.provenance}
-
-        rio.ResourceExporter().export(
-            resource=provenance_for_export,
-            path=self.output_dir / "provenance.pickle"
-        )
 
     def export_dict(self):
         # if not (self.output_dir / "attack_tuner_driver_dict.pickle").exists():
@@ -140,7 +132,8 @@ class AttackTunerDriver:
             target_model_checkpoint=model_path_fold_checkpoint_trio.checkpoint,
             objective_name=objective_name,
             objective_extra_kwargs=objective_extra_kwargs,
-            provenance={"fold": model_path_fold_checkpoint_trio.fold},
+            target_fold_index=model_path_fold_checkpoint_trio.fold
+            # extra_provenance_info={"fold": model_path_fold_checkpoint_trio.fold},
         )
 
     def run(self, num_trials: int) -> optuna.Study:

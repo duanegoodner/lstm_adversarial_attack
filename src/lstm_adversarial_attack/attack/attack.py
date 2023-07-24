@@ -8,10 +8,12 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.adv_attack_trainer as aat
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
+import lstm_adversarial_attack.attack.attack_tuner_driver as atd
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
+import lstm_adversarial_attack.data_provenance as dpr
 
 from lstm_adversarial_attack.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex,
@@ -42,7 +44,8 @@ class AttackDriver:
         result_file_prefix: str = "",
         save_attack_driver: bool = False,
         checkpoint_interval: int = None,
-        provenance: dict[str, Any] = None,
+        attack_hyperparameter_settings: ads.AttackHyperParameterSettings = None,
+        hyperparameter_tuning_result_dir: Path = None,
     ):
         """
         :param device: device to run on
@@ -99,20 +102,42 @@ class AttackDriver:
         self.result_file_prefix = result_file_prefix
         self.save_attack_driver = save_attack_driver
         self.checkpoint_interval = checkpoint_interval
-        if provenance is None:
-            provenance = {}
-        self.provenance = provenance
-        self.update_provenance()
         self.output_dir = self.initialize_output_dir(output_dir=output_dir)
+        self.attack_hyperparameter_settings = attack_hyperparameter_settings
+        self.hyperparameter_tuning_results_dir = (
+            hyperparameter_tuning_result_dir
+        )
+        self.data_provenance = self.build_data_provenance()
+        self.export_dict()
 
-    def update_provenance(self):
-        if "full_attack" not in self.provenance:
-            self.provenance["full_attack"] = {}
-        self.provenance["full_attack"][
-            "epochs_per_batch"
-        ] = self.epochs_per_batch
+    def build_data_provenance(self) -> dict[str, Any]:
+        builder = dpr.DataProvenanceBuilder(
+            previous_info=(
+                self.hyperparameter_tuning_results_dir / "provenance.pickle"
+                if self.hyperparameter_tuning_results_dir is not None
+                   and (
+                           self.hyperparameter_tuning_results_dir
+                           / "provenance.pickle"
+                   ).exists()
+                else None
+            ),
+            pipeline_component=self,
+            category_name="attack_driver",
+            new_items={
+                "epochs_per_batch": self.epochs_per_batch,
+                "attack_hyperparameter_settings": (
+                    self.attack_hyperparameter_settings
+                ),
+                "hyperparameter_tuning_result_dir": (
+                    self.hyperparameter_tuning_results_dir
+                ),
+            },
+            output_dir=self.output_dir,
+        )
+        return builder.build()
 
-    def initialize_output_dir(self, output_dir: Path | None):
+    @staticmethod
+    def initialize_output_dir(output_dir: Path | None):
         """
         Initializes directory where results of attacked will be saved
         :param output_dir: Path of output directory. If None, a directory
@@ -125,15 +150,18 @@ class AttackDriver:
                 parent_path=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
             )
         # if self.save_attack_driver:
+
+        # rio.ResourceExporter().export(
+        #     resource=self.provenance,
+        #     path=output_dir / "provenance.pickle"
+        # )
+        return output_dir
+
+    def export_dict(self):
         rio.ResourceExporter().export(
             resource=self.__dict__,
-            path=output_dir / "attack_driver_dict.pickle",
+            path=self.output_dir / "attack_driver_dict.pickle",
         )
-        rio.ResourceExporter().export(
-            resource=self.provenance,
-            path=output_dir / "provenance.pickle"
-        )
-        return output_dir
 
     @classmethod
     def from_attack_hyperparameter_settings(
@@ -142,6 +170,7 @@ class AttackDriver:
         model_path: Path,
         checkpoint: dict,
         settings: ads.AttackHyperParameterSettings,
+        tuning_result_dir: Path = None,
         epochs_per_batch: int = None,
         max_num_samples: int = None,
         sample_selection_seed: int = None,
@@ -149,7 +178,6 @@ class AttackDriver:
         output_dir: Path = None,
         save_attack_driver: bool = False,
         checkpoint_interval: int = None,
-        provenance: dict = None,
     ):
         """
         Creates AttackDriver from AttackHyperParameterSettings object
@@ -158,20 +186,19 @@ class AttackDriver:
         :param checkpoint: Info saved during training classifier. Contents
         include model params.
         :param settings: hyperparameters to be used by AttackTrainer
+        :param tuning_result_dir: directory containing attack hyperparameter
+        tuning results. Will be None
         :param epochs_per_batch: num attack iterations per batch
         :param max_num_samples: number of candidate samples for attack
         :param sample_selection_seed: random seed to use when selecting subset
         of samples from original dataset
         :param attack_misclassified_samples: whether to run attacks on samples
         that original model misclassifies
+        :param output_dir: directory where attack results will be saved
         :param save_attack_driver: whether to save AttackDriver .pickle
         :param checkpoint_interval: number of batches per checkpoint
         :return:
         """
-
-        if "full_attack" not in provenance:
-            provenance["full_attack"] = {}
-        provenance["full_attack"]["hyperparameter_settings"] = settings
 
         return cls(
             device=device,
@@ -191,7 +218,8 @@ class AttackDriver:
             epochs_per_batch=epochs_per_batch,
             save_attack_driver=save_attack_driver,
             checkpoint_interval=checkpoint_interval,
-            provenance=provenance,
+            attack_hyperparameter_settings=settings,
+            hyperparameter_tuning_result_dir=tuning_result_dir,
         )
 
     @classmethod
@@ -222,15 +250,14 @@ class AttackDriver:
                 component_string="optuna_study.pickle",
                 root_dir=cfg_paths.ATTACK_HYPERPARAMETER_TUNING,
             ).parent
-            # tuning_result_dir = ps.most_recently_modified_subdir(
-            #     root_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
-            # )
         optuna_study = rio.ResourceImporter().import_pickle_to_object(
             path=tuning_result_dir / "optuna_study.pickle"
         )
-        tuner_driver = rio.ResourceImporter().import_pickle_to_object(
-            path=tuning_result_dir / "attack_tuner_driver.pickle"
+        tuner_driver_dict = rio.ResourceImporter().import_pickle_to_object(
+            path=tuning_result_dir / "attack_tuner_driver_dict.pickle"
         )
+        tuner_driver = atd.AttackTunerDriver(**tuner_driver_dict)
+
         if epochs_per_batch is None:
             epochs_per_batch = tuner_driver.epochs_per_batch
 
@@ -257,7 +284,7 @@ class AttackDriver:
             sample_selection_seed=sample_selection_seed,
             save_attack_driver=save_attack_driver,
             checkpoint_interval=checkpoint_interval,
-            provenance=provenance,
+            tuning_result_dir=tuning_result_dir,
         )
 
     def __call__(self) -> aat.AdversarialAttackTrainer | ards.TrainerResult:

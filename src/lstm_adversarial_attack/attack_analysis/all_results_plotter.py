@@ -77,6 +77,8 @@ class AllResultsPlotter:
             colorbar_title="Perturbation Sensitivity",
         )
 
+
+
     def save_figure(self, fig: plt.Figure, label: str):
         if self.save_output:
             output_path = rio.create_timestamped_filepath(
