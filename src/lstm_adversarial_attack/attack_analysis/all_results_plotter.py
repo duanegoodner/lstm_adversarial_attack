@@ -1,4 +1,3 @@
-from functools import cached_property
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -49,11 +48,10 @@ class AllResultsPlotter:
             )
         )
         self.histogram_plotter = php.HistogramPlotter(
-            title=f"Perturbation Element Histograms",
             perts_dfs=self.attack_condition_summaries.data_for_histogram_plotter,
         )
         self.discovery_epoch_plotter = dep.DiscoveryEpochCDFPlotter(
-            title="Adversarial Examples Discovery Epoch CDFs",
+            # title="Adversarial Examples Discovery Epoch CDFs",
             xy_dfs=self.attack_condition_summaries.data_for_epochfound_cdf_plotter,
             cfg=dep.DiscoveryEpochCDFPlotterSettings(),
         )
@@ -88,8 +86,10 @@ class AllResultsPlotter:
             )
             fig.savefig(fname=str(output_path))
 
-    def plot_all_histograms(self):
-        hist_grid_fig = self.histogram_plotter.plot_all_histograms()
+    def plot_all_histograms(self, fig_title: str = None):
+        hist_grid_fig = self.histogram_plotter.plot_all_histograms(
+            fig_title=fig_title
+        )
         self.save_figure(fig=hist_grid_fig, label="histogram_grid")
 
     def plot_single_histogram(
@@ -98,19 +98,19 @@ class AllResultsPlotter:
         num_bins: int,
         x_min: float | int,
         x_max: float | int,
-        title: str = None,
-        label: str = "single_histogram"
+        fig_title: str = None,
+        label: str = "single_histogram",
     ):
         single_hist_fig = self.histogram_plotter.plot_single_histogram(
             plot_indices=plot_indices,
             num_bins=num_bins,
             x_min=x_min,
             x_max=x_max,
-            title=title
+            fig_title=fig_title,
         )
         self.save_figure(fig=single_hist_fig, label=label)
 
-    def plot_discovery_epoch_cdfs(self):
+    def plot_discovery_epoch_cdfs(self, fig_title: str = None):
         discovery_epoch_fig = self.discovery_epoch_plotter.plot_all_cdfs()
         self.save_figure(fig=discovery_epoch_fig, label="discovery_epochs")
 
@@ -123,9 +123,10 @@ class AllResultsPlotter:
         self.save_figure(fig=ganzp_ij_fig, label="ganzp_ij")
 
     def plot_sensitivity_ij(self):
-        sensitivity_ij_fig = self.sensitivity_ij_plotter.plot_susceptibilities()
+        sensitivity_ij_fig = (
+            self.sensitivity_ij_plotter.plot_susceptibilities()
+        )
         self.save_figure(fig=sensitivity_ij_fig, label="sensitivity_ij")
-
 
 
 if __name__ == "__main__":
@@ -136,10 +137,6 @@ if __name__ == "__main__":
         num_bins=100,
         x_min=0,
         x_max=0.05,
-        title=(
-            "Mean Non-zero Perturbation Element Magnitude\nfor 0 \u2192 1"
-            " Attacks"
-        ),
     )
     plotter.plot_discovery_epoch_cdfs()
     plotter.plot_gpp_ij()

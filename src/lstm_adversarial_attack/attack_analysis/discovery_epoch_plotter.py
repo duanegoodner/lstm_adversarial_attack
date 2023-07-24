@@ -39,11 +39,11 @@ class DiscoveryEpochCDFPlotterSettings:
 class DiscoveryEpochCDFPlotter:
     def __init__(
         self,
-        title: str,
+        # title: str,
         xy_dfs: ata.ZerosOnesDFPair,
         cfg: DiscoveryEpochCDFPlotterSettings,
     ):
-        self.title = title
+        # self.title = title
         self.xy_dfs = xy_dfs
         self.cfg = cfg
 
@@ -51,7 +51,7 @@ class DiscoveryEpochCDFPlotter:
     def _df_tuple(self) -> tuple[pd.DataFrame, pd.DataFrame]:
         return self.xy_dfs.zero_to_one, self.xy_dfs.one_to_zero
 
-    def _set_figure_layout(self):
+    def _set_figure_layout(self, fig_title: str):
         fig, axes = plt.subplots(
             figsize=self.cfg.fig_size,
             nrows=self.cfg.num_plot_rows,
@@ -61,7 +61,7 @@ class DiscoveryEpochCDFPlotter:
         fig.text(
             x=self.cfg.title_x_position,
             y=self.cfg.title_y_position,
-            s=self.title,
+            s=fig_title,
             ha=self.cfg.title_horizontal_alignment,
             rotation="horizontal",
             fontsize=self.cfg.title_fontsize,
@@ -78,8 +78,10 @@ class DiscoveryEpochCDFPlotter:
 
         return fig, axes
 
-    def plot_all_cdfs(self) -> plt.Figure:
-        fig, axes = self._set_figure_layout()
+    def plot_all_cdfs(self, fig_title: str = None) -> plt.Figure:
+        if fig_title is None:
+            fig_title = "Adversarial Examples Discovery Epoch CDFs"
+        fig, axes = self._set_figure_layout(fig_title=fig_title)
         for plot_row in range(len(self._df_tuple)):
             df = self._df_tuple[plot_row]
             ax = axes[plot_row]
@@ -122,7 +124,7 @@ if __name__ == "__main__":
         )
     )
     epochfound_plotter = DiscoveryEpochCDFPlotter(
-        title="Adversarial Examples Discovery Epoch CDFs",
+        # title="Adversarial Examples Discovery Epoch CDFs",
         xy_dfs=attack_condition_summaries.data_for_epochfound_cdf_plotter,
         cfg=DiscoveryEpochCDFPlotterSettings(),
     )

@@ -15,7 +15,6 @@ if __name__ == "__main__":
         )
     )
     histogram_plotter = hpl.HistogramPlotter(
-        title="Perturbation Element Histograms",
         perts_dfs=attack_condition_summaries.data_for_histogram_plotter,
     )
 
@@ -25,20 +24,12 @@ if __name__ == "__main__":
         num_bins=100,
         x_min=0,
         x_max=0.05,
-        title=(
-            "Mean Non-zero Perturbation Element Magnitude\nfor 0 \u2192 1"
-            " Attacks"
-        ),
     )
     histogram_plotter.plot_single_histogram(
         plot_indices=(1, 1),
         num_bins=100,
         x_min=0,
         x_max=0.05,
-        title=(
-            "Mean Non-zero Perturbation Element Magnitude\nfor 1 \u2192 0"
-            " Attacks"
-        ),
     )
 
     ssp.plot_metric_maps(

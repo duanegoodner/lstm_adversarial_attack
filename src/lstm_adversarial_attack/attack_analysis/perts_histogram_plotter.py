@@ -101,11 +101,11 @@ class HistogramPlotterFixedSettings:
 class HistogramPlotter:
     def __init__(
         self,
-        title: str,
+        # title: str,
         perts_dfs: ata.StandardDataFramesForPlotter,
         cfg: HistogramPlotterFixedSettings = None,
     ):
-        self.title = title
+        # self.title = title
         self.perts_dfs = perts_dfs
         if cfg is None:
             self.cfg = HistogramPlotterFixedSettings()
@@ -143,7 +143,7 @@ class HistogramPlotter:
 
         return my_grid
 
-    def _set_figure_layout(self):
+    def _set_figure_layout(self, fig_title: str):
         fig, axes = plt.subplots(
             figsize=self.cfg.fig_size,
             nrows=self.cfg.num_plot_rows,
@@ -162,7 +162,7 @@ class HistogramPlotter:
         fig.text(
             x=self.cfg.title_x_position,
             y=self.cfg.title_y_position,
-            s=self.title,
+            s=fig_title,
             ha=self.cfg.title_horizontal_alignment,
             rotation="horizontal",
             fontsize=self.cfg.title_fontsize,
@@ -201,8 +201,12 @@ class HistogramPlotter:
 
             # bottom row col idx 1 gets legend
 
-    def plot_all_histograms(self) -> plt.Figure:
-        fig, axes = self._set_figure_layout()
+    def plot_all_histograms(
+        self, fig_title: str = None
+    ) -> plt.Figure:
+        if fig_title is None:
+            fig_title = "Perturbation Histograms"
+        fig, axes = self._set_figure_layout(fig_title=fig_title)
         for plot_row in range(self.cfg.num_plot_rows):
             for plot_col in range(self.cfg.num_plot_cols):
                 ax = axes[plot_row][plot_col]
@@ -220,10 +224,10 @@ class HistogramPlotter:
         num_bins: int,
         x_min: int | float,
         x_max: int | float,
-        title: str = None,
+        fig_title: str = None,
     ):
-        if title is None:
-            title = self.cfg.plot_titles[plot_indices[1]]
+        if fig_title is None:
+            fig_title = self.cfg.plot_titles[plot_indices[1]]
 
         fig, axes = plt.subplots(nrows=1, ncols=1)
         self.hist_info_grid[plot_indices[0]][plot_indices[1]].plot(
@@ -232,7 +236,7 @@ class HistogramPlotter:
 
         axes.set_ylabel(self.cfg.ylabels[plot_indices[0]])
         axes.set_xlabel(self.cfg.xlabels[plot_indices[1]])
-        axes.set_title(title, loc="left")
+        axes.set_title(fig_title, loc="left")
         plt.legend(bbox_to_anchor=(0.88, -0.15), ncol=2)
         plt.subplots_adjust(left=0.22, right=0.88, top=0.85, bottom=0.2)
         plt.show()
@@ -249,7 +253,7 @@ if __name__ == "__main__":
     )
 
     new_plotter = HistogramPlotter(
-        title="Perturbation Element Histograms from Latest Attack",
+        # title="Perturbation Element Histograms from Latest Attack",
         perts_dfs=attack_condition_summaries.data_for_histogram_plotter,
     )
     new_plotter.plot_all_histograms()
@@ -259,8 +263,8 @@ if __name__ == "__main__":
         num_bins=100,
         x_min=0,
         x_max=0.05,
-        title=(
-            "Mean Non-zero Perturbation Element Magnitude\nfor 0 \u2192 1"
-            " Attacks"
-        ),
+        # title=(
+        #     "Mean Non-zero Perturbation Element Magnitude\nfor 0 \u2192 1"
+        #     " Attacks"
+        # ),
     )
