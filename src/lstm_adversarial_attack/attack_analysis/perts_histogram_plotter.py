@@ -195,6 +195,11 @@ class HistogramPlotter:
                     axes[plot_row][plot_col].set_xlabel(
                         self.cfg.xlabels[plot_col]
                     )
+                axes[plot_row][self.cfg.num_plot_cols // 2].legend(
+                    bbox_to_anchor=(1.3, -0.25), ncol=2
+                )
+
+            # bottom row col idx 1 gets legend
 
     def plot_all_histograms(self) -> plt.Figure:
         fig, axes = self._set_figure_layout()
@@ -228,8 +233,9 @@ class HistogramPlotter:
         axes.set_ylabel(self.cfg.ylabels[plot_indices[0]])
         axes.set_xlabel(self.cfg.xlabels[plot_indices[1]])
         axes.set_title(title, loc="left")
+        plt.legend(bbox_to_anchor=(0.88, -0.15), ncol=2)
+        plt.subplots_adjust(left=0.22, right=0.88, top=0.85, bottom=0.2)
         plt.show()
-
 
         return fig
 

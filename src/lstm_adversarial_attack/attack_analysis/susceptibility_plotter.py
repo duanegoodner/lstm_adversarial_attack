@@ -67,9 +67,11 @@ class SusceptibilityPlotter:
         self,
         susceptibility_dfs: ata.StandardDataFramesForPlotter,
         main_plot_title: str,
+        colorbar_title: str = ""
     ):
         self.susceptibility_dfs = susceptibility_dfs
         self.main_plot_title = main_plot_title
+        self.colorbar_title = colorbar_title
         self.measurement_names = (
             self.susceptibility_dfs.zero_to_one_first.columns
         )
@@ -179,7 +181,7 @@ class SusceptibilityPlotter:
 
     def plot_susceptibilities(
         self,
-        color_bar_title: str = "",
+        # color_bar_title: str = "",
     ) -> plt.Figure:
         """
         Generates all heatmap susceptibility plots in figure
@@ -205,7 +207,7 @@ class SusceptibilityPlotter:
                 if (plot_row == FIXED_SETTINGS.subplot_num_rows - 1) and (
                     plot_col == FIXED_SETTINGS.subplot_num_cols - 1
                 ):
-                    cur_plot.collections[0].colorbar.set_label(color_bar_title)
+                    cur_plot.collections[0].colorbar.set_label(self.colorbar_title)
 
         self._decorate_subplots(
             axes=axes,
@@ -235,10 +237,11 @@ def plot_metric_maps(
             metric=metric,
         ),
         main_plot_title=plot_title,
+        colorbar_title=colorbar_title
     )
 
     susceptibility_fig = plotter.plot_susceptibilities(
-        color_bar_title=colorbar_title
+        # color_bar_title=colorbar_title
     )
 
     return susceptibility_fig
