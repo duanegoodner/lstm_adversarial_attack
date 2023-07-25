@@ -33,9 +33,10 @@ class DataProvenanceBuilder:
         if previous_info is None:
             previous_info = {}
         if type(previous_info) == pathlib.PosixPath:
+
             previous_info = rio.ResourceImporter().import_pickle_to_object(
                 path=previous_info
-            )
+            ) if previous_info.exists() else {}
         self.data = previous_info
         self.data[self.category_name] = {}
         self.output_dir = output_dir
@@ -76,3 +77,14 @@ class HasDataProvenance(ABC):
             resource=self.data_provenance, path=output_path
         )
         return output_path
+
+    def export_dict(self, filename: str):
+        rio.ResourceExporter().export(
+            resource=self.__dict__,
+            path=self.provenance_info.output_dir / filename
+        )
+
+    def export(self, filename: str, provenance_only: bool = False):
+        self.write_provenance()
+        if not provenance_only:
+            self.export_dict(filename=filename)

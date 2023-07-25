@@ -33,7 +33,6 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         max_num_samples: int = cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
         sample_selection_seed: int = cfg_settings.ATTACK_SAMPLE_SELECTION_SEED,
         target_fold_index: int = None,
-        data_provenance: dict[str, Any] = None
     ):
         """
         :param device: the device to run on
@@ -64,28 +63,8 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         self.output_dir = output_dir
         self.sample_selection_seed = sample_selection_seed
         self.target_fold_index = target_fold_index
-        # if data_provenance is None:
-        #     data_provenance = self.build_data_provenance()
-        # self.data_provenance = data_provenance
-        self.write_provenance()
-        self.export_dict()
-
-    # def build_data_provenance(self) -> dict[str, Any]:
-    #     builder = dpr.DataProvenanceBuilder(
-    #             pipeline_component=self,
-    #             category_name="attack_tuner_driver",
-    #             new_items={
-    #                 "objective_name": self.objective_name,
-    #                 "objective_extra_kwargs": self.objective_extra_kwargs,
-    #                 "target_model_path": self.target_model_path,
-    #                 "target_fold_index": self.target_fold_index,
-    #                 "target_model_trained_to_epoch": self.target_model_checkpoint[
-    #                     "epoch_num"
-    #                 ],
-    #             },
-    #             output_dir=self.output_dir
-    #         )
-    #     return builder.build()
+        # self.write_provenance()
+        self.export(filename="attack_tuner_driver_dict.pickle")
 
     @property
     def provenance_info(self) -> dpr.ProvenanceInfo:
@@ -103,13 +82,11 @@ class AttackTunerDriver(dpr.HasDataProvenance):
             output_dir=self.output_dir
         )
 
-
-    def export_dict(self):
-        # if not (self.output_dir / "attack_tuner_driver_dict.pickle").exists():
-        rio.ResourceExporter().export(
-            resource=self.__dict__,
-            path=self.output_dir / "attack_tuner_driver_dict.pickle",
-        )
+    # def export_dict(self):
+    #     rio.ResourceExporter().export(
+    #         resource=self.__dict__,
+    #         path=self.output_dir / "attack_tuner_driver_dict.pickle",
+    #     )
 
     @classmethod
     def from_cross_validation_results(

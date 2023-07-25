@@ -8,15 +8,18 @@ import lstm_adversarial_attack.attack_analysis.perts_histogram_plotter as php
 import lstm_adversarial_attack.attack_analysis.susceptibility_plotter as ssp
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
+import lstm_adversarial_attack.data_provenance as dpr
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.resource_io as rio
 
 
-class AllResultsPlotter:
+class AllResultsPlotter(dpr.HasDataProvenance):
     def __init__(
         self,
         attack_result_path: Path = None,
         seq_length: int = cfg_settings.ATTACK_ANALYSIS_DEFAULT_SEQ_LENGTH,
+        min_num_perts: int = None,
+        max_num_perts: int = None,
         label: str = None,
         output_dir: Path = None,
         save_output: bool = True,
@@ -29,6 +32,8 @@ class AllResultsPlotter:
             )
         self.attack_result_path = attack_result_path
         self.seq_length = seq_length
+        self.min_num_perts = min_num_perts
+        self.max_num_perts = max_num_perts
         self.label = label
         self.save_output = save_output
         if self.save_output and output_dir is None:
@@ -44,7 +49,9 @@ class AllResultsPlotter:
         )
         self.attack_condition_summaries = (
             self.full_attack_results.get_standard_attack_condition_summaries(
-                seq_length=self.seq_length
+                seq_length=self.seq_length,
+                min_num_perts=min_num_perts,
+                max_num_perts=max_num_perts,
             )
         )
         self.histogram_plotter = php.HistogramPlotter(
@@ -76,8 +83,33 @@ class AllResultsPlotter:
             main_plot_title="Perturbation Sensitivity",
             colorbar_title="Perturbation Sensitivity",
         )
+        self.export(
+            filename="all_results_plotter_dict.pickle", provenance_only=True
+        )
 
+    @property
+    def provenance_info(self) -> dpr.ProvenanceInfo:
+        return dpr.ProvenanceInfo(
+            previous_info=(
+                self.attack_result_path / "provenance.pickle"
+                if self.attack_result_path is not None
+                else None
+            ),
+            category_name="result_plotter",
+            new_items={
+                "attack_result_path": self.attack_result_path,
+                "seq_length": self.seq_length,
+                "min_num_perts": self.min_num_perts,
+                "max_num_perts": self.max_num_perts,
+            },
+            output_dir=self.output_dir,
+        )
 
+    # def export_dict(self):
+    #     rio.ResourceExporter().export(
+    #         resource=self.__dict__,
+    #         path=self.output_dir / "all_results_plotter_dict.pickle"
+    #     )
 
     def save_figure(self, fig: plt.Figure, label: str):
         if self.save_output:
