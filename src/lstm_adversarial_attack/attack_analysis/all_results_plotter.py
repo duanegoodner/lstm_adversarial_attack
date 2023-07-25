@@ -8,17 +8,29 @@ import lstm_adversarial_attack.attack_analysis.perts_histogram_plotter as php
 import lstm_adversarial_attack.attack_analysis.susceptibility_plotter as ssp
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
+import lstm_adversarial_attack.data_provenance as dpr
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.resource_io as rio
 
 
-class AllResultsPlotter:
+class SingleHistogramInfo:
+    def __init__(self, command_info: list):
+        self.plot_indices = (int(command_info[0]), int(command_info[1]))
+        self.num_bins = int(command_info[2])
+        self.x_min = float(command_info[3])
+        self.x_max = float(command_info[4])
+
+
+class AllResultsPlotter(dpr.HasDataProvenance):
     def __init__(
         self,
         attack_result_path: Path = None,
         seq_length: int = cfg_settings.ATTACK_ANALYSIS_DEFAULT_SEQ_LENGTH,
+        min_num_perts: int = None,
+        max_num_perts: int = None,
         label: str = None,
         output_dir: Path = None,
+        single_histograms_info: list[SingleHistogramInfo] = None,
         save_output: bool = True,
     ):
         if attack_result_path is None:
@@ -29,7 +41,10 @@ class AllResultsPlotter:
             )
         self.attack_result_path = attack_result_path
         self.seq_length = seq_length
+        self.min_num_perts = min_num_perts
+        self.max_num_perts = max_num_perts
         self.label = label
+        self.single_histograms_info = single_histograms_info
         self.save_output = save_output
         if self.save_output and output_dir is None:
             output_dir = rio.create_timestamped_dir(
@@ -44,7 +59,9 @@ class AllResultsPlotter:
         )
         self.attack_condition_summaries = (
             self.full_attack_results.get_standard_attack_condition_summaries(
-                seq_length=self.seq_length
+                seq_length=self.seq_length,
+                min_num_perts=min_num_perts,
+                max_num_perts=max_num_perts,
             )
         )
         self.histogram_plotter = php.HistogramPlotter(
@@ -77,7 +94,29 @@ class AllResultsPlotter:
             colorbar_title="Perturbation Sensitivity",
         )
 
+        self.export(
+            filename="all_results_plotter_dict.pickle",
+            provenance_only=True,
+            provenance_text_file=True,
+        )
 
+    @property
+    def provenance_info(self) -> dpr.ProvenanceInfo:
+        return dpr.ProvenanceInfo(
+            previous_info=(
+                self.attack_result_path.parent / "provenance.pickle"
+                if self.attack_result_path is not None
+                else None
+            ),
+            category_name="result_plotter",
+            new_items={
+                "attack_result_path": self.attack_result_path,
+                "seq_length": self.seq_length,
+                "min_num_perts": self.min_num_perts,
+                "max_num_perts": self.max_num_perts,
+            },
+            output_dir=self.output_dir,
+        )
 
     def save_figure(self, fig: plt.Figure, label: str):
         if self.save_output:
@@ -129,6 +168,16 @@ class AllResultsPlotter:
             self.sensitivity_ij_plotter.plot_susceptibilities()
         )
         self.save_figure(fig=sensitivity_ij_fig, label="sensitivity_ij")
+
+    def plot_all(self):
+        self.plot_all_histograms()
+        if self.single_histograms_info:
+            for entry in self.single_histograms_info:
+                self.plot_single_histogram(**entry.__dict__)
+        self.plot_discovery_epoch_cdfs()
+        self.plot_gpp_ij()
+        self.plot_ganzp_ij()
+        self.plot_sensitivity_ij()
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ import argparse
 import sys
 import torch
 from pathlib import Path
-from typing import Any, Callable
+from typing import Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.adv_attack_trainer as aat
@@ -107,9 +107,9 @@ class AttackDriver(dpr.HasDataProvenance):
         self.hyperparameter_tuning_results_dir = (
             hyperparameter_tuning_result_dir
         )
-        # self.data_provenance = self.build_data_provenance()
-        self.write_provenance()
-        self.export_dict()
+        # self.write_provenance()
+        # self.export_dict()
+        self.export(filename="attack_driver_dict.pickle")
 
     @property
     def provenance_info(self) -> dpr.ProvenanceInfo:
@@ -117,10 +117,10 @@ class AttackDriver(dpr.HasDataProvenance):
             previous_info=(
                 self.hyperparameter_tuning_results_dir / "provenance.pickle"
                 if self.hyperparameter_tuning_results_dir is not None
-                   and (
-                           self.hyperparameter_tuning_results_dir
-                           / "provenance.pickle"
-                   ).exists()
+                and (
+                    self.hyperparameter_tuning_results_dir
+                    / "provenance.pickle"
+                ).exists()
                 else None
             ),
             category_name="attack_driver",
@@ -136,32 +136,6 @@ class AttackDriver(dpr.HasDataProvenance):
             output_dir=self.output_dir,
         )
 
-    # def build_data_provenance(self) -> dict[str, Any]:
-    #     builder = dpr.DataProvenanceBuilder(
-    #         previous_info=(
-    #             self.hyperparameter_tuning_results_dir / "provenance.pickle"
-    #             if self.hyperparameter_tuning_results_dir is not None
-    #                and (
-    #                        self.hyperparameter_tuning_results_dir
-    #                        / "provenance.pickle"
-    #                ).exists()
-    #             else None
-    #         ),
-    #         pipeline_component=self,
-    #         category_name="attack_driver",
-    #         new_items={
-    #             "epochs_per_batch": self.epochs_per_batch,
-    #             "attack_hyperparameter_settings": (
-    #                 self.attack_hyperparameter_settings
-    #             ),
-    #             "hyperparameter_tuning_result_dir": (
-    #                 self.hyperparameter_tuning_results_dir
-    #             ),
-    #         },
-    #         output_dir=self.output_dir,
-    #     )
-    #     return builder.build()
-
     @staticmethod
     def initialize_output_dir(output_dir: Path | None):
         """
@@ -175,19 +149,13 @@ class AttackDriver(dpr.HasDataProvenance):
             output_dir = rio.create_timestamped_dir(
                 parent_path=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
             )
-        # if self.save_attack_driver:
-
-        # rio.ResourceExporter().export(
-        #     resource=self.provenance,
-        #     path=output_dir / "provenance.pickle"
-        # )
         return output_dir
 
-    def export_dict(self):
-        rio.ResourceExporter().export(
-            resource=self.__dict__,
-            path=self.output_dir / "attack_driver_dict.pickle",
-        )
+    # def export_dict(self):
+    #     rio.ResourceExporter().export(
+    #         resource=self.__dict__,
+    #         path=self.output_dir / "attack_driver_dict.pickle",
+    #     )
 
     @classmethod
     def from_attack_hyperparameter_settings(
@@ -284,19 +252,9 @@ class AttackDriver(dpr.HasDataProvenance):
         )
         tuner_driver = atd.AttackTunerDriver(**tuner_driver_dict)
 
+        # attack can have different # epochs per batch than tuner if specified
         if epochs_per_batch is None:
             epochs_per_batch = tuner_driver.epochs_per_batch
-
-        if (tuning_result_dir / "provenance.pickle").exists():
-            provenance = rio.ResourceImporter().import_pickle_to_object(
-                path=tuning_result_dir / "provenance.pickle"
-            )
-        else:
-            provenance = {}
-
-        if "full_attack" not in provenance:
-            provenance["full_attack"] = {}
-        provenance["full_attack"]["tuning_result_dir"] = tuning_result_dir
 
         return cls.from_attack_hyperparameter_settings(
             device=device,
@@ -393,4 +351,7 @@ if __name__ == "__main__":
         ),
     )
     args_namespace = parser.parse_args()
+    # args_namespace.tuning_result_dir = str(
+    #     cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-07-01_11_03_13.591090"
+    # )
     cur_success_summary = main(**args_namespace.__dict__)
