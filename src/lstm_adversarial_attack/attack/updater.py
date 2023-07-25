@@ -50,14 +50,13 @@ tuner_driver_dicts =  [
     for driver_dict_path in attack_tuner_driver_dict_paths
 ]
 
-# for idx, driver_dict in enumerate(tuner_driver_dicts):
-#     driver_dict["data_provenance"] = driver_dict["provenance"]
-#     del driver_dict["provenance"]
-#     rio.ResourceExporter().export(
-#         resource=driver_dict,
-#         path=attack_tuner_driver_paths[idx].parent
-#         / "attack_tuner_driver_dict.pickle",
-#     )
+for idx, driver_dict in enumerate(tuner_driver_dicts):
+    del driver_dict["data_provenance"]
+    rio.ResourceExporter().export(
+        resource=driver_dict,
+        path=attack_tuner_driver_paths[idx].parent
+        / "attack_tuner_driver_dict.pickle",
+    )
 
 
 # for idx, driver_dict in enumerate(tuner_driver_dicts):

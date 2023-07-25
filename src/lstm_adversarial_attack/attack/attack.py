@@ -21,7 +21,7 @@ from lstm_adversarial_attack.x19_mort_general_dataset import (
 )
 
 
-class AttackDriver:
+class AttackDriver(dpr.HasDataProvenance):
     """
     Instantiates and runs an AdversarialAttackTrainer
     """
@@ -107,11 +107,13 @@ class AttackDriver:
         self.hyperparameter_tuning_results_dir = (
             hyperparameter_tuning_result_dir
         )
-        self.data_provenance = self.build_data_provenance()
+        # self.data_provenance = self.build_data_provenance()
+        self.write_provenance()
         self.export_dict()
 
-    def build_data_provenance(self) -> dict[str, Any]:
-        builder = dpr.DataProvenanceBuilder(
+    @property
+    def provenance_info(self) -> dpr.ProvenanceInfo:
+        return dpr.ProvenanceInfo(
             previous_info=(
                 self.hyperparameter_tuning_results_dir / "provenance.pickle"
                 if self.hyperparameter_tuning_results_dir is not None
@@ -121,7 +123,6 @@ class AttackDriver:
                    ).exists()
                 else None
             ),
-            pipeline_component=self,
             category_name="attack_driver",
             new_items={
                 "epochs_per_batch": self.epochs_per_batch,
@@ -134,7 +135,32 @@ class AttackDriver:
             },
             output_dir=self.output_dir,
         )
-        return builder.build()
+
+    # def build_data_provenance(self) -> dict[str, Any]:
+    #     builder = dpr.DataProvenanceBuilder(
+    #         previous_info=(
+    #             self.hyperparameter_tuning_results_dir / "provenance.pickle"
+    #             if self.hyperparameter_tuning_results_dir is not None
+    #                and (
+    #                        self.hyperparameter_tuning_results_dir
+    #                        / "provenance.pickle"
+    #                ).exists()
+    #             else None
+    #         ),
+    #         pipeline_component=self,
+    #         category_name="attack_driver",
+    #         new_items={
+    #             "epochs_per_batch": self.epochs_per_batch,
+    #             "attack_hyperparameter_settings": (
+    #                 self.attack_hyperparameter_settings
+    #             ),
+    #             "hyperparameter_tuning_result_dir": (
+    #                 self.hyperparameter_tuning_results_dir
+    #             ),
+    #         },
+    #         output_dir=self.output_dir,
+    #     )
+    #     return builder.build()
 
     @staticmethod
     def initialize_output_dir(output_dir: Path | None):

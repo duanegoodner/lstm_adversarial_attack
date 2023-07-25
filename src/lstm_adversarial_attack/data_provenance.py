@@ -13,7 +13,7 @@ class ProvenanceInfo:
     category_name: str
     output_dir: Path
     new_items: dict[str, Any]
-    previous_info: dict[str, Any] | Path
+    previous_info: dict[str, Any] | Path = None
 
 
 class DataProvenanceBuilder:

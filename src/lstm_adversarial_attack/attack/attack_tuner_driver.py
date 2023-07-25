@@ -15,7 +15,7 @@ import lstm_adversarial_attack.attack.model_retriever as amr
 import lstm_adversarial_attack.data_provenance as dpr
 
 
-class AttackTunerDriver:
+class AttackTunerDriver(dpr.HasDataProvenance):
     """
     Instantiates and runs (or re-starts) an AttackHyperParameterTuner
     """
@@ -64,27 +64,44 @@ class AttackTunerDriver:
         self.output_dir = output_dir
         self.sample_selection_seed = sample_selection_seed
         self.target_fold_index = target_fold_index
-        if data_provenance is None:
-            data_provenance = self.build_data_provenance()
-        self.data_provenance = data_provenance
+        # if data_provenance is None:
+        #     data_provenance = self.build_data_provenance()
+        # self.data_provenance = data_provenance
+        self.write_provenance()
         self.export_dict()
 
-    def build_data_provenance(self) -> dict[str, Any]:
-        builder = dpr.DataProvenanceBuilder(
-                pipeline_component=self,
-                category_name="attack_tuner_driver",
-                new_items={
-                    "objective_name": self.objective_name,
-                    "objective_extra_kwargs": self.objective_extra_kwargs,
-                    "target_model_path": self.target_model_path,
-                    "target_fold_index": self.target_fold_index,
-                    "target_model_trained_to_epoch": self.target_model_checkpoint[
-                        "epoch_num"
-                    ],
-                },
-                output_dir=self.output_dir
-            )
-        return builder.build()
+    # def build_data_provenance(self) -> dict[str, Any]:
+    #     builder = dpr.DataProvenanceBuilder(
+    #             pipeline_component=self,
+    #             category_name="attack_tuner_driver",
+    #             new_items={
+    #                 "objective_name": self.objective_name,
+    #                 "objective_extra_kwargs": self.objective_extra_kwargs,
+    #                 "target_model_path": self.target_model_path,
+    #                 "target_fold_index": self.target_fold_index,
+    #                 "target_model_trained_to_epoch": self.target_model_checkpoint[
+    #                     "epoch_num"
+    #                 ],
+    #             },
+    #             output_dir=self.output_dir
+    #         )
+    #     return builder.build()
+
+    @property
+    def provenance_info(self) -> dpr.ProvenanceInfo:
+        return dpr.ProvenanceInfo(
+            category_name="attack_tuner_driver",
+            new_items={
+                "objective_name": self.objective_name,
+                "objective_extra_kwargs": self.objective_extra_kwargs,
+                "target_model_path": self.target_model_path,
+                "target_fold_index": self.target_fold_index,
+                "target_model_trained_to_epoch": self.target_model_checkpoint[
+                    "epoch_num"
+                ],
+            },
+            output_dir=self.output_dir
+        )
 
 
     def export_dict(self):
