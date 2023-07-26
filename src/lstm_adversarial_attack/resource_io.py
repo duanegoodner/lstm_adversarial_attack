@@ -20,9 +20,9 @@ def create_timestamped_dir(parent_path: Path) -> Path:
 def create_timestamped_filepath(
     parent_path: Path, file_extension: str, prefix: str = "", suffix: str = ""
 ):
-    filename = f"{prefix}{datetime.now()}{suffix}.{file_extension}".replace(" ", "_").replace(
-        ":", "_"
-    )
+    filename = f"{prefix}{datetime.now()}{suffix}.{file_extension}".replace(
+        " ", "_"
+    ).replace(":", "_")
     return parent_path / filename
 
 
@@ -74,12 +74,26 @@ class ResourceImporter:
 
 
 class ResourceExporter:
-    _supported_file_types = [".pickle"]
+    _supported_file_types = [".pickle", ".json"]
 
-    def export(self, resource: object, path: Path):
+    def export_dataframe(self, resource: pd.DataFrame, path: Path):
+        assert f".{path.name.split('.')[-1]}" == ".json"
+        resource.to_json(path_or_buf=str(path), orient="records", lines=True)
+
+    def export_to_pickle(self, resource: object, path: Path):
         self._validate_path(path=path)
         with path.open(mode="wb") as p:
             dill.dump(obj=resource, file=p)
+
+    def export(self, resource: object, path: Path):
+        dispatch_is_dataframe = {
+            True: self.export_dataframe,
+            False: self.export_to_pickle,
+        }
+
+        dispatch_is_dataframe[type(resource) == pd.DataFrame](
+            resource=resource, path=path
+        )
 
     def _validate_path(self, path: Path):
         assert f".{path.name.split('.')[-1]}" in self._supported_file_types
