@@ -14,8 +14,21 @@ import lstm_adversarial_attack.resource_io as rio
 
 
 class AttackTunerObjectives:
+    """
+    Contains methods available to HyperParameterAttackTuner for calculating
+    return value of tuner objective_fn from a TrainerSuccessSummary. Each method
+    uses different attribute of a TrainerSuccessSummary for its calc.
+    """
     @staticmethod
     def sparse_small(success_summary: ards.TrainerSuccessSummary) -> float:
+        """
+        Uses TrainerSuccessSummary object's sparse_small_scores
+        :param success_summary: a TrainerSuccessSummary object obtained from
+        attacks from a particular tuning trial
+        :return: sum of sparse_small scores of adversarial perturbations of
+        all successful attacks
+        """
+
         if len(success_summary.perts_summary_best.sparse_small_scores) == 0:
             return 0.0
         else:
@@ -25,6 +38,13 @@ class AttackTunerObjectives:
 
     @staticmethod
     def sparse_small_max(success_summary: ards.TrainerSuccessSummary) -> float:
+        """
+        Uses TrainerSuccessSummary object's sparse_small_max_scores
+        :param success_summary: a TrainerSuccessSummary object obtained from
+        attacks from a particular tuning trial
+        :return: sum of spars_small_max_scores of adversarial perturbations for
+        all successful attacks
+        """
         if (
             len(success_summary.perts_summary_best.sparse_small_max_scores)
             == 0
@@ -37,6 +57,13 @@ class AttackTunerObjectives:
 
     @staticmethod
     def sparsity(success_summary: ards.TrainerSuccessSummary) -> float:
+        """
+        Uses TrainerSuccessSummary object's sparsity attribute
+        :param success_summary: a TrainerSuccessSummary object obtained from
+        attacks from a particular tuning trial
+        :return: sum of sparsity of adversarial perturbations for
+        all successful attacks
+        """
         if len(success_summary.perts_summary_best.sparsity) == 0:
             return 0.0
         else:
@@ -46,70 +73,18 @@ class AttackTunerObjectives:
     def max_num_nonzero_perts(
         success_summary: ards.TrainerSuccessSummary, max_num_perts: int
     ) -> float:
+        """
+        Returns number of adversarial perturbations with total number of
+        non-zero elements less than or equal to max_num_non_perts.
+        :param success_summary: a TrainerSuccessSummary object obtained from
+        attacks from a particular tuning trial
+        :param max_num_perts:
+        :return: Number of adversarial perturbations with total number of
+        non-zero elements less than or equal to max_num_non_perts.
+        """
         return success_summary.perts_summary_best.num_examples_with_num_nonzero_less_than(
             cutoff=(max_num_perts + 1)
         )
-
-
-class AttackTunerObjectivesBuilder:
-    """
-    Class of static methods for organization purposes. Each method returns a
-    Callable that can be to calculate the return value of an
-    AttackHyperParameterTuner's .objective_fn method.
-    """
-
-    @staticmethod
-    def sparse_small() -> Callable[[ards.TrainerSuccessSummary], float]:
-        def objective(success_summary: ards.TrainerSuccessSummary) -> float:
-            if (
-                len(success_summary.perts_summary_best.sparse_small_scores)
-                == 0
-            ):
-                return 0.0
-            else:
-                return np.sum(
-                    success_summary.perts_summary_best.sparse_small_scores
-                ).item()
-
-        return objective
-
-    @staticmethod
-    def sparse_small_max() -> Callable[[ards.TrainerSuccessSummary], float]:
-        def objective(success_summary: ards.TrainerSuccessSummary) -> float:
-            if (
-                len(success_summary.perts_summary_best.sparse_small_max_scores)
-                == 0
-            ):
-                return 0.0
-            else:
-                return np.sum(
-                    success_summary.perts_summary_best.sparse_small_max_scores
-                ).item()
-
-        return objective
-
-    @staticmethod
-    def sparsity() -> Callable[[ards.TrainerSuccessSummary], float]:
-        def objective(success_summary: ards.TrainerSuccessSummary) -> float:
-            if len(success_summary.perts_summary_best.sparsity) == 0:
-                return 0.0
-            else:
-                return np.sum(
-                    success_summary.perts_summary_best.sparsity
-                ).item()
-
-        return objective
-
-    @staticmethod
-    def max_num_nonzero_perts(
-        max_perts: int,
-    ) -> Callable[[ards.TrainerSuccessSummary], float]:
-        def objective(success_summary: ards.TrainerSuccessSummary) -> float:
-            return success_summary.perts_summary_best.num_examples_with_num_nonzero_less_than(
-                cutoff=(max_perts + 1)
-            )
-
-        return objective
 
 
 class AttackHyperParameterTuner:

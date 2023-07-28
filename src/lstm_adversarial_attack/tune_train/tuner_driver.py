@@ -42,7 +42,7 @@ class TunerDriver:
         self.collate_fn = collate_fn
         self.continue_tuning_dir = continue_tuning_dir
         if self.continue_tuning_dir is not None:
-            self.output_dir = self.continue_tuning_dir.parent.parent
+            self.output_dir = self.continue_tuning_dir#.parent.parent
         else:
             self.output_dir = rio.create_timestamped_dir(
                 parent_path=cfg_path.HYPERPARAMETER_OUTPUT_DIR

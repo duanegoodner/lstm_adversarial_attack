@@ -1,5 +1,7 @@
 import argparse
 import sys
+
+import optuna
 import torch
 from pathlib import Path
 
@@ -8,7 +10,18 @@ import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.tune_train.tuner_driver as td
 
 
-def main(num_trials: int = None):
+def main(num_trials: int = None) -> optuna.Study:
+    """
+    Runs a new optuna study consisting of multiple trials to find
+    optimized hyperparameters for use when generating a model  with a
+    X19LSTMBuilder and training it with a StandardModelTrainer. Results will be
+    saved in a newly created director under
+    data/tune_train/hyperparameter_tuning/. If overall study is killed early,
+    data from completed trials is still saved.
+
+    :param num_trials: max number of trials to run
+    :return: an optuna.Study object with results of completed trials.
+    """
     if num_trials is None:
         num_trials = cfg_settings.TUNER_NUM_TRIALS
 

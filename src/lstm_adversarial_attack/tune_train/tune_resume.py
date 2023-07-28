@@ -1,7 +1,8 @@
 import argparse
 import sys
-import torch
 from pathlib import Path
+
+import optuna
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as cfg_paths
@@ -11,11 +12,23 @@ import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.tune_train.tuner_driver as td
 
 
-def main(study_dir: Path = None, num_trials: int = None):
+def main(study_dir: Path = None, num_trials: int = None) -> optuna.Study:
+    """
+    Resumes hyperparameter tuning using the results of a previously run study.
+    Results are appended to the previous study results. (Does not create a new
+    study)
+    :param study_dir: Output directory of the previously run study. If not
+    provided, defaults to directory containing the most recently modified
+    optuna_study result under directory data/tune_train/hyperparameter_tuning.
+    :param num_trials: max number of additional trials to run
+    :return: the updated optuna Study.
+    """
     if study_dir is None:
-        study_dir = ps.most_recently_modified_subdir(
-            root_path=cfg_paths.HYPERPARAMETER_OUTPUT_DIR
-        )
+        study_dir = ps.latest_modified_file_with_name_condition(
+            component_string="optuna_study.pickle",
+            root_dir=cfg_paths.HYPERPARAMETER_OUTPUT_DIR,
+            comparison_type=ps.StringComparisonType.EXACT_MATCH
+        ).parent.parent
     if num_trials is None:
         num_trials = cfg_settings.TUNER_NUM_TRIALS
 

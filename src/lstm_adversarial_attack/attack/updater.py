@@ -1,3 +1,8 @@
+"""
+Dev script used to modify existing pickle files to match change in
+AttackHyperParameterTuner definition
+"""
+
 import sys
 from pathlib import Path
 

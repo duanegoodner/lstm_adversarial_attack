@@ -7,14 +7,11 @@ import lstm_adversarial_attack.attack_analysis.attack_analysis as ata
 
 
 @dataclass
-class HistLegendInfo:
-    loc: str
-    bbox_to_anchor: tuple[float, float]
-    ncol: int
-
-
-@dataclass
 class HistogramInfo:
+    """
+    Data for a single histogram plot. HistogramPlotter will contain one
+    HistogramInfo object for each histogram that it plots in standard grid.
+    """
     dfs: tuple[pd.DataFrame, ...]
     df_labels: tuple[str, ...]
     data_col_name: str
@@ -59,6 +56,10 @@ class HistogramInfo:
 
 @dataclass
 class HistogramPlotterFixedSettings:
+    """
+    Settings that are used for a HistogramPlotter and typically do not
+    change from one instance to another.
+    """
     df_labels: tuple[str, ...] = ("First examples", "Best examples")
     num_plot_rows: int = 2
     num_plot_cols: int = 3
@@ -99,13 +100,18 @@ class HistogramPlotterFixedSettings:
 
 
 class HistogramPlotter:
+    """
+    Provides method to plot a grid of histograms. Standard grid is 2 x 3 for
+    two attack categories (0-to-1 and 1-to-0) and three parameters (# nonzero
+    perturbation elements, avg magnitude of nonzero perturbation elements, and
+    max magnitude of perturbation elements). Also provides method for
+    re-plotting any of the histograms in grid with custom axis settings.
+    """
     def __init__(
         self,
-        # title: str,
         perts_dfs: ata.StandardDataFramesForPlotter,
         cfg: HistogramPlotterFixedSettings = None,
     ):
-        # self.title = title
         self.perts_dfs = perts_dfs
         if cfg is None:
             self.cfg = HistogramPlotterFixedSettings()

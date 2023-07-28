@@ -2,12 +2,15 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
+SRC_DIR = PROJECT_ROOT / "src"
+LSTM_ADVERSARIAL_ATTACK_PACKAGE = SRC_DIR / "lstm_adversarial_attack"
 DATA_DIR = PROJECT_ROOT / "data"
 EXAMPLE_DATA_DIR = DATA_DIR / "examples"
 
 # ##### Database #####
-DB_DOTENV_PATH = PROJECT_ROOT / "config" / "mimiciii_database.env"
-DB_DEFAULT_QUERY_DIR = PROJECT_ROOT / "src" / "mimiciii_queries"
+DB_SUBPACKAGE = LSTM_ADVERSARIAL_ATTACK_PACKAGE / "query_db"
+DB_DOTENV_PATH = DB_SUBPACKAGE / "mimiciii_database.env"
+DB_DEFAULT_QUERY_DIR = DB_SUBPACKAGE / "mimiciii_queries"
 DB_OUTPUT_DIR = DATA_DIR / "query_db"
 DB_QUERIES = [
     DB_DEFAULT_QUERY_DIR / "icustay_detail.sql",

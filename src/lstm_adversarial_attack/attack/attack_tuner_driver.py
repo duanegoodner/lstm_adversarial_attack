@@ -82,12 +82,6 @@ class AttackTunerDriver(dpr.HasDataProvenance):
             output_dir=self.output_dir
         )
 
-    # def export_dict(self):
-    #     rio.ResourceExporter().export(
-    #         resource=self.__dict__,
-    #         path=self.output_dir / "attack_tuner_driver_dict.pickle",
-    #     )
-
     @classmethod
     def from_cross_validation_results(
         cls,

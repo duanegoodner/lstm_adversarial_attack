@@ -1,6 +1,4 @@
 from dataclasses import dataclass
-from pathlib import Path
-
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
@@ -8,11 +6,15 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.colors import LogNorm
 import lstm_adversarial_attack.attack_analysis.attack_analysis as ata
-import lstm_adversarial_attack.resource_io as rio
 
 
 @dataclass
 class SusceptibilityPlotterFixedSettings:
+    """
+    Settings that are used for a SusceptibilityPlotter and typically do not
+    change from one instance to another.
+    """
+
     df_titles: tuple[tuple[str, ...], ...] = (
         (
             "0 \u2192 1 Attack, First Examples",
@@ -67,8 +69,15 @@ class SusceptibilityPlotter:
         self,
         susceptibility_dfs: ata.StandardDataFramesForPlotter,
         main_plot_title: str,
-        colorbar_title: str = ""
+        colorbar_title: str = "",
     ):
+        """
+        :param susceptibility_dfs: contain the susceptibility data to plot.
+        Note that when StandardDataFramesFor plotter is created, data are
+        filtered to only include samples of a particular sequence length when
+        :param main_plot_title: title text of main figure
+        :param colorbar_title: colorbar title text
+        """
         self.susceptibility_dfs = susceptibility_dfs
         self.main_plot_title = main_plot_title
         self.colorbar_title = colorbar_title
@@ -84,6 +93,11 @@ class SusceptibilityPlotter:
     ) -> tuple[
         tuple[pd.DataFrame, pd.DataFrame], tuple[pd.DataFrame, pd.DataFrame]
     ]:
+        """
+        :return: Container with dataframes from self.susceptibility_dfs arranged in a
+        nested tuple structure that makes them convenient for looping over
+        and generating grid of plots.
+        """
         return (
             (
                 self.susceptibility_dfs.zero_to_one_first,
@@ -174,15 +188,15 @@ class SusceptibilityPlotter:
 
     @staticmethod
     def decorate_heatmap(heatmap: sns.heatmap, source_df: pd.DataFrame):
+        """
+        Adds some formatting to a heatmap
+        """
         heatmap.axhline(y=0, color="k", linewidth=2)
         heatmap.axhline(y=len(source_df.columns), color="k", linewidth=2)
         heatmap.axvline(x=0, color="k", linewidth=2)
         heatmap.axvline(x=source_df.index.max() + 1, color="k", linewidth=2)
 
-    def plot_susceptibilities(
-        self,
-        # color_bar_title: str = "",
-    ) -> plt.Figure:
+    def plot_susceptibilities(self) -> plt.Figure:
         """
         Generates all heatmap susceptibility plots in figure
         """
@@ -207,7 +221,9 @@ class SusceptibilityPlotter:
                 if (plot_row == FIXED_SETTINGS.subplot_num_rows - 1) and (
                     plot_col == FIXED_SETTINGS.subplot_num_cols - 1
                 ):
-                    cur_plot.collections[0].colorbar.set_label(self.colorbar_title)
+                    cur_plot.collections[0].colorbar.set_label(
+                        self.colorbar_title
+                    )
 
         self._decorate_subplots(
             axes=axes,
@@ -218,51 +234,51 @@ class SusceptibilityPlotter:
         return fig
 
 
-def plot_metric_maps(
-    seq_length: int,
-    metric: str,
-    plot_title: str,
-    colorbar_title: str,
-    full_attack_results: ata.FullAttackResults = None,
-):
-    if full_attack_results is None:
-        full_attack_results = ata.FullAttackResults.from_most_recent_attack()
-    attack_condition_summaries = (
-        full_attack_results.get_standard_attack_condition_summaries(
-            seq_length=seq_length,
-        )
-    )
-    plotter = SusceptibilityPlotter(
-        susceptibility_dfs=attack_condition_summaries.data_for_susceptibility_plotter(
-            metric=metric,
-        ),
-        main_plot_title=plot_title,
-        colorbar_title=colorbar_title
-    )
+# def plot_metric_maps(
+#     seq_length: int,
+#     metric: str,
+#     plot_title: str,
+#     colorbar_title: str,
+#     full_attack_results: ata.FullAttackResults = None,
+# ):
+#     if full_attack_results is None:
+#         full_attack_results = ata.FullAttackResults.from_most_recent_attack()
+#     attack_condition_summaries = (
+#         full_attack_results.get_standard_attack_condition_summaries(
+#             seq_length=seq_length,
+#         )
+#     )
+#     plotter = SusceptibilityPlotter(
+#         susceptibility_dfs=attack_condition_summaries.data_for_susceptibility_plotter(
+#             metric=metric,
+#         ),
+#         main_plot_title=plot_title,
+#         colorbar_title=colorbar_title,
+#     )
+#
+#     susceptibility_fig = plotter.plot_susceptibilities(
+#         # color_bar_title=colorbar_title
+#     )
+#
+#     return susceptibility_fig
 
-    susceptibility_fig = plotter.plot_susceptibilities(
-        # color_bar_title=colorbar_title
-    )
 
-    return susceptibility_fig
-
-
-if __name__ == "__main__":
-    gpp_ij_figure = plot_metric_maps(
-        seq_length=48,
-        metric="gpp_ij",
-        plot_title="Perturbation Probability",
-        colorbar_title="Perturbation Probability",
-    )
-    ganzp_ij_figure = plot_metric_maps(
-        seq_length=48,
-        metric="ganzp_ij",
-        plot_title="Mean Magnitude of Non-zero Perturbation Elements",
-        colorbar_title="Perturbation Element Magnitude",
-    )
-    sensitivity_ij_figure = plot_metric_maps(
-        seq_length=48,
-        metric="sensitivity_ij",
-        plot_title="Perturbation Sensitivity",
-        colorbar_title="Perturbation Sensitivity",
-    )
+# if __name__ == "__main__":
+#     gpp_ij_figure = plot_metric_maps(
+#         seq_length=48,
+#         metric="gpp_ij",
+#         plot_title="Perturbation Probability",
+#         colorbar_title="Perturbation Probability",
+#     )
+#     ganzp_ij_figure = plot_metric_maps(
+#         seq_length=48,
+#         metric="ganzp_ij",
+#         plot_title="Mean Magnitude of Non-zero Perturbation Elements",
+#         colorbar_title="Perturbation Element Magnitude",
+#     )
+#     sensitivity_ij_figure = plot_metric_maps(
+#         seq_length=48,
+#         metric="sensitivity_ij",
+#         plot_title="Perturbation Sensitivity",
+#         colorbar_title="Perturbation Sensitivity",
+#     )
