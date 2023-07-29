@@ -1,49 +1,47 @@
 import pandas as pd
 from dataclasses import dataclass
-import lstm_adversarial_attack.preprocess.preprocess_module as pm
+from functools import cached_property
+from pathlib import Path
+import lstm_adversarial_attack.config_paths as cfp
+import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.preprocess.preprocess_input_classes as pic
+import lstm_adversarial_attack.preprocess.new_preprocessor as pre
 
 
 @dataclass
-class FeatureBuilderResources:
+class NewFeatureBuilderSettings:
     """
-    Container for data objects used by FeatureBuilder
+    Container for FeatureBuilder config settings
     """
-    full_admission_list: list[pic.FullAdmissionData]
+
+    winsorize_low: str = cfs.DEFAULT_WINSORIZE_LOW
+    winsorize_high: str = cfs.DEFAULT_WINSORIZE_HIGH
+    resample_interpolation_method: str = cfs.DEFAULT_RESAMPLE_INTERPOLATION
+    resample_limit_direction: str = cfs.DEFAULT_RESAMPLE_LIMIT_DIRECTION
 
 
-class FeatureBuilder(pm.PreprocessModule):
-    """
-    Converts dataframe of FullAdmission objects to 1-hr sampled time series
-    """
+class NewFeatureBuilder(pre.AbstractFeatureBuilder):
     def __init__(
         self,
+        resources: pre.NewFeatureBuilderResources,
+        output_dir: Path = cfp.FEATURE_BUILDER_OUTPUT,
+        settings: NewFeatureBuilderSettings = None,
     ):
-        """
-        Instantiates settings and resource references and passes to base class
-        constructor
-        """
-        super().__init__(
-            name="Feature Builder",
-            settings=pic.FeatureBuilderSettings(),
-            incoming_resource_refs=pic.FeatureBuilderResourceRefs(),
-        )
-        # since stats_summary df is small, make it a data member
-        # (we usually try to limit scope of big dfs to process() method)
-        stats_summary_path = self.incoming_resource_refs.bg_lab_vital_summary_stats
-        self.stats_summary = self.import_pickle_to_df(stats_summary_path)
+        self.resources = resources
+        self._output_dir = output_dir
+        if settings is None:
+            settings = NewFeatureBuilderSettings()
+        self._settings = settings
 
-    def _import_resources(self) -> FeatureBuilderResources:
-        imported_data = FeatureBuilderResources(
-            full_admission_list=self.import_pickle_to_df(
-                self.incoming_resource_refs.full_admission_list
-            ),
-        )
-        return imported_data
+    @property
+    def settings(self) -> NewFeatureBuilderSettings:
+        return self._settings
 
-    def _resample(
-        self, raw_time_series_df: pd.DataFrame
-    ) -> pd.DataFrame:
+    @property
+    def output_dir(self) -> Path:
+        return self._output_dir
+
+    def _resample(self, raw_time_series_df: pd.DataFrame) -> pd.DataFrame:
         """
         Resamples measurement times series to hourly increments.
 
@@ -68,7 +66,7 @@ class FeatureBuilder(pm.PreprocessModule):
         """
         cols_with_all_nan = resampled_df.columns[resampled_df.isna().all()]
         na_fill_val_map = {
-            col: self.stats_summary.loc["50%", col]
+            col: self.resources.bg_lab_vital_summary_stats.loc["50%", col]
             for col in cols_with_all_nan
         }
         resampled_df.fillna(na_fill_val_map, inplace=True)
@@ -78,9 +76,15 @@ class FeatureBuilder(pm.PreprocessModule):
         Winsorizes measurement data. Default is to 5th & 95th %ile
         :param filled_df: has all missing data imputed by interp or global mean
         """
-        winsorized_df = filled_df[self.stats_summary.columns].clip(
-            lower=self.stats_summary.loc[self.settings.winsorize_low, :],
-            upper=self.stats_summary.loc[self.settings.winsorize_high, :],
+        winsorized_df = filled_df[
+            self.resources.bg_lab_vital_summary_stats.columns
+        ].clip(
+            lower=self.resources.bg_lab_vital_summary_stats.loc[
+                self.settings.winsorize_low, :
+            ],
+            upper=self.resources.bg_lab_vital_summary_stats.loc[
+                self.settings.winsorize_high, :
+            ],
             axis=1,
         )
         return winsorized_df
@@ -92,10 +96,16 @@ class FeatureBuilder(pm.PreprocessModule):
         """
         rescaled_df = (
             winsorized_df
-            - self.stats_summary.loc[self.settings.winsorize_low, :]
+            - self.resources.bg_lab_vital_summary_stats.loc[
+                self.settings.winsorize_low, :
+            ]
         ) / (
-            self.stats_summary.loc[self.settings.winsorize_high, :]
-            - self.stats_summary.loc[self.settings.winsorize_low, :]
+            self.resources.bg_lab_vital_summary_stats.loc[
+                self.settings.winsorize_high, :
+            ]
+            - self.resources.bg_lab_vital_summary_stats.loc[
+                self.settings.winsorize_low, :
+            ]
         )
         return rescaled_df
 
@@ -118,41 +128,30 @@ class FeatureBuilder(pm.PreprocessModule):
 
         return new_df
 
-    def process(self):
+    def process(self) -> pre.NewFeatureBuilderOutput:
         """
         Winsorizes, imputes and normalizes dfs in list of FullAdmission objects
 
         Exports result (full list of modified objects) to pickle)
         """
-        assert self.settings.output_dir.exists()
-
-        data = self._import_resources()
 
         # filter out list elements with < 2 timestamps in their timeseries df
-        data.full_admission_list = [
+        filtered_admission_list = [
             entry
-            for entry in data.full_admission_list
+            for entry in self.resources.admission_list
             if entry.time_series.shape[0] > 2
         ]
 
-        for idx in range(len(data.full_admission_list)):
-            data.full_admission_list[idx].time_series = self._process_hadm_df(
-                df=data.full_admission_list[idx].time_series
+        for idx in range(len(filtered_admission_list)):
+            filtered_admission_list[idx].time_series = self._process_hadm_df(
+                df=filtered_admission_list[idx].time_series
             )
             if (idx + 1) % 5000 == 0:
                 print(
                     "Done building features for sample"
-                    f" {idx + 1}/{len(data.full_admission_list)}"
+                    f" {idx + 1}/{len(filtered_admission_list)}"
                 )
 
-        self.export_resource(
-            key="hadm_list_with_processed_dfs",
-            resource=data.full_admission_list,
-            path=self.settings.output_dir
-            / "hadm_list_with_processed_dfs.pickle",
+        return pre.NewFeatureBuilderOutput(
+            processed_admission_list=filtered_admission_list
         )
-
-
-if __name__ == "__main__":
-    feature_builder = FeatureBuilder()
-    exported_resources = feature_builder()

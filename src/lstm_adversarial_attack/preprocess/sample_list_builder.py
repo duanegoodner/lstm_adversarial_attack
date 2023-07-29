@@ -24,15 +24,11 @@ class FullAdmissionListBuilder(pm.PreprocessModule):
     """
     def __init__(
         self,
-        # settings=pic.FullAdmissionListBuilderSettings(),
-        # incoming_resource_refs=pic.FullAdmissionListBuilderResourceRefs(),
     ):
-        settings = pic.FullAdmissionListBuilderSettings()
-        incoming_resource_refs = pic.FullAdmissionListBuilderResourceRefs()
         super().__init__(
             name="FullAdmission Object List Builder",
-            settings=settings,
-            incoming_resource_refs=incoming_resource_refs,
+            settings=pic.FullAdmissionListBuilderSettings(),
+            incoming_resource_refs=pic.FullAdmissionListBuilderResourceRefs(),
         )
 
     def _import_resources(self) -> FullAdmissionListBuilderResources:

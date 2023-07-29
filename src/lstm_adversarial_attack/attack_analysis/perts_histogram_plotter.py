@@ -60,7 +60,7 @@ class HistogramPlotterFixedSettings:
     Settings that are used for a HistogramPlotter and typically do not
     change from one instance to another.
     """
-    df_labels: tuple[str, ...] = ("First examples", "Best examples")
+    df_labels: tuple[str, ...] = ("First example_data", "Best example_data")
     num_plot_rows: int = 2
     num_plot_cols: int = 3
     fig_size: tuple[int, int] = (10, 7)

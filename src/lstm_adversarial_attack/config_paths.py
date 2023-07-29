@@ -5,7 +5,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 SRC_DIR = PROJECT_ROOT / "src"
 LSTM_ADVERSARIAL_ATTACK_PACKAGE = SRC_DIR / "lstm_adversarial_attack"
 DATA_DIR = PROJECT_ROOT / "data"
-EXAMPLE_DATA_DIR = DATA_DIR / "examples"
+EXAMPLE_DATA_DIR = DATA_DIR / "example_data"
 
 # ##### Database #####
 DB_SUBPACKAGE = LSTM_ADVERSARIAL_ATTACK_PACKAGE / "query_db"
@@ -24,10 +24,10 @@ PREPROCESS_DATA_DIR = DATA_DIR / "preprocess"
 PREPROCESS_CHECKPOINTS = PREPROCESS_DATA_DIR / "checkpoints"
 PREFILTER_OUTPUT = PREPROCESS_CHECKPOINTS / "1_prefilter"
 PREFILTER_OUTPUT_FILES = {
-    "icustay": "icustay.pickle",
-    "bg": "bg.pickle",
-    "lab": "lab.pickle",
-    "vital": "vital.pickle",
+    "icustay": "icustay.json",
+    "bg": "bg.json",
+    "lab": "lab.json",
+    "vital": "vital.json",
 }
 STAY_MEASUREMENT_OUTPUT = PREPROCESS_CHECKPOINTS / "2_merged_stay_measurements"
 STAY_MEASUREMENT_OUTPUT_FILES = {
@@ -42,6 +42,9 @@ FEATURE_BUILDER_OUTPUT = PREPROCESS_CHECKPOINTS / "4_feature_builder"
 FEATURE_BUILDER_OUTPUT_FILES = {
     "hadm_list_with_processed_dfs": "hadm_list_with_processed_dfs.pickle"
 }
+
+FEATURE_FINALIZER_OUTPUT = PREPROCESS_CHECKPOINTS / "5_feature_finalizer"
+
 PREPROCESS_OUTPUT_DIR = PREPROCESS_DATA_DIR / "final_output"
 PREPROCESS_OUTPUT_FILES = {
     "measurement_data_list": "measurement_data_list.pickle",

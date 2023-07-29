@@ -1,53 +1,62 @@
 import pandas as pd
-import sys
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.preprocess.preprocess_module as ppm
+import lstm_adversarial_attack.config_settings as cfg_set
 import lstm_adversarial_attack.preprocess.preprocess_input_classes as pic
-import lstm_adversarial_attack.resource_io as rio
+import lstm_adversarial_attack.preprocess.new_preprocessor as pre
 
 
 @dataclass
-class PrefilterResources:
+class NewPrefilterSettings:
     """
-    Container for the data frames Prefilter object imports and manipulates
+    Container for objects imported by Prefilter
     """
+    # output_dir: Path = cfg_paths.PREFILTER_OUTPUT
+    min_age: int = 18
+    min_los_hospital: int = 1
+    min_los_icu: int = 1
+    bg_data_cols: list[str] = None
+    lab_data_cols: list[str] = None
+    vital_data_cols: list[str] = None
 
-    icustay: pd.DataFrame
-    bg: pd.DataFrame
-    vital: pd.DataFrame
-    lab: pd.DataFrame
+    def __post_init__(self):
+        if self.bg_data_cols is None:
+            self.bg_data_cols = cfg_set.PREPROCESS_BG_DATA_COLS
+        if self.lab_data_cols is None:
+            self.lab_data_cols = cfg_set.PREPROCESS_LAB_DATA_COLS
+        if self.vital_data_cols is None:
+            self.vital_data_cols = cfg_set.PREPROCESS_VITAL_DATA_COLS
 
 
-
-class Prefilter(ppm.PreprocessModule):
-    """
-    Imports sql query output csvs to Dataframes and filters/formats dfs
-    """
-
-    def __init__(self):
-        """
-        Instantiates settings and resource references and passes to base class
-        constructor
-        """
-        super().__init__(
-            name="Prefilter",
-            settings=pic.PrefilterSettings(),
-            incoming_resource_refs=pic.PrefilterResourceRefs(),
-        )
-
-    @staticmethod
-    def _apply_standard_df_formatting(
-        imported_resources: PrefilterResources,
+class NewPrefilter(pre.AbstractPrefilter):
+    def __init__(
+        self,
+        resources: pre.NewPrefilterResources,
+        output_dir = cfg_paths.PREFILTER_OUTPUT,
+        settings: NewPrefilterSettings = None,
     ):
+        self.resources = resources
+        self._output_dir = output_dir
+        if settings is None:
+            settings = NewPrefilterSettings()
+        self._settings = settings
+
+    @property
+    def settings(self) -> NewPrefilterSettings:
+        return self._settings
+
+    @property
+    def output_dir(self) -> Path:
+        return self._output_dir
+
+    def _apply_standard_formatting(self):
         """
-        Sets col names of all dfs referenced by PrefilterResource to lowercase
-        :param imported_resources: dataclass w/ refs to imported dataframes
+        Sets col names of all dfs in self.resouces to lowercase
         """
-        for resource in imported_resources.__dict__.values():
+        for resource in self.resources.__dict__.values():
             if isinstance(resource, pd.DataFrame):
                 resource.columns = [item.lower() for item in resource.columns]
 
@@ -69,9 +78,9 @@ class Prefilter(ppm.PreprocessModule):
         df["outtime"] = pd.to_datetime(df["outtime"])
 
         df = df[
-            (df["admission_age"] >= self.settings.min_age)
-            & (df["los_hospital"] >= self.settings.min_los_hospital)
-            & (df["los_icu"] >= self.settings.min_los_icu)
+            (df["admission_age"] >= self._settings.min_age)
+            & (df["los_hospital"] >= self._settings.min_los_hospital)
+            & (df["los_icu"] >= self._settings.min_los_icu)
         ]
 
         df = df.drop(["ethnicity", "ethnicity_grouped", "gender"], axis=1)
@@ -111,7 +120,7 @@ class Prefilter(ppm.PreprocessModule):
         bg = self._filter_measurement_df(
             df=bg,
             identifier_cols=["icustay_id", "hadm_id", "charttime"],
-            measurements_of_interest=self.settings.bg_data_cols,
+            measurements_of_interest=self._settings.bg_data_cols,
         )
 
         return bg
@@ -137,9 +146,8 @@ class Prefilter(ppm.PreprocessModule):
                 "subject_id",
                 "charttime",
             ],
-            measurements_of_interest=self.settings.lab_data_cols,
+            measurements_of_interest=self._settings.lab_data_cols,
         )
-
         return lab
 
     def _filter_vital(
@@ -157,59 +165,45 @@ class Prefilter(ppm.PreprocessModule):
         vital = self._filter_measurement_df(
             df=vital,
             identifier_cols=["icustay_id", "charttime"],
-            measurements_of_interest=self.settings.vital_data_cols,
+            measurements_of_interest=self._settings.vital_data_cols,
         )
 
         return vital
 
-    def _import_resources(self) -> PrefilterResources:
+    def process(self, ) -> pre.NewPrefilterOutput:
         """
-        Imports csv data into dataframes and stores refs in a dataclass
-        :return: a PrefilterResources dataclass containing dataframe refs
+        Runs all filter methods.
         """
-        imported_data = PrefilterResources(
-            icustay=pd.read_csv(self.incoming_resource_refs.icustay),
-            bg=pd.read_csv(self.incoming_resource_refs.bg),
-            vital=pd.read_csv(self.incoming_resource_refs.vital),
-            lab=pd.read_csv(self.incoming_resource_refs.lab),
+        self._apply_standard_formatting()
+        filtered_icustay = self._filter_icustay(df=self.resources.icustay)
+        filtered_bg = self._filter_bg(
+            bg=self.resources.bg, icustay=filtered_icustay
+        )
+        filtered_lab = self._filter_lab(
+            lab=self.resources.lab, icustay=filtered_icustay
+        )
+        filtered_vital = self._filter_vital(
+            vital=self.resources.vital, icustay=filtered_icustay
         )
 
-        return imported_data
-
-    def process(self):
-        """
-        Imports data, runs all filter methods, and exports filtered data.
-        """
-        imported_resources = self._import_resources()
-        self._apply_standard_df_formatting(
-            imported_resources=imported_resources
+        return pre.NewPrefilterOutput(
+            icustay=filtered_icustay,
+            bg=filtered_bg,
+            vital=filtered_vital,
+            lab=filtered_lab
         )
-        imported_resources.icustay = self._filter_icustay(
-            df=imported_resources.icustay
-        )
-        imported_resources.bg = self._filter_bg(
-            bg=imported_resources.bg,
-            icustay=imported_resources.icustay,
-        )
-        imported_resources.lab = self._filter_lab(
-            lab=imported_resources.lab,
-            icustay=imported_resources.icustay,
-        )
-        imported_resources.vital = self._filter_vital(
-            vital=imported_resources.vital,
-            icustay=imported_resources.icustay,
-        )
-
-        for key, val in imported_resources.__dict__.items():
-            self.export_resource_new(
-                key=key,
-                resource=val,
-                path=self.settings.output_dir
-                / cfg_paths.PREFILTER_OUTPUT_FILES[key],
-                exporter=rio.df_to_json
-            )
 
 
 if __name__ == "__main__":
-    prefilter = Prefilter()
-    exported_resources = prefilter()
+    resource_refs = pic.PrefilterResourceRefs()
+
+    prefilter_resources = pre.NewPrefilterResources(
+        icustay=pd.read_csv(resource_refs.icustay),
+        bg=pd.read_csv(resource_refs.bg),
+        vital=pd.read_csv(resource_refs.vital),
+        lab=pd.read_csv(resource_refs.lab),
+    )
+
+    prefilter = NewPrefilter(resources=prefilter_resources)
+
+    result = prefilter.process()

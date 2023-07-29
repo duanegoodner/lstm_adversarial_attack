@@ -66,7 +66,7 @@ class RecordedBatchExamples:
         only time may differ from regular batch_size is on final batch)
         :param max_seq_length: longest input sequence length (num rows)
         :param input_size: size of input tensor for sample (num cols)
-        :param comparison_funct: function for comparing examples (and
+        :param comparison_funct: function for comparing example_data (and
         deciding which gets saved as a "best" example)
         """
         self.epochs = torch.empty(batch_size_actual, dtype=torch.long).fill_(
@@ -109,7 +109,7 @@ class RecordedBatchExamples:
 class BatchResult:
     """
     Container for RecordedBatchExamples corresponding to first and best
-    adversarial examples of each sample in batch.
+    adversarial example_data of each sample in batch.
     """
     def __init__(
         self,
@@ -182,7 +182,7 @@ class TrainerResult:
     :param epochs_run: num epochs run on each batch (should all be same val)
     :param input_seq_lengths: input seq length of each sample
     :param first_examples: info from first found example for samples
-    :param best_examples: info for best (lowest loss) examples
+    :param best_examples: info for best (lowest loss) example_data
     """
     dataset: dsi.DatasetWithIndex
     dataset_indices: torch.tensor = None
@@ -276,7 +276,7 @@ class FeaturesMaskBuilder:
 class PertsSummary:
     """
     Performs summary calculations using perturbations from first and best
-    adversarial examples found by attack on a datast.
+    adversarial example_data found by attack on a datast.
     """
     def __init__(
         self,
@@ -415,8 +415,8 @@ class PertsSummary:
 
     def num_examples_with_num_nonzero_less_than(self, cutoff: int) -> np.array:
         """
-        Gets number of examples with number of nonzero perts below cutoff val.
-        :param cutoff: examples must have less than this num nonzero elements
+        Gets number of example_data with number of nonzero perts below cutoff val.
+        :param cutoff: example_data must have less than this num nonzero elements
         :return: array of ints
         """
         return np.where(self._num_nonzero_elements < cutoff)[0].shape[0]
@@ -663,7 +663,7 @@ class TrainerSuccessSummary:
     @cached_property
     def perts_summary_first(self) -> PertsSummary:
         """
-        PertsSummary of first found examples for each sample that was
+        PertsSummary of first found example_data for each sample that was
         successfully attacked
         :return: a PertsSummary object
         """
@@ -679,7 +679,7 @@ class TrainerSuccessSummary:
     @cached_property
     def perts_summary_best(self) -> PertsSummary:
         """
-        PertsSummary of best found examples for each sample that was
+        PertsSummary of best found example_data for each sample that was
         successfully attacked
         :return: a PertsSummary object
         """

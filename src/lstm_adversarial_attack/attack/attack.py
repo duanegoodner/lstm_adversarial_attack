@@ -60,7 +60,7 @@ class AttackDriver(dpr.HasDataProvenance):
         to reduce loss function.
         :param lambda_1: L1 regularization constant applied to perturbations
         :param optimizer_constructor: constructor of optimizer used when
-        searching for adversarial examples
+        searching for adversarial example_data
         :param optimizer_constructor_kwargs: kwargs passed to optimizer
         constructor
         :param max_num_samples: Number candidate samples to take from a dataset

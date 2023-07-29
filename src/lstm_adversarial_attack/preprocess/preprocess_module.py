@@ -1,8 +1,11 @@
+import json
 import pandas as pd
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PosixPath
+from typing import Any, Callable
+
 sys.path.append(str(Path(__file__).parent.parent))
 import lstm_adversarial_attack.preprocess.preprocess_resource as pr
 import lstm_adversarial_attack.resource_io as rio
@@ -13,14 +16,37 @@ class PreprocessModuleSettings(ABC):
     """
     Ensure all module's settings classes have output_dir attribute
     """
+
     output_dir: Path
 
+    def to_json(self, path: Path, **kwargs):
+        output_dict = rio.convert_posix_paths_to_strings(data=self.__dict__)
+        with path.open(mode="w") as out_file:
+            json.dump(obj=output_dict, fp=out_file)
+
+
+@dataclass
+class PreprocessResourceRefs(ABC):
+    def __post_init__(self):
+        assert all(
+            [
+                (type(value) == PosixPath)
+                for key, value in self.__dict__.items()
+            ]
+        )
+
+    # TODO consider an ABC that provides this method or just a standalone funct
+    def to_json(self, path: Path, **kwargs):
+        output_dict = rio.convert_posix_paths_to_strings(data=self.__dict__)
+        with path.open(mode="w") as out_file:
+            json.dump(obj=output_dict, fp=out_file)
 
 
 class PreprocessModule(ABC):
     """
     Base class for all modules used by Preprocessor.
     """
+
     def __init__(
         self,
         name: str,
@@ -47,24 +73,19 @@ class PreprocessModule(ABC):
         :return: dictionary with references to all files exported by module
         """
         self.process()
-        self.export_resource(
+        self.export_resource_new(
             key="resource_refs",
             resource=self.incoming_resource_refs,
-            path=self.settings.output_dir / "resource_refs.pickle"
+            path=self.settings.output_dir / "resource_refs.json",
+            exporter=self.incoming_resource_refs.to_json
         )
-        self.export_resource(
+        self.export_resource_new(
             key="settings",
             resource=self.settings,
-            path=self.settings.output_dir / "settings.pickle"
+            path=self.settings.output_dir / "settings.json",
+            exporter=self.settings.to_json,
         )
         return self.exported_resources
-
-    def import_csv(self, path: Path) -> pd.DataFrame:
-        """
-        Convenience function to aid IDE type-hinting of csv imported to df
-        """
-        # TODO Can we remove this method and just use pd.read_csv?
-        return self.resource_importer.import_csv(path=path)
 
     def import_pickle_to_df(self, path: Path) -> pd.DataFrame:
         """
@@ -100,6 +121,25 @@ class PreprocessModule(ABC):
             path=path, data_type=type(resource).__name__
         )
         self.exported_resources[key] = exported_resource
+
+    def export_resource_new(
+        self,
+        key: str,
+        resource: object,
+        path: Path,
+        exporter: Callable,
+        exporter_kwargs: dict[str, Any] = None,
+    ):
+        if exporter_kwargs is None:
+            exporter_kwargs = {}
+        assert key not in self.exported_resources
+        assert path not in [
+            item.path for item in self.exported_resources.values()
+        ]
+        exporter(resource=resource, path=path, **exporter_kwargs)
+        self.exported_resources[key] = pr.ExportedPreprocessResource(
+            path=path, data_type=type(resource).__name__
+        )
 
     @abstractmethod
     def process(self):

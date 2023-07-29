@@ -72,16 +72,11 @@ class HyperParameterTuner:
         self.cv_mean_metrics_of_interest = cv_mean_metrics_of_interest
         self.tuning_ranges = tuning_ranges
         self.hyperparameter_sampler = hyperparameter_sampler
-        # if output_dir is None:
-        #     output_dir = rio.create_timestamped_dir(
-        #         parent_path=cfg_paths.HYPERPARAMETER_OUTPUT_DIR
-        #     )
         self.output_dir = output_dir
         self.tensorboard_output_dir = self.output_dir / "tensorboard"
         self.trainer_checkpoint_dir = self.output_dir / "checkpoints_trainer"
         self.tuner_checkpoint_dir = self.output_dir / "checkpoints_tuner"
         self.exporter = rio.ResourceExporter()
-        # self.save_trial_info = save_trial_info
         self.trial_prefix = trial_prefix
         self.continue_tuning_dir = continue_tuning_dir
 
@@ -120,7 +115,8 @@ class HyperParameterTuner:
     @staticmethod
     def initialize_model(model: nn.Module):
         """
-        Initializes params of model. Currently not used.
+        Initializes params of model. Currently not used b/c create new
+        model for each fold (instead of re-using single)
 
         May need if using same model object for different folds
         :param model: a Pytorch model

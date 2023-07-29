@@ -109,31 +109,7 @@ class CrossValidator:
             return self.create_single_fold_dataset()
         else:
             return self.create_multi_fold_datasets()
-        # fold_generator_builder = self.fold_class(
-        #     n_splits=self.num_folds,
-        #     shuffle=True,
-        #     random_state=self.kfold_random_seed,
-        # )
-        # fold_generator = fold_generator_builder.split(
-        #     self.dataset[:][0], self.dataset[:][1]
-        # )
-        #
-        # all_train_eval_pairs = []
-        #
-        # for fold_idx, (train_indices, validation_indices) in enumerate(
-        #     fold_generator
-        # ):
-        #     train_dataset = Subset(dataset=self.dataset, indices=train_indices)
-        #     validation_dataset = Subset(
-        #         dataset=self.dataset, indices=validation_indices
-        #     )
-        #     all_train_eval_pairs.append(
-        #         tuh.TrainEvalDatasetPair(
-        #             train=train_dataset, validation=validation_dataset
-        #         )
-        #     )
-        #
-        # return all_train_eval_pairs
+
 
     def run_fold(
         self, fold_idx: int, train_eval_pair: tuh.TrainEvalDatasetPair
@@ -146,8 +122,6 @@ class CrossValidator:
         :param train_eval_pair: train/eval dataset pair for current fold
         """
         trainer_driver = td.TrainerDriver(
-            # train_device=self.device,
-            # eval_device=self.device,
             device=self.device,
             hyperparameter_settings=self.hyperparameter_settings,
             model=tuh.X19LSTMBuilder(

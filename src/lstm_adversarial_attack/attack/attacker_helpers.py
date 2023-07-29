@@ -131,7 +131,7 @@ class AdversarialLoss(nn.Module):
         class logit value needs to exceed original class logit value in order
         to reduce loss function.
         :param lambda_1: L1 regularization constant (to encourage finding
-        adversarial examples caused by sparse perturbations).
+        adversarial example_data caused by sparse perturbations).
         """
         super(AdversarialLoss, self).__init__()
         self.kappa = kappa

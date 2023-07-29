@@ -24,7 +24,7 @@ class AttackHyperParameterSettings:
     :param optimizer_name: name of optimizer (must match an attribute of
     torch.optim)
     :param learning_rate: learning rate to use during search for adversarial
-    examples
+    example_data
     :param log_batch_size: log (base 2) of batch size. Use log for easy
     Optuna param selection.
 

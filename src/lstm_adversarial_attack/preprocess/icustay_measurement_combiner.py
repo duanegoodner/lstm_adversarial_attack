@@ -7,7 +7,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.preprocess.preprocess_module as pm
 import lstm_adversarial_attack.preprocess.preprocess_input_classes as pic
-
+import lstm_adversarial_attack.resource_io as rio
 
 @dataclass
 class ICUStayMeasurementCombinerResources:
@@ -23,19 +23,15 @@ class ICUStayMeasurementCombinerResources:
 class ICUStayMeasurementCombiner(pm.PreprocessModule):
     def __init__(
         self,
-        settings=pic.ICUStayMeasurementCombinerSettings(),
-        incoming_resource_refs=pic.ICUStayMeasurementCombinerResourceRefs(),
     ):
         """
         Instantiates settings and resource references and passes to base class
         constructor
         """
-        settings = pic.ICUStayMeasurementCombinerSettings()
-        incoming_resource_refs = pic.ICUStayMeasurementCombinerResourceRefs()
         super().__init__(
             name="ICU Stay Data + Measurement Data Combiner",
-            settings=settings,
-            incoming_resource_refs=incoming_resource_refs,
+            settings=pic.ICUStayMeasurementCombinerSettings(),
+            incoming_resource_refs=pic.ICUStayMeasurementCombinerResourceRefs(),
         )
 
     def _import_resources(self) -> ICUStayMeasurementCombinerResources:
@@ -43,13 +39,19 @@ class ICUStayMeasurementCombiner(pm.PreprocessModule):
         Imports resources to dataframes and saves ref to each in a dataclass
         :return: ICUStayMeasurementCombinerResources (dataclass) w/ df refs
         """
+        # imported_data = ICUStayMeasurementCombinerResources(
+        #     icustay=self.import_pickle_to_df(
+        #         self.incoming_resource_refs.icustay
+        #     ),
+        #     bg=self.import_pickle_to_df(self.incoming_resource_refs.bg),
+        #     lab=self.import_pickle_to_df(self.incoming_resource_refs.lab),
+        #     vital=self.import_pickle_to_df(self.incoming_resource_refs.vital),
+        # )
         imported_data = ICUStayMeasurementCombinerResources(
-            icustay=self.import_pickle_to_df(
-                self.incoming_resource_refs.icustay
-            ),
-            bg=self.import_pickle_to_df(self.incoming_resource_refs.bg),
-            lab=self.import_pickle_to_df(self.incoming_resource_refs.lab),
-            vital=self.import_pickle_to_df(self.incoming_resource_refs.vital),
+            icustay=rio.json_to_df(path=self.incoming_resource_refs.bg),
+            bg=rio.json_to_df(path=self.incoming_resource_refs.bg),
+            lab=rio.json_to_df(path=self.incoming_resource_refs.lab),
+            vital=rio.json_to_df(path=self.incoming_resource_refs.vital),
         )
 
         return imported_data

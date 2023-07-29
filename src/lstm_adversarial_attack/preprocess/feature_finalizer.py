@@ -36,12 +36,10 @@ class FeatureFinalizer(pm.PreprocessModule):
         Instantiates settings and resource references and passes to base class
         constructor
         """
-        settings = pic.FeatureFinalizerSettings()
-        incoming_resource_refs = pic.FeatureFinalizerResourceRefs()
         super().__init__(
             name="Feature Finalizer",
-            settings=settings,
-            incoming_resource_refs=incoming_resource_refs,
+            settings=pic.FeatureFinalizerSettings(),
+            incoming_resource_refs=pic.FeatureFinalizerResourceRefs(),
         )
 
     def _import_resources(self) -> FeatureFinalizerResources:
