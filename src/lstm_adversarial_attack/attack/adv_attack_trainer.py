@@ -16,7 +16,7 @@ import lstm_adversarial_attack.weighted_dataloader_builder as wdb
 
 class AdversarialAttackTrainer:
     """
-    Finds adversarial examples for a classification model
+    Finds adversarial example_data for a classification model
     """
     # TODO consolidate params that are part of hyperparams into single object
     #  (large number of constructor args is messy)
@@ -50,10 +50,10 @@ class AdversarialAttackTrainer:
         (https://arxiv.org/abs/1802.04822). Defines a margin by which alternate
         class logit value needs to exceed original class logit value in order
         to reduce loss function.
-        :param lambda_1: L1 regularization constant (to encourage examples due
+        :param lambda_1: L1 regularization constant (to encourage example_data due
         to sparse perturbations)
         :param optimizer_constructor: constructor for optimizer used during
-        search for adversarial examples
+        search for adversarial example_data
         :param optimizer_constructor_kwargs: kwargs passed to optimizer
         constructor
         :param dataset: unfiltered dataset potential samples to use for attacks
@@ -290,7 +290,7 @@ class AdversarialAttackTrainer:
         :param orig_features: input features of samples in batch
         :param orig_labels: target model's class predictions
         :return: a BatchResult object containing first and best (lowest loss)
-        EpochSuccess info for each sample. Samples with no adversarial examples
+        EpochSuccess info for each sample. Samples with no adversarial example_data
         found are included in this but have orig initialized values that can
         be interpreted as no example found.
         """
@@ -401,7 +401,7 @@ class AdversarialAttackTrainer:
         will have information for its first found example and its lowest loss
         (aka "best") example.
         :return: TrainerResult containing info on first and best adversarial
-        examples. See TrainerResult docstring for description of values stored
+        example_data. See TrainerResult docstring for description of values stored
         for samples that have no example found.
         """
         data_loader = self.build_data_loader()

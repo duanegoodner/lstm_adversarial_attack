@@ -62,7 +62,7 @@ FIXED_SETTINGS = SusceptibilityPlotterFixedSettings()
 class SusceptibilityPlotter:
     """
     Plots heatmaps of susceptibility metrics for perturbations causing
-    adversarial examples
+    adversarial example_data
     """
 
     def __init__(

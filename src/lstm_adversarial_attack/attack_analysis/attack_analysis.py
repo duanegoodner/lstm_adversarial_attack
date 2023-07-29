@@ -45,11 +45,11 @@ class ZerosOnesDFPair:
 @dataclass
 class AttackConditionSummary:
     """
-    Container to dataframe with summary of first or best examples and the
-    perturbations corresponding to those examples.
+    Container to dataframe with summary of first or best example_data and the
+    perturbations corresponding to those example_data.
     :param examples_df: Pandas dataframe of form returned by
     FullAttackResults.get_condition_analysis()
-    :param perts: perturbations that resulted in the adversarial examples
+    :param perts: perturbations that resulted in the adversarial example_data
     summarized in examples_df.
     """
 
@@ -58,14 +58,14 @@ class AttackConditionSummary:
 
     def __post_init__(self):
         """
-        Make sure number of examples matches number of perturbation subarrays.
+        Make sure number of example_data matches number of perturbation subarrays.
         """
         assert len(self.examples_df == self.perts.shape[0])
 
     @cached_property
     def susceptibility_metrics(self) -> asm.AttackSusceptibilityMetrics:
         """
-        Calculates AttackSusceptibilityMetrics for the adversarial examples.
+        Calculates AttackSusceptibilityMetrics for the adversarial example_data.
         :return: an AttackSusceptibilityMetrics object
         """
         return asm.AttackSusceptibilityMetrics(perts=self.perts)
@@ -275,7 +275,7 @@ class FullAttackResults:
     @cached_property
     def first_examples_padded_perts(self) -> np.array:
         """
-        Padded perturbations for examples that are first example found for
+        Padded perturbations for example_data that are first example found for
         corresponding sample
         :return: array of floats
         """
@@ -286,7 +286,7 @@ class FullAttackResults:
     @cached_property
     def best_examples_padded_perts(self) -> np.array:
         """
-        Padded perturbations for examples that are best example found for
+        Padded perturbations for example_data that are best example found for
         corresponding sample
         :return: array of floats
         """
@@ -299,7 +299,7 @@ class FullAttackResults:
         example_type: RecordedExampleType,
     ):
         """
-        Builds a summary dataframe first examples or best examples
+        Builds a summary dataframe first example_data or best example_data
         :param example_type: type of example to summarize
         :return: a Pandas dataframe
         """
@@ -359,7 +359,7 @@ class FullAttackResults:
     @cached_property
     def first_examples_df(self) -> pd.DataFrame:
         """
-        Summary dataframe for all first examples
+        Summary dataframe for all first example_data
         :return: Pandas Dataframe
         """
         return self.build_examples_summary_df(
@@ -369,7 +369,7 @@ class FullAttackResults:
     @cached_property
     def best_examples_df(self) -> pd.DataFrame:
         """
-        Summary dataframe for all best (lowest loss for sample) examples
+        Summary dataframe for all best (lowest loss for sample) example_data
         :return: Pandas dataframe
         """
         return self.build_examples_summary_df(
@@ -412,16 +412,16 @@ class FullAttackResults:
         max_num_perts: int = None,
     ) -> AttackConditionSummary:
         """
-        Builds an AttackConditionSummary object for examples with specified
+        Builds an AttackConditionSummary object for example_data with specified
         sequence length and example type. Data can be further filtered using
         other optional params
-        :param seq_length: input seq length of examples to summarize
-        :param example_type: type of examples to summarize
-        :param orig_label: (optional) original label of examples to summarize
+        :param seq_length: input seq length of example_data to summarize
+        :param example_type: type of example_data to summarize
+        :param orig_label: (optional) original label of example_data to summarize
         :param min_num_perts: (optional) min number of nonzero perturbation
-        elements required of examples to summarize
+        elements required of example_data to summarize
         :param max_num_perts: (optional) max number of nonzero perturbation
-        elements required of examples to summarize
+        elements required of example_data to summarize
         :return:
         """
 

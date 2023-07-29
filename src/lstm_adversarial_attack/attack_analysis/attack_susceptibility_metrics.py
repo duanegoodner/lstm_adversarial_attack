@@ -9,12 +9,12 @@ import lstm_adversarial_attack.resource_io as rio
 class AttackSusceptibilityMetrics:
     """
     Computes susceptibiliy metrics using perturbations that generated
-    adversarial examples. All perturbations must be from samples of same
+    adversarial example_data. All perturbations must be from samples of same
     input sequence length.
     """
     def __init__(self, perts: np.array, measurement_labels: tuple[str] = None):
         """
-        :param perts: perturbations that resulted in adversarial examples.
+        :param perts: perturbations that resulted in adversarial example_data.
         Changing value alog axis 0 corresponds to changing sample.
         :param measurement_labels: decodes measurement id to measurement name
         (length of measurement_labels must be same as size of perts along

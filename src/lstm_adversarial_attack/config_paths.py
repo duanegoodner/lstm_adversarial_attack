@@ -5,7 +5,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 SRC_DIR = PROJECT_ROOT / "src"
 LSTM_ADVERSARIAL_ATTACK_PACKAGE = SRC_DIR / "lstm_adversarial_attack"
 DATA_DIR = PROJECT_ROOT / "data"
-EXAMPLE_DATA_DIR = DATA_DIR / "examples"
+EXAMPLE_DATA_DIR = DATA_DIR / "example_data"
 
 # ##### Database #####
 DB_SUBPACKAGE = LSTM_ADVERSARIAL_ATTACK_PACKAGE / "query_db"

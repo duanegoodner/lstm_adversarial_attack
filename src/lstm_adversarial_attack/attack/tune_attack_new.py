@@ -8,6 +8,7 @@ import lstm_adversarial_attack.attack.attack_tuner_driver as atd
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.gpu_helpers as gh
+import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs
 
 
@@ -32,7 +33,12 @@ def start_new_tuning(
     device = gh.get_device()
 
     if target_model_dir is None:
-        target_model_dir = str(cfg_paths.ATTACK_DEFAULT_TARGET_MODEL_DIR)
+        target_model_dir = ps.latest_modified_file_with_name_condition(
+            component_string=".tar",
+            root_dir=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR,
+            comparison_type=ps.StringComparisonType.SUFFIX
+        ).parent.parent.parent
+        # target_model_dir = str(cfg_paths.ATTACK_DEFAULT_TARGET_MODEL_DIR)
     if num_trials is None:
         num_trials = cfg_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS
     if objective_name is None:

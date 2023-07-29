@@ -30,9 +30,9 @@ def main(
     to config_settings.ATTACK_ANALYSIS_DEFAULT_SEQ_LENGTH which is typically
     the same as max observation window used during data preprocessing."
     :param min_num_perts: min number of nonzero perturbation elements required
-    of examples to summarize"
+    of example_data to summarize"
     :param max_num_perts: max number of nonzero perturbation elements required
-    of examples to summarize
+    of example_data to summarize
     :param output_dir: Directory where plot figures will be saved. If not
     specified, a new directory with timestamp in name will be created under
     data/attack_analysis"
@@ -96,7 +96,7 @@ if __name__ == "__main__":
         action="store",
         nargs="?",
         help=(
-            "max number of nonzero perturbation elements required of examples"
+            "max number of nonzero perturbation elements required of example_data"
             " to summarize"
         ),
     )
@@ -107,7 +107,7 @@ if __name__ == "__main__":
         action="store",
         nargs="?",
         help=(
-            "min number of nonzero perturbation elements required of examples"
+            "min number of nonzero perturbation elements required of example_data"
             " to summarize"
         ),
     )
