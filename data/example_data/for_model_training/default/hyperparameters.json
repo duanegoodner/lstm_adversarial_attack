@@ -1,1 +1,0 @@
-{"log_lstm_hidden_size": 7, "lstm_act_name": "Tanh", "dropout": 0.029018875280141854, "log_fc_hidden_size": 4, "fc_act_name": "Tanh", "optimizer_name": "Adam", "learning_rate": 0.0002784280532512521, "log_batch_size": 5}

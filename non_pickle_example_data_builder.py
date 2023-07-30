@@ -1,14 +1,12 @@
-import collections
 import json
 from dataclasses import dataclass
 from functools import cached_property
 
 import optuna
 import sys
-import torch
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any
 
 sys.path.append(str(Path(__file__).parent.parent))
 import lstm_adversarial_attack.attack.model_retriever as mr
@@ -29,14 +27,18 @@ def export_to_json(obj: object, output_path: Path):
 
 
 @dataclass
-class ModelTuningResult:
+class ModelTrainingPreReqArchiver:
     label: str
-    output_dir: Path
+    model_tuning_result_dir: Path
     example_save_dir: Path = cfg_paths.EXAMPLE_DATA_DIR / "for_model_training"
 
     @property
     def optuna_study_path(self) -> Path:
-        return self.output_dir / "checkpoints_tuner" / "optuna_study.pickle"
+        return (
+            self.model_tuning_result_dir
+            / "checkpoints_tuner"
+            / "optuna_study.pickle"
+        )
 
     @cached_property
     def optuna_study_object(self) -> optuna.Study:
@@ -53,19 +55,19 @@ class ModelTuningResult:
             obj=self.best_params,
             output_path=self.example_save_dir
             / self.label
-            / "hyperparameters.json",
+            / "model_training_hyperparameters.json",
         )
 
 
 @dataclass
-class CrossValidationResult:
+class AttackTuningPreReqArchiver:
     label: str
-    output_dir: Path
+    model_training_result_dir: Path
     example_save_dir: Path = cfg_paths.EXAMPLE_DATA_DIR / "for_attack_tuning"
 
     @property
     def hyperparameters_path(self) -> Path:
-        return self.output_dir / "hyperparameters.pickle"
+        return self.model_training_result_dir / "hyperparameters.pickle"
 
     @cached_property
     def hyperparameters_object(self) -> tuh.X19LSTMHyperParameterSettings:
@@ -80,7 +82,7 @@ class CrossValidationResult:
     @cached_property
     def best_checkpoint_of_median_performing_fold(self):
         model_retriever = mr.ModelRetriever(
-            training_output_dir=self.output_dir
+            training_output_dir=self.model_training_result_dir
         )
         return model_retriever.get_cv_trained_model(
             metric=cvs.EvalMetric.VALIDATION_LOSS,
@@ -112,176 +114,96 @@ class CrossValidationResult:
             obj=self.hyperparameters_dict,
             output_path=self.example_save_dir
             / self.label
-            / "hyperparameters.json",
+            / "model_training_hyperparameters.json",
         )
         export_to_json(
             obj=self.simplified_checkpoint,
             output_path=self.example_save_dir
             / self.label
-            / "simplified_checkpoint.json",
+            / "simplified_model_training_checkpoint.json",
         )
 
 
 @dataclass
-class AttackTuningResult:
+class AttackPreReqArchiver:
     label: str
-    output_dir: Path
+    model_training_result_dir: Path
+    attack_tuning_result_dir: Path
     example_save_dir: Path = cfg_paths.EXAMPLE_DATA_DIR / "for_attack"
+    attack_tuning_pre_req_archiver: AttackTuningPreReqArchiver = None
 
-
-class ExampleDataBuilder:
-    def __init__(
-        self,
-        # predictive_model_names: tuple[str, ...],
-        model_tuning_studies: tuple[ModelTuningResult, ...] = None,
-        example_root: Path = cfg_paths.EXAMPLE_DATA_DIR,
-        cv_results: tuple[CrossValidationResult, ...] = None,
-        # attack_tuning_studies: tuple[Path, ...],
-        # attack_trainer_results: tuple[Path, ...],
-    ):
-        #     self.predictive_model_names = predictive_model_names
-        self.model_tuning_studies = model_tuning_studies
-        self.cv_results = cv_results
-        #     self.attack_tuning_studies = attack_tuning_studies
-        #     self.attack_trainer_results = attack_trainer_results
-        self.example_root = example_root
-
-    @staticmethod
-    def verify_parent_dir(path: Path):
-        path.parent.mkdir(parents=True, exist_ok=True)
+    def __post_init__(self):
+        if self.attack_tuning_pre_req_archiver is None:
+            self.attack_tuning_pre_req_archiver = AttackTuningPreReqArchiver(
+                label=self.label,
+                model_training_result_dir=self.model_training_result_dir,
+                example_save_dir=self.example_save_dir,
+            )
 
     @property
-    def resource_dir_for_model_training(self) -> Path:
-        return self.example_root / "for_model_training"
+    def attack_tuning_provenance_path(self) -> Path:
+        return self.attack_tuning_result_dir / "provenance.pickle"
 
     @property
-    def resource_dir_for_attack_tuning(self) -> Path:
-        return self.example_root / "for_attack_tuning"
+    def attack_tuning_provenance_object(self) -> object:
+        return rio.ResourceImporter().import_pickle_to_object(
+            path=self.attack_tuning_provenance_path
+        )
 
     @property
-    def resource_dir_for_model_attack(self) -> Path:
-        return self.example_root / "for_model_attack"
+    def optuna_study_path(self) -> Path:
+        return self.attack_tuning_result_dir / "optuna_study.pickle"
+
+    @cached_property
+    def optuna_study_object(self) -> optuna.Study:
+        return rio.ResourceImporter().import_pickle_to_object(
+            path=self.optuna_study_path
+        )
 
     @property
-    def resource_dir_for_attack_result_plots(self) -> Path:
-        return self.example_root / "for_attack_result_plots"
+    def best_attack_hyperparams(self) -> dict[str, Any]:
+        return self.optuna_study_object.best_params
 
-    def study_best_params_to_json(self, model_tuning_study: ModelTuningResult):
-        json_out_path = (
-            self.resource_dir_for_model_training
-            / model_tuning_study.label
-            / "hyperparameters.json"
+    def save_data_for_attack_example(self):
+        self.attack_tuning_pre_req_archiver.save_data_for_attack_tuning_example()
+        export_to_json(
+            obj=self.best_attack_hyperparams,
+            output_path=self.example_save_dir
+            / self.label
+            / "attack_hyperparameters.json",
         )
 
-        self.verify_parent_dir(path=json_out_path)
-        with json_out_path.open(mode="w") as out_file:
-            json.dump(obj=model_tuning_study.best_params, fp=out_file)
 
-    def save_all_model_tuning_studies_best_params(self):
-        for study in self.model_tuning_studies:
-            self.study_best_params_to_json(model_tuning_study=study)
-
-    def write_model_training_pre_reqs(self):
-        self.save_all_model_tuning_studies_best_params()
-
-    def cv_hyperparameters_to_json(self, cv_result: CrossValidationResult):
-        json_out_path = (
-            self.resource_dir_for_attack_tuning
-            / cv_result.label
-            / "hyperparameters.json"
-        )
-        self.verify_parent_dir(path=json_out_path)
-        json_out_path.parent.mkdir(parents=True, exist_ok=True)
-        with json_out_path.open(mode="w") as out_file:
-            json.dump(obj=cv_result.hyperparameters_dict, fp=out_file)
-
-    def save_all_cv_hyperparameters(self):
-        for cv_result in self.cv_results:
-            self.cv_hyperparameters_to_json(cv_result=cv_result)
-
-    def simplified_checkpoint_to_json(self, cv_result: CrossValidationResult):
-        json_out_path = (
-            self.resource_dir_for_attack_tuning
-            / cv_result.label
-            / "simplified_checkpoint.json"
-        )
-        self.verify_parent_dir(path=json_out_path)
-        with json_out_path.open(mode="w") as out_file:
-            json.dump(obj=cv_result.simplified_checkpoint, fp=out_file)
-
-    def write_all_simplified_checkpoints(self):
-        for cv_result in self.cv_results:
-            self.simplified_checkpoint_to_json(cv_result=cv_result)
-
-    def write_attack_tuning_pre_reqs(self):
-        self.save_all_cv_hyperparameters()
-        self.write_all_simplified_checkpoints()
-
-    def median_fold_reduced_checkpoint_to_json(
-        self, cv_result: CrossValidationResult
-    ):
-        model_retriever = mr.ModelRetriever(
-            training_output_dir=cv_result.output_dir
-        )
-        modelpath_fold_checkpoint = model_retriever.get_cv_trained_model(
-            metric=cvs.EvalMetric.VALIDATION_LOSS,
-            optimize_direction=cvs.OptimizeDirection.MIN,
-        )
-
-        converted_state_dict = {
-            key: state_tensor.tolist()
-            for key, state_tensor in modelpath_fold_checkpoint.checkpoint[
-                "state_dict"
-            ].items()
-        }
-
-        reduced_checkpoint = {
-            "epoch_num": modelpath_fold_checkpoint.checkpoint["epoch_num"],
-            "state_dict": converted_state_dict,
-        }
-
-        with (
-            self.example_root
-            / "for_attack_hyperparameter_tuning"
-            / f"{cv_result.label}.json"
-        ).open(mode="w") as out_file:
-            json.dump(obj=reduced_checkpoint, fp=out_file)
-
-    def save_reduced_checkpoints_for_all_cv_results(self):
-        for cv_result in self.cv_results:
-            self.median_fold_reduced_checkpoint_to_json(cv_result=cv_result)
+@dataclass
+class PlotPreReqArchiver:
+    label: str
+    attack_result_dir: Path
+    example_save_dir: Path = cfg_paths.EXAMPLE_DATA_DIR / "for_plotting"
 
 
 if __name__ == "__main__":
-    example_data_builder = ExampleDataBuilder(
-        model_tuning_studies=(
-            ModelTuningResult(
-                label="default",
-                output_dir=cfg_paths.HYPERPARAMETER_OUTPUT_DIR
-                / "continued_trials",
-            ),
-        ),
-        cv_results=(
-            CrossValidationResult(
-                label="default_cv_result",
-                output_dir=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR
-                / "2023-06-17_23_57_23.366142",
-            ),
-        ),
+    model_training_pre_req_archiver = ModelTrainingPreReqArchiver(
+        label="default",
+        model_tuning_result_dir=cfg_paths.HYPERPARAMETER_OUTPUT_DIR
+        / "continued_trials",
     )
+    model_training_pre_req_archiver.save_data_for_model_training_example()
 
-    model_tuning_study = ModelTuningResult(
-        label="another_default",
-        output_dir=cfg_paths.HYPERPARAMETER_OUTPUT_DIR / "continued_trials",
-    )
-    model_tuning_study.save_data_for_model_training_example()
-
-    cv_result = CrossValidationResult(
-        label="another_default",
-        output_dir=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR
+    attack_tuning_pre_req_archiver = AttackTuningPreReqArchiver(
+        label="default",
+        model_training_result_dir=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR
         / "2023-06-17_23_57_23.366142",
     )
-    cv_result.save_data_for_attack_tuning_example()
+    attack_tuning_pre_req_archiver.save_data_for_attack_tuning_example()
+
+    attack_pre_req_archiver = AttackPreReqArchiver(
+        label="max_single_element_perts",
+        model_training_result_dir=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR
+        / "2023-06-17_23_57_23.366142",
+        attack_tuning_result_dir=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
+        / "2023-06-28_12_11_46.874267",
+    )
+    attack_pre_req_archiver.save_data_for_attack_example()
 
     # example_data_builder.write_model_training_pre_reqs()
     # example_data_builder.write_attack_tuning_pre_reqs()
