@@ -48,12 +48,10 @@ class ICUStayMeasurementCombiner(pm.PreprocessModule):
         #     vital=self.import_pickle_to_df(self.incoming_resource_refs.vital),
         # )
         imported_data = ICUStayMeasurementCombinerResources(
-            icustay=self.import_pickle_to_df(
-                self.incoming_resource_refs.icustay
-            ),
-            bg=self.import_pickle_to_df(self.incoming_resource_refs.bg),
-            lab=self.import_pickle_to_df(self.incoming_resource_refs.lab),
-            vital=self.import_pickle_to_df(self.incoming_resource_refs.vital),
+            icustay=rio.json_to_df(path=self.incoming_resource_refs.bg),
+            bg=rio.json_to_df(path=self.incoming_resource_refs.bg),
+            lab=rio.json_to_df(path=self.incoming_resource_refs.lab),
+            vital=rio.json_to_df(path=self.incoming_resource_refs.vital),
         )
 
         return imported_data
