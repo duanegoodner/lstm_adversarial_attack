@@ -10,7 +10,7 @@ import lstm_adversarial_attack.config_settings as lcs
 import lstm_adversarial_attack.preprocess.preprocess_module as pm
 
 @dataclass
-class PrefilterResourceRefs:
+class PrefilterResourceRefs(pm.PreprocessResourceRefs):
     """
     Container for paths to files used by Prefilter
     """
@@ -43,7 +43,7 @@ class PrefilterSettings(pm.PreprocessModuleSettings):
 
 
 @dataclass
-class ICUStayMeasurementCombinerResourceRefs:
+class ICUStayMeasurementCombinerResourceRefs(pm.PreprocessResourceRefs):
     """
     Container for paths to files imported by ICUStayMeasurementCombiner
     """
@@ -88,7 +88,7 @@ class ICUStayMeasurementCombinerSettings(pm.PreprocessModuleSettings):
 
 
 @dataclass
-class FullAdmissionListBuilderResourceRefs:
+class FullAdmissionListBuilderResourceRefs(pm.PreprocessResourceRefs):
     """
     Container for paths to files imported by FullAdmissionListBuilder
     """
@@ -140,7 +140,7 @@ FullAdmissionData.__module__ = __name__
 
 
 @dataclass
-class FeatureBuilderResourceRefs:
+class FeatureBuilderResourceRefs(pm.PreprocessResourceRefs):
     """
     Container for paths to files imported by FeatureBuilder
     """
@@ -167,7 +167,7 @@ class FeatureBuilderSettings(pm.PreprocessModuleSettings):
 
 
 @dataclass
-class FeatureFinalizerResourceRefs:
+class FeatureFinalizerResourceRefs(pm.PreprocessResourceRefs):
     """
     Container for paths to files imported by FeatureFinalizer
     """

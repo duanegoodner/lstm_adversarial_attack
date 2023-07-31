@@ -7,6 +7,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.preprocess.preprocess_module as ppm
 import lstm_adversarial_attack.preprocess.preprocess_input_classes as pic
+import lstm_adversarial_attack.resource_io as rio
 
 
 @dataclass
@@ -14,6 +15,7 @@ class PrefilterResources:
     """
     Container for the data frames Prefilter object imports and manipulates
     """
+
     icustay: pd.DataFrame
     bg: pd.DataFrame
     vital: pd.DataFrame
@@ -24,17 +26,16 @@ class Prefilter(ppm.PreprocessModule):
     """
     Imports sql query output csvs to Dataframes and filters/formats dfs
     """
+
     def __init__(self):
         """
         Instantiates settings and resource references and passes to base class
         constructor
         """
-        settings = pic.PrefilterSettings()
-        incoming_resource_refs = pic.PrefilterResourceRefs()
         super().__init__(
             name="Prefilter",
-            settings=settings,
-            incoming_resource_refs=incoming_resource_refs,
+            settings=pic.PrefilterSettings(),
+            incoming_resource_refs=pic.PrefilterResourceRefs(),
         )
 
     @staticmethod
@@ -118,10 +119,10 @@ class Prefilter(ppm.PreprocessModule):
         self, lab: pd.DataFrame, icustay: pd.DataFrame
     ) -> pd.DataFrame:
         """
-       Filters the dataframe obtained from importing output of pivoted_lab.sql
-       :param lab: dataframe with "blood group" data
-       :param icustay: icustay dataframe. must already be filtered.
-       :return: filtered lab dataframe
+        Filters the dataframe obtained from importing output of pivoted_lab.sql
+        :param lab: dataframe with "blood group" data
+        :param icustay: icustay dataframe. must already be filtered.
+        :return: filtered lab dataframe
         """
         lab["icustay_id"] = lab["icustay_id"].fillna(0).astype("int64")
         lab["hadm_id"] = lab["hadm_id"].fillna(0).astype("int64")
@@ -144,10 +145,10 @@ class Prefilter(ppm.PreprocessModule):
         self, vital: pd.DataFrame, icustay: pd.DataFrame
     ) -> pd.DataFrame:
         """
-       Filters the dataframe obtained by importing output of pivoted_vital.sql
-       :param vital: dataframe with "blood group" data
-       :param icustay: icustay dataframe. must already be filtered.
-       :return: filtered vital dataframe
+        Filters the dataframe obtained by importing output of pivoted_vital.sql
+        :param vital: dataframe with "blood group" data
+        :param icustay: icustay dataframe. must already be filtered.
+        :return: filtered vital dataframe
         """
         vital["charttime"] = pd.to_datetime(vital["charttime"])
         vital = vital[vital["icustay_id"].isin(icustay["icustay_id"])]
@@ -166,10 +167,10 @@ class Prefilter(ppm.PreprocessModule):
         :return: a PrefilterResources dataclass containing dataframe refs
         """
         imported_data = PrefilterResources(
-            icustay=self.import_csv(path=self.incoming_resource_refs.icustay),
-            bg=self.import_csv(path=self.incoming_resource_refs.bg),
-            vital=self.import_csv(path=self.incoming_resource_refs.vital),
-            lab=self.import_csv(path=self.incoming_resource_refs.lab),
+            icustay=pd.read_csv(self.incoming_resource_refs.icustay),
+            bg=pd.read_csv(self.incoming_resource_refs.bg),
+            vital=pd.read_csv(self.incoming_resource_refs.vital),
+            lab=pd.read_csv(self.incoming_resource_refs.lab),
         )
 
         return imported_data
@@ -199,11 +200,12 @@ class Prefilter(ppm.PreprocessModule):
         )
 
         for key, val in imported_resources.__dict__.items():
-            self.export_resource(
+            self.export_resource_new(
                 key=key,
                 resource=val,
                 path=self.settings.output_dir
                 / cfg_paths.PREFILTER_OUTPUT_FILES[key],
+                exporter=rio.df_to_json
             )
 
 

@@ -1,5 +1,7 @@
 # TODO Change to dill and use dill.dump / dill.load syntax.
 # TODO Consider removing this module. May be overkill.
+import json
+
 import dill
 import pandas as pd
 import sys
@@ -20,9 +22,9 @@ def create_timestamped_dir(parent_path: Path) -> Path:
 def create_timestamped_filepath(
     parent_path: Path, file_extension: str, prefix: str = "", suffix: str = ""
 ):
-    filename = f"{prefix}{datetime.now()}{suffix}.{file_extension}".replace(" ", "_").replace(
-        ":", "_"
-    )
+    filename = f"{prefix}{datetime.now()}{suffix}.{file_extension}".replace(
+        " ", "_"
+    ).replace(":", "_")
     return parent_path / filename
 
 
@@ -74,7 +76,11 @@ class ResourceImporter:
 
 
 class ResourceExporter:
-    _supported_file_types = [".pickle"]
+    _supported_file_types = [".pickle", ".json"]
+
+    def export_df_to_json(self, df: pd.DataFrame, path: Path):
+        json_string = df.to_json(orient="split")
+        dtypes = df.dtypes.apply(lambda x: x.name).to_dict()
 
     def export(self, resource: object, path: Path):
         self._validate_path(path=path)
@@ -83,3 +89,42 @@ class ResourceExporter:
 
     def _validate_path(self, path: Path):
         assert f".{path.name.split('.')[-1]}" in self._supported_file_types
+
+
+class DataFrameIO:
+    @staticmethod
+    def df_to_json(df: pd.DataFrame, path: Path):
+        assert f".{path.name.split('.')[-1]}" == ".json"
+        dtypes = df.dtypes.apply(lambda x: x.name).to_dict()
+        data_json_str = df.to_json()
+        typed_df_dict = {"dtypes": dtypes, "data": data_json_str}
+        with path.open(mode="w") as out_file:
+            json.dump(obj=typed_df_dict, fp=out_file)
+
+    @staticmethod
+    def json_to_df(path: Path) -> pd.DataFrame:
+        with path.open(mode="r") as in_file:
+            typed_df_dict = json.load(fp=in_file)
+        return pd.read_json(typed_df_dict["data"]).astype(
+            typed_df_dict["dtypes"]
+        )
+
+
+def df_to_json(resource: pd.DataFrame, path: Path):
+    DataFrameIO.df_to_json(df=resource, path=path)
+
+
+def json_to_df(path: Path) -> pd.DataFrame:
+    return DataFrameIO.json_to_df(path=path)
+
+
+def convert_posix_paths_to_strings(data):
+    if isinstance(data, dict):
+        return {key: convert_posix_paths_to_strings(value) for key, value
+                in data.items()}
+    elif isinstance(data, list):
+        return [convert_posix_paths_to_strings(item) for item in data]
+    elif isinstance(data, Path):  # Check if the value is a PosixPath
+        return str(data)
+    else:
+        return data

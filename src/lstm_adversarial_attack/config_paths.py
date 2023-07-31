@@ -24,10 +24,10 @@ PREPROCESS_DATA_DIR = DATA_DIR / "preprocess"
 PREPROCESS_CHECKPOINTS = PREPROCESS_DATA_DIR / "checkpoints"
 PREFILTER_OUTPUT = PREPROCESS_CHECKPOINTS / "1_prefilter"
 PREFILTER_OUTPUT_FILES = {
-    "icustay": "icustay.pickle",
-    "bg": "bg.pickle",
-    "lab": "lab.pickle",
-    "vital": "vital.pickle",
+    "icustay": "icustay.json",
+    "bg": "bg.json",
+    "lab": "lab.json",
+    "vital": "vital.json",
 }
 STAY_MEASUREMENT_OUTPUT = PREPROCESS_CHECKPOINTS / "2_merged_stay_measurements"
 STAY_MEASUREMENT_OUTPUT_FILES = {

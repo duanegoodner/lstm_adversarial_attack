@@ -9,8 +9,6 @@ class FeatureBuilderResources:
     """
     Container for data objects used by FeatureBuilder
     """
-    # TODO type hint should be list[FullAdmissionData] (?)
-    # full_admission_list: pd.DataFrame
     full_admission_list: list[pic.FullAdmissionData]
 
 
@@ -25,16 +23,14 @@ class FeatureBuilder(pm.PreprocessModule):
         Instantiates settings and resource references and passes to base class
         constructor
         """
-        settings = pic.FeatureBuilderSettings()
-        incoming_resource_refs = pic.FeatureBuilderResourceRefs()
         super().__init__(
             name="Feature Builder",
-            settings=settings,
-            incoming_resource_refs=incoming_resource_refs,
+            settings=pic.FeatureBuilderSettings(),
+            incoming_resource_refs=pic.FeatureBuilderResourceRefs(),
         )
         # since stats_summary df is small, make it a data member
         # (we usually try to limit scope of big dfs to process() method)
-        stats_summary_path = incoming_resource_refs.bg_lab_vital_summary_stats
+        stats_summary_path = self.incoming_resource_refs.bg_lab_vital_summary_stats
         self.stats_summary = self.import_pickle_to_df(stats_summary_path)
 
     def _import_resources(self) -> FeatureBuilderResources:
