@@ -11,6 +11,7 @@ import lstm_adversarial_attack.preprocess.feature_finalizer as ff
 import lstm_adversarial_attack.preprocess.preprocess_resource as pr
 
 
+
 class Preprocessor:
     """
     Converts database query output to feature array and class labels
@@ -29,6 +30,7 @@ class Preprocessor:
             ff.FeatureFinalizer(),
         ]
         self._saved_files = []
+        self._available_resources = {}
 
     def preprocess(self) -> list[dict[str, pr.ExportedPreprocessResource]]:
         """

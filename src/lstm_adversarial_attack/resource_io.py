@@ -76,11 +76,7 @@ class ResourceImporter:
 
 
 class ResourceExporter:
-    _supported_file_types = [".pickle", ".json"]
-
-    def export_df_to_json(self, df: pd.DataFrame, path: Path):
-        json_string = df.to_json(orient="split")
-        dtypes = df.dtypes.apply(lambda x: x.name).to_dict()
+    _supported_file_types = [".pickle"]
 
     def export(self, resource: object, path: Path):
         self._validate_path(path=path)
@@ -109,14 +105,36 @@ class DataFrameIO:
             typed_df_dict["dtypes"]
         )
 
+    @staticmethod
+    def df_to_pickle(resource: pd.DataFrame, path: Path):
+        assert f".{path.name.split('.')[-1]}" == ".pickle"
+        with path.open(mode="wb") as p:
+            dill.dump(obj=resource, file=p)
+
+    @staticmethod
+    def pickle_to_df(path: Path) -> pd.DataFrame:
+        assert f".{path.name.split('.')[-1]}" == ".pickle"
+        with path.open(mode="rb") as p:
+            result = cu.load(p)
+        return result
+
 
 def df_to_json(resource: pd.DataFrame, path: Path):
     DataFrameIO.df_to_json(df=resource, path=path)
 
+def df_to_pickle(resource: pd.DataFrame, path: Path):
+    DataFrameIO.df_to_pickle(resource=resource, path=path)
 
 def json_to_df(path: Path) -> pd.DataFrame:
     return DataFrameIO.json_to_df(path=path)
 
+def pickle_to_df(path: Path) -> pd.DataFrame:
+    return DataFrameIO.pickle_to_df(path=path)
+
+def export_to_pickle(resource: object, path: Path):
+    assert f".{path.name.split('.')[-1]}" == ".pickle"
+    with path.open(mode="wb") as p:
+        dill.dump(obj=resource, file=p)
 
 def convert_posix_paths_to_strings(data):
     if isinstance(data, dict):
