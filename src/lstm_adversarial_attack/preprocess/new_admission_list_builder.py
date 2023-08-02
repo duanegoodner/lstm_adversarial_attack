@@ -38,17 +38,6 @@ class NewAdmissionListBuilder(pre.NewPreprocessModule):
         super().__init__(
             resources=resources, output_dir=output_dir, settings=settings
         )
-        # self.resources = resources
-        # self._output_dir = output_dir
-        # self._settings = settings
-
-    # @property
-    # def settings(self) -> NewAdmissionListBuilderSettings:
-    #     return self._settings
-    #
-    # @property
-    # def output_dir(self) -> Path:
-    #     return self._output_dir
 
     @cached_property
     def _filtered_icustay_bg_lab_vital(self) -> pd.DataFrame:

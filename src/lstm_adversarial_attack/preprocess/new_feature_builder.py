@@ -33,14 +33,6 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
             resources=resources, output_dir=output_dir, settings=settings
         )
 
-    # @property
-    # def settings(self) -> NewFeatureBuilderSettings:
-    #     return self._settings
-    #
-    # @property
-    # def output_dir(self) -> Path:
-    #     return self._output_dir
-
     def _resample(self, raw_time_series_df: pd.DataFrame) -> pd.DataFrame:
         """
         Resamples measurement times series to hourly increments.

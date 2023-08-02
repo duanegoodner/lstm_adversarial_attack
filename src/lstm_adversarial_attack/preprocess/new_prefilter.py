@@ -43,18 +43,6 @@ class NewPrefilter(pre.NewPreprocessModule):
         super().__init__(
             resources=resources, output_dir=output_dir, settings=settings
         )
-        # self.resources = resources
-        # self._output_dir = output_dir
-        #
-        # self._settings = settings
-
-    # @property
-    # def settings(self) -> NewPrefilterSettings:
-    #     return self._settings
-    #
-    # @property
-    # def output_dir(self) -> Path:
-    #     return self._output_dir
 
     def _apply_standard_formatting(self):
         """
