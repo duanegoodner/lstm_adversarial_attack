@@ -26,26 +26,18 @@ class NewAdmissionListBuilderSettings:
 
 
 @dataclass
-class NewAdmissionListBuilder(pre.AbstractAdmissionListBuilder):
+class NewAdmissionListBuilder(pre.NewPreprocessModule):
     def __init__(
         self,
         resources: pre.NewAdmissionListBuilderResources,
         output_dir: Path = cfp.FULL_ADMISSION_LIST_OUTPUT,
         settings: NewAdmissionListBuilderSettings = None,
     ):
-        self.resources = resources
-        self._output_dir = output_dir
         if settings is None:
             settings = NewAdmissionListBuilderSettings()
-        self._settings = settings
-
-    @property
-    def settings(self) -> NewAdmissionListBuilderSettings:
-        return self._settings
-
-    @property
-    def output_dir(self) -> Path:
-        return self._output_dir
+        super().__init__(
+            resources=resources, output_dir=output_dir, settings=settings
+        )
 
     @cached_property
     def _filtered_icustay_bg_lab_vital(self) -> pd.DataFrame:
@@ -80,7 +72,8 @@ class NewAdmissionListBuilder(pre.AbstractAdmissionListBuilder):
                 intime=np.unique(item.intime),
                 outtime=np.unique(item.outtime),
                 time_series=item[self.settings.time_series_cols],
-            ) for item in list_of_group_dfs
+            )
+            for item in list_of_group_dfs
         ]
 
     def process(self) -> pre.NewAdmissionListBuilderOutput:

@@ -113,66 +113,90 @@ class NewFeatureFinalizerOutput(NewPreprocessResource):
     in_hospital_mortality_list: list[int]
 
 
-class AbstractPrefilter(ABC):
-    @abstractmethod
-    def process(self) -> NewPrefilterOutput:
-        pass
+class NewPreprocessModule(ABC):
+    def __init__(
+        self,
+        resources: NewPreprocessResource,
+        output_dir: Path,
+        settings: dataclass
+    ):
+        self.resources = resources
+        self._output_dir = output_dir
+        self._settings = settings
 
-    @abstractmethod
+    @property
+    def settings(self) -> dataclass:
+        return self._settings
+
+    @property
     def output_dir(self) -> Path:
-        pass
-
-
-class AbstractICUMeasurementCombiner(ABC):
-    @abstractmethod
-    def process(self) -> NewICUStayMeasurementMergerOutput:
-        pass
+        return self._output_dir
 
     @abstractmethod
-    def output_dir(self) -> Path:
+    def process(self) -> NewPreprocessResource:
         pass
 
 
-class AbstractAdmissionListBuilder(ABC):
-    @abstractmethod
-    def process(self) -> NewAdmissionListBuilderOutput:
-        pass
-
-    @abstractmethod
-    def output_dir(self) -> Path:
-        pass
-
-
-class AbstractFeatureBuilder(ABC):
-    @abstractmethod
-    def process(self) -> NewFeatureBuilderOutput:
-        pass
-
-    @abstractmethod
-    def output_dir(self) -> Path:
-        pass
-
-
-class AbstractFeatureFinalizer(ABC):
-    @abstractmethod
-    def process(self) -> NewFeatureFinalizerOutput:
-        pass
-
-    @abstractmethod
-    def output_dir(self) -> Path:
-        pass
+# class AbstractPrefilter(ABC):
+#     @abstractmethod
+#     def process(self) -> NewPrefilterOutput:
+#         pass
+#
+#     @abstractmethod
+#     def output_dir(self) -> Path:
+#         pass
+#
+#
+# class AbstractICUMeasurementCombiner(ABC):
+#     @abstractmethod
+#     def process(self) -> NewICUStayMeasurementMergerOutput:
+#         pass
+#
+#     @abstractmethod
+#     def output_dir(self) -> Path:
+#         pass
+#
+#
+# class AbstractAdmissionListBuilder(ABC):
+#     @abstractmethod
+#     def process(self) -> NewAdmissionListBuilderOutput:
+#         pass
+#
+#     @abstractmethod
+#     def output_dir(self) -> Path:
+#         pass
+#
+#
+# class AbstractFeatureBuilder(ABC):
+#     @abstractmethod
+#     def process(self) -> NewFeatureBuilderOutput:
+#         pass
+#
+#     @abstractmethod
+#     def output_dir(self) -> Path:
+#         pass
+#
+#
+# class AbstractFeatureFinalizer(ABC):
+#     @abstractmethod
+#     def process(self) -> NewFeatureFinalizerOutput:
+#         pass
+#
+#     @abstractmethod
+#     def output_dir(self) -> Path:
+#         pass
 
 
 class NewPreprocessor:
     def __init__(
         self,
-        prefilter: Callable[..., AbstractPrefilter],
+        prefilter: Callable[..., NewPreprocessModule],
         icustay_measurement_combiner: Callable[
-            ..., AbstractICUMeasurementCombiner
+            ..., NewPreprocessModule
         ],
-        admission_list_builder: Callable[..., AbstractAdmissionListBuilder],
-        feature_builder: Callable[..., AbstractFeatureBuilder],
-        feature_finalizer: Callable[..., AbstractFeatureFinalizer],
+        admission_list_builder: Callable[..., NewPreprocessModule],
+        feature_builder: Callable[..., NewPreprocessModule],
+        feature_finalizer: Callable[..., NewPreprocessModule],
         inputs: pic.PrefilterResourceRefs = None,
         save_checkpoints: bool = False,
         available_resources: dict[str, Any] = None,

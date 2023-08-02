@@ -12,6 +12,7 @@ class NewICUStayMeasurementMergerSettings:
     """
     Container for ICUStayMeasurementCombiner config settings
     """
+
     bg_data_cols: list[str] = None
     lab_data_cols: list[str] = None
     vital_data_cols: list[str] = None
@@ -29,26 +30,18 @@ class NewICUStayMeasurementMergerSettings:
         return self.bg_data_cols + self.lab_data_cols + self.vital_data_cols
 
 
-class NewICUStayMeasurementMerger(pre.AbstractICUMeasurementCombiner):
+class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
     def __init__(
         self,
         resources: pre.NewICUStayMeasurementMergerResources,
         output_dir: Path = cfp.STAY_MEASUREMENT_OUTPUT,
         settings: NewICUStayMeasurementMergerSettings = None,
     ):
-        self.resources = resources
-        self._output_dir = output_dir
         if settings is None:
             settings = NewICUStayMeasurementMergerSettings()
-        self._settings = settings
-
-    @property
-    def settings(self) -> NewICUStayMeasurementMergerSettings:
-        return self._settings
-
-    @property
-    def output_dir(self) -> Path:
-        return self._output_dir
+        super().__init__(
+            resources=resources, output_dir=output_dir, settings=settings
+        )
 
     @cached_property
     def _id_bg(self) -> pd.DataFrame:
@@ -140,9 +133,7 @@ class NewICUStayMeasurementMerger(pre.AbstractICUMeasurementCombiner):
         ].describe(percentiles=[0.05, 0.25, 0.50, 0.75, 0.95])
 
     def process(self) -> pre.NewICUStayMeasurementMergerOutput:
-
         return pre.NewICUStayMeasurementMergerOutput(
             icustay_bg_lab_vital=self.icustay_bg_lab_vital,
-            bg_lab_vital_summary_stats=self.summary_stats
+            bg_lab_vital_summary_stats=self.summary_stats,
         )
-

@@ -20,26 +20,18 @@ class NewFeatureBuilderSettings:
     resample_limit_direction: str = cfs.DEFAULT_RESAMPLE_LIMIT_DIRECTION
 
 
-class NewFeatureBuilder(pre.AbstractFeatureBuilder):
+class NewFeatureBuilder(pre.NewPreprocessModule):
     def __init__(
         self,
         resources: pre.NewFeatureBuilderResources,
         output_dir: Path = cfp.FEATURE_BUILDER_OUTPUT,
         settings: NewFeatureBuilderSettings = None,
     ):
-        self.resources = resources
-        self._output_dir = output_dir
         if settings is None:
             settings = NewFeatureBuilderSettings()
-        self._settings = settings
-
-    @property
-    def settings(self) -> NewFeatureBuilderSettings:
-        return self._settings
-
-    @property
-    def output_dir(self) -> Path:
-        return self._output_dir
+        super().__init__(
+            resources=resources, output_dir=output_dir, settings=settings
+        )
 
     def _resample(self, raw_time_series_df: pd.DataFrame) -> pd.DataFrame:
         """

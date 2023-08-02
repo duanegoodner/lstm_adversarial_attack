@@ -24,26 +24,18 @@ class NewFeatureFinalizerSettings:
 
 
 @dataclass
-class NewFeatureFinalizer(pre.AbstractFeatureFinalizer):
+class NewFeatureFinalizer(pre.NewPreprocessModule):
     def __init__(
         self,
         resources: pre.NewFeatureFinalizerResources,
         output_dir: cfp.PREPROCESS_OUTPUT_DIR = cfp.FEATURE_FINALIZER_OUTPUT,
         settings: NewFeatureFinalizerSettings = None,
     ):
-        self.resources = resources
-        self._output_dir = output_dir
         if settings is None:
             settings = NewFeatureFinalizerSettings()
-        self._settings = settings
-
-    @property
-    def settings(self) -> NewFeatureFinalizerSettings:
-        return self._settings
-
-    @property
-    def output_dir(self) -> Path:
-        return self._output_dir
+        super().__init__(
+            resources=resources, output_dir=output_dir, settings=settings
+        )
 
     @cached_property
     def measurement_col_names(self) -> tuple[str, ...]:
