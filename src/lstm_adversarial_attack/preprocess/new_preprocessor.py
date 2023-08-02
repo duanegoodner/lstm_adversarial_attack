@@ -90,6 +90,17 @@ class NewAdmissionListBuilderOutput(NewPreprocessResource):
     admission_list: list[NewFullAdmissionData]
 
 
+@dataclass
+class NewFeatureBuilderResources(NewPreprocessResource):
+    admission_list: list[NewFullAdmissionData]
+    bg_lab_vital_summary_stats: pd.DataFrame
+
+
+@dataclass
+class NewFeatureBuilderOutput(NewPreprocessResource):
+    processed_admission_list: list[NewFullAdmissionData]
+
+
 class AbstractPrefilter(ABC):
     @abstractmethod
     def process(self) -> NewPrefilterOutput:
@@ -120,6 +131,16 @@ class AbstractAdmissionListBuilder(ABC):
         pass
 
 
+class AbstractFeatureBuilder(ABC):
+    @abstractmethod
+    def process(self) -> NewFeatureBuilderOutput:
+        pass
+
+    @abstractmethod
+    def output_dir(self) -> Path:
+        pass
+
+
 class NewPreprocessor:
     def __init__(
         self,
@@ -128,7 +149,7 @@ class NewPreprocessor:
             ..., AbstractICUMeasurementCombiner
         ],
         admission_list_builder: Callable[..., AbstractAdmissionListBuilder],
-        # feature_builder: Callable[..., NewPreprocessModule],
+        feature_builder: Callable[..., AbstractFeatureBuilder],
         # feature_finalizer: Callable[..., NewPreprocessModule],
         inputs: pic.PrefilterResourceRefs = None,
         save_checkpoints: bool = False,
@@ -137,7 +158,7 @@ class NewPreprocessor:
         self.prefilter = prefilter
         self.icustay_measurement_combiner = icustay_measurement_combiner
         self.admission_list_builder = admission_list_builder
-        # self.feature_builder = feature_builder
+        self.feature_builder = feature_builder
         # self.feature_finalizer = feature_finalizer
         if inputs is None:
             inputs = pic.PrefilterResourceRefs()
@@ -156,9 +177,7 @@ class NewPreprocessor:
         )
         return prefilter_resources
 
-    def run_prefilter(
-        self, prefilter_resources: NewPrefilterResources
-    ) -> NewPrefilterOutput:
+    def run_prefilter(self, prefilter_resources: NewPrefilterResources):
         instantiated_prefilter = self.prefilter(resources=prefilter_resources)
         prefilter_output = instantiated_prefilter.process()
         if self.save_checkpoints:
@@ -166,7 +185,7 @@ class NewPreprocessor:
                 output_dir=instantiated_prefilter.output_dir
             )
         self.available_resources["prefilter_output"] = prefilter_output
-        return prefilter_output
+        # return prefilter_output
 
     def run_icustay_measurement_combiner(
         self,
@@ -182,7 +201,12 @@ class NewPreprocessor:
             measurement_combiner_output.export(
                 output_dir=instantiated_measurement_combiner.output_dir
             )
-        return measurement_combiner_output
+        self.available_resources["bg_lab_vital_summary_stats"] = (
+            measurement_combiner_output.bg_lab_vital_summary_stats
+        )
+        self.available_resources["icustay_bg_lab_vital"] = (
+            measurement_combiner_output.icustay_bg_lab_vital
+        )
 
     def run_admission_list_builder(
         self,
@@ -198,29 +222,53 @@ class NewPreprocessor:
             admission_list_builder_output.export(
                 output_dir=instantiated_admission_list_builder.output_dir
             )
-        return admission_list_builder_output
+        self.available_resources["admission_list"] = (
+            admission_list_builder_output.admission_list
+        )
+
+    def run_feature_builder(
+        self, feature_builder_resources: NewFeatureBuilderResources
+    ):
+        instantiated_feature_builder = self.feature_builder(
+            resources=feature_builder_resources
+        )
+        feature_builder_output = instantiated_feature_builder.process()
+        if self.save_checkpoints:
+            feature_builder_output.export(
+                output_dir=instantiated_feature_builder.output_dir
+            )
+        self.available_resources["processed_admission_list"] = (
+            feature_builder_output.processed_admission_list
+        )
 
     def preprocess(self):
         prefilter_resources = self.get_prefilter_resources()
-        prefilter_output = self.run_prefilter(
-            prefilter_resources=prefilter_resources
-        )
-        self.available_resources["icustay_measurement_combiner_resources"] = (
-            prefilter_output
-        )
+        self.run_prefilter(prefilter_resources=prefilter_resources)
 
         measurement_combiner_resources = NewICUStayMeasurementMergerResources(
-            **prefilter_output.__dict__
+            **self.available_resources["prefilter_output"].__dict__
         )
-        measurement_combiner_output = self.run_icustay_measurement_combiner(
+        self.run_icustay_measurement_combiner(
             icustay_measurement_combiner_resources=measurement_combiner_resources
         )
 
         admission_list_builder_resources = NewAdmissionListBuilderResources(
-            icustay_bg_lab_vital=measurement_combiner_output.icustay_bg_lab_vital
+            icustay_bg_lab_vital=self.available_resources[
+                "icustay_bg_lab_vital"
+            ]
         )
-        admission_list_builder_output = self.run_admission_list_builder(
+        self.run_admission_list_builder(
             admission_list_builder_resources=admission_list_builder_resources
         )
 
-        return admission_list_builder_output
+        feature_builder_resources = NewFeatureBuilderResources(
+            admission_list=self.available_resources["admission_list"],
+            bg_lab_vital_summary_stats=self.available_resources[
+                "bg_lab_vital_summary_stats"
+            ],
+        )
+        self.run_feature_builder(
+            feature_builder_resources=feature_builder_resources
+        )
+
+        return self.available_resources
