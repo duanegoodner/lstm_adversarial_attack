@@ -177,13 +177,13 @@ class NewPrefilter(pre.AbstractPrefilter):
         self._apply_standard_formatting()
         filtered_icustay = self._filter_icustay(df=self.resources.icustay)
         filtered_bg = self._filter_bg(
-            bg=self.resources.bg, icustay=self.resources.icustay
+            bg=self.resources.bg, icustay=filtered_icustay
         )
         filtered_lab = self._filter_lab(
-            lab=self.resources.lab, icustay=self.resources.icustay
+            lab=self.resources.lab, icustay=filtered_icustay
         )
         filtered_vital = self._filter_vital(
-            vital=self.resources.vital, icustay=self.resources.icustay
+            vital=self.resources.vital, icustay=filtered_icustay
         )
 
         return pre.NewPrefilterOutput(

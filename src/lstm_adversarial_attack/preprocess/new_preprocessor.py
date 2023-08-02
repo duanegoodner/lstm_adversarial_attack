@@ -252,23 +252,23 @@ class NewPreprocessor:
             icustay_measurement_combiner_resources=measurement_combiner_resources
         )
 
-        admission_list_builder_resources = NewAdmissionListBuilderResources(
-            icustay_bg_lab_vital=self.available_resources[
-                "icustay_bg_lab_vital"
-            ]
-        )
-        self.run_admission_list_builder(
-            admission_list_builder_resources=admission_list_builder_resources
-        )
-
-        feature_builder_resources = NewFeatureBuilderResources(
-            admission_list=self.available_resources["admission_list"],
-            bg_lab_vital_summary_stats=self.available_resources[
-                "bg_lab_vital_summary_stats"
-            ],
-        )
-        self.run_feature_builder(
-            feature_builder_resources=feature_builder_resources
-        )
+        # admission_list_builder_resources = NewAdmissionListBuilderResources(
+        #     icustay_bg_lab_vital=self.available_resources[
+        #         "icustay_bg_lab_vital"
+        #     ]
+        # )
+        # self.run_admission_list_builder(
+        #     admission_list_builder_resources=admission_list_builder_resources
+        # )
+        # #
+        # feature_builder_resources = NewFeatureBuilderResources(
+        #     admission_list=self.available_resources["admission_list"],
+        #     bg_lab_vital_summary_stats=self.available_resources[
+        #         "bg_lab_vital_summary_stats"
+        #     ],
+        # )
+        # self.run_feature_builder(
+        #     feature_builder_resources=feature_builder_resources
+        # )
 
         return self.available_resources
