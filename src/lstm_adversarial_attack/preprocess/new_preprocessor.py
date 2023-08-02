@@ -101,6 +101,16 @@ class NewFeatureBuilderOutput(NewPreprocessResource):
     processed_admission_list: list[NewFullAdmissionData]
 
 
+@dataclass
+class NewFeatureFinalizerResources(NewPreprocessResource):
+    processed_admission_list: list[NewFullAdmissionData]
+
+
+@dataclass
+class NewFeatureFinalizerOutput(NewPreprocessResource):
+
+
+
 class AbstractPrefilter(ABC):
     @abstractmethod
     def process(self) -> NewPrefilterOutput:
@@ -134,6 +144,16 @@ class AbstractAdmissionListBuilder(ABC):
 class AbstractFeatureBuilder(ABC):
     @abstractmethod
     def process(self) -> NewFeatureBuilderOutput:
+        pass
+
+    @abstractmethod
+    def output_dir(self) -> Path:
+        pass
+
+
+class AbstractFeatureFinalizer(ABC):
+    @abstractmethod
+    def process(self) -> NewFeatureFinalizerOutput:
         pass
 
     @abstractmethod
@@ -252,23 +272,23 @@ class NewPreprocessor:
             icustay_measurement_combiner_resources=measurement_combiner_resources
         )
 
-        # admission_list_builder_resources = NewAdmissionListBuilderResources(
-        #     icustay_bg_lab_vital=self.available_resources[
-        #         "icustay_bg_lab_vital"
-        #     ]
-        # )
-        # self.run_admission_list_builder(
-        #     admission_list_builder_resources=admission_list_builder_resources
-        # )
-        # #
-        # feature_builder_resources = NewFeatureBuilderResources(
-        #     admission_list=self.available_resources["admission_list"],
-        #     bg_lab_vital_summary_stats=self.available_resources[
-        #         "bg_lab_vital_summary_stats"
-        #     ],
-        # )
-        # self.run_feature_builder(
-        #     feature_builder_resources=feature_builder_resources
-        # )
+        admission_list_builder_resources = NewAdmissionListBuilderResources(
+            icustay_bg_lab_vital=self.available_resources[
+                "icustay_bg_lab_vital"
+            ]
+        )
+        self.run_admission_list_builder(
+            admission_list_builder_resources=admission_list_builder_resources
+        )
+        #
+        feature_builder_resources = NewFeatureBuilderResources(
+            admission_list=self.available_resources["admission_list"],
+            bg_lab_vital_summary_stats=self.available_resources[
+                "bg_lab_vital_summary_stats"
+            ],
+        )
+        self.run_feature_builder(
+            feature_builder_resources=feature_builder_resources
+        )
 
         return self.available_resources
