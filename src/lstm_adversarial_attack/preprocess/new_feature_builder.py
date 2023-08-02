@@ -128,7 +128,7 @@ class NewFeatureBuilder(pre.AbstractFeatureBuilder):
 
         return new_df
 
-    def process(self):
+    def process(self) -> pre.NewFeatureBuilderOutput:
         """
         Winsorizes, imputes and normalizes dfs in list of FullAdmission objects
 
@@ -152,4 +152,6 @@ class NewFeatureBuilder(pre.AbstractFeatureBuilder):
                     f" {idx + 1}/{len(filtered_admission_list)}"
                 )
 
-        return filtered_admission_list
+        return pre.NewFeatureBuilderOutput(
+            processed_admission_list=filtered_admission_list
+        )

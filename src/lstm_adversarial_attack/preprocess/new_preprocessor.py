@@ -108,7 +108,9 @@ class NewFeatureFinalizerResources(NewPreprocessResource):
 
 @dataclass
 class NewFeatureFinalizerOutput(NewPreprocessResource):
-
+    measurement_col_names: tuple[str]
+    measurement_data_list: list[np.ndarray]
+    in_hospital_mortality_list: list[int]
 
 
 class AbstractPrefilter(ABC):
@@ -170,7 +172,7 @@ class NewPreprocessor:
         ],
         admission_list_builder: Callable[..., AbstractAdmissionListBuilder],
         feature_builder: Callable[..., AbstractFeatureBuilder],
-        # feature_finalizer: Callable[..., NewPreprocessModule],
+        feature_finalizer: Callable[..., AbstractFeatureFinalizer],
         inputs: pic.PrefilterResourceRefs = None,
         save_checkpoints: bool = False,
         available_resources: dict[str, Any] = None,
@@ -179,7 +181,7 @@ class NewPreprocessor:
         self.icustay_measurement_combiner = icustay_measurement_combiner
         self.admission_list_builder = admission_list_builder
         self.feature_builder = feature_builder
-        # self.feature_finalizer = feature_finalizer
+        self.feature_finalizer = feature_finalizer
         if inputs is None:
             inputs = pic.PrefilterResourceRefs()
         self.inputs = inputs
@@ -261,6 +263,21 @@ class NewPreprocessor:
             feature_builder_output.processed_admission_list
         )
 
+    def run_feature_finalizer(
+        self, feature_finalizer_resources: NewFeatureFinalizerResources
+    ):
+        instantiated_feature_finalizer = self.feature_finalizer(
+            resources=feature_finalizer_resources
+        )
+        feature_finalizer_output = instantiated_feature_finalizer.process()
+        if self.save_checkpoints:
+            feature_finalizer_output.export(
+                output_dir=instantiated_feature_finalizer.output_dir
+            )
+        self.available_resources["feature_finalizer_output"] = (
+            feature_finalizer_output
+        )
+
     def preprocess(self):
         prefilter_resources = self.get_prefilter_resources()
         self.run_prefilter(prefilter_resources=prefilter_resources)
@@ -289,6 +306,15 @@ class NewPreprocessor:
         )
         self.run_feature_builder(
             feature_builder_resources=feature_builder_resources
+        )
+
+        feature_finalizer_resources = NewFeatureFinalizerResources(
+            processed_admission_list=self.available_resources[
+                "processed_admission_list"
+            ]
+        )
+        self.run_feature_finalizer(
+            feature_finalizer_resources=feature_finalizer_resources
         )
 
         return self.available_resources

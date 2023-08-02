@@ -4,7 +4,7 @@ import lstm_adversarial_attack.preprocess.preprocess_input_classes as pic
 import lstm_adversarial_attack.preprocess.new_icustay_measurement_merger as imm
 import lstm_adversarial_attack.preprocess.new_admission_list_builder as alb
 import lstm_adversarial_attack.preprocess.new_feature_builder as fb
-import lstm_adversarial_attack.preprocess.feature_finalizer as ff
+import lstm_adversarial_attack.preprocess.new_feature_finalizer as ff
 
 
 def main():
@@ -13,6 +13,7 @@ def main():
         icustay_measurement_combiner=imm.NewICUStayMeasurementMerger,
         admission_list_builder=alb.NewAdmissionListBuilder,
         feature_builder=fb.NewFeatureBuilder,
+        feature_finalizer=ff.NewFeatureFinalizer,
         inputs=pic.PrefilterResourceRefs(),
         save_checkpoints=False
 

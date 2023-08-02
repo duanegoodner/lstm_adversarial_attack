@@ -42,6 +42,9 @@ FEATURE_BUILDER_OUTPUT = PREPROCESS_CHECKPOINTS / "4_feature_builder"
 FEATURE_BUILDER_OUTPUT_FILES = {
     "hadm_list_with_processed_dfs": "hadm_list_with_processed_dfs.pickle"
 }
+
+FEATURE_FINALIZER_OUTPUT = PREPROCESS_CHECKPOINTS / "5_feature_finalizer"
+
 PREPROCESS_OUTPUT_DIR = PREPROCESS_DATA_DIR / "final_output"
 PREPROCESS_OUTPUT_FILES = {
     "measurement_data_list": "measurement_data_list.pickle",
