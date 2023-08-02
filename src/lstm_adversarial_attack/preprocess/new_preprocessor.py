@@ -206,7 +206,13 @@ class NewPreprocessor:
             prefilter_output.export(
                 output_dir=instantiated_prefilter.output_dir
             )
-        self.available_resources["prefilter_output"] = prefilter_output
+        self.available_resources["prefiltered_bg"] = prefilter_output.bg
+        self.available_resources["prefiltered_icustay"] = (
+            prefilter_output.icustay
+        )
+        self.available_resources["prefiltered_lab"] = prefilter_output.lab
+        self.available_resources["prefiltered_vital"] = prefilter_output.vital
+        # self.available_resources["prefilter_output"] = prefilter_output
         # return prefilter_output
 
     def run_icustay_measurement_combiner(
@@ -277,13 +283,26 @@ class NewPreprocessor:
         self.available_resources["feature_finalizer_output"] = (
             feature_finalizer_output
         )
+        self.available_resources["in_hospital_mortality_list"] = (
+            feature_finalizer_output.in_hospital_mortality_list
+        )
+        self.available_resources["measurement_col_names"] = (
+            feature_finalizer_output.measurement_col_names
+        )
+        self.available_resources["measurement_data_list"] = (
+            feature_finalizer_output.measurement_data_list
+        )
 
     def preprocess(self):
         prefilter_resources = self.get_prefilter_resources()
         self.run_prefilter(prefilter_resources=prefilter_resources)
 
         measurement_combiner_resources = NewICUStayMeasurementMergerResources(
-            **self.available_resources["prefilter_output"].__dict__
+            # **self.available_resources["prefilter_output"].__dict__
+            bg=self.available_resources["prefiltered_bg"],
+            icustay=self.available_resources["prefiltered_icustay"],
+            lab=self.available_resources["prefiltered_lab"],
+            vital=self.available_resources["prefiltered_vital"],
         )
         self.run_icustay_measurement_combiner(
             icustay_measurement_combiner_resources=measurement_combiner_resources
