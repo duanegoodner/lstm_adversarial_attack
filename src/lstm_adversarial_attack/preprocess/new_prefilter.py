@@ -31,26 +31,30 @@ class NewPrefilterSettings:
             self.vital_data_cols = cfg_set.PREPROCESS_VITAL_DATA_COLS
 
 
-class NewPrefilter(pre.AbstractPrefilter):
+class NewPrefilter(pre.NewPreprocessModule):
     def __init__(
         self,
         resources: pre.NewPrefilterResources,
         output_dir = cfg_paths.PREFILTER_OUTPUT,
         settings: NewPrefilterSettings = None,
     ):
-        self.resources = resources
-        self._output_dir = output_dir
         if settings is None:
             settings = NewPrefilterSettings()
-        self._settings = settings
+        super().__init__(
+            resources=resources, output_dir=output_dir, settings=settings
+        )
+        # self.resources = resources
+        # self._output_dir = output_dir
+        #
+        # self._settings = settings
 
-    @property
-    def settings(self) -> NewPrefilterSettings:
-        return self._settings
-
-    @property
-    def output_dir(self) -> Path:
-        return self._output_dir
+    # @property
+    # def settings(self) -> NewPrefilterSettings:
+    #     return self._settings
+    #
+    # @property
+    # def output_dir(self) -> Path:
+    #     return self._output_dir
 
     def _apply_standard_formatting(self):
         """

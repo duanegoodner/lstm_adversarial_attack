@@ -113,6 +113,30 @@ class NewFeatureFinalizerOutput(NewPreprocessResource):
     in_hospital_mortality_list: list[int]
 
 
+class NewPreprocessModule(ABC):
+    def __init__(
+        self,
+        resources: NewPreprocessResource,
+        output_dir: Path,
+        settings: dataclass
+    ):
+        self.resources = resources
+        self._output_dir = output_dir
+        self._settings = settings
+
+    @property
+    def settings(self) -> dataclass:
+        return self._settings
+
+    @property
+    def output_dir(self) -> Path:
+        return self._output_dir
+
+    @abstractmethod
+    def process(self) -> NewPreprocessResource:
+        pass
+
+
 class AbstractPrefilter(ABC):
     @abstractmethod
     def process(self) -> NewPrefilterOutput:
@@ -166,13 +190,13 @@ class AbstractFeatureFinalizer(ABC):
 class NewPreprocessor:
     def __init__(
         self,
-        prefilter: Callable[..., AbstractPrefilter],
+        prefilter: Callable[..., NewPreprocessModule],
         icustay_measurement_combiner: Callable[
-            ..., AbstractICUMeasurementCombiner
+            ..., NewPreprocessModule
         ],
-        admission_list_builder: Callable[..., AbstractAdmissionListBuilder],
-        feature_builder: Callable[..., AbstractFeatureBuilder],
-        feature_finalizer: Callable[..., AbstractFeatureFinalizer],
+        admission_list_builder: Callable[..., NewPreprocessModule],
+        feature_builder: Callable[..., NewPreprocessModule],
+        feature_finalizer: Callable[..., NewPreprocessModule],
         inputs: pic.PrefilterResourceRefs = None,
         save_checkpoints: bool = False,
         available_resources: dict[str, Any] = None,
