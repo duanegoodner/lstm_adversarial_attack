@@ -1,3 +1,5 @@
+from typing import Any
+
 import sklearn.metrics as skm
 import sys
 import torch.nn as nn
@@ -16,6 +18,7 @@ class StandardModelTrainer:
     """
     Trains and evaluates a model. Can save checkpoints & write to Tensorboard.
     """
+
     def __init__(
         self,
         # train_device: torch.device,
@@ -74,9 +77,19 @@ class StandardModelTrainer:
             f1=skm.f1_score(y_true=y_true_np, y_pred=y_pred_np),
         )
 
+    @property
+    def _current_checkpoint_info(self) -> dict[str, Any]:
+        return {
+            "epoch_num": deepcopy(self.completed_epochs),
+            "train_log_entry": deepcopy(self.train_log.data[-1]),
+            "eval_log_entry": deepcopy(self.eval_log.data[-1]),
+            "state_dict": deepcopy(self.model.state_dict()),
+            "optimizer_state_dict": deepcopy(self.optimizer.state_dict()),
+        }
+
     def _save_checkpoint(
         self,
-    ) -> Path:
+    ) -> dict[str, Any]:
         """
         Saves checkpoint w/ model/optimizer params & latest train/eval results
         :return: path of file where checkpoint is saved
@@ -84,14 +97,14 @@ class StandardModelTrainer:
         output_path = rio.create_timestamped_filepath(
             parent_path=self.checkpoint_dir, file_extension="tar"
         )
-        output_object = {
-            "epoch_num": deepcopy(self.completed_epochs),
-            "train_log_entry": deepcopy(self.train_log.data[-1]),
-            "eval_log_entry": deepcopy(self.eval_log.data[-1]),
-            "state_dict": deepcopy(self.model.state_dict()),
-            "optimizer_state_dict": deepcopy(self.optimizer.state_dict()),
-        }
-        torch.save(obj=output_object, f=output_path)
+        # output_object = {
+        #     "epoch_num": deepcopy(self.completed_epochs),
+        #     "train_log_entry": deepcopy(self.train_log.data[-1]),
+        #     "eval_log_entry": deepcopy(self.eval_log.data[-1]),
+        #     "state_dict": deepcopy(self.model.state_dict()),
+        #     "optimizer_state_dict": deepcopy(self.optimizer.state_dict()),
+        # }
+        torch.save(obj=self._current_checkpoint_info, f=output_path)
         return output_path
 
     def train_model(
@@ -220,25 +233,19 @@ class StandardModelTrainer:
         self,
         num_epochs: int,
         eval_interval: int,
-        evals_per_checkpoint: int,
         save_checkpoints: bool = False,
     ):
         """
         Runs train/eval cycles and optionally saves checkpoints.
         :param num_epochs: total number of epochs to run
         :param eval_interval: number of train epochs per eval
-        :param evals_per_checkpoint: number of evals per checkpoint
-        :param save_checkpoints: whether or not to save checkpoints
+        :param save_checkpoints: whether to save checkpoints
         :return: object containing logs of train and eval data
         """
+
         for epoch in range(num_epochs):
             self.train_model(num_epochs=1)
             if (epoch + 1) % eval_interval == 0:
                 self.evaluate_model()
-                if (
-                    (evals_per_checkpoint * (epoch + 1)) % evals_per_checkpoint
-                    == 0
-                ) and save_checkpoints:
+                if save_checkpoints:
                     self._save_checkpoint()
-
-        return ds.TrainEvalLogPair(train=self.train_log, eval=self.eval_log)

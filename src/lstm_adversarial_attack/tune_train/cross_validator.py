@@ -8,6 +8,7 @@ from typing import Callable
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as lcs
+import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.tune_train.trainer_driver as td
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
@@ -27,7 +28,6 @@ class CrossValidator:
         num_folds: int,
         epochs_per_fold: int,
         eval_interval: int,
-        evals_per_checkpoint: int,
         collate_fn: Callable = xmd.x19m_collate_fn,
         fold_class: Callable = StratifiedKFold,
         kfold_random_seed: int = lcs.CV_ASSESSMENT_RANDOM_SEED,
@@ -41,7 +41,6 @@ class CrossValidator:
         self.num_folds = num_folds
         self.epochs_per_fold = epochs_per_fold
         self.eval_interval = eval_interval
-        self.evals_per_checkpoint = evals_per_checkpoint
         self.fold_class = fold_class
         self.kfold_random_seed = kfold_random_seed
         self.cv_datasets = self.create_datasets()
@@ -55,9 +54,7 @@ class CrossValidator:
     def create_single_fold_dataset(
         self, eval_fraction: float = lcs.CV_DRIVER_SINGLE_FOLD_EVAL_FRACTION
     ) -> list[tuh.TrainEvalDatasetPair]:
-        train_dataset_size = int(
-            len(self.dataset) * (1 - eval_fraction)
-        )
+        train_dataset_size = int(len(self.dataset) * (1 - eval_fraction))
         test_dataset_size = len(self.dataset) - train_dataset_size
         train_dataset, test_dataset = random_split(
             dataset=self.dataset,
@@ -67,7 +64,6 @@ class CrossValidator:
             train=train_dataset, validation=test_dataset
         )
         return [train_eval_pair]
-
 
     def create_multi_fold_datasets(self) -> list[tuh.TrainEvalDatasetPair]:
         """
@@ -110,7 +106,6 @@ class CrossValidator:
         else:
             return self.create_multi_fold_datasets()
 
-
     def run_fold(
         self, fold_idx: int, train_eval_pair: tuh.TrainEvalDatasetPair
     ):
@@ -140,7 +135,6 @@ class CrossValidator:
         trainer_driver.run(
             num_epochs=self.epochs_per_fold,
             eval_interval=self.eval_interval,
-            evals_per_checkpoint=1,
             save_checkpoints=True,
         )
 
@@ -150,8 +144,11 @@ class CrossValidator:
 
         Results saved under self.root_output_dir
         """
+
         for fold_idx, train_eval_pair in enumerate(self.cv_datasets):
-            self.run_fold(fold_idx=fold_idx, train_eval_pair=train_eval_pair)
+            self.run_fold(
+                fold_idx=fold_idx, train_eval_pair=train_eval_pair
+            )
 
 
 if __name__ == "__main__":
@@ -173,7 +170,6 @@ if __name__ == "__main__":
         num_folds=5,
         epochs_per_fold=20,
         eval_interval=5,
-        evals_per_checkpoint=1,
     )
 
     cross_validator.run_all_folds()

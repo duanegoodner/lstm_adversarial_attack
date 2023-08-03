@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_set
+import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.tune_train.cross_validator_driver as cvd
@@ -19,7 +20,7 @@ def main(
     hyperparameters_json_path: str = None,
     num_folds: int = None,
     epochs_per_fold: int = None,
-):
+) -> dict[int, ds.TrainEvalLogPair]:
     # use if is None syntax (instead of default args) for CLI integration
     if hyperparameters_json_path is None:
         hyperparameters_json_path = (
@@ -51,7 +52,7 @@ def main(
         num_folds=num_folds,
     )
 
-    cv_driver.run()
+    return cv_driver.run()
 
 
 if __name__ == "__main__":
@@ -97,4 +98,4 @@ if __name__ == "__main__":
 
     args_namespace = parser.parse_args()
 
-    main(**args_namespace.__dict__)
+    all_fold_results = main(**args_namespace.__dict__)

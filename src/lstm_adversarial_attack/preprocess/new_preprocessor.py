@@ -137,56 +137,6 @@ class NewPreprocessModule(ABC):
         pass
 
 
-# class AbstractPrefilter(ABC):
-#     @abstractmethod
-#     def process(self) -> NewPrefilterOutput:
-#         pass
-#
-#     @abstractmethod
-#     def output_dir(self) -> Path:
-#         pass
-#
-#
-# class AbstractICUMeasurementCombiner(ABC):
-#     @abstractmethod
-#     def process(self) -> NewICUStayMeasurementMergerOutput:
-#         pass
-#
-#     @abstractmethod
-#     def output_dir(self) -> Path:
-#         pass
-#
-#
-# class AbstractAdmissionListBuilder(ABC):
-#     @abstractmethod
-#     def process(self) -> NewAdmissionListBuilderOutput:
-#         pass
-#
-#     @abstractmethod
-#     def output_dir(self) -> Path:
-#         pass
-#
-#
-# class AbstractFeatureBuilder(ABC):
-#     @abstractmethod
-#     def process(self) -> NewFeatureBuilderOutput:
-#         pass
-#
-#     @abstractmethod
-#     def output_dir(self) -> Path:
-#         pass
-#
-#
-# class AbstractFeatureFinalizer(ABC):
-#     @abstractmethod
-#     def process(self) -> NewFeatureFinalizerOutput:
-#         pass
-#
-#     @abstractmethod
-#     def output_dir(self) -> Path:
-#         pass
-
-
 class NewPreprocessor:
     def __init__(
         self,

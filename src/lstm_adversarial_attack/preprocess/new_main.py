@@ -16,8 +16,6 @@ def main():
         feature_finalizer=ff.NewFeatureFinalizer,
         inputs=pic.PrefilterResourceRefs(),
         save_checkpoints=False
-
-
     )
     return preprocessor.preprocess()
 

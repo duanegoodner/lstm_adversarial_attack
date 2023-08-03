@@ -6,7 +6,8 @@ from typing import Callable
 
 import lstm_adversarial_attack.attack.adversarial_attacker as aat
 import lstm_adversarial_attack.attack.attacker_helpers as ath
-import lstm_adversarial_attack.attack.attack_result_data_structs as ads
+import lstm_adversarial_attack.attack.attack_data_structs as ads
+import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.config_settings as lcs
 import lstm_adversarial_attack.dataset_with_index as dsi
 import lstm_adversarial_attack.data_structures as ds
@@ -18,19 +19,21 @@ class AdversarialAttackTrainer:
     """
     Finds adversarial example_data for a classification model
     """
+
     # TODO consolidate params that are part of hyperparams into single object
     #  (large number of constructor args is messy)
     def __init__(
         self,
         device: torch.device,
         model: nn.Module,
+        attack_hyperparameters: ads.AttackHyperParameterSettings,
         state_dict: dict,
-        batch_size: int,
+        # batch_size: int,
         epochs_per_batch: int,
-        kappa: float,
-        lambda_1: float,
-        optimizer_constructor: Callable,
-        optimizer_constructor_kwargs: dict,
+        # kappa: float,
+        # lambda_1: float,
+        # optimizer_constructor: Callable,
+        # optimizer_constructor_kwargs: dict,
         dataset: dsi.DatasetWithIndex | Subset,
         collate_fn: Callable,
         attack_misclassified_samples: bool,
@@ -44,18 +47,11 @@ class AdversarialAttackTrainer:
         :param device: device to run on
         :param model: original classification model to attack
         :param state_dict: state dict obtained from previous training of model
-        :param batch_size: num samples per batch during attack
         :param epochs_per_batch: number of attack iterations to run per batch
-        :param kappa: arameter from Equation 1 in Sun et al
         (https://arxiv.org/abs/1802.04822). Defines a margin by which alternate
         class logit value needs to exceed original class logit value in order
         to reduce loss function.
-        :param lambda_1: L1 regularization constant (to encourage example_data due
         to sparse perturbations)
-        :param optimizer_constructor: constructor for optimizer used during
-        search for adversarial example_data
-        :param optimizer_constructor_kwargs: kwargs passed to optimizer
-        constructor
         :param dataset: unfiltered dataset potential samples to use for attacks
         :param collate_fn: method used by dataloader to organize dataset
         elements into batches
@@ -70,22 +66,29 @@ class AdversarialAttackTrainer:
         """
         self.device = device
         self.model = model
+        self.attack_hyperparameters = attack_hyperparameters
         self.state_dict = state_dict
         self.attacker = aat.AdversarialAttacker(
             full_model=model,
             state_dict=state_dict,
             input_size=19,
             max_sequence_length=lcs.MAX_OBSERVATION_HOURS,
-            batch_size=batch_size,
+            batch_size=2**self.attack_hyperparameters.log_batch_size,
         )
-        self.kappa = kappa
-        self.lambda_1 = lambda_1
+        # self.kappa = kappa
+        # self.lambda_1 = lambda_1
         self.epochs_per_batch = epochs_per_batch
-        self.loss_fn = ath.AdversarialLoss(kappa=kappa, lambda_1=lambda_1)
-        self.optimizer_constructor = optimizer_constructor
-        self.optimizer_constructor_kwargs = optimizer_constructor_kwargs
-        self.optimizer = optimizer_constructor(
-            params=self.attacker.parameters(), **optimizer_constructor_kwargs
+        self.loss_fn = ath.AdversarialLoss(
+            kappa=self.attack_hyperparameters.kappa,
+            lambda_1=self.attack_hyperparameters.lambda_1,
+        )
+        # self.optimizer_constructor = optimizer_constructor
+        # self.optimizer_constructor_kwargs = optimizer_constructor_kwargs
+        self.optimizer_constructor_kwargs = {
+            "lr": self.attack_hyperparameters.learning_rate
+        }
+        self.optimizer = self.attack_hyperparameters.optimizer_constructor(
+            params=self.attacker.parameters(), **self.optimizer_constructor_kwargs
         )
         self.dataset = dataset
         self.collate_fn = collate_fn
@@ -190,7 +193,7 @@ class AdversarialAttackTrainer:
         logits: torch.tensor,
         orig_labels: torch.tensor,
         sample_losses: torch.tensor,
-    ) -> ads.EpochSuccesses:
+    ) -> ards.EpochSuccesses:
         """
         Gets info for samples within batch that are successfully attacked
         during an attack epoch.
@@ -213,7 +216,7 @@ class AdversarialAttackTrainer:
             successful_attack_indices
         ]
 
-        return ads.EpochSuccesses(
+        return ards.EpochSuccesses(
             epoch_num=epoch_num,
             batch_indices=successful_attack_indices,
             losses=epoch_success_losses.detach(),
@@ -234,7 +237,7 @@ class AdversarialAttackTrainer:
             max_sequence_length=lcs.MAX_OBSERVATION_HOURS,
             batch_size=batch_size,
         )
-        self.optimizer = self.optimizer_constructor(
+        self.optimizer = self.attack_hyperparameters.optimizer_constructor(
             params=self.attacker.parameters(),
             **self.optimizer_constructor_kwargs,
         )
@@ -255,19 +258,25 @@ class AdversarialAttackTrainer:
 
         # TODO Create setter methods so trainer does not need to
         #  directly access perturbations
-        zero_mask = torch.abs(
-            self.attacker.feature_perturber.perturbation) <= self.lambda_1
+        zero_mask = (
+            torch.abs(self.attacker.feature_perturber.perturbation)
+            <= self.attack_hyperparameters.lambda_1
+        )
         self.attacker.feature_perturber.perturbation.data[zero_mask] = 0
-        pos_mask = self.attacker.feature_perturber.perturbation > self.lambda_1
+        pos_mask = (
+            self.attacker.feature_perturber.perturbation
+            > self.attack_hyperparameters.lambda_1
+        )
         self.attacker.feature_perturber.perturbation.data[
             pos_mask
-        ] -= self.lambda_1
+        ] -= self.attack_hyperparameters.lambda_1
         neg_mask = (
-            self.attacker.feature_perturber.perturbation < -1 * self.lambda_1
+            self.attacker.feature_perturber.perturbation
+            < -1 * self.attack_hyperparameters.lambda_1
         )
         self.attacker.feature_perturber.perturbation.data[
             neg_mask
-        ] += self.lambda_1
+        ] += self.attack_hyperparameters.lambda_1
         clamped_perturbation = torch.clamp(
             input=self.attacker.feature_perturber.perturbation.data,
             min=perturbation_min,
@@ -283,7 +292,7 @@ class AdversarialAttackTrainer:
         indices: torch.tensor,
         orig_features: ds.VariableLengthFeatures,
         orig_labels: torch.tensor,
-    ) -> ads.BatchResult:
+    ) -> ards.BatchResult:
         """
         Attacks batch of samples for self.num_epochs.
         :param indices: dataset indices of samples in batch
@@ -329,7 +338,7 @@ class AdversarialAttackTrainer:
             self.device
         ), orig_labels.to(self.device)
 
-        batch_result = ads.BatchResult(
+        batch_result = ards.BatchResult(
             dataset_indices=indices,
             input_seq_lengths=orig_features.lengths,
             max_seq_length=self.max_seq_length,
@@ -366,15 +375,17 @@ class AdversarialAttackTrainer:
         """
         print(
             f"Running attacks with:\nbatch_size = {self.batch_size}\nkappa ="
-            f" {self.kappa}\nlambda_1 = {self.lambda_1}\noptimizer ="
-            f" {self.optimizer_constructor}\noptimizer constructor kwargs ="
+            f" {self.attack_hyperparameters.kappa}\nlambda_1 ="
+            f" {self.attack_hyperparameters.lambda_1}\noptimizer ="
+            f" {self.attack_hyperparameters.optimizer_constructor}\noptimizer"
+            " constructor kwargs ="
             f" {self.optimizer_constructor_kwargs}\nepochs per batch ="
             f" {self.epochs_per_batch}\nmax number of samples ="
             f" {len(self.dataset)}\n"
         )
 
     def save_checkpoint(
-        self, trainer_result: ads.TrainerResult, num_batches: int
+        self, trainer_result: ards.TrainerResult, num_batches: int
     ):
         """
         Saves TrainerResult, which contains info from all BatchResults, to
@@ -407,7 +418,7 @@ class AdversarialAttackTrainer:
         data_loader = self.build_data_loader()
         self.attacker.to(self.device)
         self.set_attacker_train_mode()
-        trainer_result = ads.TrainerResult(dataset=self.dataset)
+        trainer_result = ards.TrainerResult(dataset=self.dataset)
 
         self.display_attack_info()
 

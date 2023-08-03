@@ -31,12 +31,13 @@ class AttackDriver(dpr.HasDataProvenance):
         device: torch.device,
         model_path: Path,
         checkpoint: dict,
-        batch_size: int,
+        attack_hyperparameters: ads.AttackHyperParameterSettings,
+        # batch_size: int,
         epochs_per_batch: int,
-        kappa: float,
-        lambda_1: float,
-        optimizer_constructor: Callable,
-        optimizer_constructor_kwargs: dict = None,
+        # kappa: float,
+        # lambda_1: float,
+        # optimizer_constructor: Callable,
+        # optimizer_constructor_kwargs: dict = None,
         max_num_samples=None,
         sample_selection_seed=None,
         attack_misclassified_samples: bool = False,
@@ -44,7 +45,6 @@ class AttackDriver(dpr.HasDataProvenance):
         result_file_prefix: str = "",
         save_attack_driver: bool = False,
         checkpoint_interval: int = None,
-        attack_hyperparameter_settings: ads.AttackHyperParameterSettings = None,
         hyperparameter_tuning_result_dir: Path = None,
     ):
         """
@@ -79,14 +79,15 @@ class AttackDriver(dpr.HasDataProvenance):
         self.device = device
         self.model_path = model_path
         self.checkpoint = checkpoint
-        self.batch_size = batch_size
+        self.attack_hyperparameters = attack_hyperparameters
+        # self.batch_size = batch_size
         self.epochs_per_batch = epochs_per_batch
-        self.kappa = kappa
-        self.lambda_1 = lambda_1
-        self.optimizer_constructor = optimizer_constructor
-        if optimizer_constructor_kwargs is None:
-            optimizer_constructor_kwargs = {"lr": 1e-1}
-        self.optimizer_constructor_kwargs = optimizer_constructor_kwargs
+        # self.kappa = kappa
+        # self.lambda_1 = lambda_1
+        # self.optimizer_constructor = optimizer_constructor
+        # if optimizer_constructor_kwargs is None:
+        #     optimizer_constructor_kwargs = {"lr": 1e-1}
+        # self.optimizer_constructor_kwargs = optimizer_constructor_kwargs
         self.max_num_samples = max_num_samples
         self.sample_selection_seed = sample_selection_seed
         if self.sample_selection_seed is not None:
@@ -103,7 +104,6 @@ class AttackDriver(dpr.HasDataProvenance):
         self.save_attack_driver = save_attack_driver
         self.checkpoint_interval = checkpoint_interval
         self.output_dir = self.initialize_output_dir(output_dir=output_dir)
-        self.attack_hyperparameter_settings = attack_hyperparameter_settings
         self.hyperparameter_tuning_results_dir = (
             hyperparameter_tuning_result_dir
         )
@@ -125,7 +125,7 @@ class AttackDriver(dpr.HasDataProvenance):
             new_items={
                 "epochs_per_batch": self.epochs_per_batch,
                 "attack_hyperparameter_settings": (
-                    self.attack_hyperparameter_settings
+                    self.attack_hyperparameters
                 ),
                 "hyperparameter_tuning_result_dir": (
                     self.hyperparameter_tuning_results_dir
@@ -149,64 +149,65 @@ class AttackDriver(dpr.HasDataProvenance):
             )
         return output_dir
 
-    @classmethod
-    def from_attack_hyperparameter_settings(
-        cls,
-        device: torch.device,
-        model_path: Path,
-        checkpoint: dict,
-        settings: ads.AttackHyperParameterSettings,
-        tuning_result_dir: Path = None,
-        epochs_per_batch: int = None,
-        max_num_samples: int = None,
-        sample_selection_seed: int = None,
-        attack_misclassified_samples: bool = False,
-        output_dir: Path = None,
-        save_attack_driver: bool = False,
-        checkpoint_interval: int = None,
-    ):
-        """
-        Creates AttackDriver from AttackHyperParameterSettings object
-        :param device: device to run on
-        :param model_path: path to pickle with model to attack
-        :param checkpoint: Info saved during training classifier. Contents
-        include model params.
-        :param settings: hyperparameters to be used by AttackTrainer
-        :param tuning_result_dir: directory containing attack hyperparameter
-        tuning results. Will be None
-        :param epochs_per_batch: num attack iterations per batch
-        :param max_num_samples: number of candidate samples for attack
-        :param sample_selection_seed: random seed to use when selecting subset
-        of samples from original dataset
-        :param attack_misclassified_samples: whether to run attacks on samples
-        that original model misclassifies
-        :param output_dir: directory where attack results will be saved
-        :param save_attack_driver: whether to save AttackDriver .pickle
-        :param checkpoint_interval: number of batches per checkpoint
-        :return:
-        """
-
-        return cls(
-            device=device,
-            model_path=model_path,
-            checkpoint=checkpoint,
-            batch_size=2**settings.log_batch_size,
-            kappa=settings.kappa,
-            lambda_1=settings.lambda_1,
-            optimizer_constructor=getattr(
-                torch.optim, settings.optimizer_name
-            ),
-            optimizer_constructor_kwargs={"lr": settings.learning_rate},
-            max_num_samples=max_num_samples,
-            sample_selection_seed=sample_selection_seed,
-            attack_misclassified_samples=attack_misclassified_samples,
-            output_dir=output_dir,
-            epochs_per_batch=epochs_per_batch,
-            save_attack_driver=save_attack_driver,
-            checkpoint_interval=checkpoint_interval,
-            attack_hyperparameter_settings=settings,
-            hyperparameter_tuning_result_dir=tuning_result_dir,
-        )
+    # @classmethod
+    # def from_attack_hyperparameter_settings(
+    #     cls,
+    #     device: torch.device,
+    #     model_path: Path,
+    #     checkpoint: dict,
+    #     settings: ads.AttackHyperParameterSettings,
+    #     tuning_result_dir: Path = None,
+    #     epochs_per_batch: int = None,
+    #     max_num_samples: int = None,
+    #     sample_selection_seed: int = None,
+    #     attack_misclassified_samples: bool = False,
+    #     output_dir: Path = None,
+    #     save_attack_driver: bool = False,
+    #     checkpoint_interval: int = None,
+    # ):
+    #     """
+    #     Creates AttackDriver from AttackHyperParameterSettings object
+    #     :param device: device to run on
+    #     :param model_path: path to pickle with model to attack
+    #     :param checkpoint: Info saved during training classifier. Contents
+    #     include model params.
+    #     :param settings: hyperparameters to be used by AttackTrainer
+    #     :param tuning_result_dir: directory containing attack hyperparameter
+    #     tuning results. Will be None
+    #     :param epochs_per_batch: num attack iterations per batch
+    #     :param max_num_samples: number of candidate samples for attack
+    #     :param sample_selection_seed: random seed to use when selecting subset
+    #     of samples from original dataset
+    #     :param attack_misclassified_samples: whether to run attacks on samples
+    #     that original model misclassifies
+    #     :param output_dir: directory where attack results will be saved
+    #     :param save_attack_driver: whether to save AttackDriver .pickle
+    #     :param checkpoint_interval: number of batches per checkpoint
+    #     :return:
+    #     """
+    #
+    #     return cls(
+    #         device=device,
+    #         model_path=model_path,
+    #         checkpoint=checkpoint,
+    #         attack_hyperparameters=settings,
+    #         # batch_size=2**settings.log_batch_size,
+    #         # kappa=settings.kappa,
+    #         # lambda_1=settings.lambda_1,
+    #         # optimizer_constructor=getattr(
+    #         #     torch.optim, settings.optimizer_name
+    #         # ),
+    #         # optimizer_constructor_kwargs={"lr": settings.learning_rate},
+    #         max_num_samples=max_num_samples,
+    #         sample_selection_seed=sample_selection_seed,
+    #         attack_misclassified_samples=attack_misclassified_samples,
+    #         output_dir=output_dir,
+    #         epochs_per_batch=epochs_per_batch,
+    #         save_attack_driver=save_attack_driver,
+    #         checkpoint_interval=checkpoint_interval,
+    #         # attack_hyperparameters=settings,
+    #         hyperparameter_tuning_result_dir=tuning_result_dir,
+    #     )
 
     @classmethod
     def from_attack_hyperparameter_tuning(
@@ -248,11 +249,11 @@ class AttackDriver(dpr.HasDataProvenance):
         if epochs_per_batch is None:
             epochs_per_batch = tuner_driver.epochs_per_batch
 
-        return cls.from_attack_hyperparameter_settings(
+        return cls(
             device=device,
             model_path=tuner_driver.target_model_path,
             checkpoint=tuner_driver.target_model_checkpoint,
-            settings=ads.AttackHyperParameterSettings(
+            attack_hyperparameters=ads.AttackHyperParameterSettings(
                 **optuna_study.best_params
             ),
             epochs_per_batch=epochs_per_batch,
@@ -260,8 +261,23 @@ class AttackDriver(dpr.HasDataProvenance):
             sample_selection_seed=sample_selection_seed,
             save_attack_driver=save_attack_driver,
             checkpoint_interval=checkpoint_interval,
-            tuning_result_dir=tuning_result_dir,
+            hyperparameter_tuning_result_dir=tuning_result_dir,
         )
+
+        # return cls.from_attack_hyperparameter_settings(
+        #     device=device,
+        #     model_path=tuner_driver.target_model_path,
+        #     checkpoint=tuner_driver.target_model_checkpoint,
+        #     settings=ads.AttackHyperParameterSettings(
+        #         **optuna_study.best_params
+        #     ),
+        #     epochs_per_batch=epochs_per_batch,
+        #     max_num_samples=max_num_samples,
+        #     sample_selection_seed=sample_selection_seed,
+        #     save_attack_driver=save_attack_driver,
+        #     checkpoint_interval=checkpoint_interval,
+        #     tuning_result_dir=tuning_result_dir,
+        # )
 
     def __call__(self) -> aat.AdversarialAttackTrainer | ards.TrainerResult:
         """
@@ -275,12 +291,13 @@ class AttackDriver(dpr.HasDataProvenance):
             device=self.device,
             model=model,
             state_dict=self.checkpoint["state_dict"],
-            batch_size=self.batch_size,
-            kappa=self.kappa,
-            lambda_1=self.lambda_1,
+            attack_hyperparameters=self.attack_hyperparameters,
+            # batch_size=self.batch_size,
+            # kappa=self.kappa,
+            # lambda_1=self.lambda_1,
             epochs_per_batch=self.epochs_per_batch,
-            optimizer_constructor=self.optimizer_constructor,
-            optimizer_constructor_kwargs=self.optimizer_constructor_kwargs,
+            # optimizer_constructor=self.optimizer_constructor,
+            # optimizer_constructor_kwargs=self.optimizer_constructor_kwargs,
             dataset=self.dataset,
             collate_fn=self.collate_fn,
             attack_misclassified_samples=self.attack_misclassified_samples,

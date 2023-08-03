@@ -1,6 +1,6 @@
 import sys
 from dataclasses import dataclass
-
+import json
 import optuna
 import torch
 import torch.nn as nn
@@ -13,6 +13,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as lcs
+import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.weighted_dataloader_builder as wdl
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
@@ -104,6 +105,10 @@ class TrainerDriver:
             path=output_root_dir / "hyperparameters.pickle",
         )
 
+        hyperparameters_json_path = output_root_dir / "hyperparameters.json"
+        with hyperparameters_json_path.open(mode="w") as out_file:
+            json.dump(self.hyperparameter_settings.__dict__, out_file)
+
         if tensorboard_output_dir is None:
             tensorboard_output_dir = output_root_dir / "tensorboard"
         tensorboard_output_dir.mkdir(parents=True, exist_ok=True)
@@ -160,14 +165,12 @@ class TrainerDriver:
         self,
         num_epochs: int,
         eval_interval: int,
-        evals_per_checkpoint,
         save_checkpoints: bool,
     ):
         """
         Writes graph to tensorboard, instantiates Trainer & runs train/eval cycles.
         :param num_epochs: Number of epochs to train
         :param eval_interval: Number of epochs between evals
-        :param evals_per_checkpoint: Number of evals per checkpoint
         :param save_checkpoints: Whether to save checkpoints
         """
         torch.manual_seed(lcs.TRAINER_RANDOM_SEED)
@@ -202,7 +205,6 @@ class TrainerDriver:
         trainer.run_train_eval_cycles(
             num_epochs=num_epochs,
             eval_interval=eval_interval,
-            evals_per_checkpoint=evals_per_checkpoint,
             save_checkpoints=save_checkpoints,
         )
 

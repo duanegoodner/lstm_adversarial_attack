@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from enum import auto, Enum
 from pathlib import Path
-import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.config_paths as cfg_paths
+import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs
 
 
@@ -35,9 +36,11 @@ class ModelRetriever:
         (training) results
         """
         if training_output_dir is None:
-            training_output_dir = cvs.get_newest_sub_dir(
-                path=lcp.CV_ASSESSMENT_OUTPUT_DIR
-            )
+            training_output_dir = ps.latest_modified_file_with_name_condition(
+            component_string=".tar",
+            root_dir=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR,
+            comparison_type=ps.StringComparisonType.SUFFIX
+        ).parent.parent.parent
         self.training_output_dir = training_output_dir
         self.checkpoints_dir = self.training_output_dir / "checkpoints"
         self.model_path = self.training_output_dir / "model.pickle"

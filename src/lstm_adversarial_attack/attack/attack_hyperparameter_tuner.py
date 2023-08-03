@@ -198,13 +198,14 @@ class AttackHyperParameterTuner:
             model_path=self.model_path,
             checkpoint=self.checkpoint,
             epochs_per_batch=self.epoch_per_batch,
-            batch_size=2**settings.log_batch_size,
-            kappa=settings.kappa,
-            lambda_1=settings.lambda_1,
-            optimizer_constructor=getattr(
-                torch.optim, settings.optimizer_name
-            ),
-            optimizer_constructor_kwargs={"lr": settings.learning_rate},
+            attack_hyperparameters=settings,
+            # batch_size=2**settings.log_batch_size,
+            # kappa=settings.kappa,
+            # lambda_1=settings.lambda_1,
+            # optimizer_constructor=getattr(
+            #     torch.optim, settings.optimizer_name
+            # ),
+            # optimizer_constructor_kwargs={"lr": settings.learning_rate},
             max_num_samples=self.max_num_samples,
             sample_selection_seed=self.sample_selection_seed,
             output_dir=self.attack_results_dir,
