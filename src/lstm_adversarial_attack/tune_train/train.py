@@ -15,27 +15,24 @@ import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
 
 def main(
-    hyperparams_path: str = None,
+    # study_path: str = None,
+    hyperparameters_json_path: str = None,
     num_folds: int = None,
     epochs_per_fold: int = None,
 ):
     # use if is None syntax (instead of default args) for CLI integration
-
-    # if study_path is None:
-    #     study_path = ps.latest_modified_file_with_name_condition(
-    #         component_string="optuna_study.pickle",
-    #         root_dir=cfg_paths.HYPERPARAMETER_OUTPUT_DIR,
-    #     )
-    if hyperparams_path is None:
-        hyperparams_path = ps.latest_modified_file_with_name_condition(
-            component_string="best_trial_info.json",
-            root_dir=cfg_paths.HYPERPARAMETER_OUTPUT_DIR,
+    if hyperparameters_json_path is None:
+        hyperparameters_json_path = (
+            ps.latest_modified_file_with_name_condition(
+                component_string="best_trial_info.json",
+                root_dir=cfg_paths.HYPERPARAMETER_OUTPUT_DIR,
+            )
         )
-    with Path(hyperparams_path).open(mode="r") as input_file:
+    with Path(hyperparameters_json_path).open(mode="r") as input_file:
         hyperparams_dict = json.load(input_file)
 
     hyperparameters = tuh.X19LSTMHyperParameterSettings(
-        **hyperparams_dict["params"]
+        **hyperparams_dict["hyperparameters"]
     )
 
     if num_folds is None:
@@ -46,14 +43,6 @@ def main(
 
     cur_device = gh.get_device()
 
-    # cv_driver = cvd.CrossValidatorDriver.from_study_path(
-    #     device=cur_device,
-    #     dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
-    #     study_path=Path(study_path),
-    #     num_folds=num_folds,
-    #     epochs_per_fold=epochs_per_fold,
-    # )
-
     cv_driver = cvd.CrossValidatorDriver(
         device=cur_device,
         dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
@@ -63,30 +52,22 @@ def main(
     )
 
     cv_driver.run()
-    # else:
-    #     single_fold_trainer = sft.SingleFoldTrainer(
-    #         device=cur_device,
-    #         dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
-    #         train_dataset_fraction=1 - 1 / cfg_set.CV_DRIVER_NUM_FOLDS,
-    #         study_path=study_path,
-    #         num_epochs=epochs_per_fold
-    #     )
-    #     single_fold_trainer.run()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-s",
-        "--study_path",
+        "-j",
+        "--hyperparameters_json_path",
         type=str,
         action="store",
         nargs="?",
         help=(
-            "Path to an optuna.Study object .pickle file. Study will be "
-            "imported, and model training will use its .best_params. If "
+            "Path to an json file containing hyperparameters to use during "
+            "model training. Format must match that of file output by"
+            "HyperParameterTuner.export_best_trial_info(). If "
             "not specified, the most recently modified file named "
-            "'optuna_study.pickle' under path specified by "
+            "'best_trial_info.json' under path specified by "
             "config_paths.HYPERPARAMETER_OUTPUT_DIR will be used."
         ),
     )

@@ -1,4 +1,5 @@
 import sys
+from dataclasses import dataclass
 
 import optuna
 import torch
@@ -27,6 +28,7 @@ class TrainerDriver:
     Provides class methods to instantiate from Optuna output or checkpoints.
 
     """
+
     def __init__(
         self,
         device: torch.device,
@@ -111,134 +113,6 @@ class TrainerDriver:
         checkpoint_output_dir.mkdir(parents=True, exist_ok=True)
 
         return output_root_dir, tensorboard_output_dir, checkpoint_output_dir
-
-    @classmethod
-    def from_optuna_completed_trial_obj(
-        cls,
-        device: torch.device,
-        completed_trial: optuna.Trial,
-        train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
-    ):
-        """
-        Creates a TrainerDriver using info from optuna.Trial object
-        :param device: device to run on
-        :param completed_trial: a completed optuna.Trial object
-        :param train_eval_dataset_pair: train & eval datasets
-        """
-        settings = tuh.X19LSTMHyperParameterSettings(**completed_trial.params)
-        model = tuh.X19LSTMBuilder(settings=settings).build()
-        return cls(
-            device=device,
-            hyperparameter_settings=settings,
-            model=model,
-            train_eval_dataset_pair=train_eval_dataset_pair,
-        )
-
-    @classmethod
-    def from_optuna_completed_trial_path(
-        cls,
-        device: torch.device,
-        trial_path: Path,
-        train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
-    ):
-        """
-        Creates a TrainerDriver using (pickle) file path of optuna.Trial
-        :param device: device to run on
-        :param trial_path: path to pickle with completed optuna.Trial
-        :param train_eval_dataset_pair: train & eval datasets
-        """
-        completed_trial = rio.ResourceImporter().import_pickle_to_object(
-            path=trial_path
-        )
-        return cls.from_optuna_completed_trial_obj(
-            device=device,
-            completed_trial=completed_trial,
-            train_eval_dataset_pair=train_eval_dataset_pair,
-        )
-
-    @classmethod
-    def from_optuna_study_path(
-        cls,
-        device: torch.device,
-        study_path: Path,
-        train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
-    ):
-        """
-        Creates TrainerDriver using filepath of optuna.Study pickle
-        :param device: device to run on
-        :param study_path: file path to optuna.Study pickle file
-        :param train_eval_dataset_pair: train and test/eval datasets
-        """
-        study = rio.ResourceImporter().import_pickle_to_object(path=study_path)
-        return cls.from_optuna_completed_trial_obj(
-            device=device,
-            completed_trial=study.best_trial,
-            train_eval_dataset_pair=train_eval_dataset_pair,
-        )
-
-    @classmethod
-    def from_previous_training(
-        cls,
-        device: torch.device,
-        train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
-        checkpoint_file: Path,
-        hyperparameters_file: Path,
-        additional_output_dir: Path,
-    ):
-        """
-        Creates TrainerDriver w/ info from files output by previous train run
-        :param device: device to run on
-        :param train_eval_dataset_pair: train and eval/test datasets
-        :param checkpoint_file: path to previous training checkpoint
-        :param hyperparameters_file: path X19LSTMHyperParameterSettings pickle
-        :param additional_output_dir: path where new output will be saved
-        """
-        hyperparameter_settings = (
-            rio.ResourceImporter().import_pickle_to_object(
-                path=hyperparameters_file
-            )
-        )
-        model = tuh.X19LSTMBuilder(settings=hyperparameter_settings).build()
-        model.to(device)
-        checkpoint = torch.load(checkpoint_file, map_location=device)
-        return cls(
-            device=device,
-            train_eval_dataset_pair=train_eval_dataset_pair,
-            model=model,
-            hyperparameter_settings=hyperparameter_settings,
-            model_state_dict=checkpoint["state_dict"],
-            optimizer_state_dict=checkpoint["optimizer_state_dict"],
-            epoch_start_count=checkpoint["epoch_num"],
-            output_root_dir=additional_output_dir,
-        )
-
-    @classmethod
-    def from_standard_previous_training(
-        cls,
-        device: torch.device,
-        train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
-        training_output_dir: Path,
-    ):
-        """
-        Creates TrainerDriver output root of previous training.
-
-        Assumes standard training output file structure.
-        :param device: device to run on
-        :param train_eval_dataset_pair: train and test/eval datasets
-        :param training_output_dir: root output dir of previous training
-        """
-        checkpoint_file = sorted(
-            (training_output_dir / "checkpoints").glob("*.tar")
-        )[-1]
-
-        return cls.from_previous_training(
-            device=device,
-            train_eval_dataset_pair=train_eval_dataset_pair,
-            checkpoint_file=checkpoint_file,
-            hyperparameters_file=training_output_dir
-            / "hyperparameters.pickle",
-            additional_output_dir=training_output_dir,
-        )
 
     def build_data_loaders(self) -> tuh.TrainEvalDataLoaderPair:
         """
@@ -331,3 +205,54 @@ class TrainerDriver:
             evals_per_checkpoint=evals_per_checkpoint,
             save_checkpoints=save_checkpoints,
         )
+
+
+@dataclass
+class HyperparametersModelPair:
+    hyperparameters: tuh.X19LSTMHyperParameterSettings
+    model: nn.Module
+
+
+class BuildHyperparametersModelPair:
+    @staticmethod
+    def from_optuna_completed_trial_obj(
+        completed_trial: optuna.Trial,
+    ) -> HyperparametersModelPair:
+        hyperparameters = tuh.X19LSTMHyperParameterSettings(
+            **completed_trial.params
+        )
+        model = tuh.X19LSTMBuilder(settings=hyperparameters).build()
+        return HyperparametersModelPair(
+            hyperparameters=hyperparameters, model=model
+        )
+
+    @classmethod
+    def from_optuna_completed_trial_pickle(
+        cls, trial_path: Path
+    ) -> HyperparametersModelPair:
+        completed_trial = rio.ResourceImporter().import_pickle_to_object(
+            path=trial_path
+        )
+        return cls.from_optuna_completed_trial_obj(
+            completed_trial=completed_trial
+        )
+
+    @classmethod
+    def from_optuna_study_obj(
+        cls, study: optuna.Study
+    ) -> HyperparametersModelPair:
+        return cls.from_optuna_completed_trial_obj(
+            completed_trial=study.best_trial
+        )
+
+    @classmethod
+    def from_optuna_study_pickle(cls, pickle_path: Path) -> HyperparametersModelPair:
+        study = rio.ResourceImporter().import_pickle_to_object(
+            path=pickle_path
+        )
+        return cls.from_optuna_study_obj(study=study)
+
+
+
+    # @classmethod
+    # def from_optuna_study(cls, study: optuna.Study):

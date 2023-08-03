@@ -82,48 +82,6 @@ class AttackTunerDriver(dpr.HasDataProvenance):
             output_dir=self.output_dir
         )
 
-    @classmethod
-    def from_cross_validation_results(
-        cls,
-        device: torch.device,
-        selection_metric: cvs.EvalMetric,
-        optimize_direction: cvs.OptimizeDirection,
-        objective_name: str,
-        objective_extra_kwargs: dict[str, Any] = None,
-        training_output_dir: Path = None,
-    ):
-        """
-        Creates an AttackTunerDriver using info from either a cross-validation
-        or single-fold assessment of model to be attacked.
-        :param device: device to run on
-        :param selection_metric: metric for choosing which target model checkpoint to use
-        :param optimize_direction: min or max
-        :param objective_name: name of method from AttackTunerObjectives that
-        calculates return val of AttackHyperparameterTuner objective_fn
-        :param objective_extra_kwargs: kwargs (other than a TrainerResult)
-        needed by method named AttackTunerObjectives.objective_name
-        :param training_output_dir: directory where tuning data is saved
-        :return: an AttackTunerDriver instance
-        """
-        model_retriever = amr.ModelRetriever(
-            training_output_dir=training_output_dir,
-        )
-
-        model_path_fold_checkpoint_trio = model_retriever.get_model(
-            eval_metric=selection_metric,
-            optimize_direction=optimize_direction,
-        )
-
-        return cls(
-            device=device,
-            target_model_path=model_path_fold_checkpoint_trio.model_path,
-            target_model_checkpoint=model_path_fold_checkpoint_trio.checkpoint,
-            objective_name=objective_name,
-            objective_extra_kwargs=objective_extra_kwargs,
-            target_fold_index=model_path_fold_checkpoint_trio.fold
-            # extra_provenance_info={"fold": model_path_fold_checkpoint_trio.fold},
-        )
-
     def run(self, num_trials: int) -> optuna.Study:
         """
         Instantiates and runs an AttackHyperParameterTuner
@@ -168,3 +126,6 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         )
 
         return tuner.tune(num_trials=num_trials)
+
+
+

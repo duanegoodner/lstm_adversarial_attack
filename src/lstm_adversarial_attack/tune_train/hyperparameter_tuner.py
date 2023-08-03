@@ -233,7 +233,7 @@ class HyperParameterTuner:
         :param trial:
         :return: dataclass containing objects for use during trial
         """
-        settings = tuh.X19LSTMHyperParameterSettings.from_optuna_active_trial(
+        settings = tuh.BuildX19LSTMHyperParameterSettings.from_optuna_trial(
             trial=trial, tuning_ranges=self.tuning_ranges
         )
         summary_writer_path = (
@@ -335,7 +335,7 @@ class HyperParameterTuner:
         """
         best_trial_info = {
             "trial_number": study.best_trial.number,
-            "params": study.best_params,
+            "hyperparameters": study.best_params,
         }
         best_trial_info_export_path = (
             self.tuner_checkpoint_dir / "best_trial_info.json"

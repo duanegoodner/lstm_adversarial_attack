@@ -20,6 +20,7 @@ class TrainEvalDatasetPair:
     """
     Container for a train dataset and eval dataset
     """
+
     train: Dataset
     validation: Dataset
 
@@ -29,6 +30,7 @@ class TrainEvalDataLoaderPair:
     """
     Container for a train dataloader and eval dataloader
     """
+
     train: DataLoader
     eval: DataLoader
 
@@ -38,6 +40,7 @@ class X19MLSTMTuningRanges:
     """
     Container of hyperparameter tuning ranges intended for use with Optuna
     """
+
     log_lstm_hidden_size: tuple[int, int] = lcs.TUNING_LOG_LSTM_HIDDEN_SIZE
     lstm_act_options: tuple[str, ...] = lcs.TUNING_LSTM_ACT_OPTIONS
     dropout: tuple[float, float] = lcs.TUNING_DROPOUT
@@ -53,6 +56,7 @@ class NonArchHyperParameterSettings:
     """
     Holds values of hyperparameters that are not part of model architecture
     """
+
     optimizer_name: str
     learning_rate: float
     log_batch_size: int
@@ -63,6 +67,7 @@ class X19LSTMHyperParameterSettings:
     """
     Hyperparameter values
     """
+
     log_lstm_hidden_size: int
     lstm_act_name: str
     dropout: float
@@ -72,41 +77,41 @@ class X19LSTMHyperParameterSettings:
     learning_rate: float
     log_batch_size: int
 
-    @classmethod
-    def from_optuna_active_trial(
-        cls, trial: optuna.Trial, tuning_ranges: X19MLSTMTuningRanges
-    ):
-        """
-        Creates X19MLSTMTuningRanges object with getting Optuna suggestions
-        :param trial: currently running optuna.Trial
-        :param tuning_ranges: hyperparameter allowed ranges
-        :return:
-        """
-        return cls(
-            log_lstm_hidden_size=trial.suggest_int(
-                "log_lstm_hidden_size",
-                *tuning_ranges.log_lstm_hidden_size,
-            ),
-            lstm_act_name=trial.suggest_categorical(
-                "lstm_act_name", list(tuning_ranges.lstm_act_options)
-            ),
-            dropout=trial.suggest_float("dropout", *tuning_ranges.dropout),
-            log_fc_hidden_size=trial.suggest_int(
-                "log_fc_hidden_size", *tuning_ranges.log_fc_hidden_size
-            ),
-            fc_act_name=trial.suggest_categorical(
-                "fc_act_name", list(tuning_ranges.fc_act_options)
-            ),
-            optimizer_name=trial.suggest_categorical(
-                "optimizer_name", list(tuning_ranges.optimizer_options)
-            ),
-            learning_rate=trial.suggest_float(
-                "learning_rate", *tuning_ranges.learning_rate, log=True
-            ),
-            log_batch_size=trial.suggest_int(
-                "log_batch_size", *tuning_ranges.log_batch_size
-            ),
-        )
+    # @classmethod
+    # def from_optuna_active_trial(
+    #     cls, trial: optuna.Trial, tuning_ranges: X19MLSTMTuningRanges
+    # ):
+    #     """
+    #     Creates X19MLSTMTuningRanges object with getting Optuna suggestions
+    #     :param trial: currently running optuna.Trial
+    #     :param tuning_ranges: hyperparameter allowed ranges
+    #     :return:
+    #     """
+    #     return cls(
+    #         log_lstm_hidden_size=trial.suggest_int(
+    #             "log_lstm_hidden_size",
+    #             *tuning_ranges.log_lstm_hidden_size,
+    #         ),
+    #         lstm_act_name=trial.suggest_categorical(
+    #             "lstm_act_name", list(tuning_ranges.lstm_act_options)
+    #         ),
+    #         dropout=trial.suggest_float("dropout", *tuning_ranges.dropout),
+    #         log_fc_hidden_size=trial.suggest_int(
+    #             "log_fc_hidden_size", *tuning_ranges.log_fc_hidden_size
+    #         ),
+    #         fc_act_name=trial.suggest_categorical(
+    #             "fc_act_name", list(tuning_ranges.fc_act_options)
+    #         ),
+    #         optimizer_name=trial.suggest_categorical(
+    #             "optimizer_name", list(tuning_ranges.optimizer_options)
+    #         ),
+    #         learning_rate=trial.suggest_float(
+    #             "learning_rate", *tuning_ranges.learning_rate, log=True
+    #         ),
+    #         log_batch_size=trial.suggest_int(
+    #             "log_batch_size", *tuning_ranges.log_batch_size
+    #         ),
+    #     )
 
     @property
     def non_arch_settings(self) -> NonArchHyperParameterSettings:
@@ -117,7 +122,48 @@ class X19LSTMHyperParameterSettings:
         return NonArchHyperParameterSettings(
             optimizer_name=self.optimizer_name,
             learning_rate=self.learning_rate,
-            log_batch_size=self.log_batch_size
+            log_batch_size=self.log_batch_size,
+        )
+
+
+class BuildX19LSTMHyperParameterSettings:
+
+    @staticmethod
+    def from_optuna_trial(
+        trial: optuna.Trial, tuning_ranges: X19MLSTMTuningRanges
+    ):
+        return X19LSTMHyperParameterSettings(
+            log_lstm_hidden_size=trial.suggest_int(
+                "log_lstm_hidden_size",
+                *tuning_ranges.log_lstm_hidden_size,
+            ),
+            lstm_act_name=trial.suggest_categorical(
+                "lstm_act_name",
+                choices=list(tuning_ranges.lstm_act_options),
+            ),
+            dropout=trial.suggest_float(
+                "dropout", *tuning_ranges.dropout
+            ),
+            log_fc_hidden_size=trial.suggest_int(
+                "log_fc_hidden_size",
+                *tuning_ranges.log_fc_hidden_size,
+            ),
+            fc_act_name=trial.suggest_categorical(
+                "fc_act_name",
+                choices=list(tuning_ranges.fc_act_options),
+            ),
+            optimizer_name=trial.suggest_categorical(
+                "optimizer_name",
+                choices=list(tuning_ranges.optimizer_options),
+            ),
+            learning_rate=trial.suggest_float(
+                "learning_rate",
+                *tuning_ranges.learning_rate,
+                log=True,
+            ),
+            log_batch_size=trial.suggest_int(
+                "log_batch_size", *tuning_ranges.log_batch_size
+            ),
         )
 
 
@@ -125,6 +171,7 @@ class X19LSTMBuilder:
     """
     Builds LSTM + 2 fully-connected layers model (as a torch.nn.Sequential)
     """
+
     def __init__(
         self,
         settings: X19LSTMHyperParameterSettings,
@@ -167,17 +214,17 @@ class X19LSTMBuilder:
         return nn.Sequential(
             lms.BidirectionalLSTMX19Graph(
                 input_size=19,
-                lstm_hidden_size=2 ** self.log_lstm_hidden_size,
+                lstm_hidden_size=2**self.log_lstm_hidden_size,
             ),
             getattr(nn, self.lstm_act_name)(),
             nn.Dropout(p=self.dropout),
             nn.Linear(
-                in_features=2 * (2 ** self.log_lstm_hidden_size),
-                out_features=2 ** self.log_fc_hidden_size,
+                in_features=2 * (2**self.log_lstm_hidden_size),
+                out_features=2**self.log_fc_hidden_size,
             ),
             getattr(nn, self.fc_act_name)(),
             nn.Linear(
-                in_features=2 ** self.log_fc_hidden_size,
+                in_features=2**self.log_fc_hidden_size,
                 out_features=2,
             ),
             nn.Softmax(dim=1),
@@ -189,6 +236,7 @@ class ObjectiveFunctionTools:
     """
     Collection of tools needed by HyperparameterTuner.objective_fn
     """
+
     settings: X19LSTMHyperParameterSettings
     summary_writer: SummaryWriter
     cv_means_log: ds.EvalLog
@@ -202,6 +250,7 @@ class PerformanceSelector:
     """
     Generic selector of min or max vals. Used by HyperparameterTuner.
     """
+
     _selection_dispatch = {
         optuna.study.StudyDirection.MINIMIZE: min,
         "min": min,
