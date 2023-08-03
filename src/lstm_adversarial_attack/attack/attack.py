@@ -107,8 +107,6 @@ class AttackDriver(dpr.HasDataProvenance):
         self.hyperparameter_tuning_results_dir = (
             hyperparameter_tuning_result_dir
         )
-        # self.write_provenance()
-        # self.export_dict()
         self.export(filename="attack_driver_dict.pickle")
 
     @property
@@ -150,12 +148,6 @@ class AttackDriver(dpr.HasDataProvenance):
                 parent_path=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
             )
         return output_dir
-
-    # def export_dict(self):
-    #     rio.ResourceExporter().export(
-    #         resource=self.__dict__,
-    #         path=self.output_dir / "attack_driver_dict.pickle",
-    #     )
 
     @classmethod
     def from_attack_hyperparameter_settings(

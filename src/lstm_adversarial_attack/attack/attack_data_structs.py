@@ -29,24 +29,49 @@ class AttackHyperParameterSettings:
     Optuna param selection.
 
     """
+
     kappa: float
     lambda_1: float
     optimizer_name: str
     learning_rate: float
     log_batch_size: int
 
-    @classmethod
-    def from_optuna_active_trial(
-        cls, trial: optuna.Trial, tuning_ranges: AttackTuningRanges
-    ):
-        """
-        Creates an AttackDriver using an active optuna Trial. Uses methods of
-        trial to select specific hyperparams from tuning ranges.
-        :param trial: an optuna Trial ()
-        :param tuning_ranges: AttackTuningRanges dataclass object with range
-        of hyperparameters to search
-        """
-        return cls(
+    # @classmethod
+    # def from_optuna_active_trial(
+    #     cls, trial: optuna.Trial, tuning_ranges: AttackTuningRanges
+    # ):
+    #     """
+    #     Creates an AttackDriver using an active optuna Trial. Uses methods of
+    #     trial to select specific hyperparams from tuning ranges.
+    #     :param trial: an optuna Trial ()
+    #     :param tuning_ranges: AttackTuningRanges dataclass object with range
+    #     of hyperparameters to search
+    #     """
+    #     return cls(
+    #         kappa=trial.suggest_float(
+    #             "kappa", *tuning_ranges.kappa, log=False
+    #         ),
+    #         lambda_1=trial.suggest_float(
+    #             "lambda_1", *tuning_ranges.lambda_1, log=True
+    #         ),
+    #         optimizer_name=trial.suggest_categorical(
+    #             "optimizer_name", list(tuning_ranges.optimizer_name)
+    #         ),
+    #         learning_rate=trial.suggest_float(
+    #             "learning_rate", *tuning_ranges.learning_rate, log=True
+    #         ),
+    #         log_batch_size=trial.suggest_int(
+    #             "log_batch_size", *tuning_ranges.log_batch_size
+    #         ),
+    #     )
+
+
+class BuildAttackHyperParameterSettings:
+    @staticmethod
+    def from_optuna_trial(
+        trial: optuna.Trial, tuning_ranges: AttackTuningRanges
+    ) -> AttackHyperParameterSettings:
+        return AttackHyperParameterSettings(
             kappa=trial.suggest_float(
                 "kappa", *tuning_ranges.kappa, log=False
             ),
@@ -63,3 +88,4 @@ class AttackHyperParameterSettings:
                 "log_batch_size", *tuning_ranges.log_batch_size
             ),
         )
+

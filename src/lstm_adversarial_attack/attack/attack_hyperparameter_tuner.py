@@ -185,9 +185,14 @@ class AttackHyperParameterTuner:
         :param trial:
         :return: an AttackDriver
         """
-        settings = ads.AttackHyperParameterSettings.from_optuna_active_trial(
+
+        settings = ads.BuildAttackHyperParameterSettings.from_optuna_trial(
             trial=trial, tuning_ranges=self.tuning_ranges
         )
+
+        # settings = ads.AttackHyperParameterSettings.from_optuna_active_trial(
+        #     trial=trial, tuning_ranges=self.tuning_ranges
+        # )
         attack_driver = atk.AttackDriver(
             device=self.device,
             model_path=self.model_path,
