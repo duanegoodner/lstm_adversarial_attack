@@ -1,3 +1,5 @@
+import json
+
 import optuna
 import sys
 import torch
@@ -28,6 +30,7 @@ class HyperParameterTuner:
     Tunes hyperparameters. Runs K-fold CV for each set of hyperparams.
     Uses Optuna pruning and optimization objects.
     """
+
     def __init__(
         self,
         device: torch.device,
@@ -39,9 +42,7 @@ class HyperParameterTuner:
         epochs_per_fold: int,
         fold_class: Callable,
         kfold_random_seed: int,
-        cv_mean_metrics_of_interest: tuple[
-            str
-        ],
+        cv_mean_metrics_of_interest: tuple[str],
         performance_metric: str,
         optimization_direction: optuna.study.StudyDirection,
         pruner: BasePruner,
@@ -327,6 +328,21 @@ class HyperParameterTuner:
         study_export_path = self.tuner_checkpoint_dir / study_filename
         self.exporter.export(resource=study, path=study_export_path)
 
+    def export_best_trial_info(self, study: optuna.Study):
+        """
+        Exports best params of study to json
+        :param study: an Optuna Study
+        """
+        best_trial_info = {
+            "trial_number": study.best_trial.number,
+            "params": study.best_params,
+        }
+        best_trial_info_export_path = (
+            self.tuner_checkpoint_dir / "best_trial_info.json"
+        )
+        with best_trial_info_export_path.open(mode="w") as out_file:
+            json.dump(obj=best_trial_info, fp=out_file)
+
     @staticmethod
     def report_study_results(study: optuna.Study):
         """
@@ -370,7 +386,9 @@ class HyperParameterTuner:
 
         if self.continue_tuning_dir is not None:
             study = rio.ResourceImporter().import_pickle_to_object(
-                path=self.continue_tuning_dir / "checkpoints_tuner" / "optuna_study.pickle"
+                path=self.continue_tuning_dir
+                / "checkpoints_tuner"
+                / "optuna_study.pickle"
             )
             assert study.direction == self.optimization_direction
         else:
@@ -382,5 +400,6 @@ class HyperParameterTuner:
         for trial_num in range(num_trials):
             study.optimize(func=self.objective_fn, n_trials=1, timeout=timeout)
             self.export_study(study=study)
+            self.export_best_trial_info(study=study)
 
         return study
