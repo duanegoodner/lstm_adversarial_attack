@@ -8,6 +8,7 @@ import sys
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
+from typing import Any
 import lstm_adversarial_attack.custom_unpickler as cu
 
 
@@ -130,6 +131,11 @@ def json_to_df(path: Path) -> pd.DataFrame:
 
 def pickle_to_df(path: Path) -> pd.DataFrame:
     return DataFrameIO.pickle_to_df(path=path)
+
+def import_json(path: Path) -> dict[str, Any]:
+    with path.open(mode="r") as in_file:
+        input_dict = json.load(in_file)
+    return input_dict
 
 def export_to_pickle(resource: object, path: Path):
     assert f".{path.name.split('.')[-1]}" == ".pickle"

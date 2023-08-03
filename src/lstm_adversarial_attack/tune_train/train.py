@@ -1,4 +1,5 @@
 import argparse
+import json
 import sys
 import torch
 from pathlib import Path
@@ -9,42 +10,58 @@ import lstm_adversarial_attack.config_settings as cfg_set
 import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.tune_train.cross_validator_driver as cvd
+import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
 
 def main(
-    study_path: str = None,
+    hyperparams_path: str = None,
     num_folds: int = None,
-    epochs_per_fold: int = None
+    epochs_per_fold: int = None,
 ):
+    # use if is None syntax (instead of default args) for CLI integration
 
-    #  Do this instead of default args for easy argparse compatibility
-    if study_path is None:
-        study_path = ps.latest_modified_file_with_name_condition(
-            component_string="optuna_study.pickle",
-            root_dir=cfg_paths.HYPERPARAMETER_OUTPUT_DIR
+    # if study_path is None:
+    #     study_path = ps.latest_modified_file_with_name_condition(
+    #         component_string="optuna_study.pickle",
+    #         root_dir=cfg_paths.HYPERPARAMETER_OUTPUT_DIR,
+    #     )
+    if hyperparams_path is None:
+        hyperparams_path = ps.latest_modified_file_with_name_condition(
+            component_string="best_trial_info.json",
+            root_dir=cfg_paths.HYPERPARAMETER_OUTPUT_DIR,
         )
+    with Path(hyperparams_path).open(mode="r") as input_file:
+        hyperparams_dict = json.load(input_file)
+
+    hyperparameters = tuh.X19LSTMHyperParameterSettings(
+        **hyperparams_dict["params"]
+    )
+
     if num_folds is None:
         num_folds = cfg_set.CV_DRIVER_NUM_FOLDS
     if epochs_per_fold is None:
         epochs_per_fold = cfg_set.CV_DRIVER_EPOCHS_PER_FOLD
-
     assert num_folds > 0
 
     cur_device = gh.get_device()
-    # if torch.cuda.is_available():
-    #     cur_device = torch.device("cuda:0")
-    # else:
-    #     cur_device = torch.device("cpu")
 
-    # if num_folds > 1:
-    cv_driver = cvd.CrossValidatorDriver.from_study_path(
+    # cv_driver = cvd.CrossValidatorDriver.from_study_path(
+    #     device=cur_device,
+    #     dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
+    #     study_path=Path(study_path),
+    #     num_folds=num_folds,
+    #     epochs_per_fold=epochs_per_fold,
+    # )
+
+    cv_driver = cvd.CrossValidatorDriver(
         device=cur_device,
         dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
-        study_path=Path(study_path),
+        hyperparameters=hyperparameters,
+        epochs_per_fold=epochs_per_fold,
         num_folds=num_folds,
-        epochs_per_fold=epochs_per_fold
     )
+
     cv_driver.run()
     # else:
     #     single_fold_trainer = sft.SingleFoldTrainer(
@@ -65,11 +82,13 @@ if __name__ == "__main__":
         type=str,
         action="store",
         nargs="?",
-        help="Path to an optuna.Study object .pickle file. Study will be "
-             "imported, and model training will use its .best_params. If "
-             "not specified, the most recently modified file named "
-             "'optuna_study.pickle' under path specified by "
-             "config_paths.HYPERPARAMETER_OUTPUT_DIR will be used."
+        help=(
+            "Path to an optuna.Study object .pickle file. Study will be "
+            "imported, and model training will use its .best_params. If "
+            "not specified, the most recently modified file named "
+            "'optuna_study.pickle' under path specified by "
+            "config_paths.HYPERPARAMETER_OUTPUT_DIR will be used."
+        ),
     )
     parser.add_argument(
         "-f",
@@ -77,8 +96,10 @@ if __name__ == "__main__":
         type=int,
         action="store",
         nargs="?",
-        help="Number of cross-validation folds. Defaults to "
-             "config_settings.CV_DRIVER_NUM_FOLDS"
+        help=(
+            "Number of cross-validation folds. Defaults to "
+            "config_settings.CV_DRIVER_NUM_FOLDS"
+        ),
     )
 
     parser.add_argument(
@@ -87,14 +108,12 @@ if __name__ == "__main__":
         type=int,
         action="store",
         nargs="?",
-        help="Number of epochs per fold. Defaults to "
-             "config_settings.CV_DRIVER_EPOCHS_PER_FOLD"
+        help=(
+            "Number of epochs per fold. Defaults to "
+            "config_settings.CV_DRIVER_EPOCHS_PER_FOLD"
+        ),
     )
 
     args_namespace = parser.parse_args()
 
-
     main(**args_namespace.__dict__)
-
-
-
