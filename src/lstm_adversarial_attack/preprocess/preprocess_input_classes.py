@@ -42,24 +42,24 @@ class PrefilterSettings(pm.PreprocessModuleSettings):
             self.vital_data_cols = lcs.PREPROCESS_VITAL_DATA_COLS
 
 
-@dataclass
-class ICUStayMeasurementCombinerResourceRefs(pm.PreprocessResourceRefs):
-    """
-    Container for paths to files imported by ICUStayMeasurementCombiner
-    """
-    icustay: Path = (
-        cfg_paths.PREFILTER_OUTPUT
-        / cfg_paths.PREFILTER_OUTPUT_FILES["icustay"]
-    )
-    bg: Path = (
-        cfg_paths.PREFILTER_OUTPUT / cfg_paths.PREFILTER_OUTPUT_FILES["bg"]
-    )
-    lab: Path = (
-        cfg_paths.PREFILTER_OUTPUT / cfg_paths.PREFILTER_OUTPUT_FILES["lab"]
-    )
-    vital: Path = (
-        cfg_paths.PREFILTER_OUTPUT / cfg_paths.PREFILTER_OUTPUT_FILES["vital"]
-    )
+# @dataclass
+# class ICUStayMeasurementCombinerResourceRefs(pm.PreprocessResourceRefs):
+#     """
+#     Container for paths to files imported by ICUStayMeasurementCombiner
+#     """
+#     icustay: Path = (
+#         cfg_paths.PREFILTER_OUTPUT
+#         / cfg_paths.PREFILTER_OUTPUT_FILES["icustay"]
+#     )
+#     bg: Path = (
+#         cfg_paths.PREFILTER_OUTPUT / cfg_paths.PREFILTER_OUTPUT_FILES["bg"]
+#     )
+#     lab: Path = (
+#         cfg_paths.PREFILTER_OUTPUT / cfg_paths.PREFILTER_OUTPUT_FILES["lab"]
+#     )
+#     vital: Path = (
+#         cfg_paths.PREFILTER_OUTPUT / cfg_paths.PREFILTER_OUTPUT_FILES["vital"]
+#     )
 
 
 @dataclass
@@ -87,15 +87,15 @@ class ICUStayMeasurementCombinerSettings(pm.PreprocessModuleSettings):
         return self.bg_data_cols + self.lab_data_cols + self.vital_data_cols
 
 
-@dataclass
-class FullAdmissionListBuilderResourceRefs(pm.PreprocessResourceRefs):
-    """
-    Container for paths to files imported by FullAdmissionListBuilder
-    """
-    icustay_bg_lab_vital: Path = (
-        cfg_paths.STAY_MEASUREMENT_OUTPUT
-        / cfg_paths.STAY_MEASUREMENT_OUTPUT_FILES["icustay_bg_lab_vital"]
-    )
+# @dataclass
+# class FullAdmissionListBuilderResourceRefs(pm.PreprocessResourceRefs):
+#     """
+#     Container for paths to files imported by FullAdmissionListBuilder
+#     """
+#     icustay_bg_lab_vital: Path = (
+#         cfg_paths.STAY_MEASUREMENT_OUTPUT
+#         / cfg_paths.STAY_MEASUREMENT_OUTPUT_FILES["icustay_bg_lab_vital"]
+#     )
 
 
 @dataclass

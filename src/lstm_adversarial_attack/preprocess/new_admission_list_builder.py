@@ -29,19 +29,28 @@ class NewAdmissionListBuilderSettings:
 class NewAdmissionListBuilder(pre.NewPreprocessModule):
     def __init__(
         self,
-        resources: pre.NewAdmissionListBuilderResources,
+        resources: dict[str, pre.IncomingFeatherDataFrame] = None,
         output_dir: Path = cfp.FULL_ADMISSION_LIST_OUTPUT,
         settings: NewAdmissionListBuilderSettings = None,
     ):
+        if resources is None:
+            resources = {
+                "icustay_bg_lab_vital": pre.IncomingFeatherDataFrame(
+                    resource_id=cfp.FULL_ADMISSION_LIST_INPUT_FILES[
+                        "icustay_bg_lab_vital"
+                    ]
+                )
+            }
         if settings is None:
             settings = NewAdmissionListBuilderSettings()
         super().__init__(
             resources=resources, output_dir=output_dir, settings=settings
         )
+        self.icustay_bg_lab_vital = self.resource_items["icustay_bg_lab_vital"]
 
     @cached_property
     def _filtered_icustay_bg_lab_vital(self) -> pd.DataFrame:
-        return self.resources.icustay_bg_lab_vital.drop(
+        return self.icustay_bg_lab_vital.drop(
             labels=[
                 "dod",
                 "los_hospital",
@@ -76,7 +85,14 @@ class NewAdmissionListBuilder(pre.NewPreprocessModule):
             for item in list_of_group_dfs
         ]
 
-    def process(self) -> pre.NewAdmissionListBuilderOutput:
-        return pre.NewAdmissionListBuilderOutput(
-            admission_list=self.admission_list
-        )
+    def process(self) -> dict[str, pre.OutgoingPreprocessResource]:
+        return {
+            "full_admission_list": pre.OutgoingPreprocessResourceNoExport(
+                resource=self.admission_list
+            )
+        }
+
+
+if __name__ == "__main__":
+    full_admission_list_builder = NewAdmissionListBuilder()
+    result = full_admission_list_builder.process()

@@ -152,3 +152,29 @@ def convert_posix_paths_to_strings(data):
         return str(data)
     else:
         return data
+
+
+class _FeatherIO:
+
+    @staticmethod
+    def df_to_feather(df: pd.DataFrame, path: Path):
+        assert "index" not in df.columns
+        df_for_export = df.reset_index(inplace=False)
+        df_for_export.to_feather(path=path)
+
+    @staticmethod
+    def feather_to_df(path: Path) -> pd.DataFrame:
+        df_with_default_index = pd.read_feather(path=path)
+        assert "index" in df_with_default_index.columns
+        df = df_with_default_index.set_index("index")
+        return df
+
+
+def df_to_feather(df: pd.DataFrame, path: Path):
+    _FeatherIO.df_to_feather(df=df, path=path)
+
+
+def feather_to_df(path: Path) -> pd.DataFrame:
+    return _FeatherIO.feather_to_df(path=path)
+
+

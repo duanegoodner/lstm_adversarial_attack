@@ -23,16 +23,28 @@ DB_QUERIES = [
 PREPROCESS_DATA_DIR = DATA_DIR / "preprocess"
 PREPROCESS_CHECKPOINTS = PREPROCESS_DATA_DIR / "checkpoints"
 PREFILTER_OUTPUT = PREPROCESS_CHECKPOINTS / "1_prefilter"
-PREFILTER_OUTPUT_FILES = {
-    "icustay": "icustay.json",
-    "bg": "bg.json",
-    "lab": "lab.json",
-    "vital": "vital.json",
+PREFILTER_INPUT_FILES = {
+    "icustay": DB_OUTPUT_DIR / "icustay_detail.csv",
+    "bg": DB_OUTPUT_DIR / "pivoted_bg.csv",
+    "vital": DB_OUTPUT_DIR / "pivoted_vital.csv",
+    "lab": DB_OUTPUT_DIR / "pivoted_lab.csv",
+}
+STAY_MEASUREMENT_INPUT_FILES = {
+    "prefiltered_icustay": PREFILTER_OUTPUT / "prefiltered_icustay.feather",
+    "prefiltered_bg": PREFILTER_OUTPUT / "prefiltered_bg.feather",
+    "prefiltered_lab": PREFILTER_OUTPUT / "prefiltered_lab.feather",
+    "prefiltered_vital": PREFILTER_OUTPUT / "prefiltered_vital.feather",
 }
 STAY_MEASUREMENT_OUTPUT = PREPROCESS_CHECKPOINTS / "2_merged_stay_measurements"
 STAY_MEASUREMENT_OUTPUT_FILES = {
     "icustay_bg_lab_vital": "icustay_bg_lab_vital.pickle",
     "bg_lab_vital_summary_stats": "bg_lab_vital_summary_stats.pickle",
+}
+
+FULL_ADMISSION_LIST_INPUT_FILES = {
+    "icustay_bg_lab_vital": (
+        STAY_MEASUREMENT_OUTPUT / "icustay_bg_lab_vital.feather"
+    )
 }
 FULL_ADMISSION_LIST_OUTPUT = PREPROCESS_CHECKPOINTS / "3_full_admission_list"
 FULL_ADMISSION_LIST_OUTPUT_FILES = {

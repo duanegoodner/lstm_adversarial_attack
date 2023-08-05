@@ -1,3 +1,4 @@
+import time
 import lstm_adversarial_attack.preprocess.new_preprocessor as ppr
 import lstm_adversarial_attack.preprocess.new_prefilter as prf
 import lstm_adversarial_attack.preprocess.preprocess_input_classes as pic
@@ -15,13 +16,10 @@ def main():
         feature_builder=fb.NewFeatureBuilder,
         feature_finalizer=ff.NewFeatureFinalizer,
         inputs=pic.PrefilterResourceRefs(),
-        save_checkpoints=False
+        save_checkpoints=True
     )
     return preprocessor.preprocess()
 
 
 if __name__ == "__main__":
     result = main()
-
-
-

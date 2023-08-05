@@ -14,6 +14,7 @@ class NewPrefilterSettings:
     """
     Container for objects imported by Prefilter
     """
+
     # output_dir: Path = cfg_paths.PREFILTER_OUTPUT
     min_age: int = 18
     min_los_hospital: int = 1
@@ -34,23 +35,34 @@ class NewPrefilterSettings:
 class NewPrefilter(pre.NewPreprocessModule):
     def __init__(
         self,
-        resources: pre.NewPrefilterResources,
-        output_dir = cfg_paths.PREFILTER_OUTPUT,
+        resources: dict[str, pre.IncomingCSVDataFrame] = None,
+        output_dir=cfg_paths.PREFILTER_OUTPUT,
         settings: NewPrefilterSettings = None,
     ):
+        if resources is None:
+            resources = {
+                key: pre.IncomingCSVDataFrame(resource_id=value)
+                for key, value in cfg_paths.PREFILTER_INPUT_FILES.items()
+            }
         if settings is None:
             settings = NewPrefilterSettings()
         super().__init__(
             resources=resources, output_dir=output_dir, settings=settings
         )
+        self.icustay = self.resource_items["icustay"]
+        self.bg = self.resource_items["bg"]
+        self.vital = self.resource_items["vital"]
+        self.lab = self.resource_items["lab"]
 
     def _apply_standard_formatting(self):
         """
         Sets col names of all dfs in self.resouces to lowercase
         """
-        for resource in self.resources.__dict__.values():
-            if isinstance(resource, pd.DataFrame):
-                resource.columns = [item.lower() for item in resource.columns]
+
+        module_dfs = [self.icustay, self.bg, self.vital, self.lab]
+
+        for df in module_dfs:
+            df.columns = [item.lower() for item in df.columns]
 
     def _filter_icustay(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -162,40 +174,40 @@ class NewPrefilter(pre.NewPreprocessModule):
 
         return vital
 
-    def process(self, ) -> pre.NewPrefilterOutput:
+    def process(
+        self,
+    ) -> dict[str, pre.OutgoingPreprocessResource]:
         """
         Runs all filter methods.
         """
         self._apply_standard_formatting()
-        filtered_icustay = self._filter_icustay(df=self.resources.icustay)
-        filtered_bg = self._filter_bg(
-            bg=self.resources.bg, icustay=filtered_icustay
-        )
-        filtered_lab = self._filter_lab(
-            lab=self.resources.lab, icustay=filtered_icustay
-        )
+        filtered_icustay = self._filter_icustay(df=self.icustay)
+        filtered_bg = self._filter_bg(bg=self.bg, icustay=filtered_icustay)
+        filtered_lab = self._filter_lab(lab=self.lab, icustay=filtered_icustay)
         filtered_vital = self._filter_vital(
-            vital=self.resources.vital, icustay=filtered_icustay
+            vital=self.vital, icustay=filtered_icustay
         )
 
-        return pre.NewPrefilterOutput(
-            icustay=filtered_icustay,
-            bg=filtered_bg,
-            vital=filtered_vital,
-            lab=filtered_lab
-        )
+        return {
+            "prefiltered_icustay": pre.OutgoingPreprocessDataFrame(
+                resource=filtered_icustay
+            ),
+            "prefiltered_bg": pre.OutgoingPreprocessDataFrame(
+                resource=filtered_bg
+            ),
+            "prefiltered_lab": pre.OutgoingPreprocessDataFrame(
+                resource=filtered_lab
+            ),
+            "prefiltered_vital": pre.OutgoingPreprocessDataFrame(
+                resource=filtered_vital
+            ),
+        }
 
 
 if __name__ == "__main__":
-    resource_refs = pic.PrefilterResourceRefs()
-
-    prefilter_resources = pre.NewPrefilterResources(
-        icustay=pd.read_csv(resource_refs.icustay),
-        bg=pd.read_csv(resource_refs.bg),
-        vital=pd.read_csv(resource_refs.vital),
-        lab=pd.read_csv(resource_refs.lab),
-    )
-
-    prefilter = NewPrefilter(resources=prefilter_resources)
-
+    prefilter = NewPrefilter()
     result = prefilter.process()
+    for key, outgoing_dataframe in result.items():
+        outgoing_dataframe.export(
+            path=cfg_paths.PREFILTER_OUTPUT / f"{key}.feather"
+        )

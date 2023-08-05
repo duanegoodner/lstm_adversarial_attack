@@ -33,21 +33,30 @@ class NewICUStayMeasurementMergerSettings:
 class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
     def __init__(
         self,
-        resources: pre.NewICUStayMeasurementMergerResources,
+        resources: dict[str, pre.IncomingFeatherDataFrame] = None,
         output_dir: Path = cfp.STAY_MEASUREMENT_OUTPUT,
         settings: NewICUStayMeasurementMergerSettings = None,
     ):
+        if resources is None:
+            resources = {
+               key: pre.IncomingFeatherDataFrame(resource_id=value) for key, value
+               in cfp.STAY_MEASUREMENT_INPUT_FILES.items()
+            }
         if settings is None:
             settings = NewICUStayMeasurementMergerSettings()
         super().__init__(
             resources=resources, output_dir=output_dir, settings=settings
         )
+        self.prefiltered_icustay = self.resource_items["prefiltered_icustay"]
+        self.prefiltered_bg = self.resource_items["prefiltered_bg"]
+        self.prefiltered_vital = self.resource_items["prefiltered_vital"]
+        self.prefiltered_lab = self.resource_items["prefiltered_lab"]
 
     @cached_property
     def _id_bg(self) -> pd.DataFrame:
         return pd.merge(
-            left=self.resources.icustay,
-            right=self.resources.bg,
+            left=self.prefiltered_icustay,
+            right=self.prefiltered_bg,
             on=["hadm_id"],
             how="right",
             suffixes=("_icu", "_bg"),
@@ -67,8 +76,8 @@ class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
     def _id_lab(self) -> pd.DataFrame:
         return (
             pd.merge(
-                left=self.resources.icustay,
-                right=self.resources.lab,
+                left=self.prefiltered_icustay,
+                right=self.prefiltered_lab,
                 on=["hadm_id"],
                 how="right",
                 suffixes=("_icu", "_lab"),
@@ -88,8 +97,8 @@ class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
     @cached_property
     def _id_vital(self) -> pd.DataFrame:
         return pd.merge(
-            left=self.resources.icustay,
-            right=self.resources.vital,
+            left=self.prefiltered_icustay,
+            right=self.prefiltered_vital,
             on=["icustay_id"],
         )[
             [
@@ -119,21 +128,36 @@ class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
 
     @cached_property
     def icustay_bg_lab_vital(self) -> pd.DataFrame:
-        return pd.merge(
-            left=self.resources.icustay,
+        merged_df = pd.merge(
+            left=self.prefiltered_icustay,
             right=self._id_bg_lab_vital,
             on=["subject_id", "hadm_id", "icustay_id"],
             how="outer",
         )
+        return merged_df
 
     @cached_property
     def summary_stats(self) -> pd.DataFrame:
-        return self.icustay_bg_lab_vital[
+        summary = self.icustay_bg_lab_vital[
             self.settings.all_measurement_cols
         ].describe(percentiles=[0.05, 0.25, 0.50, 0.75, 0.95])
+        return summary
 
-    def process(self) -> pre.NewICUStayMeasurementMergerOutput:
-        return pre.NewICUStayMeasurementMergerOutput(
-            icustay_bg_lab_vital=self.icustay_bg_lab_vital,
-            bg_lab_vital_summary_stats=self.summary_stats,
-        )
+    def process(self) -> dict[str, pre.OutgoingPreprocessResource]:
+        return {
+            "icustay_bg_lab_vital": pre.OutgoingPreprocessDataFrame(
+                resource=self.icustay_bg_lab_vital
+            ),
+            "bg_lab_vital_summary_stats": pre.OutgoingPreprocessDataFrame(
+                resource=self.summary_stats
+            )
+        }
+
+        # return pre.NewICUStayMeasurementMergerOutput(
+        #     icustay_bg_lab_vital=self.icustay_bg_lab_vital,
+        #     bg_lab_vital_summary_stats=self.summary_stats,
+        # )
+
+if __name__ == "__main__":
+    measurement_merger = NewICUStayMeasurementMerger()
+    result = measurement_merger.process()
