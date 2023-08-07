@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import pathlib
+import datetime
 
+import msgspec
 import numpy as np
 import pandas as pd
 import sys
@@ -12,6 +13,7 @@ from typing import Any, Callable, TypeVar
 
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
+import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.preprocess.preprocess_input_classes as pic
 import lstm_adversarial_attack.preprocess.preprocess_resource as pr
 import lstm_adversarial_attack.resource_io as rio
@@ -26,6 +28,15 @@ class NotExportable(Exception):
         return f"{self._object} -> {self._msg}"
 
 
+class NotImportable(Exception):
+    def __init__(self, obj: object, msg: str = "Object is not importable"):
+        self._object = obj
+        self._msg = msg
+
+    def __str__(self):
+        return f"{self._object} -> {self._msg}"
+
+
 _T = TypeVar("_T")
 
 
@@ -33,7 +44,7 @@ class IncomingPreprocessResource(ABC):
     def __init__(
         self,
         resource_id: str | Path,
-        resource_pool: dict[str, Any] = None,
+        resource_pool: dict[str, OutgoingPreprocessResource] = None,
     ):
         if type(resource_id) == str:
             assert resource_pool is not None
@@ -41,7 +52,7 @@ class IncomingPreprocessResource(ABC):
         self._resource_id = resource_id
         self._resource_pool = resource_pool
         if type(self._resource_id) == str:
-            self._item = self._resource_pool[self._resource_id]
+            self._item = self._resource_pool[self._resource_id].resource
         else:
             self._item = self._import_object()
 
@@ -71,6 +82,18 @@ class IncomingCSVDataFrame(IncomingPreprocessResource):
         return pd.read_csv(filepath_or_buffer=self.resource_id)
 
 
+class IncomingPreprocessResourceNoImport(IncomingPreprocessResource):
+    def _import_object(self):
+        raise NotImportable(self)
+
+
+class IncomingPreprocessPickle(IncomingPreprocessResource):
+    def _import_object(self) -> object:
+        return rio.ResourceImporter().import_pickle_to_object(
+            path=self.resource_id
+        )
+
+
 class OutgoingPreprocessResource(ABC):
     def __init__(self, resource: Any):
         self._resource = resource
@@ -90,7 +113,12 @@ class OutgoingPreprocessDataFrame(OutgoingPreprocessResource):
 
 class OutgoingPreprocessResourceNoExport(OutgoingPreprocessResource):
     def export(self, path: Path):
-        raise NotExportable
+        raise NotExportable(self)
+
+
+class OutgoingPreprocessPickle(OutgoingPreprocessResource):
+    def export(self, path: Path):
+        rio.ResourceExporter().export(resource=self._resource, path=path)
 
 
 @dataclass
@@ -100,35 +128,18 @@ class NewPreprocessResource(ABC):
         pass
 
 
-@dataclass
-class PureDataFrameContainer(NewPreprocessResource, ABC):
-    def export(self, output_dir: Path) -> list[pr.ExportedPreprocessResource]:
-        exported_resources = []
-
-        for key, df in self.__dict__.items():
-            rio.df_to_feather(df=df, path=output_dir / f"{key}.feather")
-            exported_resources.append(
-                pr.ExportedPreprocessResource(
-                    path=output_dir, data_type=type(df).__name__
-                )
-            )
-        return exported_resources
-
-
-@dataclass
-class NewFullAdmissionData:
+class NewFullAdmissionData(msgspec.Struct):
     """
     Container used as elements list build by FullAdmissionListBuilder
     """
-
-    subject_id: np.ndarray
-    hadm_id: np.ndarray
-    icustay_id: np.ndarray
-    admittime: np.ndarray
-    dischtime: np.ndarray
-    hospital_expire_flag: np.ndarray
-    intime: np.ndarray
-    outtime: np.ndarray
+    subject_id: int
+    hadm_id: int
+    icustay_id: int
+    admittime: np.datetime64
+    dischtime: np.datetime64
+    hospital_expire_flag: int
+    intime: np.datetime64
+    outtime: np.datetime64
     time_series: pd.DataFrame
 
 
@@ -136,52 +147,21 @@ class NewFullAdmissionData:
 NewFullAdmissionData.__module__ = __name__
 
 
-@dataclass
-class NewAdmissionListBuilderResources(PureDataFrameContainer):
-    icustay_bg_lab_vital: pd.DataFrame
+class OutgoingFullAdmissionData(OutgoingPreprocessResource):
+    def export(self, path: Path):
+        rio.export_full_admission_data(obj=self._resource, path=path)
 
 
-@dataclass
-class NewAdmissionListBuilderOutput(NewPreprocessResource):
-    admission_list: list[NewFullAdmissionData]
-
-    def export(self, output_dir: Path) -> list[pr.ExportedPreprocessResource]:
-        pass
+class OutgoingListOfArrays(OutgoingPreprocessResource):
+    def export(self, path: Path):
+        rio.list_of_np_to_json(resource=self.resource, path=path)
 
 
-@dataclass
-class NewFeatureBuilderResources(NewPreprocessResource):
-    admission_list: list[NewFullAdmissionData]
-    bg_lab_vital_summary_stats: pd.DataFrame
-
-    def export(self, output_dir: Path) -> list[pr.ExportedPreprocessResource]:
-        pass
-
-
-@dataclass
-class NewFeatureBuilderOutput(NewPreprocessResource):
-    processed_admission_list: list[NewFullAdmissionData]
-
-    def export(self, output_dir: Path) -> list[pr.ExportedPreprocessResource]:
-        pass
-
-
-@dataclass
-class NewFeatureFinalizerResources(NewPreprocessResource):
-    processed_admission_list: list[NewFullAdmissionData]
-
-    def export(self, output_dir: Path) -> list[pr.ExportedPreprocessResource]:
-        pass
-
-
-@dataclass
-class NewFeatureFinalizerOutput(NewPreprocessResource):
-    measurement_col_names: tuple[str]
-    measurement_data_list: list[np.ndarray]
-    in_hospital_mortality_list: list[int]
-
-    def export(self, output_dir: Path) -> list[pr.ExportedPreprocessResource]:
-        pass
+class JsonReadyOutput(OutgoingPreprocessResource):
+    def export(self, path: Path):
+        encoded_output = msgspec.json.encode(self.resource)
+        with path.open(mode="wb") as out_file:
+            out_file.write(encoded_output)
 
 
 class NewPreprocessModule(ABC):
@@ -256,9 +236,6 @@ class NewPreprocessor:
                 outgoing_resource.export(
                     path=instantiated_prefilter.output_dir / f"{key}.feather"
                 )
-            # prefilter_output.export(
-            #     output_dir=instantiated_prefilter.output_dir
-            # )
         self.available_resources["prefiltered_bg"] = prefilter_output[
             "prefiltered_bg"
         ]
@@ -271,8 +248,6 @@ class NewPreprocessor:
         self.available_resources["prefiltered_vital"] = prefilter_output[
             "prefiltered_vital"
         ]
-        # self.available_resources["prefilter_output"] = prefilter_output
-        # return prefilter_output
 
     def run_icustay_measurement_combiner(
         self,
@@ -292,9 +267,6 @@ class NewPreprocessor:
                     path=instantiated_measurement_combiner.output_dir
                     / f"{key}.feather"
                 )
-            # measurement_combiner_output.export(
-            #     output_dir=instantiated_measurement_combiner.output_dir
-            # )
         self.available_resources["bg_lab_vital_summary_stats"] = (
             measurement_combiner_output["bg_lab_vital_summary_stats"]
         )
@@ -314,32 +286,36 @@ class NewPreprocessor:
         admission_list_builder_output = (
             instantiated_admission_list_builder.process()
         )
-        # Don't give ability to export b/c do not have non-pickle option
-        # if self.save_checkpoints:
-        #     admission_list_builder_output.export(
-        #         output_dir=instantiated_admission_list_builder.output_dir
-        #     )
+        if self.save_checkpoints:
+            admission_list_builder_output["full_admission_list"].export(
+                path=instantiated_admission_list_builder.output_dir
+                / "full_admission_list.pickle"
+            )
         self.available_resources["full_admission_list"] = (
             admission_list_builder_output["full_admission_list"]
         )
 
     def run_feature_builder(
-        self, feature_builder_resources: NewFeatureBuilderResources
+        self,
+        feature_builder_resources: dict[
+            str, IncomingPreprocessResourceNoImport | IncomingFeatherDataFrame
+        ],
     ):
         instantiated_feature_builder = self.feature_builder(
             resources=feature_builder_resources
         )
         feature_builder_output = instantiated_feature_builder.process()
         if self.save_checkpoints:
-            feature_builder_output.export(
-                output_dir=instantiated_feature_builder.output_dir
+            feature_builder_output["processed_admission_list"].export(
+                path=instantiated_feature_builder.output_dir
+                / "processed_admission_list.pickle"
             )
         self.available_resources["processed_admission_list"] = (
-            feature_builder_output.processed_admission_list
+            feature_builder_output["processed_admission_list"]
         )
 
     def run_feature_finalizer(
-        self, feature_finalizer_resources: NewFeatureFinalizerResources
+        self, feature_finalizer_resources: dict[str, IncomingPreprocessPickle]
     ):
         instantiated_feature_finalizer = self.feature_finalizer(
             resources=feature_finalizer_resources
@@ -367,16 +343,19 @@ class NewPreprocessor:
         self.run_prefilter()
         self.run_icustay_measurement_combiner()
         self.run_admission_list_builder()
-        #
-        # feature_builder_resources = NewFeatureBuilderResources(
-        #     admission_list=self.available_resources["admission_list"],
-        #     bg_lab_vital_summary_stats=self.available_resources[
-        #         "bg_lab_vital_summary_stats"
-        #     ],
-        # )
-        # self.run_feature_builder(
-        #     feature_builder_resources=feature_builder_resources
-        # )
+        self.run_feature_builder(
+            feature_builder_resources={
+                "full_admission_list": IncomingPreprocessResourceNoImport(
+                    resource_id="full_admission_list",
+                    resource_pool=self.available_resources,
+                ),
+                "bg_lab_vital_summary_stats": IncomingFeatherDataFrame(
+                    resource_id=cfp.STAY_MEASUREMENT_OUTPUT
+                    / "bg_lab_vital_summary_stats.feather"
+                ),
+            }
+        )
+
         #
         # feature_finalizer_resources = NewFeatureFinalizerResources(
         #     processed_admission_list=self.available_resources[

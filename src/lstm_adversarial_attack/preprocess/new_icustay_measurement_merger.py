@@ -161,3 +161,7 @@ class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
 if __name__ == "__main__":
     measurement_merger = NewICUStayMeasurementMerger()
     result = measurement_merger.process()
+    for key, outgoing_dataframe in result.items():
+        outgoing_dataframe.export(
+            path=cfp.STAY_MEASUREMENT_OUTPUT / f"{key}.feather"
+        )

@@ -23,15 +23,35 @@ class NewFeatureBuilderSettings:
 class NewFeatureBuilder(pre.NewPreprocessModule):
     def __init__(
         self,
-        resources: pre.NewFeatureBuilderResources,
+        resources: dict[
+            str,
+            pre.IncomingPreprocessPickle | pre.IncomingFeatherDataFrame,
+        ] = None,
         output_dir: Path = cfp.FEATURE_BUILDER_OUTPUT,
         settings: NewFeatureBuilderSettings = None,
     ):
+        if resources is None:
+            resources = {
+                "full_admission_list": pre.IncomingPreprocessPickle(
+                    resource_id=cfp.FEATURE_BUILDER_INPUT_FILES[
+                        "full_admission_list"
+                    ]
+                ),
+                "bg_lab_vital_summary_stats": pre.IncomingFeatherDataFrame(
+                    resource_id=cfp.FEATURE_BUILDER_INPUT_FILES[
+                        "bg_lab_vital_summary_stats"
+                    ]
+                ),
+            }
         if settings is None:
             settings = NewFeatureBuilderSettings()
         super().__init__(
             resources=resources, output_dir=output_dir, settings=settings
         )
+        self.full_admission_list = self.resource_items["full_admission_list"]
+        self.bg_lab_vital_summary_stats = self.resource_items[
+            "bg_lab_vital_summary_stats"
+        ]
 
     def _resample(self, raw_time_series_df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -58,7 +78,7 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
         """
         cols_with_all_nan = resampled_df.columns[resampled_df.isna().all()]
         na_fill_val_map = {
-            col: self.resources.bg_lab_vital_summary_stats.loc["50%", col]
+            col: self.bg_lab_vital_summary_stats.loc["50%", col]
             for col in cols_with_all_nan
         }
         resampled_df.fillna(na_fill_val_map, inplace=True)
@@ -69,12 +89,12 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
         :param filled_df: has all missing data imputed by interp or global mean
         """
         winsorized_df = filled_df[
-            self.resources.bg_lab_vital_summary_stats.columns
+            self.bg_lab_vital_summary_stats.columns
         ].clip(
-            lower=self.resources.bg_lab_vital_summary_stats.loc[
+            lower=self.bg_lab_vital_summary_stats.loc[
                 self.settings.winsorize_low, :
             ],
-            upper=self.resources.bg_lab_vital_summary_stats.loc[
+            upper=self.bg_lab_vital_summary_stats.loc[
                 self.settings.winsorize_high, :
             ],
             axis=1,
@@ -88,14 +108,14 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
         """
         rescaled_df = (
             winsorized_df
-            - self.resources.bg_lab_vital_summary_stats.loc[
+            - self.bg_lab_vital_summary_stats.loc[
                 self.settings.winsorize_low, :
             ]
         ) / (
-            self.resources.bg_lab_vital_summary_stats.loc[
+            self.bg_lab_vital_summary_stats.loc[
                 self.settings.winsorize_high, :
             ]
-            - self.resources.bg_lab_vital_summary_stats.loc[
+            - self.bg_lab_vital_summary_stats.loc[
                 self.settings.winsorize_low, :
             ]
         )
@@ -120,7 +140,7 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
 
         return new_df
 
-    def process(self) -> pre.NewFeatureBuilderOutput:
+    def process(self) -> dict[str, pre.OutgoingPreprocessPickle]:
         """
         Winsorizes, imputes and normalizes dfs in list of FullAdmission objects
 
@@ -130,7 +150,7 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
         # filter out list elements with < 2 timestamps in their timeseries df
         filtered_admission_list = [
             entry
-            for entry in self.resources.admission_list
+            for entry in self.full_admission_list
             if entry.time_series.shape[0] > 2
         ]
 
@@ -144,6 +164,12 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
                     f" {idx + 1}/{len(filtered_admission_list)}"
                 )
 
-        return pre.NewFeatureBuilderOutput(
-            processed_admission_list=filtered_admission_list
-        )
+        return {
+            "processed_admission_list": pre.OutgoingPreprocessPickle(
+                resource=filtered_admission_list
+            )
+        }
+
+if __name__ == "__main__":
+    feature_builder = NewFeatureBuilder()
+    result = feature_builder.process()

@@ -50,11 +50,25 @@ FULL_ADMISSION_LIST_OUTPUT = PREPROCESS_CHECKPOINTS / "3_full_admission_list"
 FULL_ADMISSION_LIST_OUTPUT_FILES = {
     "full_admission_list": "full_admission_list.pickle"
 }
+
 FEATURE_BUILDER_OUTPUT = PREPROCESS_CHECKPOINTS / "4_feature_builder"
+FEATURE_BUILDER_INPUT_FILES = {
+    "bg_lab_vital_summary_stats": (
+        STAY_MEASUREMENT_OUTPUT / "bg_lab_vital_summary_stats.feather"
+    ),
+    "full_admission_list": (
+        FULL_ADMISSION_LIST_OUTPUT / "full_admission_list.pickle"
+    ),
+}
 FEATURE_BUILDER_OUTPUT_FILES = {
     "hadm_list_with_processed_dfs": "hadm_list_with_processed_dfs.pickle"
 }
 
+FEATURE_FINALIZER_INPUT_FILES = {
+    "processed_admission_list": (
+        FEATURE_BUILDER_OUTPUT / "processed_admission_list.pickle"
+    )
+}
 FEATURE_FINALIZER_OUTPUT = PREPROCESS_CHECKPOINTS / "5_feature_finalizer"
 
 PREPROCESS_OUTPUT_DIR = PREPROCESS_DATA_DIR / "final_output"

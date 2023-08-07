@@ -27,21 +27,31 @@ class NewFeatureFinalizerSettings:
 class NewFeatureFinalizer(pre.NewPreprocessModule):
     def __init__(
         self,
-        resources: pre.NewFeatureFinalizerResources,
+        resources: dict[str, pre.IncomingPreprocessPickle] = None,
         output_dir: cfp.PREPROCESS_OUTPUT_DIR = cfp.FEATURE_FINALIZER_OUTPUT,
         settings: NewFeatureFinalizerSettings = None,
     ):
+        if resources is None:
+            resources = {
+                "processed_admission_list": pre.IncomingPreprocessPickle(
+                    resource_id=cfp.FEATURE_FINALIZER_INPUT_FILES[
+                        "processed_admission_list"
+                    ]
+                )
+            }
         if settings is None:
             settings = NewFeatureFinalizerSettings()
         super().__init__(
             resources=resources, output_dir=output_dir, settings=settings
         )
+        self.processed_admission_list = self.resource_items[
+            "processed_admission_list"
+        ]
 
     @cached_property
     def measurement_col_names(self) -> tuple[str, ...]:
         all_data_col_names = [
-            item.time_series.columns
-            for item in self.resources.processed_admission_list
+            item.time_series.columns for item in self.processed_admission_list
         ]
         first_item_names = list(all_data_col_names[0])
         assert all(
@@ -66,12 +76,12 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
         :return: df with times filtered down to window of interest
         """
         if start_time is None:
-            start_time = np.array([np.datetime64(datetime.min)])
+            start_time = np.datetime64(datetime.min)
         if end_time is None:
-            end_time = np.array([np.datetime64(datetime.max)])
+            end_time = np.datetime64(datetime.max)
         return time_series[
-            (time_series[time_col] > start_time[0])
-            & (time_series[time_col] < end_time[0])
+            (time_series[time_col] > start_time)
+            & (time_series[time_col] < end_time)
         ]
 
     def _get_feature_array(
@@ -105,20 +115,31 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
         else:
             return None
 
-    def process(self):
+    def process(self) -> dict[str, pre.OutgoingPreprocessPickle]:
         measurement_data_list = []
         in_hospital_mortality_list = []
 
-        for entry in self.resources.processed_admission_list:
+        for entry in self.processed_admission_list:
             feature_array = self._get_feature_array(sample=entry)
             if feature_array is not None:
                 measurement_data_list.append(feature_array)
-                in_hospital_mortality_list.append(
-                    entry.hospital_expire_flag.item()
-                )
+                in_hospital_mortality_list.append(entry.hospital_expire_flag)
 
-        return pre.NewFeatureFinalizerOutput(
-            measurement_col_names=self.measurement_col_names,
-            measurement_data_list=measurement_data_list,
-            in_hospital_mortality_list=in_hospital_mortality_list,
-        )
+        return {
+            "in_hospital_mortality_list": pre.OutgoingPreprocessPickle(
+                resource=in_hospital_mortality_list
+            ),
+            "measurement_col_names": pre.OutgoingPreprocessPickle(
+                resource=self.measurement_col_names,
+            ),
+            "measurement_data_list": pre.OutgoingPreprocessPickle(
+                resource=measurement_data_list
+            ),
+        }
+
+
+if __name__ == "__main__":
+    feature_finalizer = NewFeatureFinalizer()
+    result = feature_finalizer.process()
+    for key, value in result.items():
+        value.export(feature_finalizer.output_dir / f"{key}.pickle")

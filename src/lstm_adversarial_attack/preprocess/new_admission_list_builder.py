@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
@@ -72,14 +73,16 @@ class NewAdmissionListBuilder(pre.NewPreprocessModule):
         list_of_group_dfs = [group[1] for group in df_grouped_by_hadm]
         return [
             pre.NewFullAdmissionData(
-                subject_id=np.unique(item.subject_id),
-                hadm_id=np.unique(item.hadm_id),
-                icustay_id=np.unique(item.icustay_id),
-                admittime=np.unique(item.admittime),
-                dischtime=np.unique(item.dischtime),
-                hospital_expire_flag=np.unique(item.hospital_expire_flag),
-                intime=np.unique(item.intime),
-                outtime=np.unique(item.outtime),
+                subject_id=int(np.unique(item.subject_id)[0]),
+                hadm_id=int(np.unique(item.hadm_id)[0]),
+                icustay_id=int(np.unique(item.icustay_id)[0]),
+                admittime=np.unique(item.admittime)[0],
+                dischtime=np.unique(item.dischtime)[0],
+                hospital_expire_flag=int(
+                    np.unique(item.hospital_expire_flag)[0]
+                ),
+                intime=np.unique(item.intime)[0],
+                outtime=np.unique(item.outtime)[0],
                 time_series=item[self.settings.time_series_cols],
             )
             for item in list_of_group_dfs
@@ -87,7 +90,7 @@ class NewAdmissionListBuilder(pre.NewPreprocessModule):
 
     def process(self) -> dict[str, pre.OutgoingPreprocessResource]:
         return {
-            "full_admission_list": pre.OutgoingPreprocessResourceNoExport(
+            "full_admission_list": pre.OutgoingFullAdmissionData(
                 resource=self.admission_list
             )
         }
@@ -95,4 +98,14 @@ class NewAdmissionListBuilder(pre.NewPreprocessModule):
 
 if __name__ == "__main__":
     full_admission_list_builder = NewAdmissionListBuilder()
+    start_process = time.time()
     result = full_admission_list_builder.process()
+    end_process = time.time()
+    print(f"process time = {end_process - start_process}")
+    start_json_export = time.time()
+    result["full_admission_list"].export(
+        path=cfp.FULL_ADMISSION_LIST_OUTPUT / "full_admission_list.json"
+    )
+    end_json_export = time.time()
+    print(f"export time = {end_json_export - start_json_export}")
+

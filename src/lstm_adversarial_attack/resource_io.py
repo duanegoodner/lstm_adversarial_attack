@@ -1,7 +1,10 @@
 # TODO Change to dill and use dill.dump / dill.load syntax.
 # TODO Consider removing this module. May be overkill.
 import json
+from functools import cached_property
 
+import msgspec
+import numpy as np
 import dill
 import pandas as pd
 import sys
@@ -36,26 +39,14 @@ class ResourceType(Enum):
 
 class ResourceImporter:
     _supported_file_types = {
-        ".csv": ResourceType.CSV,
         ".pickle": ResourceType.PICKLE,
     }
-
-    # def _validate_path(self, path: Path) -> ResourceType:
-    #     assert path.exists()
-    #     file_extension = f".{path.name.split('.')[-1]}"
-    #     file_type = self._supported_file_types.get(file_extension)
-    #     assert file_type is not None
-    #     return file_type
 
     @staticmethod
     def _validate_path(path: Path, file_type: str):
         assert path.exists()
         file_extension = f".{path.name.split('.')[-1]}"
         assert file_type == file_extension
-
-    def import_csv(self, path: Path) -> pd.DataFrame:
-        self._validate_path(path=path, file_type=".csv")
-        return pd.read_csv(path)
 
     def import_pickle_to_df(self, path: Path) -> pd.DataFrame:
         self._validate_path(path=path, file_type=".pickle")
@@ -176,5 +167,95 @@ def df_to_feather(df: pd.DataFrame, path: Path):
 
 def feather_to_df(path: Path) -> pd.DataFrame:
     return _FeatherIO.feather_to_df(path=path)
+
+
+class _MsgspecIO:
+    @staticmethod
+    def to_json(resource: object, path: Path):
+        encoded_output = msgspec.json.encode(obj=resource)
+        with path.open(mode="wb") as out_file:
+            out_file.write(encoded_output)
+
+    @staticmethod
+    def from_json(path: Path) -> dict:
+        with path.open(mode="rb") as in_file:
+            imported_encoded_data = in_file.read()
+        return msgspec.json.decode(imported_encoded_data)
+
+class _ListOfArraysIO:
+
+    @staticmethod
+    def list_of_np_to_json(resource: list[np.array], path: Path):
+        unique_dtypes = np.unique([item.dtype for item in resource])
+        assert len(unique_dtypes) == 1
+        dtype = unique_dtypes.item()
+        list_of_lists = [item.tolist() for item in resource]
+        output_dict = {"dtype": dtype, "data": list_of_lists}
+        encoded_output = msgspec.json.encode(output_dict)
+        with path.open(mode="wb") as out_file:
+            out_file.write(encoded_output)
+
+    @staticmethod
+    def json_to_list_of_np(path: Path) -> list[np.array]:
+        with path.open(mode="rb") as in_file:
+            imported_encoded_data = in_file.read()
+        imported_dict = msgspec.json.decode(imported_encoded_data)
+        list_of_arrays = [
+            np.array(item, dtype=imported_dict["dtype"])
+            for item in imported_dict["data"]
+        ]
+        return list_of_arrays
+
+
+def list_of_np_to_json(resource: list[np.array], path: Path):
+    _ListOfArraysIO.list_of_np_to_json(resource=resource, path=path)
+
+
+def json_to_list_of_np(path: Path) -> list[np.array]:
+    return _ListOfArraysIO.json_to_list_of_np(path=path)
+
+
+class _JsonReadyIO:
+    @staticmethod
+    def to_json(resource: object, path: Path):
+        encoded_output = msgspec.json.encode(obj=resource)
+        with path.open(mode="wb") as out_file:
+            out_file.write(encoded_output)
+
+
+class _FullAdmissionDataIO:
+
+    @staticmethod
+    def enc_hook(obj: Any) -> Any:
+        if isinstance(obj, pd.Timestamp):
+            return obj.to_pydatetime()
+        if isinstance(obj, pd.DataFrame):
+            return obj.to_numpy().tolist()
+        if isinstance(obj, np.datetime64):
+            return obj.astype(datetime)
+        if pd.isna(obj):
+            return None
+        else:
+            raise NotImplementedError(
+                f"Encoder does not support objects of type {type(obj)}"
+            )
+
+    @cached_property
+    def encoder(self) -> msgspec.json.Encoder:
+        return msgspec.json.Encoder(enc_hook=self.enc_hook)
+
+
+FULL_ADMISSION_DATA_IO = _FullAdmissionDataIO()
+FULL_ADMISSION_DATA_ENCODER = FULL_ADMISSION_DATA_IO.encoder
+
+
+def export_full_admission_data(obj: Any, path: Path):
+    encoded_object = FULL_ADMISSION_DATA_ENCODER.encode(obj)
+    with path.open(mode="wb") as out_file:
+        out_file.write(encoded_object)
+
+
+
+
 
 

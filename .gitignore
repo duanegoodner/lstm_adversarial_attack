@@ -39,6 +39,8 @@ data/preprocess/checkpoints/3_full_admission_list/*
 !data/preprocess/checkpoints/3_full_admission_list/.gitkeep
 data/preprocess/checkpoints/4_feature_builder/*
 !data/preprocess/checkpoints/4_feature_builder/.gitkeep
+data/preprocess/checkpoints/5_feature_finalizer/*
+!data/preprocess/checkpoints/5_feature_finalizer/.gitkeep
 
 
 
