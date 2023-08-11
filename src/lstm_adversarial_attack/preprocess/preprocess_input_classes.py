@@ -1,13 +1,16 @@
-import numpy as np
-import pandas as pd
 import sys
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as lcs
 import lstm_adversarial_attack.preprocess.preprocess_module as pm
+
 
 @dataclass
 class PrefilterResourceRefs(pm.PreprocessResourceRefs):

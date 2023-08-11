@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+
 import lstm_adversarial_attack.attack.attacker_helpers as ah
 import lstm_adversarial_attack.attack.feature_perturber as fp
 

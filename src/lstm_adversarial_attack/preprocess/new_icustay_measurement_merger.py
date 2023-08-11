@@ -1,10 +1,14 @@
-from dataclasses import dataclass
+import time
+from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
+
 import pandas as pd
+
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.preprocess.new_preprocessor as pre
+import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 @dataclass
@@ -13,17 +17,15 @@ class NewICUStayMeasurementMergerSettings:
     Container for ICUStayMeasurementCombiner config settings
     """
 
-    bg_data_cols: list[str] = None
-    lab_data_cols: list[str] = None
-    vital_data_cols: list[str] = None
-
-    def __post_init__(self):
-        if self.bg_data_cols is None:
-            self.bg_data_cols = cfs.PREPROCESS_BG_DATA_COLS
-        if self.lab_data_cols is None:
-            self.lab_data_cols = cfs.PREPROCESS_LAB_DATA_COLS
-        if self.vital_data_cols is None:
-            self.vital_data_cols = cfs.PREPROCESS_VITAL_DATA_COLS
+    bg_data_cols: list[str] = field(
+        default_factory=lambda: cfs.PREPROCESS_BG_DATA_COLS
+    )
+    lab_data_cols: list[str] = field(
+        default_factory=lambda: cfs.PREPROCESS_LAB_DATA_COLS
+    )
+    vital_data_cols: list[str] = field(
+        default_factory=lambda: cfs.PREPROCESS_VITAL_DATA_COLS
+    )
 
     @property
     def all_measurement_cols(self) -> list[str]:
@@ -33,24 +35,21 @@ class NewICUStayMeasurementMergerSettings:
 class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
     def __init__(
         self,
-        resources: dict[str, pre.IncomingFeatherDataFrame] = None,
+        resources: rds.NewICUStayMeasurementMergerResources = None,
         output_dir: Path = cfp.STAY_MEASUREMENT_OUTPUT,
         settings: NewICUStayMeasurementMergerSettings = None,
     ):
         if resources is None:
-            resources = {
-               key: pre.IncomingFeatherDataFrame(resource_id=value) for key, value
-               in cfp.STAY_MEASUREMENT_INPUT_FILES.items()
-            }
+            resources = rds.NewICUStayMeasurementMergerResources()
         if settings is None:
             settings = NewICUStayMeasurementMergerSettings()
         super().__init__(
             resources=resources, output_dir=output_dir, settings=settings
         )
-        self.prefiltered_icustay = self.resource_items["prefiltered_icustay"]
-        self.prefiltered_bg = self.resource_items["prefiltered_bg"]
-        self.prefiltered_vital = self.resource_items["prefiltered_vital"]
-        self.prefiltered_lab = self.resource_items["prefiltered_lab"]
+        self.prefiltered_icustay =resources.prefiltered_icustay.item
+        self.prefiltered_bg = resources.prefiltered_bg.item
+        self.prefiltered_vital = resources.prefiltered_vital.item
+        self.prefiltered_lab = resources.prefiltered_lab.item
 
     @cached_property
     def _id_bg(self) -> pd.DataFrame:
@@ -143,25 +142,32 @@ class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
         ].describe(percentiles=[0.05, 0.25, 0.50, 0.75, 0.95])
         return summary
 
-    def process(self) -> dict[str, pre.OutgoingPreprocessResource]:
+    def process(self) -> dict[str, rds.OutgoingPreprocessResource]:
         return {
-            "icustay_bg_lab_vital": pre.OutgoingPreprocessDataFrame(
+            "icustay_bg_lab_vital": rds.OutgoingPreprocessDataFrame(
                 resource=self.icustay_bg_lab_vital
             ),
-            "bg_lab_vital_summary_stats": pre.OutgoingPreprocessDataFrame(
+            "bg_lab_vital_summary_stats": rds.OutgoingPreprocessDataFrame(
                 resource=self.summary_stats
-            )
+            ),
         }
 
-        # return pre.NewICUStayMeasurementMergerOutput(
-        #     icustay_bg_lab_vital=self.icustay_bg_lab_vital,
-        #     bg_lab_vital_summary_stats=self.summary_stats,
-        # )
 
 if __name__ == "__main__":
+    init_start = time.time()
     measurement_merger = NewICUStayMeasurementMerger()
+    init_end = time.time()
+    print(f"measurement merger init time = {init_end - init_start}")
+
+    process_start = time.time()
     result = measurement_merger.process()
+    process_end = time.time()
+    print(f"measurement merger process time = {process_end - process_start}")
+
+    export_start = time.time()
     for key, outgoing_dataframe in result.items():
         outgoing_dataframe.export(
-            path=cfp.STAY_MEASUREMENT_OUTPUT / f"{key}.feather"
+            path=measurement_merger.output_dir / f"{key}.feather"
         )
+    export_end = time.time()
+    print(f"measurement merger export time = {export_end - export_start}")

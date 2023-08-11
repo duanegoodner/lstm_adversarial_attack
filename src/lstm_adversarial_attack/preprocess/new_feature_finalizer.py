@@ -1,12 +1,16 @@
-import numpy as np
-import pandas as pd
-from dataclasses import dataclass
+import time
+from dataclasses import dataclass, field
 from datetime import datetime
 from functools import cached_property
-from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.preprocess.new_preprocessor as pre
+import lstm_adversarial_attack.preprocess.preprocess_data_structures as pds
+import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 @dataclass
@@ -27,26 +31,18 @@ class NewFeatureFinalizerSettings:
 class NewFeatureFinalizer(pre.NewPreprocessModule):
     def __init__(
         self,
-        resources: dict[str, pre.IncomingPreprocessPickle] = None,
+        resources: rds.NewFeatureFinalizerResources = None,
         output_dir: cfp.PREPROCESS_OUTPUT_DIR = cfp.FEATURE_FINALIZER_OUTPUT,
         settings: NewFeatureFinalizerSettings = None,
     ):
         if resources is None:
-            resources = {
-                "processed_admission_list": pre.IncomingPreprocessPickle(
-                    resource_id=cfp.FEATURE_FINALIZER_INPUT_FILES[
-                        "processed_admission_list"
-                    ]
-                )
-            }
+            resources = rds.NewFeatureFinalizerResources()
         if settings is None:
             settings = NewFeatureFinalizerSettings()
         super().__init__(
             resources=resources, output_dir=output_dir, settings=settings
         )
-        self.processed_admission_list = self.resource_items[
-            "processed_admission_list"
-        ]
+        self.processed_admission_list = resources.processed_admission_list.item
 
     @cached_property
     def measurement_col_names(self) -> tuple[str, ...]:
@@ -85,7 +81,7 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
         ]
 
     def _get_feature_array(
-        self, sample: pre.NewFullAdmissionData
+        self, sample: pds.NewFullAdmissionData
     ) -> np.ndarray | None:
         """
         Filters time series df to window of interest & converts to array
@@ -115,7 +111,9 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
         else:
             return None
 
-    def process(self) -> dict[str, pre.OutgoingPreprocessPickle]:
+    def process(
+        self,
+    ) -> dict[str, rds.JsonReadyOutput | rds.OutgoingListOfArrays]:
         measurement_data_list = []
         in_hospital_mortality_list = []
 
@@ -126,20 +124,31 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
                 in_hospital_mortality_list.append(entry.hospital_expire_flag)
 
         return {
-            "in_hospital_mortality_list": pre.OutgoingPreprocessPickle(
+            "in_hospital_mortality_list": rds.JsonReadyOutput(
                 resource=in_hospital_mortality_list
             ),
-            "measurement_col_names": pre.OutgoingPreprocessPickle(
+            "measurement_col_names": rds.JsonReadyOutput(
                 resource=self.measurement_col_names,
             ),
-            "measurement_data_list": pre.OutgoingPreprocessPickle(
+            "measurement_data_list": rds.OutgoingListOfArrays(
                 resource=measurement_data_list
             ),
         }
 
 
 if __name__ == "__main__":
+    init_start = time.time()
     feature_finalizer = NewFeatureFinalizer()
+    init_end = time.time()
+    print(f"feature finalizer init time = {init_end - init_start}")
+
+    process_start = time.time()
     result = feature_finalizer.process()
+    process_end = time.time()
+    print(f"process time = {process_end - process_start}")
+
+    export_start = time.time()
     for key, value in result.items():
-        value.export(feature_finalizer.output_dir / f"{key}.pickle")
+        value.export(feature_finalizer.output_dir / f"{key}.json")
+    export_end = time.time()
+    print(f"export time = {export_end - export_start}")

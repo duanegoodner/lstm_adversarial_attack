@@ -1,7 +1,9 @@
-import pandas as pd
 from dataclasses import dataclass
-import lstm_adversarial_attack.preprocess.preprocess_module as pm
+
+import pandas as pd
+
 import lstm_adversarial_attack.preprocess.preprocess_input_classes as pic
+import lstm_adversarial_attack.preprocess.preprocess_module as pm
 
 
 @dataclass

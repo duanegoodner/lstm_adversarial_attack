@@ -1,12 +1,13 @@
-import pandas as pd
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+import pandas as pd
+
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.preprocess.preprocess_module as ppm
 import lstm_adversarial_attack.preprocess.preprocess_input_classes as pic
+import lstm_adversarial_attack.preprocess.preprocess_module as ppm
 import lstm_adversarial_attack.resource_io as rio
 
 

@@ -1,10 +1,12 @@
+from dataclasses import dataclass
+from typing import Callable
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.utils.data as ud
-from dataclasses import dataclass
 from sklearn.metrics import confusion_matrix
-from typing import Callable
+
 import lstm_adversarial_attack.dataset_with_index as dsi
 
 

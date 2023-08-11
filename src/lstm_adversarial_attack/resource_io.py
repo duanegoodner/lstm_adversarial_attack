@@ -1,13 +1,10 @@
 # TODO Change to dill and use dill.dump / dill.load syntax.
 # TODO Consider removing this module. May be overkill.
 import json
-from functools import cached_property
-
 import msgspec
 import numpy as np
 import dill
 import pandas as pd
-import sys
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
@@ -113,9 +110,6 @@ class DataFrameIO:
 
 def df_to_json(resource: pd.DataFrame, path: Path):
     DataFrameIO.df_to_json(df=resource, path=path)
-
-def df_to_pickle(resource: pd.DataFrame, path: Path):
-    DataFrameIO.df_to_pickle(resource=resource, path=path)
 
 def json_to_df(path: Path) -> pd.DataFrame:
     return DataFrameIO.json_to_df(path=path)
@@ -223,36 +217,7 @@ class _JsonReadyIO:
             out_file.write(encoded_output)
 
 
-class _FullAdmissionDataIO:
 
-    @staticmethod
-    def enc_hook(obj: Any) -> Any:
-        if isinstance(obj, pd.Timestamp):
-            return obj.to_pydatetime()
-        if isinstance(obj, pd.DataFrame):
-            return obj.to_numpy().tolist()
-        if isinstance(obj, np.datetime64):
-            return obj.astype(datetime)
-        if pd.isna(obj):
-            return None
-        else:
-            raise NotImplementedError(
-                f"Encoder does not support objects of type {type(obj)}"
-            )
-
-    @cached_property
-    def encoder(self) -> msgspec.json.Encoder:
-        return msgspec.json.Encoder(enc_hook=self.enc_hook)
-
-
-FULL_ADMISSION_DATA_IO = _FullAdmissionDataIO()
-FULL_ADMISSION_DATA_ENCODER = FULL_ADMISSION_DATA_IO.encoder
-
-
-def export_full_admission_data(obj: Any, path: Path):
-    encoded_object = FULL_ADMISSION_DATA_ENCODER.encode(obj)
-    with path.open(mode="wb") as out_file:
-        out_file.write(encoded_object)
 
 
 

@@ -1,8 +1,10 @@
+from dataclasses import dataclass
+from typing import Callable
+
 import torch
 import torch.nn as nn
-from dataclasses import dataclass
 from torch.utils.data import Subset
-from typing import Callable
+
 import lstm_adversarial_attack.attack.inferrer as infr
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 

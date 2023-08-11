@@ -1,18 +1,19 @@
 import sys
-import optuna
-import torch
 from pathlib import Path
 from typing import Any
+
+import optuna
+import torch
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_hyperparameter_tuner as aht
+import lstm_adversarial_attack.attack.model_retriever as amr
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
+import lstm_adversarial_attack.data_provenance as dpr
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs
-import lstm_adversarial_attack.attack.model_retriever as amr
-import lstm_adversarial_attack.data_provenance as dpr
 
 
 class AttackTunerDriver(dpr.HasDataProvenance):

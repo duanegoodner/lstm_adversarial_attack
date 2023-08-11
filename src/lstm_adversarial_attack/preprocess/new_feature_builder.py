@@ -1,11 +1,13 @@
-import pandas as pd
+import time
 from dataclasses import dataclass
-from functools import cached_property
 from pathlib import Path
+
+import pandas as pd
+
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
-import lstm_adversarial_attack.preprocess.preprocess_input_classes as pic
 import lstm_adversarial_attack.preprocess.new_preprocessor as pre
+import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 @dataclass
@@ -23,35 +25,21 @@ class NewFeatureBuilderSettings:
 class NewFeatureBuilder(pre.NewPreprocessModule):
     def __init__(
         self,
-        resources: dict[
-            str,
-            pre.IncomingPreprocessPickle | pre.IncomingFeatherDataFrame,
-        ] = None,
+        resources: rds.NewFeatureBuilderResources = None,
         output_dir: Path = cfp.FEATURE_BUILDER_OUTPUT,
         settings: NewFeatureBuilderSettings = None,
     ):
         if resources is None:
-            resources = {
-                "full_admission_list": pre.IncomingPreprocessPickle(
-                    resource_id=cfp.FEATURE_BUILDER_INPUT_FILES[
-                        "full_admission_list"
-                    ]
-                ),
-                "bg_lab_vital_summary_stats": pre.IncomingFeatherDataFrame(
-                    resource_id=cfp.FEATURE_BUILDER_INPUT_FILES[
-                        "bg_lab_vital_summary_stats"
-                    ]
-                ),
-            }
+            resources = rds.NewFeatureBuilderResources()
         if settings is None:
             settings = NewFeatureBuilderSettings()
         super().__init__(
             resources=resources, output_dir=output_dir, settings=settings
         )
-        self.full_admission_list = self.resource_items["full_admission_list"]
-        self.bg_lab_vital_summary_stats = self.resource_items[
-            "bg_lab_vital_summary_stats"
-        ]
+        self.full_admission_list = resources.full_admission_list.item
+        self.bg_lab_vital_summary_stats = (
+            resources.bg_lab_vital_summary_stats.item
+        )
 
     def _resample(self, raw_time_series_df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -140,7 +128,7 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
 
         return new_df
 
-    def process(self) -> dict[str, pre.OutgoingPreprocessPickle]:
+    def process(self) -> dict[str, rds.OutgoingFullAdmissionData]:
         """
         Winsorizes, imputes and normalizes dfs in list of FullAdmission objects
 
@@ -165,11 +153,26 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
                 )
 
         return {
-            "processed_admission_list": pre.OutgoingPreprocessPickle(
+            "processed_admission_list": rds.OutgoingFullAdmissionData(
                 resource=filtered_admission_list
             )
         }
 
+
 if __name__ == "__main__":
+    init_start = time.time()
     feature_builder = NewFeatureBuilder()
+    init_end = time.time()
+    print(f"feature builder init time = {init_end - init_start}")
+
+    start_process = time.time()
     result = feature_builder.process()
+    end_process = time.time()
+    print(f"process time = {end_process - start_process}")
+
+    start_json_export = time.time()
+    result["processed_admission_list"].export(
+        path=feature_builder.output_dir / "processed_admission_list.json"
+    )
+    end_json_export = time.time()
+    print(f"export time = {end_json_export - start_json_export}")

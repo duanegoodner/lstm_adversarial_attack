@@ -1,11 +1,12 @@
 import argparse
 import sys
-import optuna
 from pathlib import Path
 
+import optuna
+
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.attack.model_retriever as amr
 import lstm_adversarial_attack.attack.attack_tuner_driver as atd
+import lstm_adversarial_attack.attack.model_retriever as amr
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.gpu_helpers as gh

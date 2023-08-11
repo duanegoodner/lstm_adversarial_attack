@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from enum import auto, Enum
+from enum import Enum, auto
 from pathlib import Path
+
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs

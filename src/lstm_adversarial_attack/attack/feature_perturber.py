@@ -1,7 +1,8 @@
 import sys
+from pathlib import Path
+
 import torch
 import torch.nn as nn
-from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.data_structures as ds

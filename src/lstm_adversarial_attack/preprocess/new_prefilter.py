@@ -1,15 +1,12 @@
-import datetime
-import pandas as pd
 import time
-from dataclasses import dataclass
-from functools import cached_property
-from pathlib import Path
+from dataclasses import dataclass, field
 
-import lstm_adversarial_attack.config_paths as cfg_paths
+import pandas as pd
+
+import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfg_set
-import lstm_adversarial_attack.preprocess.preprocess_input_classes as pic
 import lstm_adversarial_attack.preprocess.new_preprocessor as pre
-import lstm_adversarial_attack.resource_io as rio
+import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 @dataclass
@@ -18,54 +15,47 @@ class NewPrefilterSettings:
     Container for objects imported by Prefilter
     """
 
-    # output_dir: Path = cfg_paths.PREFILTER_OUTPUT
     min_age: int = 18
     min_los_hospital: int = 1
     min_los_icu: int = 1
-    bg_data_cols: list[str] = None
-    lab_data_cols: list[str] = None
-    vital_data_cols: list[str] = None
-
-    def __post_init__(self):
-        if self.bg_data_cols is None:
-            self.bg_data_cols = cfg_set.PREPROCESS_BG_DATA_COLS
-        if self.lab_data_cols is None:
-            self.lab_data_cols = cfg_set.PREPROCESS_LAB_DATA_COLS
-        if self.vital_data_cols is None:
-            self.vital_data_cols = cfg_set.PREPROCESS_VITAL_DATA_COLS
+    bg_data_cols: list[str] = field(
+        default_factory=lambda: cfg_set.PREPROCESS_BG_DATA_COLS
+    )
+    lab_data_cols: list[str] = field(
+        default_factory=lambda: cfg_set.PREPROCESS_LAB_DATA_COLS
+    )
+    vital_data_cols: list[str] = field(
+        default_factory=lambda: cfg_set.PREPROCESS_VITAL_DATA_COLS
+    )
 
 
 class NewPrefilter(pre.NewPreprocessModule):
     def __init__(
         self,
-        resources: dict[str, pre.IncomingCSVDataFrame] = None,
-        output_dir=cfg_paths.PREFILTER_OUTPUT,
+        resources: rds.NewPrefilterResources = None,
+        output_dir=cfp.PREFILTER_OUTPUT,
         settings: NewPrefilterSettings = None,
     ):
         if resources is None:
-            resources = {
-                key: pre.IncomingCSVDataFrame(resource_id=value)
-                for key, value in cfg_paths.PREFILTER_INPUT_FILES.items()
-            }
+            resources = rds.NewPrefilterResources()
         if settings is None:
             settings = NewPrefilterSettings()
         super().__init__(
             resources=resources, output_dir=output_dir, settings=settings
         )
-        self.icustay = self.resource_items["icustay"]
-        self.bg = self.resource_items["bg"]
-        self.vital = self.resource_items["vital"]
-        self.lab = self.resource_items["lab"]
+        self.icustay = resources.icustay.item
+        self.bg = resources.bg.item
+        self.vital = resources.vital.item
+        self.lab = resources.lab.item
 
     def _apply_standard_formatting(self):
         """
-        Sets col names of all dfs in self.resouces to lowercase
+        Sets col names of all dfs in self._resources to lowercase
         """
 
-        module_dfs = [self.icustay, self.bg, self.vital, self.lab]
-
-        for df in module_dfs:
-            df.columns = [item.lower() for item in df.columns]
+        for val in self.__dict__.values():
+            if isinstance(val, pd.DataFrame):
+                val.columns = [item.lower() for item in val.columns]
 
     def _filter_icustay(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -179,7 +169,7 @@ class NewPrefilter(pre.NewPreprocessModule):
 
     def process(
         self,
-    ) -> dict[str, pre.OutgoingPreprocessResource]:
+    ) -> dict[str, rds.OutgoingPreprocessResource]:
         """
         Runs all filter methods.
         """
@@ -191,26 +181,54 @@ class NewPrefilter(pre.NewPreprocessModule):
             vital=self.vital, icustay=filtered_icustay
         )
 
+
+
         return {
-            "prefiltered_icustay": pre.OutgoingPreprocessDataFrame(
+            "prefiltered_icustay": rds.OutgoingPreprocessDataFrame(
                 resource=filtered_icustay
             ),
-            "prefiltered_bg": pre.OutgoingPreprocessDataFrame(
+            "prefiltered_bg": rds.OutgoingPreprocessDataFrame(
                 resource=filtered_bg
             ),
-            "prefiltered_lab": pre.OutgoingPreprocessDataFrame(
+            "prefiltered_lab": rds.OutgoingPreprocessDataFrame(
                 resource=filtered_lab
             ),
-            "prefiltered_vital": pre.OutgoingPreprocessDataFrame(
+            "prefiltered_vital": rds.OutgoingPreprocessDataFrame(
                 resource=filtered_vital
             ),
         }
 
 
 if __name__ == "__main__":
-    prefilter = NewPrefilter()
-    result = prefilter.process()
-    for key, outgoing_dataframe in result.items():
-        outgoing_dataframe.export(
-            path=cfg_paths.PREFILTER_OUTPUT / f"{key}.feather"
+    init_prefilter_start = time.time()
+    prefilter_resources = rds.NewPrefilterResources(
+        icustay=rds.IncomingCSVDataFrame(
+            resource_id=cfp.DB_OUTPUT_DIR / "icustay_500.csv"
+        ),
+        bg=rds.IncomingCSVDataFrame(
+            resource_id=cfp.PREFILTER_INPUT_FILES["bg"]
+        ),
+        vital=rds.IncomingCSVDataFrame(
+            resource_id=cfp.PREFILTER_INPUT_FILES["vital"]
+        ),
+        lab=rds.IncomingCSVDataFrame(
+            resource_id=cfp.PREFILTER_INPUT_FILES["lab"]
         )
+    )
+
+    prefilter = NewPrefilter(
+        resources=prefilter_resources
+    )
+    init_prefilter_end = time.time()
+    print(f"prefilter init time = {init_prefilter_end - init_prefilter_start}")
+
+    process_start = time.time()
+    result = prefilter.process()
+    process_end = time.time()
+    print(f"prefilter process time = {process_end - process_start}")
+
+    export_start = time.time()
+    for key, outgoing_dataframe in result.items():
+        outgoing_dataframe.export(path=prefilter.output_dir / f"{key}.feather")
+    export_end = time.time()
+    print(f"prefilter result export time = {export_end - export_start}")

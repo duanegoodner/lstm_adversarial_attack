@@ -1,7 +1,9 @@
-import optuna
-import torch
 from dataclasses import dataclass
 from typing import Callable
+
+import optuna
+import torch
+
 import lstm_adversarial_attack.config_settings as cfg_set
 
 

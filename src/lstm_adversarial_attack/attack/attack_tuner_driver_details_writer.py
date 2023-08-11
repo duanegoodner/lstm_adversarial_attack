@@ -1,14 +1,14 @@
 import collections
-
-import torch
-
-import lstm_adversarial_attack.resource_io as rio
-import lstm_adversarial_attack.config_paths as cfp
-import lstm_adversarial_attack.attack.attack_data_structs as ads
 import json
 from collections import OrderedDict
 from pathlib import PosixPath
 from typing import Any
+
+import torch
+
+import lstm_adversarial_attack.attack.attack_data_structs as ads
+import lstm_adversarial_attack.config_paths as cfp
+import lstm_adversarial_attack.resource_io as rio
 
 
 class AttackTunerDriverDictEncoder(json.JSONEncoder):

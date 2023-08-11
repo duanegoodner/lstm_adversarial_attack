@@ -1,10 +1,11 @@
+from pathlib import Path
+from typing import Any, Callable
+
 import numpy as np
 import optuna
 import torch
 from optuna.pruners import BasePruner, MedianPruner
 from optuna.samplers import BaseSampler, TPESampler
-from pathlib import Path
-from typing import Any, Callable
 
 import lstm_adversarial_attack.attack.attack as atk
 import lstm_adversarial_attack.attack.attack_data_structs as ads

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-import numpy as np
-import pandas as pd
-import torch
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Callable
+
+import numpy as np
+import pandas as pd
+import torch
+
 import lstm_adversarial_attack.dataset_with_index as dsi
 
 

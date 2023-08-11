@@ -7,10 +7,9 @@ import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
+import lstm_adversarial_attack.attack.attack_hyperparameter_tuner as aht
 import lstm_adversarial_attack.config_paths as cfg_path
 import lstm_adversarial_attack.resource_io as rio
-import lstm_adversarial_attack.attack.attack_hyperparameter_tuner as aht
-
 
 msn_dirname = "2023-06-28_12_11_46.874267"
 ms_dirname = "2023-06-30_10_52_24.059982"

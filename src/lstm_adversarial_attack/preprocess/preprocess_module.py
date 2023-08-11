@@ -1,10 +1,11 @@
 import json
-import pandas as pd
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path, PosixPath
 from typing import Any, Callable
+
+import pandas as pd
 
 sys.path.append(str(Path(__file__).parent.parent))
 import lstm_adversarial_attack.preprocess.preprocess_resource as pr

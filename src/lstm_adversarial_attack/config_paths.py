@@ -57,7 +57,7 @@ FEATURE_BUILDER_INPUT_FILES = {
         STAY_MEASUREMENT_OUTPUT / "bg_lab_vital_summary_stats.feather"
     ),
     "full_admission_list": (
-        FULL_ADMISSION_LIST_OUTPUT / "full_admission_list.pickle"
+        FULL_ADMISSION_LIST_OUTPUT / "full_admission_list.json"
     ),
 }
 FEATURE_BUILDER_OUTPUT_FILES = {
@@ -66,7 +66,7 @@ FEATURE_BUILDER_OUTPUT_FILES = {
 
 FEATURE_FINALIZER_INPUT_FILES = {
     "processed_admission_list": (
-        FEATURE_BUILDER_OUTPUT / "processed_admission_list.pickle"
+        FEATURE_BUILDER_OUTPUT / "processed_admission_list.json"
     )
 }
 FEATURE_FINALIZER_OUTPUT = PREPROCESS_CHECKPOINTS / "5_feature_finalizer"
