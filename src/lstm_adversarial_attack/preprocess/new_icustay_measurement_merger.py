@@ -38,6 +38,7 @@ class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
         resources: rds.NewICUStayMeasurementMergerResources = None,
         output_dir: Path = None,
         settings: NewICUStayMeasurementMergerSettings = None,
+        output_info: rds.NewICUStayMeasurementMergerOutputInfo = None,
     ):
         if resources is None:
             resources = rds.NewICUStayMeasurementMergerResources()
@@ -45,10 +46,15 @@ class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
             output_dir = cfp.STAY_MEASUREMENT_OUTPUT
         if settings is None:
             settings = NewICUStayMeasurementMergerSettings()
+        if output_info is None:
+            output_info = rds.NewICUStayMeasurementMergerOutputInfo()
         super().__init__(
-            resources=resources, output_dir=output_dir, settings=settings
+            resources=resources,
+            output_dir=output_dir,
+            settings=settings,
+            output_info=output_info,
         )
-        self.prefiltered_icustay =resources.prefiltered_icustay.item
+        self.prefiltered_icustay = resources.prefiltered_icustay.item
         self.prefiltered_bg = resources.prefiltered_bg.item
         self.prefiltered_vital = resources.prefiltered_vital.item
         self.prefiltered_lab = resources.prefiltered_lab.item
@@ -146,11 +152,13 @@ class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
 
     def process(self) -> dict[str, rds.OutgoingPreprocessResource]:
         return {
-            "icustay_bg_lab_vital": rds.OutgoingPreprocessDataFrame(
+            "icustay_bg_lab_vital": self.output_info.icustay_bg_lab_vital(
                 resource=self.icustay_bg_lab_vital
             ),
-            "bg_lab_vital_summary_stats": rds.OutgoingPreprocessDataFrame(
-                resource=self.summary_stats
+            "bg_lab_vital_summary_stats": (
+                self.output_info.bg_lab_vital_summary_stats(
+                    resource=self.summary_stats
+                )
             ),
         }
 
@@ -167,9 +175,10 @@ if __name__ == "__main__":
     print(f"measurement merger process time = {process_end - process_start}")
 
     export_start = time.time()
-    for key, outgoing_dataframe in result.items():
-        outgoing_dataframe.export(
-            path=measurement_merger.output_dir / f"{key}.feather"
+    for key, outgoing_resource in result.items():
+        outgoing_resource.export(
+            path=measurement_merger.output_dir
+            / f"{key}{outgoing_resource.file_ext}"
         )
     export_end = time.time()
     print(f"measurement merger export time = {export_end - export_start}")

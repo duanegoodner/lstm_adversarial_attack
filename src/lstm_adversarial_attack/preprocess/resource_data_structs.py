@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, TypedDict, TypeVar
 
 import pandas as pd
 
@@ -106,9 +106,13 @@ class FileResourceInfo(SingleResourceInfo):
     def build_resource(
         self, **kwargs
     ) -> dict[str, IncomingPreprocessResource]:
-        return {
-            self.key: self.constructor(resource_id=self.path)
-        }
+        return {self.key: self.constructor(resource_id=self.path)}
+
+
+@dataclass
+class SingleOutputInfo:
+    key: str
+    constructor: Callable[..., OutgoingPreprocessResource]
 
 
 class IncomingFeatherDataFrame(IncomingPreprocessResource):
@@ -180,25 +184,41 @@ class JsonReadyOutput(OutgoingPreprocessResource):
 
 @dataclass
 class NewPrefilterResources:
-    icustay: IncomingCSVDataFrame = field(
+    icustay: IncomingPreprocessResource = field(
         default_factory=lambda: IncomingCSVDataFrame(
             resource_id=cfp.PREFILTER_INPUT_FILES["icustay"]
         )
     )
-    bg: IncomingCSVDataFrame = field(
+    bg: IncomingPreprocessResource = field(
         default_factory=lambda: IncomingCSVDataFrame(
             resource_id=cfp.PREFILTER_INPUT_FILES["bg"]
         )
     )
-    vital: IncomingCSVDataFrame = field(
+    vital: IncomingPreprocessResource = field(
         default_factory=lambda: IncomingCSVDataFrame(
             resource_id=cfp.PREFILTER_INPUT_FILES["vital"]
         )
     )
-    lab: IncomingCSVDataFrame = field(
+    lab: IncomingPreprocessResource = field(
         default_factory=lambda: IncomingCSVDataFrame(
             resource_id=cfp.PREFILTER_INPUT_FILES["lab"]
         )
+    )
+
+
+@dataclass
+class NewPrefilterOutputInfo:
+    prefiltered_icustay: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingPreprocessDataFrame
+    )
+    prefiltered_bg: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingPreprocessDataFrame
+    )
+    prefiltered_lab: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingPreprocessDataFrame
+    )
+    prefiltered_vital: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingPreprocessDataFrame
     )
 
 
@@ -227,6 +247,16 @@ class NewICUStayMeasurementMergerResources:
 
 
 @dataclass
+class NewICUStayMeasurementMergerOutputInfo:
+    icustay_bg_lab_vital: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingPreprocessDataFrame
+    )
+    bg_lab_vital_summary_stats: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingPreprocessDataFrame
+    )
+
+
+@dataclass
 class NewAdmissionListBuilderResources:
     icustay_bg_lab_vital: IncomingFeatherDataFrame = field(
         default_factory=lambda: IncomingFeatherDataFrame(
@@ -238,8 +268,15 @@ class NewAdmissionListBuilderResources:
 
 
 @dataclass
+class NewAdmissionListBuilderOutputInfo:
+    full_admission_list: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingFullAdmissionData
+    )
+
+
+@dataclass
 class NewFeatureBuilderResources:
-    full_admission_list: IncomingFullAdmissionData = field(
+    full_admission_list: IncomingPreprocessResource = field(
         default_factory=lambda: IncomingFullAdmissionData(
             resource_id=cfp.FEATURE_BUILDER_INPUT_FILES["full_admission_list"]
         )
@@ -254,6 +291,13 @@ class NewFeatureBuilderResources:
 
 
 @dataclass
+class NewFeatureBuilderOutputInfo:
+    processed_admission_list: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingFullAdmissionData
+    )
+
+
+@dataclass
 class NewFeatureFinalizerResources:
     processed_admission_list: IncomingFullAdmissionData = field(
         default_factory=lambda: IncomingFullAdmissionData(
@@ -261,4 +305,17 @@ class NewFeatureFinalizerResources:
                 "processed_admission_list"
             ]
         )
+    )
+
+
+@dataclass
+class NewFeatureFinalizerOutputInfo:
+    in_hospital_mortality_list: Callable[..., OutgoingPreprocessResource] = (
+        JsonReadyOutput
+    )
+    measurement_col_names: Callable[..., OutgoingPreprocessResource] = (
+        JsonReadyOutput
+    )
+    measurement_data_list: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingListOfArrays
     )

@@ -33,6 +33,7 @@ class NewAdmissionListBuilder(pre.NewPreprocessModule):
         resources: rds.NewAdmissionListBuilderResources = None,
         output_dir: Path = None,
         settings: NewAdmissionListBuilderSettings = None,
+        output_info: rds.NewAdmissionListBuilderOutputInfo = None,
     ):
         if resources is None:
             resources = rds.NewAdmissionListBuilderResources()
@@ -40,8 +41,13 @@ class NewAdmissionListBuilder(pre.NewPreprocessModule):
             output_dir = cfp.FULL_ADMISSION_LIST_OUTPUT
         if settings is None:
             settings = NewAdmissionListBuilderSettings()
+        if output_info is None:
+            output_info = rds.NewAdmissionListBuilderOutputInfo()
         super().__init__(
-            resources=resources, output_dir=output_dir, settings=settings
+            resources=resources,
+            output_dir=output_dir,
+            settings=settings,
+            output_info=output_info,
         )
         self.icustay_bg_lab_vital = resources.icustay_bg_lab_vital.item
 
@@ -86,7 +92,7 @@ class NewAdmissionListBuilder(pre.NewPreprocessModule):
 
     def process(self) -> dict[str, rds.OutgoingPreprocessResource]:
         return {
-            "full_admission_list": rds.OutgoingFullAdmissionData(
+            "full_admission_list": self.output_info.full_admission_list(
                 resource=self.admission_list
             )
         }
@@ -104,9 +110,9 @@ if __name__ == "__main__":
     print(f"process time = {end_process - start_process}")
 
     start_json_export = time.time()
-    result["full_admission_list"].export(
-        path=full_admission_list_builder.output_dir
-        / "full_admission_list.json"
-    )
+    for key, outgoing_resource in result.items():
+        outgoing_resource.export(
+            path=full_admission_list_builder.output_dir / f"{key}{outgoing_resource.file_ext}"
+        )
     end_json_export = time.time()
     print(f"export time = {end_json_export - start_json_export}")

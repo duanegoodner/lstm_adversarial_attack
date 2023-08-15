@@ -28,6 +28,7 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
         resources: rds.NewFeatureBuilderResources = None,
         output_dir: Path = None,
         settings: NewFeatureBuilderSettings = None,
+        output_info: rds.NewFeatureBuilderOutputInfo = None,
     ):
         if resources is None:
             resources = rds.NewFeatureBuilderResources()
@@ -35,8 +36,13 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
             output_dir = cfp.FEATURE_BUILDER_OUTPUT
         if settings is None:
             settings = NewFeatureBuilderSettings()
+        if output_info is None:
+            output_info = rds.NewFeatureBuilderOutputInfo()
         super().__init__(
-            resources=resources, output_dir=output_dir, settings=settings
+            resources=resources,
+            output_dir=output_dir,
+            settings=settings,
+            output_info=output_info,
         )
         self.full_admission_list = resources.full_admission_list.item
         self.bg_lab_vital_summary_stats = (
@@ -155,8 +161,10 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
                 )
 
         return {
-            "processed_admission_list": rds.OutgoingFullAdmissionData(
-                resource=filtered_admission_list
+            "processed_admission_list": (
+                self.output_info.processed_admission_list(
+                    resource=filtered_admission_list
+                )
             )
         }
 
@@ -173,8 +181,10 @@ if __name__ == "__main__":
     print(f"process time = {end_process - start_process}")
 
     start_json_export = time.time()
-    result["processed_admission_list"].export(
-        path=feature_builder.output_dir / "processed_admission_list.json"
-    )
+    for key, outgoing_resource in result.items():
+        outgoing_resource.export(
+            path=feature_builder.output_dir
+            / f"{key}{outgoing_resource.file_ext}"
+        )
     end_json_export = time.time()
     print(f"export time = {end_json_export - start_json_export}")

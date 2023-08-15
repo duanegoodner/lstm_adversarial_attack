@@ -16,10 +16,12 @@ class NewPreprocessModule(ABC):
         resources: dataclass,
         output_dir: Path,
         settings: dataclass,
+        output_info: dataclass
     ):
         self._resources = resources
         self._output_dir = output_dir
         self._settings = settings
+        self._output_info = output_info
 
     @property
     def settings(self) -> dataclass:
@@ -28,6 +30,10 @@ class NewPreprocessModule(ABC):
     @property
     def output_dir(self) -> Path:
         return self._output_dir
+
+    @property
+    def output_info(self) -> dataclass:
+        return self._output_info
 
     @abstractmethod
     def process(
@@ -41,6 +47,7 @@ class ModuleInfo:
     module_constructor: Callable[..., NewPreprocessModule]
     resources_constructor: Callable[..., dataclass]
     individual_resources_info: list[rds.SingleResourceInfo]
+    output_info: dataclass = None
     output_dir: Path = None
     settings: dataclass = None
 
@@ -57,6 +64,7 @@ class ModuleInfo:
             resources=resources,
             output_dir=self.output_dir,
             settings=self.settings,
+            output_info=self.output_info
         )
 
 

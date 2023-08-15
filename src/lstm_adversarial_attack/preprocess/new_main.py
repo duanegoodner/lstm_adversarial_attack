@@ -17,7 +17,7 @@ def main():
         individual_resources_info=[
             rds.FileResourceInfo(
                 key="icustay",
-                path=cfp.PREFILTER_INPUT_FILES["icustay"],
+                path=cfp.DB_OUTPUT_DIR / "icustay_500.csv",
                 constructor=rds.IncomingCSVDataFrame
             ),
             rds.FileResourceInfo(
@@ -69,7 +69,10 @@ def main():
                 key="icustay_bg_lab_vital",
                 constructor=rds.IncomingFeatherDataFrame
             )
-        ]
+        ],
+        # output_info=rds.NewAdmissionListBuilderOutputInfo(
+        #     full_admission_list=rds.OutgoingPreprocessPickle
+        # )
     )
 
     feature_builder_info = ppr.ModuleInfo(
@@ -84,7 +87,10 @@ def main():
                 key="bg_lab_vital_summary_stats",
                 constructor=rds.IncomingFeatherDataFrame
             )
-        ]
+        ],
+        # output_info=rds.NewFeatureBuilderOutputInfo(
+        #     processed_admission_list=rds.OutgoingPreprocessPickle
+        # )
     )
 
     feature_finalizer_info = ppr.ModuleInfo(

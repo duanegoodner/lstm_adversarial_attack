@@ -27,10 +27,13 @@ class DecomposedTimeSeries(msgspec.Struct):
     data: list[list[float]]
 
 
-class NewFullAdmissionDataListHeader(msgspec.Struct):
-    time_series_col_names: list[str]
-    time_series_dtypes: list[str]
+# class NewFullAdmissionDataListHeader(msgspec.Struct):
+#     time_series_col_names: list[str]
+#     time_series_dtypes: list[str]
 
-    @property
-    def dtype_dict(self) -> dict[str, str]:
-        return dict(zip(self.time_series_col_names, self.time_series_dtypes))
+
+class NewFullAdmissionDataListHeader(msgspec.Struct):
+    timestamp_col_name: str
+    timestamp_dtype: str
+    data_cols_names: list[str]
+    data_cols_dtype: str

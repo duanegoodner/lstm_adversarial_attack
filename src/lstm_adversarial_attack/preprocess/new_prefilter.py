@@ -36,15 +36,21 @@ class NewPrefilter(pre.NewPreprocessModule):
         resources: rds.NewPrefilterResources = None,
         output_dir: Path = None,
         settings: NewPrefilterSettings = None,
+        output_info: rds.NewPrefilterOutputInfo = None,
     ):
         if resources is None:
             resources = rds.NewPrefilterResources()
         if output_dir is None:
-            output_dir=cfp.PREFILTER_OUTPUT
+            output_dir = cfp.PREFILTER_OUTPUT
         if settings is None:
             settings = NewPrefilterSettings()
+        if output_info is None:
+            output_info = rds.NewPrefilterOutputInfo()
         super().__init__(
-            resources=resources, output_dir=output_dir, settings=settings
+            resources=resources,
+            output_dir=output_dir,
+            settings=settings,
+            output_info=output_info,
         )
         self.icustay = resources.icustay.item
         self.bg = resources.bg.item
@@ -185,16 +191,16 @@ class NewPrefilter(pre.NewPreprocessModule):
         )
 
         return {
-            "prefiltered_icustay": rds.OutgoingPreprocessDataFrame(
+            "prefiltered_icustay": self.output_info.prefiltered_icustay(
                 resource=filtered_icustay
             ),
-            "prefiltered_bg": rds.OutgoingPreprocessDataFrame(
+            "prefiltered_bg": self.output_info.prefiltered_bg(
                 resource=filtered_bg
             ),
-            "prefiltered_lab": rds.OutgoingPreprocessDataFrame(
+            "prefiltered_lab": self.output_info.prefiltered_lab(
                 resource=filtered_lab
             ),
-            "prefiltered_vital": rds.OutgoingPreprocessDataFrame(
+            "prefiltered_vital": self.output_info.prefiltered_vital(
                 resource=filtered_vital
             ),
         }
@@ -204,7 +210,7 @@ if __name__ == "__main__":
     init_prefilter_start = time.time()
     prefilter_resources = rds.NewPrefilterResources(
         icustay=rds.IncomingCSVDataFrame(
-            resource_id=cfp.DB_OUTPUT_DIR / "icustay_500.csv"
+            resource_id=cfp.PREFILTER_INPUT_FILES["icustay"]
         ),
         bg=rds.IncomingCSVDataFrame(
             resource_id=cfp.PREFILTER_INPUT_FILES["bg"]
@@ -214,12 +220,10 @@ if __name__ == "__main__":
         ),
         lab=rds.IncomingCSVDataFrame(
             resource_id=cfp.PREFILTER_INPUT_FILES["lab"]
-        )
+        ),
     )
 
-    prefilter = NewPrefilter(
-        resources=prefilter_resources
-    )
+    prefilter = NewPrefilter(resources=prefilter_resources)
     init_prefilter_end = time.time()
     print(f"prefilter init time = {init_prefilter_end - init_prefilter_start}")
 
@@ -229,7 +233,9 @@ if __name__ == "__main__":
     print(f"prefilter process time = {process_end - process_start}")
 
     export_start = time.time()
-    for key, outgoing_dataframe in result.items():
-        outgoing_dataframe.export(path=prefilter.output_dir / f"{key}.feather")
+    for key, outgoing_resource in result.items():
+        outgoing_resource.export(
+            path=prefilter.output_dir / f"{key}{outgoing_resource.file_ext}"
+        )
     export_end = time.time()
     print(f"prefilter result export time = {export_end - export_start}")

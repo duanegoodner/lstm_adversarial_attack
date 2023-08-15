@@ -34,6 +34,7 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
         resources: rds.NewFeatureFinalizerResources = None,
         output_dir: cfp.PREPROCESS_OUTPUT_DIR = None,
         settings: NewFeatureFinalizerSettings = None,
+        output_info: rds.NewFeatureFinalizerOutputInfo = None,
     ):
         if resources is None:
             resources = rds.NewFeatureFinalizerResources()
@@ -41,8 +42,13 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
             output_dir = cfp.FEATURE_FINALIZER_OUTPUT
         if settings is None:
             settings = NewFeatureFinalizerSettings()
+        if output_info is None:
+            output_info = rds.NewFeatureFinalizerOutputInfo()
         super().__init__(
-            resources=resources, output_dir=output_dir, settings=settings
+            resources=resources,
+            output_dir=output_dir,
+            settings=settings,
+            output_info=output_info,
         )
         self.processed_admission_list = resources.processed_admission_list.item
 
@@ -126,13 +132,15 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
                 in_hospital_mortality_list.append(entry.hospital_expire_flag)
 
         return {
-            "in_hospital_mortality_list": rds.JsonReadyOutput(
-                resource=in_hospital_mortality_list
+            "in_hospital_mortality_list": (
+                self.output_info.in_hospital_mortality_list(
+                    resource=in_hospital_mortality_list
+                )
             ),
-            "measurement_col_names": rds.JsonReadyOutput(
+            "measurement_col_names": self.output_info.measurement_col_names(
                 resource=self.measurement_col_names,
             ),
-            "measurement_data_list": rds.OutgoingListOfArrays(
+            "measurement_data_list": self.output_info.measurement_data_list(
                 resource=measurement_data_list
             ),
         }
@@ -150,7 +158,10 @@ if __name__ == "__main__":
     print(f"process time = {process_end - process_start}")
 
     export_start = time.time()
-    for key, value in result.items():
-        value.export(feature_finalizer.output_dir / f"{key}.json")
+    for key, outgoing_resource in result.items():
+        outgoing_resource.export(
+            path=feature_finalizer.output_dir
+                 / f"{key}{outgoing_resource.file_ext}"
+        )
     export_end = time.time()
     print(f"export time = {export_end - export_start}")

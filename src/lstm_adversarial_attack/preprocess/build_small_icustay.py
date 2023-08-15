@@ -6,9 +6,9 @@ full_icustay = pd.read_csv(
     filepath_or_buffer=cfp.PREFILTER_INPUT_FILES["icustay"]
 )
 
-icustay_500 = full_icustay.iloc[:500, :]
+icustay_4000 = full_icustay.iloc[:4000, :]
 
-output_path = cfp.DB_OUTPUT_DIR / "icustay_500.csv"
+output_path = cfp.DB_OUTPUT_DIR / "icustay_4000.csv"
 
-icustay_500.to_csv(output_path)
+icustay_4000.to_csv(output_path)
 
