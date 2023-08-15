@@ -1,5 +1,6 @@
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import pandas as pd
 
@@ -33,11 +34,13 @@ class NewPrefilter(pre.NewPreprocessModule):
     def __init__(
         self,
         resources: rds.NewPrefilterResources = None,
-        output_dir=cfp.PREFILTER_OUTPUT,
+        output_dir: Path = None,
         settings: NewPrefilterSettings = None,
     ):
         if resources is None:
             resources = rds.NewPrefilterResources()
+        if output_dir is None:
+            output_dir=cfp.PREFILTER_OUTPUT
         if settings is None:
             settings = NewPrefilterSettings()
         super().__init__(
@@ -180,8 +183,6 @@ class NewPrefilter(pre.NewPreprocessModule):
         filtered_vital = self._filter_vital(
             vital=self.vital, icustay=filtered_icustay
         )
-
-
 
         return {
             "prefiltered_icustay": rds.OutgoingPreprocessDataFrame(

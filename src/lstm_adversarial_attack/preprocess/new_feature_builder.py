@@ -26,11 +26,13 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
     def __init__(
         self,
         resources: rds.NewFeatureBuilderResources = None,
-        output_dir: Path = cfp.FEATURE_BUILDER_OUTPUT,
+        output_dir: Path = None,
         settings: NewFeatureBuilderSettings = None,
     ):
         if resources is None:
             resources = rds.NewFeatureBuilderResources()
+        if output_dir is None:
+            output_dir = cfp.FEATURE_BUILDER_OUTPUT
         if settings is None:
             settings = NewFeatureBuilderSettings()
         super().__init__(

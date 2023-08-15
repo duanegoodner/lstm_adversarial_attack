@@ -32,11 +32,13 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
     def __init__(
         self,
         resources: rds.NewFeatureFinalizerResources = None,
-        output_dir: cfp.PREPROCESS_OUTPUT_DIR = cfp.FEATURE_FINALIZER_OUTPUT,
+        output_dir: cfp.PREPROCESS_OUTPUT_DIR = None,
         settings: NewFeatureFinalizerSettings = None,
     ):
         if resources is None:
             resources = rds.NewFeatureFinalizerResources()
+        if output_dir is None:
+            output_dir = cfp.FEATURE_FINALIZER_OUTPUT
         if settings is None:
             settings = NewFeatureFinalizerSettings()
         super().__init__(

@@ -36,11 +36,13 @@ class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
     def __init__(
         self,
         resources: rds.NewICUStayMeasurementMergerResources = None,
-        output_dir: Path = cfp.STAY_MEASUREMENT_OUTPUT,
+        output_dir: Path = None,
         settings: NewICUStayMeasurementMergerSettings = None,
     ):
         if resources is None:
             resources = rds.NewICUStayMeasurementMergerResources()
+        if output_dir is None:
+            output_dir = cfp.STAY_MEASUREMENT_OUTPUT
         if settings is None:
             settings = NewICUStayMeasurementMergerSettings()
         super().__init__(

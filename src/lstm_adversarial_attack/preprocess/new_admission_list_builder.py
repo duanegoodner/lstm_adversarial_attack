@@ -31,11 +31,13 @@ class NewAdmissionListBuilder(pre.NewPreprocessModule):
     def __init__(
         self,
         resources: rds.NewAdmissionListBuilderResources = None,
-        output_dir: Path = cfp.FULL_ADMISSION_LIST_OUTPUT,
+        output_dir: Path = None,
         settings: NewAdmissionListBuilderSettings = None,
     ):
         if resources is None:
             resources = rds.NewAdmissionListBuilderResources()
+        if output_dir is None:
+            output_dir = cfp.FULL_ADMISSION_LIST_OUTPUT
         if settings is None:
             settings = NewAdmissionListBuilderSettings()
         super().__init__(

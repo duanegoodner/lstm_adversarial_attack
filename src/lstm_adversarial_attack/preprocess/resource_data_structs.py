@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, Callable, TypeVar
 
 import pandas as pd
 
@@ -35,6 +35,7 @@ class IncomingPreprocessResource(ABC):
     """
     Base class for resource used by a PreprocessModule.
     """
+
     def __init__(
         self,
         resource_id: str | Path,
@@ -72,6 +73,42 @@ class IncomingPreprocessResource(ABC):
     @property
     def resource_pool(self) -> dict[str, _T | Any] | None:
         return self._resource_pool
+
+
+@dataclass
+class SingleResourceInfo(ABC):
+    @abstractmethod
+    def build_resource(self, **kwargs):
+        pass
+
+
+@dataclass
+class PoolResourceInfo(SingleResourceInfo):
+    key: str
+    constructor: Callable[..., IncomingPreprocessResource]
+
+    def build_resource(
+        self, resource_pool: dict[str, OutgoingPreprocessResource]
+    ) -> dict[str, IncomingPreprocessResource]:
+        return {
+            self.key: self.constructor(
+                resource_id=self.key, resource_pool=resource_pool
+            )
+        }
+
+
+@dataclass
+class FileResourceInfo(SingleResourceInfo):
+    key: str
+    path: Path
+    constructor: Callable[..., IncomingPreprocessResource]
+
+    def build_resource(
+        self, **kwargs
+    ) -> dict[str, IncomingPreprocessResource]:
+        return {
+            self.key: self.constructor(resource_id=self.path)
+        }
 
 
 class IncomingFeatherDataFrame(IncomingPreprocessResource):
