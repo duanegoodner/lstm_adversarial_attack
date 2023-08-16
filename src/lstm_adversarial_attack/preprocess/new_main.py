@@ -113,7 +113,7 @@ def main():
 
     preprocessor = ppr.NewPreprocessor(
         modules_info=modules_info,
-        save_checkpoints=True
+        save_checkpoints=False
     )
     return preprocessor.run_all_modules()
 

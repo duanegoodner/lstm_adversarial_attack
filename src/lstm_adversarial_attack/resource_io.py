@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum, auto
 from functools import cached_property
 from pathlib import Path
-from typing import Any
+from typing import Any, Type
 
 import dill
 import msgspec
@@ -177,6 +177,39 @@ def export_json_ready_object(obj: Any, path: Path):
     JSON_READY_DATA_WRITER.export(obj=obj, path=path)
 
 
+class FeatureArrays(msgspec.Struct):
+    data: list[np.ndarray]
+
+
+class ClassLabels(msgspec.Struct):
+    data: list[int]
+
+
+class MeasurementColumnNames(msgspec.Struct):
+    data: tuple[str, ...]
+
+
+class PythonReadyJsonReader:
+    @cached_property
+    def decoder(self) -> msgspec.json.Decoder:
+        return msgspec.json.Decoder()
+
+    def decode(self, obj: bytes) -> Any:
+        return self.decoder.decode(obj)
+
+    def import_object(self, path: Path) -> Any:
+        with path.open(mode="rb") as in_file:
+            encoded_object = in_file.read()
+        return self.decode(encoded_object)
+
+
+PYTHON_READY_JSON_READER = PythonReadyJsonReader()
+
+
+def import_python_ready_json(path: Path) -> Any:
+    return PYTHON_READY_JSON_READER.import_object(path=path)
+
+
 class NumpyArrayDataWriter:
     def enc_hook(self, obj: Any) -> Any:
         if isinstance(obj, np.ndarray):
@@ -210,6 +243,16 @@ NUMPY_ARRAY_DATA_WRITER = NumpyArrayDataWriter()
 
 def export_list_of_numpy_arrays(np_arrays: list[np.ndarray], path: Path):
     NUMPY_ARRAY_DATA_WRITER.export(obj=np_arrays, path=path)
+
+
+# class ListOfArraysReader:
+#
+#     @staticmethod
+#     def dec_hook(type: Type, obj: Any) -> Any:
+#         if type is np.ndarray:
+
+
+
 
 
 
