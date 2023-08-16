@@ -9,11 +9,10 @@ import pandas as pd
 
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
-import lstm_adversarial_attack.preprocess.preprocess_data_structures as pds
+import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 
 # TODO Consider creating DataWriter base class with encoder abstractmethod and
 #  encode() & export() concrete methods
-
 
 
 class AdmissionDataWriter:
@@ -25,7 +24,7 @@ class AdmissionDataWriter:
         if isinstance(obj, pd.Timestamp):
             return obj.to_pydatetime()
         if isinstance(obj, pd.DataFrame):
-            return pds.DecomposedTimeSeries(
+            return eds.DecomposedTimeSeries(
                 index=obj.index.tolist(),
                 time_vals=obj["charttime"].tolist(),
                 data=obj.loc[:, obj.columns != "charttime"]
@@ -46,7 +45,7 @@ class AdmissionDataWriter:
         return msgspec.json.Encoder(enc_hook=self.enc_hook)
 
     def encode(
-        self, full_admission_data_list: list[pds.NewFullAdmissionData]
+        self, full_admission_data_list: list[eds.NewFullAdmissionData]
     ) -> bytes:
         example_df = full_admission_data_list[0].time_series
         timestamp_col_name = "charttime"
@@ -57,7 +56,7 @@ class AdmissionDataWriter:
         data_only_df = example_df[data_cols_names]
         data_cols_dtype = np.unique(data_only_df.dtypes).item().name
 
-        header = pds.NewFullAdmissionDataListHeader(
+        header = eds.NewFullAdmissionDataListHeader(
             timestamp_col_name=timestamp_col_name,
             timestamp_dtype=timestamp_dtype,
             data_cols_names=data_cols_names,
@@ -74,7 +73,7 @@ class AdmissionDataWriter:
 
     def export(
         self,
-        full_admission_data_list: list[pds.NewFullAdmissionData],
+        full_admission_data_list: list[eds.NewFullAdmissionData],
         path: Path,
     ):
         encoded_header_and_body = self.encode(full_admission_data_list)
@@ -118,10 +117,10 @@ class AdmissionDataListReader:
 
     @cached_property
     def _header_decoder(self) -> msgspec.json.Decoder:
-        return msgspec.json.Decoder(pds.NewFullAdmissionDataListHeader)
+        return msgspec.json.Decoder(eds.NewFullAdmissionDataListHeader)
 
     @cached_property
-    def _header(self) -> pds.NewFullAdmissionDataListHeader:
+    def _header(self) -> eds.NewFullAdmissionDataListHeader:
         return self._header_decoder.decode(self._header_bytes)
 
     def _body_dec_hook(self, type: Type, obj: Any) -> Any:
@@ -143,10 +142,10 @@ class AdmissionDataListReader:
     @cached_property
     def body_decoder(self) -> msgspec.json.Decoder:
         return msgspec.json.Decoder(
-            list[pds.NewFullAdmissionData], dec_hook=self._body_dec_hook
+            list[eds.NewFullAdmissionData], dec_hook=self._body_dec_hook
         )
 
-    def decode(self) -> list[pds.NewFullAdmissionData]:
+    def decode(self) -> list[eds.NewFullAdmissionData]:
         return self.body_decoder.decode(self._body_bytes)
 
 
@@ -154,16 +153,90 @@ ADMISSION_DATA_WRITER = AdmissionDataWriter()
 
 
 def export_admission_data_list(
-    data_obj: list[pds.NewFullAdmissionData], path: Path
+    data_obj: list[eds.NewFullAdmissionData], path: Path
 ):
     ADMISSION_DATA_WRITER.export(full_admission_data_list=data_obj, path=path)
 
 
-def import_admission_data_list(path: Path) -> list[pds.NewFullAdmissionData]:
+def import_admission_data_list(path: Path) -> list[eds.NewFullAdmissionData]:
     data_reader = AdmissionDataListReader.from_file(
         path=path, delimiter=cfs.ADMISSION_DATA_JSON_DELIMITER
     )
     return data_reader.decode()
+
+
+class JsonReadyDataWriter:
+    @cached_property
+    def encoder(self) -> msgspec.json.Encoder:
+        return msgspec.json.Encoder()
+
+    def encode(self, obj: Any) -> bytes:
+        return self.encoder.encode(obj)
+
+    def export(self, obj: Any, path: Path):
+        encoded_output = self.encode(obj)
+        with path.open(mode="wb") as out_file:
+            out_file.write(encoded_output)
+
+
+JSON_READY_DATA_WRITER = JsonReadyDataWriter()
+
+
+def export_json_ready_object(obj: Any, path: Path):
+    JSON_READY_DATA_WRITER.export(obj=obj, path=path)
+
+
+class FeatureArraysDataWriter:
+    def enc_hook(self, obj: Any) -> Any:
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            raise NotImplementedError(
+                f"Encoder does not support objects of type {type(obj)}"
+            )
+
+    @cached_property
+    def encoder(self) -> msgspec.json.Encoder:
+        return msgspec.json.Encoder(enc_hook=self.enc_hook)
+
+    def encode(self, obj: Any) -> bytes:
+        return self.encoder.encode(obj)
+
+    def export(self, obj: Any, path: Path):
+        encoded_data = self.encode(obj)
+        with path.open(mode="wb") as out_file:
+            out_file.write(encoded_data)
+
+
+FEATURE_ARRAYS_DATA_WRITER = FeatureArraysDataWriter()
+
+
+def export_feature_arrays(np_arrays: list[np.ndarray], path: Path):
+    FEATURE_ARRAYS_DATA_WRITER.export(obj=np_arrays, path=path)
+
+
+class FeatureArraysDataReader:
+    @staticmethod
+    def dec_hook(type: Type, obj: Any) -> Any:
+        if type is np.ndarray:
+            return np.array(obj)
+        else:
+            raise NotImplementedError(
+                f"Objects of type {type} are not supported")
+
+    @cached_property
+    def decoder(self) -> msgspec.json.Decoder:
+        return msgspec.json.Decoder(eds.FeatureArrays, dec_hook=self.dec_hook)
+
+    def decode(self, obj: bytes) -> eds.FeatureArrays:
+        return self.decoder.decode(obj)
+
+    def import_object(self, path: Path) -> eds.FeatureArrays:
+        with path.open(mode="rb") as in_file:
+            encoded_object = in_file.read()
+        return self.decode(encoded_object)
+
+
 
 
 if __name__ == "__main__":

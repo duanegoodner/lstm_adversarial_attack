@@ -1,7 +1,5 @@
-import datetime
-from functools import cached_property
-
 import msgspec
+import numpy as np
 import pandas as pd
 
 
@@ -27,13 +25,20 @@ class DecomposedTimeSeries(msgspec.Struct):
     data: list[list[float]]
 
 
-# class NewFullAdmissionDataListHeader(msgspec.Struct):
-#     time_series_col_names: list[str]
-#     time_series_dtypes: list[str]
-
-
 class NewFullAdmissionDataListHeader(msgspec.Struct):
     timestamp_col_name: str
     timestamp_dtype: str
     data_cols_names: list[str]
     data_cols_dtype: str
+
+
+class FeatureArrays(msgspec.Struct):
+    data: list[np.ndarray]
+
+
+class ClassLabels(msgspec.Struct):
+    data: list[int]
+
+
+class MeasurementColumnNames(msgspec.Struct):
+    data: tuple[str, ...]

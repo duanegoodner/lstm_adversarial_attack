@@ -9,7 +9,7 @@ import pandas as pd
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.preprocess.new_preprocessor as pre
-import lstm_adversarial_attack.preprocess.preprocess_data_structures as pds
+import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
@@ -68,13 +68,13 @@ class NewAdmissionListBuilder(pre.NewPreprocessModule):
         )
 
     @cached_property
-    def admission_list(self) -> list[pds.NewFullAdmissionData]:
+    def admission_list(self) -> list[eds.NewFullAdmissionData]:
         df_grouped_by_hadm = self._filtered_icustay_bg_lab_vital.groupby(
             ["hadm_id"]
         )
         list_of_group_dfs = [group[1] for group in df_grouped_by_hadm]
         return [
-            pds.NewFullAdmissionData(
+            eds.NewFullAdmissionData(
                 subject_id=int(np.unique(item.subject_id)[0]),
                 hadm_id=int(np.unique(item.hadm_id)[0]),
                 icustay_id=int(np.unique(item.icustay_id)[0]),

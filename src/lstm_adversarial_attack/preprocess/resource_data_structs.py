@@ -7,7 +7,7 @@ import pandas as pd
 
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.preprocess.encode_decode as edc
-import lstm_adversarial_attack.preprocess.preprocess_data_structures as pds
+import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.resource_io as rio
 
 _T = TypeVar("_T")
@@ -133,7 +133,7 @@ class IncomingPreprocessPickle(IncomingPreprocessResource):
 
 
 class IncomingFullAdmissionData(IncomingPreprocessResource):
-    def _import_object(self) -> list[pds.NewFullAdmissionData]:
+    def _import_object(self) -> list[eds.NewFullAdmissionData]:
         return edc.import_admission_data_list(path=self.resource_id)
 
 
@@ -164,9 +164,9 @@ class OutgoingFullAdmissionData(OutgoingPreprocessResource):
         return ".json"
 
 
-class OutgoingListOfArrays(OutgoingPreprocessResource):
+class OutgoingFeaturesList(OutgoingPreprocessResource):
     def export(self, path: Path):
-        rio.export_list_of_numpy_arrays(np_arrays=self.resource, path=path)
+        edc.export_feature_arrays(np_arrays=self.resource, path=path)
 
     @property
     def file_ext(self) -> str:
@@ -175,7 +175,7 @@ class OutgoingListOfArrays(OutgoingPreprocessResource):
 
 class JsonReadyOutput(OutgoingPreprocessResource):
     def export(self, path: Path):
-        rio.export_json_ready_object(obj=self.resource, path=path)
+        edc.export_json_ready_object(obj=self.resource, path=path)
 
     @property
     def file_ext(self) -> str:
@@ -317,5 +317,5 @@ class NewFeatureFinalizerOutputInfo:
         JsonReadyOutput
     )
     measurement_data_list: Callable[..., OutgoingPreprocessResource] = (
-        OutgoingListOfArrays
+        OutgoingFeaturesList
     )

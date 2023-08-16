@@ -9,7 +9,7 @@ import pandas as pd
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.preprocess.new_preprocessor as pre
-import lstm_adversarial_attack.preprocess.preprocess_data_structures as pds
+import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
@@ -89,7 +89,7 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
         ]
 
     def _get_feature_array(
-        self, sample: pds.NewFullAdmissionData
+        self, sample: eds.NewFullAdmissionData
     ) -> np.ndarray | None:
         """
         Filters time series df to window of interest & converts to array
@@ -121,7 +121,7 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
 
     def process(
         self,
-    ) -> dict[str, rds.JsonReadyOutput | rds.OutgoingListOfArrays]:
+    ) -> dict[str, rds.JsonReadyOutput | rds.OutgoingFeaturesList]:
         measurement_data_list = []
         in_hospital_mortality_list = []
 

@@ -156,39 +156,6 @@ def feather_to_df(path: Path) -> pd.DataFrame:
     return _FeatherIO.feather_to_df(path=path)
 
 
-class JsonReadyDataWriter:
-    @cached_property
-    def encoder(self) -> msgspec.json.Encoder:
-        return msgspec.json.Encoder()
-
-    def encode(self, obj: Any) -> bytes:
-        return self.encoder.encode(obj)
-
-    def export(self, obj: Any, path: Path):
-        encoded_output = self.encode(obj)
-        with path.open(mode="wb") as out_file:
-            out_file.write(encoded_output)
-
-
-JSON_READY_DATA_WRITER = JsonReadyDataWriter()
-
-
-def export_json_ready_object(obj: Any, path: Path):
-    JSON_READY_DATA_WRITER.export(obj=obj, path=path)
-
-
-class FeatureArrays(msgspec.Struct):
-    data: list[np.ndarray]
-
-
-class ClassLabels(msgspec.Struct):
-    data: list[int]
-
-
-class MeasurementColumnNames(msgspec.Struct):
-    data: tuple[str, ...]
-
-
 class PythonReadyJsonReader:
     @cached_property
     def decoder(self) -> msgspec.json.Decoder:
@@ -210,39 +177,7 @@ def import_python_ready_json(path: Path) -> Any:
     return PYTHON_READY_JSON_READER.import_object(path=path)
 
 
-class NumpyArrayDataWriter:
-    def enc_hook(self, obj: Any) -> Any:
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        if np.isnan(obj):
-            return None
-        if isinstance(obj, np.datetime64):
-            return pd.Timestamp
-        if isinstance(obj, pd.Timestamp):
-            return obj.to_pydatetime()
-        else:
-            raise NotImplementedError(
-                f"Encoder does not support objects of type {type(obj)}"
-            )
 
-    @cached_property
-    def encoder(self) -> msgspec.json.Encoder:
-        return msgspec.json.Encoder(enc_hook=self.enc_hook)
-
-    def encode(self, obj: Any) -> bytes:
-        return self.encoder.encode(obj)
-
-    def export(self, obj: Any, path: Path):
-        encoded_data = self.encode(obj)
-        with path.open(mode="wb") as out_file:
-            out_file.write(encoded_data)
-
-
-NUMPY_ARRAY_DATA_WRITER = NumpyArrayDataWriter()
-
-
-def export_list_of_numpy_arrays(np_arrays: list[np.ndarray], path: Path):
-    NUMPY_ARRAY_DATA_WRITER.export(obj=np_arrays, path=path)
 
 
 # class ListOfArraysReader:
