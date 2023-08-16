@@ -161,7 +161,7 @@ if __name__ == "__main__":
     for key, outgoing_resource in result.items():
         outgoing_resource.export(
             path=feature_finalizer.output_dir
-                 / f"{key}{outgoing_resource.file_ext}"
+            / f"{key}{outgoing_resource.file_ext}"
         )
     export_end = time.time()
     print(f"export time = {export_end - export_start}")

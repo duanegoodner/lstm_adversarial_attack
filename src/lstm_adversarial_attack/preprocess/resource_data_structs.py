@@ -157,7 +157,9 @@ class OutgoingPreprocessPickle(OutgoingPreprocessResource):
 
 class OutgoingFullAdmissionData(OutgoingPreprocessResource):
     def export(self, path: Path):
-        edc.export_admission_data_list(data_obj=self._resource, path=path)
+        edc.export_admission_data_list(
+            admission_data_list=self._resource, path=path
+        )
 
     @property
     def file_ext(self) -> str:
@@ -166,7 +168,8 @@ class OutgoingFullAdmissionData(OutgoingPreprocessResource):
 
 class OutgoingFeaturesList(OutgoingPreprocessResource):
     def export(self, path: Path):
-        edc.export_feature_arrays(np_arrays=self.resource, path=path)
+        edc.AdmissionDataWriter().export(obj=self.resource, path=path)
+        # edc.export_feature_arrays(np_arrays=self.resource, path=path)
 
     @property
     def file_ext(self) -> str:
@@ -176,6 +179,36 @@ class OutgoingFeaturesList(OutgoingPreprocessResource):
 class JsonReadyOutput(OutgoingPreprocessResource):
     def export(self, path: Path):
         edc.export_json_ready_object(obj=self.resource, path=path)
+
+    @property
+    def file_ext(self) -> str:
+        return ".json"
+
+
+class OutgoingFeatureArrays(OutgoingPreprocessResource):
+    def export(self, path: Path):
+        struct_for_export = eds.FeatureArrays(data=self.resource)
+        edc.FeatureArraysWriter().export(obj=struct_for_export, path=path)
+
+    @property
+    def file_ext(self) -> str:
+        return ".json"
+
+
+class OutgoingClassLabels(OutgoingPreprocessResource):
+    def export(self, path: Path):
+        struct_for_export = eds.ClassLabels(data=self.resource)
+        edc.ClassLabelsWriter().export(obj=struct_for_export, path=path)
+
+    @property
+    def file_ext(self) -> str:
+        return ".json"
+
+
+class OutgoingMeasurementColumnNames(OutgoingPreprocessResource):
+    def export(self, path: Path):
+        struct_for_export = eds.MeasurementColumnNames(data=self.resource)
+        edc.MeasurementColumnNamesWriter().export(struct_for_export, path=path)
 
     @property
     def file_ext(self) -> str:
@@ -311,11 +344,11 @@ class NewFeatureFinalizerResources:
 @dataclass
 class NewFeatureFinalizerOutputInfo:
     in_hospital_mortality_list: Callable[..., OutgoingPreprocessResource] = (
-        JsonReadyOutput
+        OutgoingClassLabels
     )
     measurement_col_names: Callable[..., OutgoingPreprocessResource] = (
-        JsonReadyOutput
+        OutgoingMeasurementColumnNames
     )
     measurement_data_list: Callable[..., OutgoingPreprocessResource] = (
-        OutgoingFeaturesList
+        OutgoingFeatureArrays
     )

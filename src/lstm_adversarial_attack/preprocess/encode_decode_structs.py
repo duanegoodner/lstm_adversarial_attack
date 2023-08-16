@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import msgspec
 import numpy as np
 import pandas as pd
@@ -37,7 +39,7 @@ class FeatureArrays(msgspec.Struct):
 
 
 class ClassLabels(msgspec.Struct):
-    data: list[int]
+    data: list[int] = None
 
 
 class MeasurementColumnNames(msgspec.Struct):

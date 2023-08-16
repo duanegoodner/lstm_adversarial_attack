@@ -95,8 +95,7 @@ class NewPreprocessor:
             )
 
     def run_preprocess_module(
-        self,
-        module: NewPreprocessModule,
+        self, module: NewPreprocessModule, save_output: bool
     ):
         process_start = time.time()
         module_output = module.process()
@@ -105,7 +104,7 @@ class NewPreprocessor:
             f"{module.__class__.__name__} process time ="
             f" {process_end - process_start}"
         )
-        if self.save_checkpoints:
+        if save_output:
             export_start = time.time()
             self.export_resources(
                 module_output=module_output, output_dir=module.output_dir
@@ -118,7 +117,7 @@ class NewPreprocessor:
         self.available_resources.update(module_output)
 
     def run_all_modules(self):
-        for module_info in self.modules_info:
+        for idx, module_info in enumerate(self.modules_info):
             print(f"Running {module_info.module_constructor.__name__}")
             init_start = time.time()
             module = module_info.build_module(
@@ -129,6 +128,10 @@ class NewPreprocessor:
                 f"{module.__class__.__name__} init time ="
                 f" {init_end - init_start}"
             )
-            self.run_preprocess_module(module=module)
+            self.run_preprocess_module(
+                module=module,
+                save_output=self.save_checkpoints
+                or (idx == len(self.modules_info) - 1),
+            )
 
         return self.available_resources

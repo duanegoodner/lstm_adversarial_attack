@@ -1,7 +1,8 @@
 import time
+from abc import ABC, abstractmethod
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Type
+from typing import Any, Type, TypeVar, Callable
 
 import msgspec
 import numpy as np
@@ -71,14 +72,16 @@ class AdmissionDataWriter:
             )
         )
 
-    def export(
-        self,
-        full_admission_data_list: list[eds.NewFullAdmissionData],
-        path: Path,
-    ):
-        encoded_header_and_body = self.encode(full_admission_data_list)
+    def export(self, obj: Any, path: Path):
+        encoded_data = self.encode(obj)
         with path.open(mode="wb") as out_file:
-            out_file.write(encoded_header_and_body)
+            out_file.write(encoded_data)
+
+
+def export_admission_data_list(
+    admission_data_list: list[eds.NewFullAdmissionData], path: Path
+):
+    AdmissionDataWriter().export(obj=admission_data_list, path=path)
 
 
 class AdmissionDataListReader:
@@ -149,15 +152,6 @@ class AdmissionDataListReader:
         return self.body_decoder.decode(self._body_bytes)
 
 
-ADMISSION_DATA_WRITER = AdmissionDataWriter()
-
-
-def export_admission_data_list(
-    data_obj: list[eds.NewFullAdmissionData], path: Path
-):
-    ADMISSION_DATA_WRITER.export(full_admission_data_list=data_obj, path=path)
-
-
 def import_admission_data_list(path: Path) -> list[eds.NewFullAdmissionData]:
     data_reader = AdmissionDataListReader.from_file(
         path=path, delimiter=cfs.ADMISSION_DATA_JSON_DELIMITER
@@ -179,14 +173,39 @@ class JsonReadyDataWriter:
             out_file.write(encoded_output)
 
 
-JSON_READY_DATA_WRITER = JsonReadyDataWriter()
-
-
 def export_json_ready_object(obj: Any, path: Path):
-    JSON_READY_DATA_WRITER.export(obj=obj, path=path)
+    JsonReadyDataWriter().export(obj=obj, path=path)
 
 
-class FeatureArraysDataWriter:
+EncodeType = TypeVar("EncodeType", bound=msgspec.Struct)
+
+
+class StandardStructWriter(ABC):
+    def __init__(self, struct_type: Callable[..., EncodeType]):
+        self._struct_type = struct_type
+
+    @staticmethod
+    @abstractmethod
+    def enc_hook(obj: Any) -> Any:
+        pass
+
+    @cached_property
+    def encoder(self) -> msgspec.json.Encoder:
+        return msgspec.json.Encoder(enc_hook=self.enc_hook)
+
+    def encode(self, obj: EncodeType) -> bytes:
+        return self.encoder.encode(obj)
+
+    def export(self, obj: EncodeType, path: Path):
+        encoded_data = self.encode(obj)
+        with path.open(mode="wb") as out_file:
+            out_file.write(encoded_data)
+
+
+class FeatureArraysWriter(StandardStructWriter):
+    def __init__(self):
+        super().__init__(struct_type=eds.FeatureArrays)
+
     def enc_hook(self, obj: Any) -> Any:
         if isinstance(obj, np.ndarray):
             return obj.tolist()
@@ -195,52 +214,107 @@ class FeatureArraysDataWriter:
                 f"Encoder does not support objects of type {type(obj)}"
             )
 
-    @cached_property
-    def encoder(self) -> msgspec.json.Encoder:
-        return msgspec.json.Encoder(enc_hook=self.enc_hook)
 
-    def encode(self, obj: Any) -> bytes:
-        return self.encoder.encode(obj)
+class ClassLabelsWriter(StandardStructWriter):
+    def __init__(self):
+        super().__init__(struct_type=eds.ClassLabels)
 
-    def export(self, obj: Any, path: Path):
-        encoded_data = self.encode(obj)
-        with path.open(mode="wb") as out_file:
-            out_file.write(encoded_data)
-
-
-FEATURE_ARRAYS_DATA_WRITER = FeatureArraysDataWriter()
-
-
-def export_feature_arrays(np_arrays: list[np.ndarray], path: Path):
-    FEATURE_ARRAYS_DATA_WRITER.export(obj=np_arrays, path=path)
-
-
-class FeatureArraysDataReader:
     @staticmethod
-    def dec_hook(type: Type, obj: Any) -> Any:
-        if type is np.ndarray:
-            return np.array(obj)
-        else:
-            raise NotImplementedError(
-                f"Objects of type {type} are not supported")
+    def enc_hook(obj: Any) -> Any:
+        pass  # ClassLabels object is json-ready
+
+
+class MeasurementColumnNamesWriter(StandardStructWriter):
+    def __init__(self):
+        super().__init__(struct_type=eds.MeasurementColumnNames)
+
+    @staticmethod
+    def enc_hook(obj: Any) -> Any:
+        pass  # MeasurementColumnNames object is json-ready
+
+
+DecodeType = TypeVar("DecodeType", bound=msgspec.Struct)
+
+
+class StandardStructReader(ABC):
+    def __init__(self, struct_type: Callable[..., DecodeType]):
+        self._struct_type = struct_type
+
+    @staticmethod
+    @abstractmethod
+    def dec_hook(decode_type: Type, obj: Any) -> Any:
+        pass
 
     @cached_property
     def decoder(self) -> msgspec.json.Decoder:
-        return msgspec.json.Decoder(eds.FeatureArrays, dec_hook=self.dec_hook)
+        return msgspec.json.Decoder(self._struct_type, dec_hook=self.dec_hook)
 
-    def decode(self, obj: bytes) -> eds.FeatureArrays:
+    def decode(self, obj: bytes) -> DecodeType:
         return self.decoder.decode(obj)
 
-    def import_object(self, path: Path) -> eds.FeatureArrays:
+    def import_struct(self, path: Path) -> DecodeType:
         with path.open(mode="rb") as in_file:
-            encoded_object = in_file.read()
-        return self.decode(encoded_object)
+            encoded_struct = in_file.read()
+        return self.decode(obj=encoded_struct)
 
 
+class FeatureArraysReader(StandardStructReader):
+    def __init__(self):
+        super().__init__(struct_type=eds.FeatureArrays)
+
+    @staticmethod
+    def dec_hook(decode_type: Type, obj: Any) -> Any:
+        if decode_type is np.ndarray:
+            return np.array(obj)
+        else:
+            raise NotImplementedError(
+                f"Objects of type {type} are not supported"
+            )
+
+
+class ClassLabelsReader(StandardStructReader):
+    def __init__(self):
+        super().__init__(struct_type=eds.ClassLabels)
+
+    @staticmethod
+    def dec_hook(decode_type: Type, obj: Any) -> Any:
+        # No need to do anything b/c incoming json is Python-object-ready
+        pass
+
+
+class MeasurementColumnNamesReader(StandardStructReader):
+    def __init__(self):
+        super().__init__(struct_type=eds.MeasurementColumnNames)
+
+    @staticmethod
+    def dec_hook(decode_type: Type, obj: Any) -> Any:
+        if decode_type is tuple[str]:
+            return tuple(obj)
 
 
 if __name__ == "__main__":
-    import_path = cfp.FULL_ADMISSION_LIST_OUTPUT / "full_admission_list.json"
-    json_import_start = time.time()
-    result = import_admission_data_list(path=import_path)
-    json_import_end = time.time()
+    # import_path = cfp.FULL_ADMISSION_LIST_OUTPUT / "full_admission_list.json"
+    # json_import_start = time.time()
+    # result = import_admission_data_list(path=import_path)
+    # json_import_end = time.time()
+
+    my_features = [
+        np.array([[1.1, 2.2, 3.3]]),
+        np.array([[4.4, 5.5, 6.6], [7.7, 8.8, 9.9]]),
+    ]
+
+    feature_arrays = eds.FeatureArrays(data=my_features)
+    encoded_feature_arrays = FeatureArraysWriter().encode(feature_arrays)
+    decoded_features = FeatureArraysReader().decode(encoded_feature_arrays)
+
+    my_class_labels = [0, 0, 1]
+    class_labels = eds.ClassLabels(data=my_class_labels)
+    encoded_class_labels = ClassLabelsWriter().encode(class_labels)
+    decoded_class_labels = ClassLabelsReader().decode(encoded_class_labels)
+
+    my_col_names = ("col_one", "col_two", "col_three")
+    col_names = eds.MeasurementColumnNames(data=my_col_names)
+    encoded_col_names = MeasurementColumnNamesWriter().encode(col_names)
+    decoded_col_names = MeasurementColumnNamesReader().decode(
+        encoded_col_names
+    )
