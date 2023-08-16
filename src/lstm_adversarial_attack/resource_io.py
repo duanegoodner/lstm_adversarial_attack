@@ -1,14 +1,17 @@
 # TODO Change to dill and use dill.dump / dill.load syntax.
 # TODO Consider removing this module. May be overkill.
 import json
-import msgspec
-import numpy as np
-import dill
-import pandas as pd
 from datetime import datetime
 from enum import Enum, auto
+from functools import cached_property
 from pathlib import Path
 from typing import Any
+
+import dill
+import msgspec
+import numpy as np
+import pandas as pd
+
 import lstm_adversarial_attack.custom_unpickler as cu
 
 
@@ -117,16 +120,6 @@ def json_to_df(path: Path) -> pd.DataFrame:
 def pickle_to_df(path: Path) -> pd.DataFrame:
     return DataFrameIO.pickle_to_df(path=path)
 
-def import_json(path: Path) -> dict[str, Any]:
-    with path.open(mode="r") as in_file:
-        input_dict = json.load(in_file)
-    return input_dict
-
-def export_to_pickle(resource: object, path: Path):
-    assert f".{path.name.split('.')[-1]}" == ".pickle"
-    with path.open(mode="wb") as p:
-        dill.dump(obj=resource, file=p)
-
 def convert_posix_paths_to_strings(data):
     if isinstance(data, dict):
         return {key: convert_posix_paths_to_strings(value) for key, value
@@ -163,64 +156,60 @@ def feather_to_df(path: Path) -> pd.DataFrame:
     return _FeatherIO.feather_to_df(path=path)
 
 
-class _MsgspecIO:
-    @staticmethod
-    def to_json(resource: object, path: Path):
-        encoded_output = msgspec.json.encode(obj=resource)
-        with path.open(mode="wb") as out_file:
-            out_file.write(encoded_output)
+class JsonReadyDataWriter:
+    @cached_property
+    def encoder(self) -> msgspec.json.Encoder:
+        return msgspec.json.Encoder()
 
-    @staticmethod
-    def from_json(path: Path) -> dict:
-        with path.open(mode="rb") as in_file:
-            imported_encoded_data = in_file.read()
-        return msgspec.json.decode(imported_encoded_data)
+    def encode(self, obj: Any) -> bytes:
+        return self.encoder.encode(obj)
 
-class _ListOfArraysIO:
-
-    @staticmethod
-    def list_of_np_to_json(resource: list[np.array], path: Path):
-        unique_dtypes = np.unique([item.dtype for item in resource])
-        assert len(unique_dtypes) == 1
-        dtype = unique_dtypes.item()
-        list_of_lists = [item.tolist() for item in resource]
-        output_dict = {"dtype": dtype, "data": list_of_lists}
-        encoded_output = msgspec.json.encode(output_dict)
-        with path.open(mode="wb") as out_file:
-            out_file.write(encoded_output)
-
-    @staticmethod
-    def json_to_list_of_np(path: Path) -> list[np.array]:
-        with path.open(mode="rb") as in_file:
-            imported_encoded_data = in_file.read()
-        imported_dict = msgspec.json.decode(imported_encoded_data)
-        list_of_arrays = [
-            np.array(item, dtype=imported_dict["dtype"])
-            for item in imported_dict["data"]
-        ]
-        return list_of_arrays
-
-
-def list_of_np_to_json(resource: list[np.array], path: Path):
-    _ListOfArraysIO.list_of_np_to_json(resource=resource, path=path)
-
-
-def json_to_list_of_np(path: Path) -> list[np.array]:
-    return _ListOfArraysIO.json_to_list_of_np(path=path)
-
-
-class _JsonReadyIO:
-    @staticmethod
-    def to_json(resource: object, path: Path):
-        encoded_output = msgspec.json.encode(obj=resource)
+    def export(self, obj: Any, path: Path):
+        encoded_output = self.encode(obj)
         with path.open(mode="wb") as out_file:
             out_file.write(encoded_output)
 
 
+JSON_READY_DATA_WRITER = JsonReadyDataWriter()
 
 
+def export_json_ready_object(obj: Any, path: Path):
+    JSON_READY_DATA_WRITER.export(obj=obj, path=path)
 
 
+class NumpyArrayDataWriter:
+    def enc_hook(self, obj: Any) -> Any:
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if np.isnan(obj):
+            return None
+        if isinstance(obj, np.datetime64):
+            return pd.Timestamp
+        if isinstance(obj, pd.Timestamp):
+            return obj.to_pydatetime()
+        else:
+            raise NotImplementedError(
+                f"Encoder does not support objects of type {type(obj)}"
+            )
+
+    @cached_property
+    def encoder(self) -> msgspec.json.Encoder:
+        return msgspec.json.Encoder(enc_hook=self.enc_hook)
+
+    def encode(self, obj: Any) -> bytes:
+        return self.encoder.encode(obj)
+
+    def export(self, obj: Any, path: Path):
+        encoded_data = self.encode(obj)
+        with path.open(mode="wb") as out_file:
+            out_file.write(encoded_data)
+
+
+NUMPY_ARRAY_DATA_WRITER = NumpyArrayDataWriter()
+
+
+def export_list_of_numpy_arrays(np_arrays: list[np.ndarray], path: Path):
+    NUMPY_ARRAY_DATA_WRITER.export(obj=np_arrays, path=path)
 
 
 

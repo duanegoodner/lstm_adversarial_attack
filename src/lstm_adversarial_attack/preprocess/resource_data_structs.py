@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, TypedDict, TypeVar
+from typing import Any, Callable, TypeVar
 
 import pandas as pd
 
@@ -166,7 +166,7 @@ class OutgoingFullAdmissionData(OutgoingPreprocessResource):
 
 class OutgoingListOfArrays(OutgoingPreprocessResource):
     def export(self, path: Path):
-        edc.export_list_of_numpy_arrays(np_arrays=self.resource, path=path)
+        rio.export_list_of_numpy_arrays(np_arrays=self.resource, path=path)
 
     @property
     def file_ext(self) -> str:
@@ -175,7 +175,7 @@ class OutgoingListOfArrays(OutgoingPreprocessResource):
 
 class JsonReadyOutput(OutgoingPreprocessResource):
     def export(self, path: Path):
-        edc.export_json_ready_object(obj=self.resource, path=path)
+        rio.export_json_ready_object(obj=self.resource, path=path)
 
     @property
     def file_ext(self) -> str:

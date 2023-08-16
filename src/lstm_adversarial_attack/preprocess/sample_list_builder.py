@@ -38,7 +38,7 @@ class FullAdmissionListBuilder(pm.PreprocessModule):
         :return: dataclass containing ref to single dataframe
         """
         imported_data = FullAdmissionListBuilderResources(
-            icustay_bg_lab_vital=self.import_pickle_to_df(
+            icustay_bg_lab_vital=pd.read_pickle(
                 path=self.incoming_resource_refs.icustay_bg_lab_vital
             )
         )

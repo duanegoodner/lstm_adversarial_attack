@@ -41,14 +41,6 @@ class ICUStayMeasurementCombiner(pm.PreprocessModule):
         Imports resources to dataframes and saves ref to each in a dataclass
         :return: ICUStayMeasurementCombinerResources (dataclass) w/ df refs
         """
-        # imported_data = ICUStayMeasurementCombinerResources(
-        #     icustay=self.import_pickle_to_df(
-        #         self.incoming_resource_refs.icustay
-        #     ),
-        #     bg=self.import_pickle_to_df(self.incoming_resource_refs.bg),
-        #     lab=self.import_pickle_to_df(self.incoming_resource_refs.lab),
-        #     vital=self.import_pickle_to_df(self.incoming_resource_refs.vital),
-        # )
         imported_data = ICUStayMeasurementCombinerResources(
             icustay=rio.json_to_df(path=self.incoming_resource_refs.bg),
             bg=rio.json_to_df(path=self.incoming_resource_refs.bg),
