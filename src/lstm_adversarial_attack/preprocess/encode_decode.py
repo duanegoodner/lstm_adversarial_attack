@@ -11,6 +11,7 @@ import pandas as pd
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.preprocess.preprocess_data_structures as pds
+import lstm_adversarial_attack.resource_io as rio
 
 # TODO Consider creating DataWriter base class with encoder abstractmethod and
 #  encode() & export() concrete methods
@@ -216,6 +217,7 @@ class AdmissionDataWriter:
 #     def decode(self) -> list[pds.NewFullAdmissionData]:
 #         return self.body_decoder.decode(self._body_bytes)
 
+
 class AdmissionDataListReader:
     def __init__(
         self,
@@ -262,7 +264,7 @@ class AdmissionDataListReader:
         if type is pd.Timestamp:
             return pd.Timestamp(obj)
         if type is pd.DataFrame:
-            time_vals = pd.Series(obj["time_vals"], dtype="datetime64[ns]")
+            time_vals = np.array(obj["time_vals"], dtype="datetime64[ns]")
             df = pd.DataFrame(
                 np.array(obj["data"], dtype=self._header.data_cols_dtype)
             )
@@ -302,10 +304,23 @@ def import_admission_data_list(path: Path) -> list[pds.NewFullAdmissionData]:
 
 if __name__ == "__main__":
     import_path = cfp.FULL_ADMISSION_LIST_OUTPUT / "full_admission_list.json"
-    cProfile.runctx(
-        statement="import_admission_data_list(path=import_path)",
-        globals=None,
-        locals=locals(),
-        filename="full_admission_list_import2.profile"
+    # cProfile.runctx(
+    #     statement="import_admission_data_list(path=import_path)",
+    #     globals=None,
+    #     locals=locals(),
+    #     filename="full_admission_list_import3.profile"
+    # )
+    json_import_start = time.time()
+    result = import_admission_data_list(path=import_path)
+    json_import_end = time.time()
+    print(f"json import time = {json_import_end - json_import_start}")
+
+    pickle_path = cfp.FULL_ADMISSION_LIST_OUTPUT / "full_admission_list.pickle"
+    pickle_list = rio.export_to_pickle(resource=result, path=pickle_path)
+
+    pickle_import_start = time.time()
+    imported_pickle = rio.ResourceImporter().import_pickle_to_list(
+        path=pickle_path
     )
-    # result = import_admission_data_list(path=import_path)
+    pickle_import_end = time.time()
+    print(f"pickle import time = {pickle_import_end - pickle_import_start}")

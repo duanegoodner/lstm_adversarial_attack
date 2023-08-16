@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,7 +17,7 @@ class NewPreprocessModule(ABC):
         resources: dataclass,
         output_dir: Path,
         settings: dataclass,
-        output_info: dataclass
+        output_info: dataclass,
     ):
         self._resources = resources
         self._output_dir = output_dir
@@ -64,7 +65,7 @@ class ModuleInfo:
             resources=resources,
             output_dir=self.output_dir,
             settings=self.settings,
-            output_info=self.output_info
+            output_info=self.output_info,
         )
 
 
@@ -97,16 +98,37 @@ class NewPreprocessor:
         self,
         module: NewPreprocessModule,
     ):
-        print(f"Running {module.__class__.__name__}")
+        process_start = time.time()
         module_output = module.process()
+        process_end = time.time()
+        print(
+            f"{module.__class__.__name__} process time ="
+            f" {process_end - process_start}"
+        )
         if self.save_checkpoints:
+            export_start = time.time()
             self.export_resources(
                 module_output=module_output, output_dir=module.output_dir
+            )
+            export_end = time.time()
+            print(
+                f"{module.__class__.__name__} export time ="
+                f" {export_end - export_start}\n"
             )
         self.available_resources.update(module_output)
 
     def run_all_modules(self):
         for module_info in self.modules_info:
-            module = module_info.build_module(resource_pool=self.available_resources)
+            print(f"Running {module_info.module_constructor.__name__}")
+            init_start = time.time()
+            module = module_info.build_module(
+                resource_pool=self.available_resources
+            )
+            init_end = time.time()
+            print(
+                f"{module.__class__.__name__} init time ="
+                f" {init_end - init_start}"
+            )
             self.run_preprocess_module(module=module)
+
         return self.available_resources
