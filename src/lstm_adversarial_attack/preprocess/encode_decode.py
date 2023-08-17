@@ -8,8 +8,10 @@ import msgspec
 import numpy as np
 import pandas as pd
 
+import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
+import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 
 # TODO Consider creating DataWriter base class with encoder abstractmethod and
 #  encode() & export() concrete methods
@@ -238,7 +240,21 @@ class PreprocessModuleSummaryWriter(StandardStructWriter):
 
     @staticmethod
     def enc_hook(obj: Any) -> Any:
-        pass    # PreprocessModuleSummary is json-ready
+        pass  # PreprocessModuleSummary is json-ready
+
+
+class TunerDriverSummaryWriter(StandardStructWriter):
+    def __init__(self):
+        super().__init__(struct_type=eds.TunerDriverSummary)
+
+    @staticmethod
+    def enc_hook(obj: Any) -> Any:
+        if isinstance(obj, tuh.X19MLSTMTuningRanges):
+            return obj.__dict__
+        else:
+            raise NotImplementedError(
+                f"Encoder does not support objects of type {type(obj)}"
+            )
 
 
 DecodeType = TypeVar("DecodeType", bound=msgspec.Struct)
@@ -286,8 +302,8 @@ class ClassLabelsReader(StandardStructReader):
 
     @staticmethod
     def dec_hook(decode_type: Type, obj: Any) -> Any:
-        # No need to do anything b/c incoming json is Python-object-ready
-        pass
+        # ClassLabels are json ready, so dec_hook should never be called
+        raise NotImplementedError(f"Objects of type {type} are not supported")
 
 
 class MeasurementColumnNamesReader(StandardStructReader):
@@ -298,6 +314,26 @@ class MeasurementColumnNamesReader(StandardStructReader):
     def dec_hook(decode_type: Type, obj: Any) -> Any:
         if decode_type is tuple[str]:
             return tuple(obj)
+        else:
+            raise NotImplementedError(
+                f"Objects of type {type} are not supported"
+            )
+
+
+class TunerDriverSummaryReader(StandardStructReader):
+    def __init__(self):
+        super().__init__(struct_type=eds.TunerDriverSummary)
+
+    @staticmethod
+    def dec_hook(decode_type: Type, obj: Any) -> Any:
+        if decode_type is tuple[str]:
+            return tuple(obj)
+        if decode_type is tuh.X19MLSTMTuningRanges:
+            return tuh.X19MLSTMTuningRanges(**obj)
+        else:
+            raise NotImplementedError(
+                f"Objects of type {type} are not supported"
+            )
 
 
 if __name__ == "__main__":
@@ -306,23 +342,29 @@ if __name__ == "__main__":
     # result = import_admission_data_list(path=import_path)
     # json_import_end = time.time()
 
-    my_features = [
-        np.array([[1.1, 2.2, 3.3]]),
-        np.array([[4.4, 5.5, 6.6], [7.7, 8.8, 9.9]]),
-    ]
+    # my_features = [
+    #     np.array([[1.1, 2.2, 3.3]]),
+    #     np.array([[4.4, 5.5, 6.6], [7.7, 8.8, 9.9]]),
+    # ]
+    #
+    # feature_arrays = eds.FeatureArrays(data=my_features)
+    # encoded_feature_arrays = FeatureArraysWriter().encode(feature_arrays)
+    # decoded_features = FeatureArraysReader().decode(encoded_feature_arrays)
+    #
+    # my_class_labels = [0, 0, 1]
+    # class_labels = eds.ClassLabels(data=my_class_labels)
+    # encoded_class_labels = ClassLabelsWriter().encode(class_labels)
+    # decoded_class_labels = ClassLabelsReader().decode(encoded_class_labels)
+    #
+    # my_col_names = ("col_one", "col_two", "col_three")
+    # col_names = eds.MeasurementColumnNames(data=my_col_names)
+    # encoded_col_names = MeasurementColumnNamesWriter().encode(col_names)
+    # decoded_col_names = MeasurementColumnNamesReader().decode(
+    #     encoded_col_names
+    # )
 
-    feature_arrays = eds.FeatureArrays(data=my_features)
-    encoded_feature_arrays = FeatureArraysWriter().encode(feature_arrays)
-    decoded_features = FeatureArraysReader().decode(encoded_feature_arrays)
-
-    my_class_labels = [0, 0, 1]
-    class_labels = eds.ClassLabels(data=my_class_labels)
-    encoded_class_labels = ClassLabelsWriter().encode(class_labels)
-    decoded_class_labels = ClassLabelsReader().decode(encoded_class_labels)
-
-    my_col_names = ("col_one", "col_two", "col_three")
-    col_names = eds.MeasurementColumnNames(data=my_col_names)
-    encoded_col_names = MeasurementColumnNamesWriter().encode(col_names)
-    decoded_col_names = MeasurementColumnNamesReader().decode(
-        encoded_col_names
+    tuner_driver_summary = TunerDriverSummaryReader().import_struct(
+        path=cfp.HYPERPARAMETER_OUTPUT_DIR
+        / "2023-08-17_15_05_51.518571"
+        / "tuner_driver_summary_2023-08-17_15_05_51.519082.json"
     )
