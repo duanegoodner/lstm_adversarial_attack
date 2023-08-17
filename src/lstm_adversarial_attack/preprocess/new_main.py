@@ -17,7 +17,7 @@ def main():
         individual_resources_info=[
             rds.FileResourceInfo(
                 key="icustay",
-                path=cfp.DB_OUTPUT_DIR / "icustay_500.csv",
+                path=cfp.PREFILTER_INPUT_FILES["icustay"],
                 constructor=rds.IncomingCSVDataFrame
             ),
             rds.FileResourceInfo(
@@ -112,7 +112,7 @@ def main():
 
     preprocessor = ppr.NewPreprocessor(
         modules_info=modules_info,
-        save_checkpoints=False
+        save_checkpoints=True
     )
     return preprocessor.run_all_modules()
 

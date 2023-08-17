@@ -73,8 +73,9 @@ FEATURE_FINALIZER_OUTPUT = PREPROCESS_CHECKPOINTS / "5_feature_finalizer"
 
 PREPROCESS_OUTPUT_DIR = FEATURE_FINALIZER_OUTPUT
 PREPROCESS_OUTPUT_FILES = {
-    "measurement_data_list": "measurement_data_list.pickle",
-    "in_hospital_mortality_list": "in_hospital_mortality_list.pickle",
+    "measurement_data_list": "measurement_data_list.json",
+    "in_hospital_mortality_list": "in_hospital_mortality_list.json",
+    "measurement_col_names": "measurement_col_names.json"
 }
 
 

@@ -1,22 +1,20 @@
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-import sys
 import torch
-from IPython.display import display, HTML
-from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
-from pathlib import Path
-from torch.nn.utils.rnn import (
-    pad_sequence,
-)
+from IPython.display import HTML, display
+from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
 
+from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
+
 sys.path.append(str(Path(__file__).parent.parent))
-from lstm_adversarial_attack.config_paths import (
-    PREPROCESS_OUTPUT_DIR,
-    PREPROCESS_OUTPUT_FILES,
-)
-from lstm_adversarial_attack.data_structures import VariableLengthFeatures
+import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.resource_io as rio
+from lstm_adversarial_attack.data_structures import VariableLengthFeatures
+import lstm_adversarial_attack.preprocess.encode_decode as edc
 
 
 class X19MGeneralDataset(Dataset):
@@ -33,10 +31,7 @@ class X19MGeneralDataset(Dataset):
             selected_indices = np.random.choice(
                 a=len(in_hosp_mort), size=max_num_samples, replace=False
             )
-
-            # measurements = measurements[:max_num_samples]
             measurements = [measurements[i] for i in selected_indices]
-            # in_hosp_mort = in_hosp_mort[:max_num_samples]
             in_hosp_mort = [in_hosp_mort[i] for i in selected_indices]
 
         self.measurements = measurements
@@ -49,21 +44,26 @@ class X19MGeneralDataset(Dataset):
         return self.measurements[idx], self.in_hosp_mort[idx]
 
     @classmethod
+    # TODO change this to import from json files instead of pickles (will use
+    #  preprocess.encode_decode.FeatureArraysReader & .ClassLabelsReader
     def from_feature_finalizer_output(
         cls,
-        measurements_path: Path = PREPROCESS_OUTPUT_DIR
-        / PREPROCESS_OUTPUT_FILES["measurement_data_list"],
-        in_hospital_mort_path: Path = PREPROCESS_OUTPUT_DIR
-        / PREPROCESS_OUTPUT_FILES["in_hospital_mortality_list"],
+        measurements_path: Path = cfp.PREPROCESS_OUTPUT_DIR
+        / cfp.PREPROCESS_OUTPUT_FILES["measurement_data_list"],
+        in_hospital_mort_path: Path = cfp.PREPROCESS_OUTPUT_DIR
+        / cfp.PREPROCESS_OUTPUT_FILES["in_hospital_mortality_list"],
         max_num_samples: int = None,
         random_seed: int = None,
     ):
-        importer = rio.ResourceImporter()
-        measurements_np_list = importer.import_pickle_to_object(
-            path=measurements_path
+        measurements_np_list = (
+            edc.FeatureArraysReader()
+            .import_struct(path=measurements_path)
+            .data
         )
-        mort_int_list = importer.import_pickle_to_object(
-            path=in_hospital_mort_path
+        mort_int_list = (
+            edc.ClassLabelsReader()
+            .import_struct(path=in_hospital_mort_path)
+            .data
         )
         assert len(measurements_np_list) == len(mort_int_list)
 
@@ -176,8 +176,8 @@ class DatasetInspector:
 
 if __name__ == "__main__":
     x19_general_dataset = X19MGeneralDataset.from_feature_finalizer_output(
-        max_num_samples=100
+        # max_num_samples=100
     )
     x19_with_index = X19MGeneralDatasetWithIndex.from_feature_finalizer_output(
-        max_num_samples=100
+        # max_num_samples=100
     )
