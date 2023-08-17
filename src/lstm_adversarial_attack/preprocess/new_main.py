@@ -17,7 +17,7 @@ def main():
         individual_resources_info=[
             rds.FileResourceInfo(
                 key="icustay",
-                path=cfp.DB_OUTPUT_DIR / "icustay_4000.csv",
+                path=cfp.DB_OUTPUT_DIR / "icustay_500.csv",
                 constructor=rds.IncomingCSVDataFrame
             ),
             rds.FileResourceInfo(

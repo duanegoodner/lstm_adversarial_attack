@@ -7,8 +7,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
+import msgspec
+
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
+import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
+import lstm_adversarial_attack.preprocess.encode_decode as edc
 
 
 class NewPreprocessModule(ABC):
@@ -41,6 +45,30 @@ class NewPreprocessModule(ABC):
         self,
     ) -> dict[str, rds.OutgoingPreprocessResource]:
         pass
+
+    @property
+    def summary(self) -> eds.PreprocessModuleSummary:
+        return eds.PreprocessModuleSummary(
+            output_dir=str(self._output_dir),
+            output_constructors={
+                key: val.__name__
+                for key, val in self._output_constructors.__dict__.items()
+            },
+            resources={
+                key: {
+                    "resource_name": val.__class__.__name__,
+                    "resource_id": str(val.resource_id),
+                }
+                for key, val in self._resources.__dict__.items()
+            },
+            settings=self._settings.__dict__,
+        )
+
+    def save_summary(self):
+        edc.PreprocessModuleSummaryWriter().export(
+            obj=self.summary,
+            path=self._output_dir / f"{self.__class__.__name__}_summary.json",
+        )
 
 
 @dataclass
@@ -110,6 +138,7 @@ class NewPreprocessor:
             self.export_resources(
                 module_output=module_output, output_dir=module.output_dir
             )
+            module.save_summary()
             export_end = time.time()
             print(
                 f"{module.__class__.__name__} export time ="

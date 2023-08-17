@@ -232,6 +232,15 @@ class MeasurementColumnNamesWriter(StandardStructWriter):
         pass  # MeasurementColumnNames object is json-ready
 
 
+class PreprocessModuleSummaryWriter(StandardStructWriter):
+    def __init__(self):
+        super().__init__(struct_type=eds.PreprocessModuleSummary)
+
+    @staticmethod
+    def enc_hook(obj: Any) -> Any:
+        pass    # PreprocessModuleSummary is json-ready
+
+
 DecodeType = TypeVar("DecodeType", bound=msgspec.Struct)
 
 

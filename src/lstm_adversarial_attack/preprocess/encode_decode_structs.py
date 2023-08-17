@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 import msgspec
 import numpy as np
@@ -44,3 +45,10 @@ class ClassLabels(msgspec.Struct):
 
 class MeasurementColumnNames(msgspec.Struct):
     data: tuple[str, ...]
+
+
+class PreprocessModuleSummary(msgspec.Struct):
+    output_dir: str
+    output_constructors: dict[str, str]
+    resources: dict[str, dict[str, str]]
+    settings: dict[str, Any]
