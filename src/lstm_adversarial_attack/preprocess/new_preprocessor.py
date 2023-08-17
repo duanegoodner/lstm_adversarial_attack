@@ -50,6 +50,7 @@ class ModuleInfo:
     individual_resources_info: list[rds.SingleResourceInfo]
     output_info: dataclass = None
     output_dir: Path = None
+    save_output: bool = False
     settings: dataclass = None
 
     def build_module(
@@ -117,7 +118,7 @@ class NewPreprocessor:
         self.available_resources.update(module_output)
 
     def run_all_modules(self):
-        for idx, module_info in enumerate(self.modules_info):
+        for module_info in self.modules_info:
             print(f"Running {module_info.module_constructor.__name__}")
             init_start = time.time()
             module = module_info.build_module(
@@ -131,7 +132,7 @@ class NewPreprocessor:
             self.run_preprocess_module(
                 module=module,
                 save_output=self.save_checkpoints
-                or (idx == len(self.modules_info) - 1),
+                or module_info.save_output,
             )
 
         return self.available_resources

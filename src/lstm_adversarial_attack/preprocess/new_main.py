@@ -17,7 +17,7 @@ def main():
         individual_resources_info=[
             rds.FileResourceInfo(
                 key="icustay",
-                path=cfp.DB_OUTPUT_DIR / "icustay_500.csv",
+                path=cfp.DB_OUTPUT_DIR / "icustay_4000.csv",
                 constructor=rds.IncomingCSVDataFrame
             ),
             rds.FileResourceInfo(
@@ -101,7 +101,8 @@ def main():
                 key="processed_admission_list",
                 constructor=rds.IncomingFullAdmissionData
             )
-        ]
+        ],
+        save_output=True
     )
     modules_info = [
         prefilter_info,
