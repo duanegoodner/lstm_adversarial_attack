@@ -34,7 +34,7 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
         resources: rds.NewFeatureFinalizerResources = None,
         output_dir: cfp.PREPROCESS_OUTPUT_DIR = None,
         settings: NewFeatureFinalizerSettings = None,
-        output_info: rds.NewFeatureFinalizerOutputInfo = None,
+        output_constructors: rds.NewFeatureFinalizerOutputConstructors = None,
     ):
         if resources is None:
             resources = rds.NewFeatureFinalizerResources()
@@ -42,13 +42,13 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
             output_dir = cfp.FEATURE_FINALIZER_OUTPUT
         if settings is None:
             settings = NewFeatureFinalizerSettings()
-        if output_info is None:
-            output_info = rds.NewFeatureFinalizerOutputInfo()
+        if output_constructors is None:
+            output_constructors = rds.NewFeatureFinalizerOutputConstructors()
         super().__init__(
             resources=resources,
             output_dir=output_dir,
             settings=settings,
-            output_info=output_info,
+            output_constructors=output_constructors,
         )
         self.processed_admission_list = resources.processed_admission_list.item
 
@@ -133,14 +133,14 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
 
         return {
             "in_hospital_mortality_list": (
-                self.output_info.in_hospital_mortality_list(
+                self.output_constructors.in_hospital_mortality_list(
                     resource=in_hospital_mortality_list
                 )
             ),
-            "measurement_col_names": self.output_info.measurement_col_names(
+            "measurement_col_names": self.output_constructors.measurement_col_names(
                 resource=self.measurement_col_names,
             ),
-            "measurement_data_list": self.output_info.measurement_data_list(
+            "measurement_data_list": self.output_constructors.measurement_data_list(
                 resource=measurement_data_list
             ),
         }

@@ -17,12 +17,12 @@ class NewPreprocessModule(ABC):
         resources: dataclass,
         output_dir: Path,
         settings: dataclass,
-        output_info: dataclass,
+        output_constructors: dataclass,
     ):
         self._resources = resources
         self._output_dir = output_dir
         self._settings = settings
-        self._output_info = output_info
+        self._output_constructors = output_constructors
 
     @property
     def settings(self) -> dataclass:
@@ -33,8 +33,8 @@ class NewPreprocessModule(ABC):
         return self._output_dir
 
     @property
-    def output_info(self) -> dataclass:
-        return self._output_info
+    def output_constructors(self) -> dataclass:
+        return self._output_constructors
 
     @abstractmethod
     def process(
@@ -48,7 +48,7 @@ class ModuleInfo:
     module_constructor: Callable[..., NewPreprocessModule]
     resources_constructor: Callable[..., dataclass]
     individual_resources_info: list[rds.SingleResourceInfo]
-    output_info: dataclass = None
+    output_constructors: dataclass = None
     output_dir: Path = None
     save_output: bool = False
     settings: dataclass = None
@@ -66,7 +66,7 @@ class ModuleInfo:
             resources=resources,
             output_dir=self.output_dir,
             settings=self.settings,
-            output_info=self.output_info,
+            output_constructors=self.output_constructors,
         )
 
 
@@ -131,8 +131,7 @@ class NewPreprocessor:
             )
             self.run_preprocess_module(
                 module=module,
-                save_output=self.save_checkpoints
-                or module_info.save_output,
+                save_output=self.save_checkpoints or module_info.save_output,
             )
 
         return self.available_resources

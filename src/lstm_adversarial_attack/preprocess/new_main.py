@@ -70,9 +70,7 @@ def main():
                 constructor=rds.IncomingFeatherDataFrame
             )
         ],
-        # output_info=rds.NewAdmissionListBuilderOutputInfo(
-        #     full_admission_list=rds.OutgoingPreprocessPickle
-        # )
+
     )
 
     feature_builder_info = ppr.ModuleInfo(
@@ -88,7 +86,7 @@ def main():
                 constructor=rds.IncomingFeatherDataFrame
             )
         ],
-        # output_info=rds.NewFeatureBuilderOutputInfo(
+        # output_info=rds.NewFeatureBuilderOutputConstructors(
         #     processed_admission_list=rds.OutgoingPreprocessPickle
         # )
     )

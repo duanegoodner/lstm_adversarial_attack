@@ -38,7 +38,7 @@ class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
         resources: rds.NewICUStayMeasurementMergerResources = None,
         output_dir: Path = None,
         settings: NewICUStayMeasurementMergerSettings = None,
-        output_info: rds.NewICUStayMeasurementMergerOutputInfo = None,
+        output_constructors: rds.NewICUStayMeasurementMergerOutputConstructors = None,
     ):
         if resources is None:
             resources = rds.NewICUStayMeasurementMergerResources()
@@ -46,13 +46,13 @@ class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
             output_dir = cfp.STAY_MEASUREMENT_OUTPUT
         if settings is None:
             settings = NewICUStayMeasurementMergerSettings()
-        if output_info is None:
-            output_info = rds.NewICUStayMeasurementMergerOutputInfo()
+        if output_constructors is None:
+            output_constructors = rds.NewICUStayMeasurementMergerOutputConstructors()
         super().__init__(
             resources=resources,
             output_dir=output_dir,
             settings=settings,
-            output_info=output_info,
+            output_constructors=output_constructors,
         )
         self.prefiltered_icustay = resources.prefiltered_icustay.item
         self.prefiltered_bg = resources.prefiltered_bg.item
@@ -152,11 +152,11 @@ class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
 
     def process(self) -> dict[str, rds.OutgoingPreprocessResource]:
         return {
-            "icustay_bg_lab_vital": self.output_info.icustay_bg_lab_vital(
+            "icustay_bg_lab_vital": self.output_constructors.icustay_bg_lab_vital(
                 resource=self.icustay_bg_lab_vital
             ),
             "bg_lab_vital_summary_stats": (
-                self.output_info.bg_lab_vital_summary_stats(
+                self.output_constructors.bg_lab_vital_summary_stats(
                     resource=self.summary_stats
                 )
             ),

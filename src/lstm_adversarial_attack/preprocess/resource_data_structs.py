@@ -240,7 +240,7 @@ class NewPrefilterResources:
 
 
 @dataclass
-class NewPrefilterOutputInfo:
+class NewPrefilterOutputConstructors:
     prefiltered_icustay: Callable[..., OutgoingPreprocessResource] = (
         OutgoingPreprocessDataFrame
     )
@@ -280,7 +280,7 @@ class NewICUStayMeasurementMergerResources:
 
 
 @dataclass
-class NewICUStayMeasurementMergerOutputInfo:
+class NewICUStayMeasurementMergerOutputConstructors:
     icustay_bg_lab_vital: Callable[..., OutgoingPreprocessResource] = (
         OutgoingPreprocessDataFrame
     )
@@ -301,7 +301,7 @@ class NewAdmissionListBuilderResources:
 
 
 @dataclass
-class NewAdmissionListBuilderOutputInfo:
+class NewAdmissionListBuilderOutputConstructors:
     full_admission_list: Callable[..., OutgoingPreprocessResource] = (
         OutgoingFullAdmissionData
     )
@@ -324,7 +324,7 @@ class NewFeatureBuilderResources:
 
 
 @dataclass
-class NewFeatureBuilderOutputInfo:
+class NewFeatureBuilderOutputConstructors:
     processed_admission_list: Callable[..., OutgoingPreprocessResource] = (
         OutgoingFullAdmissionData
     )
@@ -342,7 +342,7 @@ class NewFeatureFinalizerResources:
 
 
 @dataclass
-class NewFeatureFinalizerOutputInfo:
+class NewFeatureFinalizerOutputConstructors:
     in_hospital_mortality_list: Callable[..., OutgoingPreprocessResource] = (
         OutgoingClassLabels
     )

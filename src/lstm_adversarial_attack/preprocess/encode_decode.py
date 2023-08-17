@@ -8,7 +8,6 @@ import msgspec
 import numpy as np
 import pandas as pd
 
-import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 

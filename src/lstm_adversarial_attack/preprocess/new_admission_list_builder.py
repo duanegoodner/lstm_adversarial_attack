@@ -33,7 +33,7 @@ class NewAdmissionListBuilder(pre.NewPreprocessModule):
         resources: rds.NewAdmissionListBuilderResources = None,
         output_dir: Path = None,
         settings: NewAdmissionListBuilderSettings = None,
-        output_info: rds.NewAdmissionListBuilderOutputInfo = None,
+        output_constructors: rds.NewAdmissionListBuilderOutputConstructors = None,
     ):
         if resources is None:
             resources = rds.NewAdmissionListBuilderResources()
@@ -41,13 +41,13 @@ class NewAdmissionListBuilder(pre.NewPreprocessModule):
             output_dir = cfp.FULL_ADMISSION_LIST_OUTPUT
         if settings is None:
             settings = NewAdmissionListBuilderSettings()
-        if output_info is None:
-            output_info = rds.NewAdmissionListBuilderOutputInfo()
+        if output_constructors is None:
+            output_constructors = rds.NewAdmissionListBuilderOutputConstructors()
         super().__init__(
             resources=resources,
             output_dir=output_dir,
             settings=settings,
-            output_info=output_info,
+            output_constructors=output_constructors,
         )
         self.icustay_bg_lab_vital = resources.icustay_bg_lab_vital.item
 
@@ -92,7 +92,7 @@ class NewAdmissionListBuilder(pre.NewPreprocessModule):
 
     def process(self) -> dict[str, rds.OutgoingPreprocessResource]:
         return {
-            "full_admission_list": self.output_info.full_admission_list(
+            "full_admission_list": self.output_constructors.full_admission_list(
                 resource=self.admission_list
             )
         }

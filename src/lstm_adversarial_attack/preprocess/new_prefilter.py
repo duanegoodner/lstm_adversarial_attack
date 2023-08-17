@@ -36,7 +36,7 @@ class NewPrefilter(pre.NewPreprocessModule):
         resources: rds.NewPrefilterResources = None,
         output_dir: Path = None,
         settings: NewPrefilterSettings = None,
-        output_info: rds.NewPrefilterOutputInfo = None,
+        output_constructors: rds.NewPrefilterOutputConstructors = None,
     ):
         if resources is None:
             resources = rds.NewPrefilterResources()
@@ -44,13 +44,13 @@ class NewPrefilter(pre.NewPreprocessModule):
             output_dir = cfp.PREFILTER_OUTPUT
         if settings is None:
             settings = NewPrefilterSettings()
-        if output_info is None:
-            output_info = rds.NewPrefilterOutputInfo()
+        if output_constructors is None:
+            output_constructors = rds.NewPrefilterOutputConstructors()
         super().__init__(
             resources=resources,
             output_dir=output_dir,
             settings=settings,
-            output_info=output_info,
+            output_constructors=output_constructors,
         )
         self.icustay = resources.icustay.item
         self.bg = resources.bg.item
@@ -191,16 +191,16 @@ class NewPrefilter(pre.NewPreprocessModule):
         )
 
         return {
-            "prefiltered_icustay": self.output_info.prefiltered_icustay(
+            "prefiltered_icustay": self.output_constructors.prefiltered_icustay(
                 resource=filtered_icustay
             ),
-            "prefiltered_bg": self.output_info.prefiltered_bg(
+            "prefiltered_bg": self.output_constructors.prefiltered_bg(
                 resource=filtered_bg
             ),
-            "prefiltered_lab": self.output_info.prefiltered_lab(
+            "prefiltered_lab": self.output_constructors.prefiltered_lab(
                 resource=filtered_lab
             ),
-            "prefiltered_vital": self.output_info.prefiltered_vital(
+            "prefiltered_vital": self.output_constructors.prefiltered_vital(
                 resource=filtered_vital
             ),
         }

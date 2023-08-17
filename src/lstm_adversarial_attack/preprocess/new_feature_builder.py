@@ -28,7 +28,7 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
         resources: rds.NewFeatureBuilderResources = None,
         output_dir: Path = None,
         settings: NewFeatureBuilderSettings = None,
-        output_info: rds.NewFeatureBuilderOutputInfo = None,
+        output_constructors: rds.NewFeatureBuilderOutputConstructors = None,
     ):
         if resources is None:
             resources = rds.NewFeatureBuilderResources()
@@ -36,13 +36,13 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
             output_dir = cfp.FEATURE_BUILDER_OUTPUT
         if settings is None:
             settings = NewFeatureBuilderSettings()
-        if output_info is None:
-            output_info = rds.NewFeatureBuilderOutputInfo()
+        if output_constructors is None:
+            output_constructors = rds.NewFeatureBuilderOutputConstructors()
         super().__init__(
             resources=resources,
             output_dir=output_dir,
             settings=settings,
-            output_info=output_info,
+            output_constructors=output_constructors,
         )
         self.full_admission_list = resources.full_admission_list.item
         self.bg_lab_vital_summary_stats = (
@@ -162,7 +162,7 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
 
         return {
             "processed_admission_list": (
-                self.output_info.processed_admission_list(
+                self.output_constructors.processed_admission_list(
                     resource=filtered_admission_list
                 )
             )
