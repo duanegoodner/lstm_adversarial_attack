@@ -1,15 +1,16 @@
+import sys
+from copy import deepcopy
+from pathlib import Path
 from typing import Any
 
 import sklearn.metrics as skm
-import sys
 import torch.nn as nn
 import torch.optim
 import torch.utils.data as ud
-from copy import deepcopy
-from pathlib import Path
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path.append(str(Path(__file__).parent.parent))
+import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.resource_io as rio
 
@@ -36,8 +37,6 @@ class StandardModelTrainer:
         summary_writer_subgroup: str = "",
     ):
         self.device = device
-        # self.train_device = train_device
-        # self.eval_device = eval_device
         self.model = model
         self.loss_fn = loss_fn
         self.optimizer = optimizer
@@ -71,7 +70,7 @@ class StandardModelTrainer:
 
         return ds.ClassificationScores(
             accuracy=skm.accuracy_score(y_true=y_true_np, y_pred=y_pred_np),
-            AUC=skm.roc_auc_score(y_true=y_true_one_hot, y_score=y_score_np),
+            auc=skm.roc_auc_score(y_true=y_true_one_hot, y_score=y_score_np),
             precision=skm.precision_score(y_true=y_true_np, y_pred=y_pred_np),
             recall=skm.recall_score(y_true=y_true_np, y_pred=y_pred_np),
             f1=skm.f1_score(y_true=y_true_np, y_pred=y_pred_np),
@@ -97,14 +96,6 @@ class StandardModelTrainer:
         output_path = rio.create_timestamped_filepath(
             parent_path=self.checkpoint_dir, file_extension="tar"
         )
-        # output_object = {
-        #     "epoch_num": deepcopy(self.completed_epochs),
-        #     "train_log_entry": deepcopy(self.train_log.data[-1]),
-        #     "eval_log_entry": deepcopy(self.eval_log.data[-1]),
-        #     "state_dict": deepcopy(self.model.state_dict()),
-        #     "optimizer_state_dict": deepcopy(self.optimizer.state_dict()),
-        # }
-        torch.save(obj=self._current_checkpoint_info, f=output_path)
         return output_path
 
     def train_model(
@@ -213,21 +204,54 @@ class StandardModelTrainer:
             f" data:\n{eval_results}\n"
         )
 
+        metrics_of_interest = [
+            "accuracy",
+            "auc",
+            "f1",
+            "precision",
+            "recall",
+            "validation_loss",
+        ]
+
         if self.summary_writer is not None:
-            self.summary_writer.add_scalars(
-                f"{self.summary_writer_group}/AUC",
-                {f"{self.summary_writer_subgroup}": eval_results.AUC},
-                self.completed_epochs,
-            )
-            self.summary_writer.add_scalars(
-                f"{self.summary_writer_group}/_validation_loss",
-                {
-                    f"{self.summary_writer_subgroup}": (
-                        eval_results.validation_loss
-                    ),
-                },
-                self.completed_epochs,
-            )
+
+            report_attributes = [
+                "accuracy",
+                "auc",
+                "f1",
+                "precision",
+                "recall",
+                "validation_loss",
+            ]
+            for attribute in report_attributes:
+                self.summary_writer.add_scalars(
+                    f"{self.summary_writer_group}/{cfs.ATTR_DISPLAY[attribute]}",
+                    {
+                        f"{self.summary_writer_subgroup}": getattr(
+                            eval_results, attribute
+                        )
+                    },
+                    self.completed_epochs,
+                )
+
+            # self.summary_writer.add_scalars(
+            #     f"{self.summary_writer_group}/{cfs.ATTR_DISPLAY['auc']}",
+            #     {
+            #         f"{self.summary_writer_subgroup}": getattr(
+            #             eval_results, "auc"
+            #         )
+            #     },
+            #     self.completed_epochs,
+            # )
+            # self.summary_writer.add_scalars(
+            #     f"{self.summary_writer_group}/{cfs.ATTR_DISPLAY['validation_loss']}",
+            #     {
+            #         f"{self.summary_writer_subgroup}": getattr(
+            #             eval_results, "validation_loss"
+            #         ),
+            #     },
+            #     self.completed_epochs,
+            # )
 
     def run_train_eval_cycles(
         self,

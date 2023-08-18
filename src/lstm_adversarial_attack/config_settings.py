@@ -1,3 +1,11 @@
+ATTR_DISPLAY = {
+    "accuracy": "accuracy",
+    "auc": "AUC",
+    "f1": "F1",
+    "precision": "precision",
+    "recall": "recall",
+    "validation_loss": "_validation_loss",
+}
 
 PREPROCESS_BG_DATA_COLS = ["potassium", "calcium", "ph", "pco2", "lactate"]
 PREPROCESS_LAB_DATA_COLS = [
@@ -44,17 +52,24 @@ TUNING_OPTIMIZER_OPTIONS = ("Adam", "RMSprop", "SGD")
 TUNING_LEARNING_RATE = (1e-5, 1e-1)
 TUNING_LOG_BATCH_SIZE = (5, 8)
 
-TUNER_NUM_FOLDS = 5
-TUNER_NUM_CV_EPOCHS = 20
-TUNER_EPOCHS_PER_FOLD = 5
-# TUNER_NUM_FOLDS = 3
-# TUNER_NUM_CV_EPOCHS = 2
-# TUNER_EPOCHS_PER_FOLD = 2
+# TUNER_NUM_FOLDS = 5
+# TUNER_NUM_CV_EPOCHS = 20
+# TUNER_EPOCHS_PER_FOLD = 5
+TUNER_NUM_FOLDS = 3
+TUNER_NUM_CV_EPOCHS = 2
+TUNER_EPOCHS_PER_FOLD = 2
 TUNER_PRUNER_NUM_STARTUP_TRIALS = 5
 TUNER_PRUNER_NUM_WARMUP_STEPS = 3
 TUNER_NUM_TRIALS = 30
 TUNER_KFOLD_RANDOM_SEED = 1234
-TUNER_CV_MEAN_METRICS_OF_INTEREST = ("AUC", "validation_loss")
+TUNER_CV_MEAN_METRICS_OF_INTEREST = (
+    "accuracy",
+    "auc",
+    "f1",
+    "precision",
+    "recall",
+    "validation_loss",
+)
 TUNER_PERFORMANCE_METRIC = "validation_loss"
 TUNER_OPTIMIZATION_DIRECTION = "minimize"
 
@@ -82,4 +97,3 @@ ATTACK_SAMPLE_SELECTION_SEED = 2023
 ATTACK_CHECKPOINT_INTERVAL = 50
 
 ATTACK_ANALYSIS_DEFAULT_SEQ_LENGTH = 48
-

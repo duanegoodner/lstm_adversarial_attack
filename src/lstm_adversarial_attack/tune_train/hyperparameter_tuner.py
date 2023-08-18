@@ -1,26 +1,26 @@
 import json
+import sys
+from pathlib import Path
+from typing import Callable
 
 import optuna
-import sys
 import torch
 import torch.nn as nn
 from optuna.pruners import BasePruner, MedianPruner
 from optuna.samplers import BaseSampler, TPESampler
 from optuna.trial import TrialState
-from pathlib import Path
 from sklearn.model_selection import StratifiedKFold
 from torch.utils.data import DataLoader, Dataset, Subset
 from torch.utils.tensorboard import SummaryWriter
-from typing import Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_settings as cfg_set
-import lstm_adversarial_attack.resource_io as rio
+import lstm_adversarial_attack.config_paths as cfp
+import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.data_structures as ds
-import lstm_adversarial_attack.config_paths as cfg_paths
+import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
-import lstm_adversarial_attack.weighted_dataloader_builder as wdb
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
+import lstm_adversarial_attack.weighted_dataloader_builder as wdb
 
 
 # TODO Try to replace cross-validation work here with CrossValidator (if able
@@ -222,7 +222,7 @@ class HyperParameterTuner:
         """
         for metric in self.cv_mean_metrics_of_interest:
             summary_writer.add_scalar(
-                f"{self.trial_prefix}{trial.number}/{metric}_mean",
+                f"{self.trial_prefix}{trial.number}/{cfs.ATTR_DISPLAY[metric]}_mean",
                 getattr(log_entry.result, metric),
                 log_entry.epoch,
             )

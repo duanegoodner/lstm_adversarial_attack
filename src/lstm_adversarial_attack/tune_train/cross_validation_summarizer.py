@@ -105,7 +105,7 @@ class FoldSummarizer:
                 for item in self.fold_checkpoints
             ],
             "auc": [
-                item["eval_log_entry"].result.AUC
+                item["eval_log_entry"].result.auc
                 for item in self.fold_checkpoints
             ],
             "accuracy": [

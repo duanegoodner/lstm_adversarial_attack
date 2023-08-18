@@ -15,7 +15,7 @@ class VariableLengthFeatures:
 @dataclass
 class ClassificationScores:
     accuracy: float
-    AUC: float
+    auc: float
     precision: float
     recall: float
     f1: float
@@ -23,7 +23,7 @@ class ClassificationScores:
     def __str__(self) -> str:
         return (
             f"Accuracy:\t{self.accuracy:.4f}\n"
-            f"AUC:\t\t{self.AUC:.4f}\n"
+            f"AUC:\t\t{self.auc:.4f}\n"
             f"Precision:\t{self.precision:.4f}\n"
             f"Recall:\t\t{self.recall:.4f}\n"
             f"F1:\t\t\t{self.f1:.4f}"
@@ -43,7 +43,7 @@ class TrainEpochResult:
 class EvalEpochResult:
     validation_loss: float
     accuracy: float
-    AUC: float
+    auc: float
     precision: float
     recall: float
     f1: float
@@ -55,7 +55,7 @@ class EvalEpochResult:
         return cls(
             validation_loss=validation_loss,
             accuracy=scores.accuracy,
-            AUC=scores.AUC,
+            auc=scores.auc,
             precision=scores.precision,
             recall=scores.recall,
             f1=scores.f1,
@@ -68,7 +68,7 @@ class EvalEpochResult:
                 [item.validation_loss for item in results]
             ),
             accuracy=np.mean([item.accuracy for item in results]),
-            AUC=np.mean([item.AUC for item in results]),
+            auc=np.mean([item.auc for item in results]),
             precision=np.mean([item.precision for item in results]),
             recall=np.mean([item.recall for item in results]),
             f1=np.mean([item.f1 for item in results]),
@@ -78,7 +78,7 @@ class EvalEpochResult:
         return (
             f"Loss:\t\t{self.validation_loss:.4f}\n"
             f"Accuracy:\t{self.accuracy:.4f}\n"
-            f"AUC:\t\t{self.AUC:.4f}\n"
+            f"AUC:\t\t{self.auc:.4f}\n"
             f"Precision:\t{self.precision:.4f}\n"
             f"Recall:\t\t{self.recall:.4f}\n"
             f"F1:\t\t\t{self.f1:.4f}"
@@ -156,3 +156,5 @@ class FullEvalResult:
     y_pred: torch.tensor
     y_score: torch.tensor
     y_true: torch.tensor
+
+
