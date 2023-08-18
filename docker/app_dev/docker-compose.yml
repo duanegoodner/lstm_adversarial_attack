@@ -62,9 +62,22 @@ services:
     stdin_open: true
     tty: true
 
+  postgres_optuna:
+    image: postgres
+    container_name: postgres_optuna
+    environment:
+      - POSTGRES_PASSWORD=optuna
+      - POSTGRES_USER=optuna
+      - POSTGRES_DB=optuna
+    volumes:
+      - optuna_db:/var/lib/postgresql/data
+    ports:
+      - 5556:5432
+
 volumes:
   postgres_mimiciii_db:
     external: true
+  optuna_db:
 
 
 

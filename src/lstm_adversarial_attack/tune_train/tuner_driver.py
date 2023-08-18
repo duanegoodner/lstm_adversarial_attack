@@ -131,14 +131,6 @@ class TunerDriver:
                 obj=self.summary, path=summary_output_path
             )
 
-        # driver_dict_output_path = rio.create_timestamped_filepath(
-        #     parent_path=self.output_dir,
-        #     file_extension="pickle",
-        #     prefix="tuner_driver_dict_",
-        # )
-        # rio.ResourceExporter().export(
-        #     resource=self.__dict__, path=driver_dict_output_path
-        # )
         tuner = htu.HyperParameterTuner(
             device=self.device,
             dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
