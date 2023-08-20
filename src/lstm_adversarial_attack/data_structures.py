@@ -4,6 +4,7 @@ import torch
 from abc import ABC
 from dataclasses import dataclass
 from enum import Enum, auto
+from typing import Iterable, TypeVar, Type, Callable, Any
 
 
 @dataclass
@@ -60,6 +61,35 @@ class EvalEpochResult:
             recall=scores.recall,
             f1=scores.f1,
         )
+
+    def __add__(self, other):
+        if isinstance(other, EvalEpochResult):
+            sum_dict = {
+                key: self.__dict__[key] + other.__dict__[key]
+                for key in self.__dict__.keys()
+            }
+            return EvalEpochResult(**sum_dict)
+        else:
+            raise TypeError("Unsupported operand type")
+
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        else:
+            return self.__add__(other)
+
+    def __truediv__(self, other):
+        if isinstance(other, (int, float)):
+            if other == 0:
+                raise ZeroDivisionError("Division by zero")
+            else:
+                quotient_dict = {
+                    key: self.__dict__[key] / other
+                    for key in self.__dict__.keys()
+                }
+            return EvalEpochResult(**quotient_dict)
+        else:
+            raise TypeError("Unsupported operand type")
 
     @classmethod
     def mean(cls, results: list["EvalEpochResult"]) -> "EvalEpochResult":
@@ -156,5 +186,4 @@ class FullEvalResult:
     y_pred: torch.tensor
     y_score: torch.tensor
     y_true: torch.tensor
-
 

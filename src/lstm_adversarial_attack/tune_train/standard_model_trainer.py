@@ -155,7 +155,7 @@ class StandardModelTrainer:
             )
 
     @torch.no_grad()
-    def evaluate_model(self):
+    def evaluate_model(self) -> ds.EvalLogEntry:
         """
         Evaluates model. Calculates and stores perfromance metrics.
         """
@@ -184,12 +184,18 @@ class StandardModelTrainer:
             validation_loss=epoch_loss, **classification_scores.__dict__
         )
 
+        eval_log_entry = ds.EvalLogEntry(
+            epoch=self.completed_epochs, result=eval_results
+        )
+
         self.eval_log.update(
-            ds.EvalLogEntry(epoch=self.completed_epochs, result=eval_results)
+            eval_log_entry
         )
         self.report_eval_results(
             eval_results=eval_results,
         )
+
+        return eval_log_entry
 
     def report_eval_results(
         self,
@@ -214,7 +220,6 @@ class StandardModelTrainer:
         ]
 
         if self.summary_writer is not None:
-
             report_attributes = [
                 "accuracy",
                 "auc",
@@ -234,24 +239,7 @@ class StandardModelTrainer:
                     self.completed_epochs,
                 )
 
-            # self.summary_writer.add_scalars(
-            #     f"{self.summary_writer_group}/{cfs.ATTR_DISPLAY['auc']}",
-            #     {
-            #         f"{self.summary_writer_subgroup}": getattr(
-            #             eval_results, "auc"
-            #         )
-            #     },
-            #     self.completed_epochs,
-            # )
-            # self.summary_writer.add_scalars(
-            #     f"{self.summary_writer_group}/{cfs.ATTR_DISPLAY['validation_loss']}",
-            #     {
-            #         f"{self.summary_writer_subgroup}": getattr(
-            #             eval_results, "validation_loss"
-            #         ),
-            #     },
-            #     self.completed_epochs,
-            # )
+
 
     def run_train_eval_cycles(
         self,
