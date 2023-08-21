@@ -62,7 +62,7 @@ TUNER_PRUNER_NUM_STARTUP_TRIALS = 5
 TUNER_PRUNER_NUM_WARMUP_STEPS = 3
 TUNER_NUM_TRIALS = 30
 TUNER_KFOLD_RANDOM_SEED = 1234
-TUNER_CV_MEAN_METRICS_OF_INTEREST = (
+TUNER_CV_MEAN_TENSORBOARD_METRICS = (
     "accuracy",
     "auc",
     "f1",
@@ -74,6 +74,22 @@ TUNER_PERFORMANCE_METRIC = "validation_loss"
 TUNER_OPTIMIZATION_DIRECTION = "minimize"
 
 TRAINER_RANDOM_SEED = 12345678
+TRAINER_EVAL_GENERAL_LOGGING_METRICS = (
+    "accuracy",
+    "auc",
+    "f1",
+    "precision",
+    "recall",
+    "validation_loss",
+)
+TRAINER_EVAL_TENSORBOARD_METRICS = (
+    "accuracy",
+    "auc",
+    "f1",
+    "precision",
+    "recall",
+    "validation_loss",
+)
 
 CV_ASSESSMENT_RANDOM_SEED = 86420
 CV_DRIVER_EPOCHS_PER_FOLD = 1000

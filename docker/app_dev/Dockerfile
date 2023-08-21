@@ -72,7 +72,7 @@ RUN sudo chown -R ${PRIMARY_USER}:${PRIMARY_USER} ${BUILD_DIR}/accessjd \
 
 RUN sudo mkdir ${CONTAINER_PROJECT_ROOT}
 WORKDIR ${CONTAINER_PROJECT_ROOT}
-RUN sudo rm -rf ${BUILD_DIR}
+RUN #sudo rm -rf ${BUILD_DIR}
 
 # Create rest of directory structure expected of local project
 # ARG CONTAINER_PROJECT_ROOT=${CONTAINER_DEVSPACE}/project

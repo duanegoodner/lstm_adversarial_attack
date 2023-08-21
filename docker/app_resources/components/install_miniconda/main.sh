@@ -3,8 +3,8 @@
 install_dir=$1
 primary_user=$2
 
-miniconda_version=latest
-installer=https://repo.anaconda.com/miniconda/Miniconda3-$miniconda_version-Linux-x86_64.sh
+miniconda_version=py310_23.3.1-0
+installer=https://repo.anaconda.com/miniconda/Miniconda3-py310_23.3.1-0-Linux-x86_64.sh
 
 # export statement seems to have no effect, so add to PATH
 # via Dockerfile $ENV command.
@@ -30,5 +30,6 @@ conda init zsh
 sudo chown -R "$primary_user":"$primary_user" "$install_dir"
 
 # add mamba for faster package installs (in images that use this as base)
+
 conda install mamba -n base -c conda-forge
 mamba update --name base --channel defaults conda

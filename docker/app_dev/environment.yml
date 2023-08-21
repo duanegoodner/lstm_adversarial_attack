@@ -28,7 +28,7 @@ dependencies:
     - git+https://github.com/duanegoodner/pygetfacl@0.0.5
     - graphviz
     - jupyterlab_limit_output
-    - jupyterlab-variableinspector
+#    - jupyterlab-variableinspector
     - netron
     - optuna
     - pyhealth

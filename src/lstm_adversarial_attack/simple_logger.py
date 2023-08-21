@@ -68,7 +68,7 @@ class SimpleLogWriter:
 
 if __name__ == "__main__":
     my_logger = SimpleLogWriter(
-        name_prefix="test_logger",
+        name="test_logger",
         log_file=cfp.HYPERPARAMETER_OUTPUT_DIR / "test_log.csv",
         data_col_names=("a", "b", "c"),
     )

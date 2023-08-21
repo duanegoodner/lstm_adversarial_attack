@@ -13,6 +13,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.resource_io as rio
+import lstm_adversarial_attack.simple_logger as slg
 
 
 class StandardModelTrainer:
@@ -32,6 +33,11 @@ class StandardModelTrainer:
         test_loader: ud.DataLoader,
         checkpoint_dir: Path,
         epoch_start_count: int = 0,
+        train_log_writer: slg.SimpleLogWriter = None,
+        eval_log_writer: slg.SimpleLogWriter = None,
+        eval_log_metrics: tuple[
+            str, ...
+        ] = cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS,
         summary_writer: SummaryWriter = None,
         summary_writer_group: str = "",
         summary_writer_subgroup: str = "",
@@ -46,6 +52,8 @@ class StandardModelTrainer:
         if not checkpoint_dir.exists():
             checkpoint_dir.mkdir()
         self.completed_epochs = epoch_start_count
+        self.train_log_writer = train_log_writer
+        self.eval_log_writer = eval_log_writer
         self.summary_writer = summary_writer
         self.summary_writer_group = summary_writer_group
         self.summary_writer_subgroup = summary_writer_subgroup
@@ -154,6 +162,11 @@ class StandardModelTrainer:
                 self.completed_epochs,
             )
 
+        if self.train_log_writer is not None:
+            self.train_log_writer.write_data(
+                data=(str(self.completed_epochs), str(epoch_loss))
+            )
+
     @torch.no_grad()
     def evaluate_model(self) -> ds.EvalLogEntry:
         """
@@ -188,9 +201,7 @@ class StandardModelTrainer:
             epoch=self.completed_epochs, result=eval_results
         )
 
-        self.eval_log.update(
-            eval_log_entry
-        )
+        self.eval_log.update(eval_log_entry)
         self.report_eval_results(
             eval_results=eval_results,
         )
@@ -210,25 +221,8 @@ class StandardModelTrainer:
             f" data:\n{eval_results}\n"
         )
 
-        metrics_of_interest = [
-            "accuracy",
-            "auc",
-            "f1",
-            "precision",
-            "recall",
-            "validation_loss",
-        ]
-
         if self.summary_writer is not None:
-            report_attributes = [
-                "accuracy",
-                "auc",
-                "f1",
-                "precision",
-                "recall",
-                "validation_loss",
-            ]
-            for attribute in report_attributes:
+            for attribute in cfs.TRAINER_EVAL_TENSORBOARD_METRICS:
                 self.summary_writer.add_scalars(
                     f"{self.summary_writer_group}/{cfs.ATTR_DISPLAY[attribute]}",
                     {
@@ -238,8 +232,6 @@ class StandardModelTrainer:
                     },
                     self.completed_epochs,
                 )
-
-
 
     def run_train_eval_cycles(
         self,

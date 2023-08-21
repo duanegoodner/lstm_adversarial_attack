@@ -38,7 +38,7 @@ class TunerDriver:
         kfold_random_seed: int = cfg_set.TUNER_KFOLD_RANDOM_SEED,
         cv_mean_metrics_of_interest: tuple[
             str, ...
-        ] = cfg_set.TUNER_CV_MEAN_METRICS_OF_INTEREST,
+        ] = cfg_set.TUNER_CV_MEAN_TENSORBOARD_METRICS,
         performance_metric: str = cfg_set.TUNER_PERFORMANCE_METRIC,
         optimization_direction_label: str = cfg_set.TUNER_OPTIMIZATION_DIRECTION,
         pruner_name: str = "MedianPruner",
