@@ -123,11 +123,11 @@ class CrossValidator:
                 settings=self.hyperparameter_settings
             ).build(),
             train_eval_dataset_pair=train_eval_pair,
+            fold_idx=fold_idx,
             output_dir=self.output_root_dir,
-            tensorboard_output_dir=self.output_root_dir / "tensorboard",
-            checkpoint_output_dir=self.output_root_dir
-            / "checkpoints"
-            / f"fold_{fold_idx}",
+            # checkpoint_output_dir=self.output_root_dir
+            # / "checkpoints"
+            # / f"fold_{fold_idx}",
             summary_writer_subgroup=f"fold_{fold_idx}",
             summary_writer_add_graph=fold_idx == 0,
         )

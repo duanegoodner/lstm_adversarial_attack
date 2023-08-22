@@ -23,6 +23,35 @@ import lstm_adversarial_attack.simple_logger as slg
 import lstm_adversarial_attack.config_settings as cfs
 
 
+class TrainingOutputDirs:
+    def __init__(
+        self,
+        root_dir: Path,
+        fold_index: int = None,
+    ):
+        self.root_dir = root_dir
+        self.fold_index = fold_index
+        self.checkpoints_dir = (
+            self.root_dir / "checkpoints" / f"fold_{self.fold_index}"
+            if self.fold_index is not None
+            else self.root_dir / "checkpoints"
+        )
+        self.logs_dir = (
+            self.root_dir / "logs" / f"fold_{self.fold_index}"
+            if self.fold_index is not None
+            else self.root_dir / "logs"
+        )
+        self.tensorboard_dir = self.root_dir / "tensorboard"
+        self._post_init()
+
+    def _post_init(self):
+        self.root_dir.mkdir(parents=True, exist_ok=True)
+        self.checkpoints_dir.mkdir(parents=True, exist_ok=True)
+        self.logs_dir.mkdir(exist_ok=True)
+        self.tensorboard_dir.mkdir(exist_ok=True)
+
+
+
 class TrainerDriver:
     """
     Isolation layer to avoid need to modify StandardModelTrainer.
@@ -43,10 +72,9 @@ class TrainerDriver:
         optimizer_state_dict: dict = None,
         collate_fn: Callable = xmd.x19m_collate_fn,
         loss_fn: nn.Module = nn.CrossEntropyLoss(),
+        fold_idx: int = None,
         epoch_start_count: int = 0,
         output_dir: Path = None,
-        tensorboard_output_dir: Path = None,
-        checkpoint_output_dir: Path = None,
         summary_writer_group: str = "",
         summary_writer_subgroup: str = "",
         summary_writer_add_graph: bool = False,
@@ -60,83 +88,32 @@ class TrainerDriver:
         self.hyperparameter_settings = hyperparameter_settings
         self.batch_size = 2**hyperparameter_settings.log_batch_size
         self.loss_fn = loss_fn
+        self.fold_idx = fold_idx
         self.optimizer = getattr(
             torch.optim, hyperparameter_settings.optimizer_name
         )(self.model.parameters(), lr=hyperparameter_settings.learning_rate)
         if optimizer_state_dict is not None:
             self.optimizer.load_state_dict(state_dict=optimizer_state_dict)
         self.epoch_start_count = epoch_start_count
-        self.output_dir = self.initialize_output_dir(
-            output_dir=output_dir
-            # tensorboard_output_dir=tensorboard_output_dir,
-            # checkpoint_output_dir=checkpoint_output_dir,
-        )
+        # self.output_dir = self.initialize_output_dir(output_dir=output_dir)
+        self.output_dirs = TrainingOutputDirs(root_dir=output_dir)
         self.initialize_output_content()
         self.summary_writer_group = summary_writer_group
         self.summary_writer_subgroup = summary_writer_subgroup
         self.summary_writer_add_graph = summary_writer_add_graph
 
-    @property
-    def tensorboard_dir(self) -> Path | None:
-        return (
-            self.output_dir / "tensorboard"
-            if self.output_dir is not None
-            else None
-        )
-
-    @property
-    def checkpoint_dir(self) -> Path:
-        return (
-            self.output_dir / "checkpoints"
-            if self.output_dir is not None
-            else None
-        )
-
-    @property
-    def logs_dir(self) -> Path:
-        return (
-            self.output_dir / "logs"
-            if self.output_dir is not None
-            else None
-        )
-
-    @staticmethod
-    def initialize_output_dir(
-        output_dir: Path = None,
-    ) -> Path:
-        """
-        Creates output root, tensorboard dir, and checkpoint dir. Puts copies
-        of model and hyperparameters in output root.
-        :param output_dir: root dir for files saved from training/eval
-        :return: output_dir, tensorboard_output_dir, checkpoint_output_dir
-        """
-
-        if output_dir is None:
-            output_dir = rio.create_timestamped_dir(
-                parent_path=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR
-            )
-        else:
-            output_dir.mkdir(parents=True, exist_ok=True)
-
-        return output_dir
-
     def initialize_output_content(self):
         rio.ResourceExporter().export(
-            resource=self.model, path=self.output_dir / "model.pickle"
+            resource=self.model, path=self.output_dirs.root_dir / "model.pickle"
         )
         rio.ResourceExporter().export(
             resource=self.hyperparameter_settings,
-            path=self.output_dir / "hyperparameters.pickle",
+            path=self.output_dirs.root_dir / "hyperparameters.pickle",
         )
 
-        hyperparameters_json_path = self.output_dir / "hyperparameters.json"
+        hyperparameters_json_path = self.output_dirs.root_dir / "hyperparameters.json"
         with hyperparameters_json_path.open(mode="w") as out_file:
             json.dump(self.hyperparameter_settings.__dict__, out_file)
-
-        self.checkpoint_dir.mkdir()
-        self.logs_dir.mkdir()
-        self.tensorboard_dir.mkdir()
-
 
     def build_data_loaders(self) -> tuh.TrainEvalDataLoaderPair:
         """
@@ -194,19 +171,19 @@ class TrainerDriver:
         """
         torch.manual_seed(lcs.TRAINER_RANDOM_SEED)
         data_loaders = self.build_data_loaders()
-        summary_writer = SummaryWriter(str(self.tensorboard_dir))
+        summary_writer = SummaryWriter(str(self.output_dirs.tensorboard_dir))
 
         if self.summary_writer_add_graph:
             self.add_model_graph_to_tensorboard(summary_writer=summary_writer)
 
         train_log_writer = slg.SimpleLogWriter(
             name=f"train_log_{uuid.uuid1().int>>64}",
-            log_file=self.output_dir / "logs" / "train.log",
+            log_file=self.output_dirs.logs_dir / "train.log",
         )
 
         eval_log_writer = slg.SimpleLogWriter(
             name=f"eval_log_{uuid.uuid1().int>>64}",
-            log_file=self.output_dir / "logs" / "eval.log",
+            log_file=self.output_dirs.logs_dir / "eval.log",
         )
 
         trainer = smt.StandardModelTrainer(
@@ -216,7 +193,7 @@ class TrainerDriver:
             test_loader=data_loaders.eval,
             loss_fn=self.loss_fn,
             optimizer=self.optimizer,
-            checkpoint_dir=self.checkpoint_dir,
+            checkpoint_dir=self.output_dirs.checkpoints_dir,
             summary_writer=summary_writer,
             epoch_start_count=self.epoch_start_count,
             summary_writer_group=self.summary_writer_group,
@@ -228,8 +205,8 @@ class TrainerDriver:
 
         print(
             "Training model.\nCheckpoints will be saved"
-            f" in:\n{self.checkpoint_dir}\n\nTensorboard logs will be"
-            f" saved in:\n {self.tensorboard_dir}\n\n"
+            f" in:\n{self.output_dirs.checkpoints_dir}\n\nTensorboard logs will be"
+            f" saved in:\n {self.output_dirs.tensorboard_dir}\n\n"
         )
 
         # This function returns a TrainEval pair, but currently no need to
