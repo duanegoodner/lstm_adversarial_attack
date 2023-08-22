@@ -6,13 +6,9 @@ channels:
 
 dependencies:
   - black
-  - docker-py
   - dill
-  # - gensim
   - isort
   - jupyter
-  - jupyterlab_limit_output
-  - jupyterlab-variableinspector
   - jupyterlab
   - matplotlib
   - msgspec
@@ -29,10 +25,12 @@ dependencies:
   - pip:
     - git+https://github.com/duanegoodner/pygetfacl@0.0.5
     - graphviz
-    - netron
+    - jupyterlab_limit_output
     - optuna
-    - pyhealth
     - tensorboard
     - torch
     - torchview
     - torchvision
+
+
+

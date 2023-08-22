@@ -54,6 +54,7 @@ class StandardModelTrainer:
         self.completed_epochs = epoch_start_count
         self.train_log_writer = train_log_writer
         self.eval_log_writer = eval_log_writer
+        self.eval_log_metrics = eval_log_metrics
         self.summary_writer = summary_writer
         self.summary_writer_group = summary_writer_group
         self.summary_writer_subgroup = summary_writer_subgroup
@@ -232,6 +233,10 @@ class StandardModelTrainer:
                     },
                     self.completed_epochs,
                 )
+
+        if self.summary_writer is not None:
+            metric_vals = tuple([getattr(eval_results, attribute) for attribute in self.eval_log_metrics])
+            self.eval_log_writer.write_data(data=(self.completed_epochs, *metric_vals))
 
     def run_train_eval_cycles(
         self,

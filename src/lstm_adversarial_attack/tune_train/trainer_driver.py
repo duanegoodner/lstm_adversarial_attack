@@ -1,4 +1,5 @@
 import sys
+import uuid
 from dataclasses import dataclass
 import json
 import optuna
@@ -18,7 +19,8 @@ import lstm_adversarial_attack.weighted_dataloader_builder as wdl
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
-
+import lstm_adversarial_attack.simple_logger as slg
+import lstm_adversarial_attack.config_settings as cfs
 
 class TrainerDriver:
     """
@@ -81,6 +83,7 @@ class TrainerDriver:
         output_root_dir: Path = None,
         tensorboard_output_dir: Path = None,
         checkpoint_output_dir: Path = None,
+        logs_dir: Path = None
     ) -> tuple[Path, Path, Path]:
         """
         Creates output root, tensorboard dir, and checkpoint dir. Puts copies
@@ -116,6 +119,12 @@ class TrainerDriver:
         if checkpoint_output_dir is None:
             checkpoint_output_dir = output_root_dir / "checkpoints"
         checkpoint_output_dir.mkdir(parents=True, exist_ok=True)
+
+        if logs_dir is None:
+            logs_dir = output_root_dir / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+
+
 
         return output_root_dir, tensorboard_output_dir, checkpoint_output_dir
 
@@ -180,6 +189,20 @@ class TrainerDriver:
         if self.summary_writer_add_graph:
             self.add_model_graph_to_tensorboard(summary_writer=summary_writer)
 
+        train_log_writer = slg.SimpleLogWriter(
+            name=f"train_log_{uuid.uuid1().int>>64}",
+            log_file=self.output_root_dir / "logs" / "train_log.log",
+            data_col_names=("epoch", "loss")
+        )
+
+        eval_log_writer = slg.SimpleLogWriter(
+            name=f"eval_log_{uuid.uuid1().int>>64}",
+            log_file=self.output_root_dir / "logs" / "eval_log.log",
+            data_col_names=("epoch", *cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS)
+        )
+
+
+
         trainer = smt.StandardModelTrainer(
             device=self.device,
             model=self.model,
@@ -192,6 +215,9 @@ class TrainerDriver:
             epoch_start_count=self.epoch_start_count,
             summary_writer_group=self.summary_writer_group,
             summary_writer_subgroup=self.summary_writer_subgroup,
+            train_log_writer=train_log_writer,
+            eval_log_writer=eval_log_writer,
+            eval_log_metrics=cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS
         )
 
         print(

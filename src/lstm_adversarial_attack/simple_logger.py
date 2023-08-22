@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -57,9 +58,10 @@ class SimpleLogWriter:
         self._logger.addHandler(handler)
         self._logger.setLevel(logging.INFO)
 
-    def write_data(self, data: tuple[str, ...]):
+    def write_data(self, data: tuple[Any, ...]):
         assert len(data) == len(self._data_col_names)
-        self._logger.info(",".join(data))
+
+        self._logger.info(",".join(tuple(str(item) for item in data)))
 
     @property
     def log_file(self) -> Path:

@@ -271,7 +271,8 @@ class HyperParameterTuner:
             for fold_idx, trainer in enumerate(objective_tools.trainers):
                 trainer.train_model(num_epochs=self.epochs_per_fold)
                 eval_result = trainer.evaluate_model()
-                eval_epoch_results.append(trainer.eval_log.latest_entry)
+                # eval_epoch_results.append(trainer.eval_log.latest_entry)
+                eval_epoch_results.append(eval_result)
                 trainer.model.to("cpu")
 
             # mean_validation_vals = ds.EvalEpochResult.mean(

@@ -6,9 +6,7 @@ channels:
 
 dependencies:
   - black
-  - docker-py
   - dill
-#  - gensim
   - isort
   - jupyter
   - jupyterlab
@@ -28,11 +26,11 @@ dependencies:
     - git+https://github.com/duanegoodner/pygetfacl@0.0.5
     - graphviz
     - jupyterlab_limit_output
-#    - jupyterlab-variableinspector
-    - netron
     - optuna
-    - pyhealth
     - tensorboard
     - torch
     - torchview
     - torchvision
+
+
+
