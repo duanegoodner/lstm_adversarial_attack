@@ -123,7 +123,7 @@ class CrossValidator:
                 settings=self.hyperparameter_settings
             ).build(),
             train_eval_dataset_pair=train_eval_pair,
-            output_root_dir=self.output_root_dir,
+            output_dir=self.output_root_dir,
             tensorboard_output_dir=self.output_root_dir / "tensorboard",
             checkpoint_output_dir=self.output_root_dir
             / "checkpoints"

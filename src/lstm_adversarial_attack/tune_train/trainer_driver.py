@@ -22,6 +22,7 @@ import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 import lstm_adversarial_attack.simple_logger as slg
 import lstm_adversarial_attack.config_settings as cfs
 
+
 class TrainerDriver:
     """
     Isolation layer to avoid need to modify StandardModelTrainer.
@@ -43,7 +44,7 @@ class TrainerDriver:
         collate_fn: Callable = xmd.x19m_collate_fn,
         loss_fn: nn.Module = nn.CrossEntropyLoss(),
         epoch_start_count: int = 0,
-        output_root_dir: Path = None,
+        output_dir: Path = None,
         tensorboard_output_dir: Path = None,
         checkpoint_output_dir: Path = None,
         summary_writer_group: str = "",
@@ -65,68 +66,77 @@ class TrainerDriver:
         if optimizer_state_dict is not None:
             self.optimizer.load_state_dict(state_dict=optimizer_state_dict)
         self.epoch_start_count = epoch_start_count
-        (
-            self.output_root_dir,
-            self.tensorboard_output_dir,
-            self.checkpoint_output_dir,
-        ) = self.initialize_output_dir(
-            output_root_dir=output_root_dir,
-            tensorboard_output_dir=tensorboard_output_dir,
-            checkpoint_output_dir=checkpoint_output_dir,
+        self.output_dir = self.initialize_output_dir(
+            output_dir=output_dir
+            # tensorboard_output_dir=tensorboard_output_dir,
+            # checkpoint_output_dir=checkpoint_output_dir,
         )
+        self.initialize_output_content()
         self.summary_writer_group = summary_writer_group
         self.summary_writer_subgroup = summary_writer_subgroup
         self.summary_writer_add_graph = summary_writer_add_graph
 
+    @property
+    def tensorboard_dir(self) -> Path | None:
+        return (
+            self.output_dir / "tensorboard"
+            if self.output_dir is not None
+            else None
+        )
+
+    @property
+    def checkpoint_dir(self) -> Path:
+        return (
+            self.output_dir / "checkpoints"
+            if self.output_dir is not None
+            else None
+        )
+
+    @property
+    def logs_dir(self) -> Path:
+        return (
+            self.output_dir / "logs"
+            if self.output_dir is not None
+            else None
+        )
+
+    @staticmethod
     def initialize_output_dir(
-        self,
-        output_root_dir: Path = None,
-        tensorboard_output_dir: Path = None,
-        checkpoint_output_dir: Path = None,
-        logs_dir: Path = None
-    ) -> tuple[Path, Path, Path]:
+        output_dir: Path = None,
+    ) -> Path:
         """
         Creates output root, tensorboard dir, and checkpoint dir. Puts copies
         of model and hyperparameters in output root.
-        :param output_root_dir: root dir for files saved from training/eval
-        :param tensorboard_output_dir: folder for tensorboard output
-        :param checkpoint_output_dir: folder to save checkpoints in
-        :return: output_root_dir, tensorboard_output_dir, checkpoint_output_dir
+        :param output_dir: root dir for files saved from training/eval
+        :return: output_dir, tensorboard_output_dir, checkpoint_output_dir
         """
 
-        if output_root_dir is None:
-            output_root_dir = rio.create_timestamped_dir(
+        if output_dir is None:
+            output_dir = rio.create_timestamped_dir(
                 parent_path=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR
             )
         else:
-            output_root_dir.mkdir(parents=True, exist_ok=True)
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+        return output_dir
+
+    def initialize_output_content(self):
         rio.ResourceExporter().export(
-            resource=self.model, path=output_root_dir / "model.pickle"
+            resource=self.model, path=self.output_dir / "model.pickle"
         )
         rio.ResourceExporter().export(
             resource=self.hyperparameter_settings,
-            path=output_root_dir / "hyperparameters.pickle",
+            path=self.output_dir / "hyperparameters.pickle",
         )
 
-        hyperparameters_json_path = output_root_dir / "hyperparameters.json"
+        hyperparameters_json_path = self.output_dir / "hyperparameters.json"
         with hyperparameters_json_path.open(mode="w") as out_file:
             json.dump(self.hyperparameter_settings.__dict__, out_file)
 
-        if tensorboard_output_dir is None:
-            tensorboard_output_dir = output_root_dir / "tensorboard"
-        tensorboard_output_dir.mkdir(parents=True, exist_ok=True)
+        self.checkpoint_dir.mkdir()
+        self.logs_dir.mkdir()
+        self.tensorboard_dir.mkdir()
 
-        if checkpoint_output_dir is None:
-            checkpoint_output_dir = output_root_dir / "checkpoints"
-        checkpoint_output_dir.mkdir(parents=True, exist_ok=True)
-
-        if logs_dir is None:
-            logs_dir = output_root_dir / "logs"
-        logs_dir.mkdir(parents=True, exist_ok=True)
-
-
-
-        return output_root_dir, tensorboard_output_dir, checkpoint_output_dir
 
     def build_data_loaders(self) -> tuh.TrainEvalDataLoaderPair:
         """
@@ -184,23 +194,20 @@ class TrainerDriver:
         """
         torch.manual_seed(lcs.TRAINER_RANDOM_SEED)
         data_loaders = self.build_data_loaders()
-        summary_writer = SummaryWriter(str(self.tensorboard_output_dir))
+        summary_writer = SummaryWriter(str(self.tensorboard_dir))
 
         if self.summary_writer_add_graph:
             self.add_model_graph_to_tensorboard(summary_writer=summary_writer)
 
         train_log_writer = slg.SimpleLogWriter(
             name=f"train_log_{uuid.uuid1().int>>64}",
-            log_file=self.output_root_dir / "logs" / "train.log",
-            # data_col_names=("epoch", "loss")
+            log_file=self.output_dir / "logs" / "train.log",
         )
 
         eval_log_writer = slg.SimpleLogWriter(
             name=f"eval_log_{uuid.uuid1().int>>64}",
-            log_file=self.output_root_dir / "logs" / "eval.log",
+            log_file=self.output_dir / "logs" / "eval.log",
         )
-
-
 
         trainer = smt.StandardModelTrainer(
             device=self.device,
@@ -209,20 +216,20 @@ class TrainerDriver:
             test_loader=data_loaders.eval,
             loss_fn=self.loss_fn,
             optimizer=self.optimizer,
-            checkpoint_dir=self.checkpoint_output_dir,
+            checkpoint_dir=self.checkpoint_dir,
             summary_writer=summary_writer,
             epoch_start_count=self.epoch_start_count,
             summary_writer_group=self.summary_writer_group,
             summary_writer_subgroup=self.summary_writer_subgroup,
             train_log_writer=train_log_writer,
             eval_log_writer=eval_log_writer,
-            eval_log_metrics=cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS
+            eval_log_metrics=cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS,
         )
 
         print(
             "Training model.\nCheckpoints will be saved"
-            f" in:\n{self.checkpoint_output_dir}\n\nTensorboard logs will be"
-            f" saved in:\n {self.tensorboard_output_dir}\n\n"
+            f" in:\n{self.checkpoint_dir}\n\nTensorboard logs will be"
+            f" saved in:\n {self.tensorboard_dir}\n\n"
         )
 
         # This function returns a TrainEval pair, but currently no need to
@@ -273,13 +280,13 @@ class BuildHyperparametersModelPair:
         )
 
     @classmethod
-    def from_optuna_study_pickle(cls, pickle_path: Path) -> HyperparametersModelPair:
+    def from_optuna_study_pickle(
+        cls, pickle_path: Path
+    ) -> HyperparametersModelPair:
         study = rio.ResourceImporter().import_pickle_to_object(
             path=pickle_path
         )
         return cls.from_optuna_study_obj(study=study)
-
-
 
     # @classmethod
     # def from_optuna_study(cls, study: optuna.Study):
