@@ -22,22 +22,34 @@ class SimpleLogWriter:
         self,
         name: str,
         log_file: Path,
-        data_col_names: tuple[str, ...],
+        # data_col_names: tuple[str, ...] = None,
         output_format: str = "%(asctime)s,%(message)s",
         date_format: str = "%Y-%m-%d %H:%M:%S.%f",
     ):
-        self._data_col_names = data_col_names
+        self._data_col_names = None
         self._log_file = log_file
         self._name = name
-        # self._name = f"{self._name_prefix}_{uuid.uuid1().int >> 64}"
         self._output_format = output_format
         self._date_format = date_format
         self._logger = logging.getLogger(self._name)
-        self._post_init()
+        # self._post_init()
 
-    def _post_init(self):
+    @property
+    def data_col_names(self) -> tuple[str, ...]:
+        return self._data_col_names
+
+    @data_col_names.setter
+    def data_col_names(self, value: tuple[str, ...]):
+        self._data_col_names = value
+
+    def activate(self, data_col_names: tuple[str, ...]):
+        self.data_col_names = data_col_names
         self._validate_log_file()
         self._set_up_logger()
+
+    # def _post_init(self):
+    #     self._validate_log_file()
+    #     self._set_up_logger()
 
     def _validate_log_file(self):
         if not self._log_file.exists():
@@ -72,8 +84,8 @@ if __name__ == "__main__":
     my_logger = SimpleLogWriter(
         name="test_logger",
         log_file=cfp.HYPERPARAMETER_OUTPUT_DIR / "test_log.csv",
-        data_col_names=("a", "b", "c"),
     )
+    my_logger.activate(data_col_names=("a", "b", "c"))
     my_logger.write_data(data=("1", "2", "3"))
 
     df_result = pd.read_csv(my_logger.log_file)

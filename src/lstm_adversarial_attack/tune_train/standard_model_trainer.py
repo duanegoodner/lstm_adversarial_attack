@@ -54,12 +54,18 @@ class StandardModelTrainer:
         self.completed_epochs = epoch_start_count
         self.train_log_writer = train_log_writer
         self.eval_log_writer = eval_log_writer
-        self.eval_log_metrics = eval_log_metrics
+        # self.eval_log_metrics = eval_log_metrics
         self.summary_writer = summary_writer
         self.summary_writer_group = summary_writer_group
         self.summary_writer_subgroup = summary_writer_subgroup
         self.train_log = ds.TrainLog()
         self.eval_log = ds.EvalLog()
+
+    def _activate_log_writers(self):
+        self.train_log_writer.activate(data_col_names=("epoch", "loss"))
+        self.eval_log_writer.activate(
+            data_col_names=("epoch", *cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS)
+        )
 
     @staticmethod
     def calculate_performance_metrics(
@@ -235,8 +241,15 @@ class StandardModelTrainer:
                 )
 
         if self.summary_writer is not None:
-            metric_vals = tuple([getattr(eval_results, attribute) for attribute in self.eval_log_metrics])
-            self.eval_log_writer.write_data(data=(self.completed_epochs, *metric_vals))
+            metric_vals = tuple(
+                [
+                    getattr(eval_results, attribute)
+                    for attribute in cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS
+                ]
+            )
+            self.eval_log_writer.write_data(
+                data=(self.completed_epochs, *metric_vals)
+            )
 
     def run_train_eval_cycles(
         self,
@@ -252,6 +265,7 @@ class StandardModelTrainer:
         :return: object containing logs of train and eval data
         """
 
+        self._activate_log_writers()
         for epoch in range(num_epochs):
             self.train_model(num_epochs=1)
             if (epoch + 1) % eval_interval == 0:

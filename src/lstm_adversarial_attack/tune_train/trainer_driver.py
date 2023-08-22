@@ -191,14 +191,13 @@ class TrainerDriver:
 
         train_log_writer = slg.SimpleLogWriter(
             name=f"train_log_{uuid.uuid1().int>>64}",
-            log_file=self.output_root_dir / "logs" / "train_log.log",
-            data_col_names=("epoch", "loss")
+            log_file=self.output_root_dir / "logs" / "train.log",
+            # data_col_names=("epoch", "loss")
         )
 
         eval_log_writer = slg.SimpleLogWriter(
             name=f"eval_log_{uuid.uuid1().int>>64}",
-            log_file=self.output_root_dir / "logs" / "eval_log.log",
-            data_col_names=("epoch", *cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS)
+            log_file=self.output_root_dir / "logs" / "eval.log",
         )
 
 
