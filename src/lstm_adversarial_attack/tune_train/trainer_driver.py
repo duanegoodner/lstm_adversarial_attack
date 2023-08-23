@@ -23,35 +23,6 @@ import lstm_adversarial_attack.simple_logger as slg
 import lstm_adversarial_attack.config_settings as cfs
 
 
-class TrainingOutputDirs:
-    def __init__(
-        self,
-        root_dir: Path,
-        fold_index: int = None,
-    ):
-        self.root_dir = root_dir
-        self.fold_index = fold_index
-        self.checkpoints_dir = (
-            self.root_dir / "checkpoints" / f"fold_{self.fold_index}"
-            if self.fold_index is not None
-            else self.root_dir / "checkpoints"
-        )
-        self.logs_dir = (
-            self.root_dir / "logs" / f"fold_{self.fold_index}"
-            if self.fold_index is not None
-            else self.root_dir / "logs"
-        )
-        self.tensorboard_dir = self.root_dir / "tensorboard"
-        self._post_init()
-
-    def _post_init(self):
-        self.root_dir.mkdir(parents=True, exist_ok=True)
-        self.checkpoints_dir.mkdir(parents=True, exist_ok=True)
-        self.logs_dir.mkdir(exist_ok=True)
-        self.tensorboard_dir.mkdir(exist_ok=True)
-
-
-
 class TrainerDriver:
     """
     Isolation layer to avoid need to modify StandardModelTrainer.
@@ -96,7 +67,9 @@ class TrainerDriver:
             self.optimizer.load_state_dict(state_dict=optimizer_state_dict)
         self.epoch_start_count = epoch_start_count
         # self.output_dir = self.initialize_output_dir(output_dir=output_dir)
-        self.output_dirs = TrainingOutputDirs(root_dir=output_dir)
+        self.output_dirs = smt.TrainingOutputDirs(
+            root_dir=output_dir, fold_index=fold_idx
+        )
         self.initialize_output_content()
         self.summary_writer_group = summary_writer_group
         self.summary_writer_subgroup = summary_writer_subgroup
@@ -104,14 +77,17 @@ class TrainerDriver:
 
     def initialize_output_content(self):
         rio.ResourceExporter().export(
-            resource=self.model, path=self.output_dirs.root_dir / "model.pickle"
+            resource=self.model,
+            path=self.output_dirs.root_dir / "model.pickle",
         )
         rio.ResourceExporter().export(
             resource=self.hyperparameter_settings,
             path=self.output_dirs.root_dir / "hyperparameters.pickle",
         )
 
-        hyperparameters_json_path = self.output_dirs.root_dir / "hyperparameters.json"
+        hyperparameters_json_path = (
+            self.output_dirs.root_dir / "hyperparameters.json"
+        )
         with hyperparameters_json_path.open(mode="w") as out_file:
             json.dump(self.hyperparameter_settings.__dict__, out_file)
 
@@ -200,13 +176,13 @@ class TrainerDriver:
             summary_writer_subgroup=self.summary_writer_subgroup,
             train_log_writer=train_log_writer,
             eval_log_writer=eval_log_writer,
-            eval_log_metrics=cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS,
+            # eval_log_metrics=cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS,
         )
 
         print(
             "Training model.\nCheckpoints will be saved"
-            f" in:\n{self.output_dirs.checkpoints_dir}\n\nTensorboard logs will be"
-            f" saved in:\n {self.output_dirs.tensorboard_dir}\n\n"
+            f" in:\n{self.output_dirs.checkpoints_dir}\n\nTensorboard logs"
+            f" will be saved in:\n {self.output_dirs.tensorboard_dir}\n\n"
         )
 
         # This function returns a TrainEval pair, but currently no need to

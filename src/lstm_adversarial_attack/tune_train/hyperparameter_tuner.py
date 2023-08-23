@@ -1,5 +1,7 @@
 import json
+import shutil
 import sys
+import uuid
 from pathlib import Path
 from typing import Callable
 
@@ -21,6 +23,7 @@ import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 import lstm_adversarial_attack.weighted_dataloader_builder as wdb
+import lstm_adversarial_attack.simple_logger as slg
 
 
 # TODO Try to replace cross-validation work here with CrossValidator (if able
@@ -75,7 +78,7 @@ class HyperParameterTuner:
         self.hyperparameter_sampler = hyperparameter_sampler
         self.output_dir = output_dir
         self.tensorboard_output_dir = self.output_dir / "tensorboard"
-        self.trainer_checkpoint_dir = self.output_dir / "checkpoints_trainer"
+        # self.trainer_checkpoint_dir = self.output_dir / "checkpoints_trainer"
         self.tuner_checkpoint_dir = self.output_dir / "checkpoints_tuner"
         self.exporter = rio.ResourceExporter()
         self.trial_prefix = trial_prefix
@@ -133,14 +136,28 @@ class HyperParameterTuner:
         settings: tuh.X19LSTMHyperParameterSettings,
         summary_writer: SummaryWriter,
         trial_number: int,
+        remove_existing_log_tree: bool = True,
     ) -> list[smt.StandardModelTrainer]:
         """
         Creates one StandardModelTrainer per fold.
         :param settings: hyperparameter settings for an optuna.Trial
         :param summary_writer: object that writes to Tensorboard
         :param trial_number: .number value of optuna.Trial using trainers
+        :param remove_existing_log_tree: boolean indicating whether existing
+        logs from previous (partial) run of trial should be deleted
         :return: list containing the StandardModelTrainer objects
         """
+
+        if (
+            remove_existing_log_tree
+            and (
+                self.output_dir / "trainer_output" / f"trial_{trial_number}"
+            ).exists()
+        ):
+            shutil.rmtree(
+                self.output_dir / "trainer_output" / f"trial_{trial_number}"
+            )
+
         trainers = []
         for fold_idx, dataset_pair in enumerate(self.cv_datasets):
             model = tuh.X19LSTMBuilder(settings=settings).build()
@@ -156,6 +173,24 @@ class HyperParameterTuner:
                 collate_fn=self.collate_fn,
             )
 
+            trainer_output_dirs = smt.TrainingOutputDirs(
+                root_dir=self.output_dir
+                / "trainer_output"
+                / f"trial_{trial_number}",
+                # / "training_output",
+                fold_index=fold_idx,
+            )
+
+            train_log_writer = slg.SimpleLogWriter(
+                name=f"train_log_{uuid.uuid1().int>>64}",
+                log_file=trainer_output_dirs.logs_dir / "train.log",
+            )
+
+            eval_log_writer = slg.SimpleLogWriter(
+                name=f"eval_log_{uuid.uuid1().int>>64}",
+                log_file=trainer_output_dirs.logs_dir / "eval.log",
+            )
+
             trainer = smt.StandardModelTrainer(
                 device=self.device,
                 model=model,
@@ -168,7 +203,9 @@ class HyperParameterTuner:
                 summary_writer=summary_writer,
                 summary_writer_group=f"{self.trial_prefix}{trial_number}",
                 summary_writer_subgroup=f"fold_{fold_idx}",
-                checkpoint_dir=self.trainer_checkpoint_dir,
+                train_log_writer=train_log_writer,
+                eval_log_writer=eval_log_writer,
+                checkpoint_dir=trainer_output_dirs.checkpoints_dir,
             )
 
             trainers.append(trainer)

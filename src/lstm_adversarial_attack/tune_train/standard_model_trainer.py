@@ -1,3 +1,4 @@
+import shutil
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -14,6 +15,34 @@ import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.simple_logger as slg
+
+
+class TrainingOutputDirs:
+    def __init__(
+        self,
+        root_dir: Path,
+        fold_index: int = None,
+    ):
+        self.root_dir = root_dir
+        self.fold_index = fold_index
+        self.checkpoints_dir = (
+            self.root_dir / "checkpoints" / f"fold_{self.fold_index}"
+            if self.fold_index is not None
+            else self.root_dir / "checkpoints"
+        )
+        self.logs_dir = (
+            self.root_dir / "logs" / f"fold_{self.fold_index}"
+            if self.fold_index is not None
+            else self.root_dir / "logs"
+        )
+        self.tensorboard_dir = self.root_dir / "tensorboard"
+        self._post_init()
+
+    def _post_init(self):
+        self.root_dir.mkdir(parents=True, exist_ok=True)
+        self.checkpoints_dir.mkdir(parents=True, exist_ok=True)
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
+        self.tensorboard_dir.mkdir(parents=True, exist_ok=True)
 
 
 class StandardModelTrainer:
@@ -35,9 +64,6 @@ class StandardModelTrainer:
         epoch_start_count: int = 0,
         train_log_writer: slg.SimpleLogWriter = None,
         eval_log_writer: slg.SimpleLogWriter = None,
-        eval_log_metrics: tuple[
-            str, ...
-        ] = cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS,
         summary_writer: SummaryWriter = None,
         summary_writer_group: str = "",
         summary_writer_subgroup: str = "",
@@ -54,6 +80,7 @@ class StandardModelTrainer:
         self.completed_epochs = epoch_start_count
         self.train_log_writer = train_log_writer
         self.eval_log_writer = eval_log_writer
+        self._activate_log_writers()
         # self.eval_log_metrics = eval_log_metrics
         self.summary_writer = summary_writer
         self.summary_writer_group = summary_writer_group
@@ -117,7 +144,7 @@ class StandardModelTrainer:
             "train_log_entry": self.train_log.latest_entry,
             "eval_log_entry": self.eval_log.latest_entry,
             "state_dict": self.model.state_dict(),
-            "optimizer_state_dict": self.optimizer.state_dict()
+            "optimizer_state_dict": self.optimizer.state_dict(),
         }
 
         torch.save(obj=checkpoint, f=output_path)
@@ -251,15 +278,19 @@ class StandardModelTrainer:
                     self.completed_epochs,
                 )
 
-        if self.summary_writer is not None:
-            metric_vals = tuple(
+        if self.eval_log_writer is not None:
+            eval_result_data = tuple(
                 [
-                    getattr(eval_results, attribute)
-                    for attribute in cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS
+                    getattr(eval_results, metric)
+                    for metric in cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS
                 ]
             )
+
             self.eval_log_writer.write_data(
-                data=(self.completed_epochs, *metric_vals)
+                data=(
+                    self.completed_epochs,
+                    *eval_result_data,
+                )
             )
 
     def run_train_eval_cycles(
@@ -276,7 +307,7 @@ class StandardModelTrainer:
         :return: object containing logs of train and eval data
         """
 
-        self._activate_log_writers()
+        # self._activate_log_writers()
         for epoch in range(num_epochs):
             self.train_model(num_epochs=1)
             if (epoch + 1) % eval_interval == 0:
