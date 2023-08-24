@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import optuna
 import sys
 import torch
@@ -18,6 +20,7 @@ import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.tune_train.hyperparameter_tuner as htu
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
+import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 
 
 class TunerDriver:
@@ -45,18 +48,33 @@ class TunerDriver:
         pruner_kwargs: dict[str, Any] = None,
         sampler_name: str = "TPESampler",
         sampler_kwargs: dict[str, Any] = None,
+        study_name: str = None,
+        study_storage_name: str = "TUNING_STUDIES_STORAGE",
+        # study_storage: optuna.storages.RDBStorage = tsd.TUNING_STUDIES_STORAGE,
     ):
+
         self.device = device
         self.collate_fn = getattr(xmd, collate_fn_name)
+        if study_name is None:
+            timestamp = "".join(
+                char for char in str(datetime.now()) if char.isdigit()
+            )
+            study_name = f"model_tuning_{timestamp}"
+        self.study_name = study_name
+        self.output_dir = cfg_path.HYPERPARAMETER_OUTPUT_DIR / self.study_name
+
+
+
+        self.output_dir.mkdir(parents=True, exist_ok=True)
         self.continue_tuning_dir = (
             None if continue_tuning_dir is None else Path(continue_tuning_dir)
         )
-        if self.continue_tuning_dir is not None:
-            self.output_dir = self.continue_tuning_dir  # .parent.parent
-        else:
-            self.output_dir = rio.create_timestamped_dir(
-                parent_path=cfg_path.HYPERPARAMETER_OUTPUT_DIR
-            )
+        # if self.continue_tuning_dir is not None:
+        #     self.output_dir = self.continue_tuning_dir  # .parent.parent
+        # else:
+        #     self.output_dir = rio.create_timestamped_dir(
+        #         parent_path=cfg_path.HYPERPARAMETER_OUTPUT_DIR
+        #     )
         if tuning_ranges is None:
             tuning_ranges = tuh.X19MLSTMTuningRanges()
         self.tuning_ranges = tuning_ranges
@@ -93,6 +111,7 @@ class TunerDriver:
         self.hyperparameter_sampler = getattr(optuna.samplers, sampler_name)(
             **self.sampler_kwargs
         )
+        self.study_storage_name = study_storage_name
 
     @property
     def summary(self) -> eds.TunerDriverSummary:
@@ -148,6 +167,8 @@ class TunerDriver:
             optimization_direction=self.optimization_direction,
             pruner=self.pruner,
             hyperparameter_sampler=self.hyperparameter_sampler,
+            study_name=self.study_name,
+            study_storage=getattr(tsd, self.study_storage_name)
         )
         # completed_study = self.tuner.tune(num_trials=num_trials)
         completed_study = tuner.tune(num_trials=num_trials)

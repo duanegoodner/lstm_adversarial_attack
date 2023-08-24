@@ -13,7 +13,7 @@ def main() -> list[Path]:
     :return: paths to the query output files
     """
     db_access = mdb.MimiciiiDatabaseAccess(
-        dotenv_path=cfg_paths.DB_DOTENV_PATH,
+        dotenv_path=cfg_paths.MIMICIII_DB_DOTENV_PATH,
         output_dir=cfg_paths.DB_OUTPUT_DIR,
     )
     db_access.connect()

@@ -9,7 +9,7 @@ EXAMPLE_DATA_DIR = DATA_DIR / "example_data"
 
 # ##### Database #####
 DB_SUBPACKAGE = LSTM_ADVERSARIAL_ATTACK_PACKAGE / "query_db"
-DB_DOTENV_PATH = DB_SUBPACKAGE / "mimiciii_database.env"
+MIMICIII_DB_DOTENV_PATH = DB_SUBPACKAGE / "mimiciii_database.env"
 DB_DEFAULT_QUERY_DIR = DB_SUBPACKAGE / "mimiciii_queries"
 DB_OUTPUT_DIR = DATA_DIR / "query_db"
 DB_QUERIES = [
@@ -18,6 +18,9 @@ DB_QUERIES = [
     DB_DEFAULT_QUERY_DIR / "pivoted_lab.sql",
     DB_DEFAULT_QUERY_DIR / "pivoted_vital.sql",
 ]
+TUNING_STUDY_DB_SUBPACKAGE = LSTM_ADVERSARIAL_ATTACK_PACKAGE / "tuning_db"
+OPTUNA_DB_DOTENV_PATH = TUNING_STUDY_DB_SUBPACKAGE / "tuning_studies_database.env"
+
 
 # ##### Preprocessor #####
 PREPROCESS_DATA_DIR = DATA_DIR / "preprocess"

@@ -20,10 +20,11 @@ import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.resource_io as rio
+import lstm_adversarial_attack.simple_logger as slg
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
+import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.weighted_dataloader_builder as wdb
-import lstm_adversarial_attack.simple_logger as slg
 
 
 # TODO Try to replace cross-validation work here with CrossValidator (if able
@@ -51,8 +52,11 @@ class HyperParameterTuner:
         pruner: BasePruner,
         hyperparameter_sampler: BaseSampler,
         output_dir: Path,
+        study_name: str,
+        study_storage: optuna.storages.RDBStorage,
         trial_prefix: str = "trial_",
         continue_tuning_dir: Path = None,
+
     ):
         self.device = device
         self.dataset = dataset
@@ -83,6 +87,8 @@ class HyperParameterTuner:
         self.exporter = rio.ResourceExporter()
         self.trial_prefix = trial_prefix
         self.continue_tuning_dir = continue_tuning_dir
+        self.study_name = study_name
+        self.study_storage = study_storage
 
     def create_datasets(self) -> list[tuh.TrainEvalDatasetPair]:
         """
@@ -435,6 +441,8 @@ class HyperParameterTuner:
             assert study.direction == self.optimization_direction
         else:
             study = optuna.create_study(
+                study_name=self.study_name,
+                storage=self.study_storage,
                 direction=self.optimization_direction_label,
                 sampler=self.hyperparameter_sampler,
                 pruner=self.pruner,
