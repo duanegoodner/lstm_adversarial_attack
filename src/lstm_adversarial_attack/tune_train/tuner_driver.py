@@ -12,7 +12,7 @@ import sklearn.model_selection
 from typing import Any, Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_paths as cfg_path
+import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfg_set
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
@@ -23,6 +23,51 @@ import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 
 
+def validate_existing_output(
+    storage: optuna.storages.RDBStorage, study_name: str
+):
+    existing_study_summaries = optuna.study.get_all_study_summaries(
+        storage=storage
+    )
+    existing_study_names = [
+        item.study_name for item in existing_study_summaries
+    ]
+
+    study_in_db = study_name in existing_study_names
+    local_study_output_exists = (
+        cfp.HYPERPARAMETER_OUTPUT_DIR / study_name
+    ).exists()
+
+    assert study_in_db == local_study_output_exists
+
+
+def has_rdb_output(
+    study_name: str, storage: optuna.storages.RDBStorage
+) -> bool:
+    """
+    Determines if output exists for study named study_name in storage.
+    :param study_name: name of study
+    :param storage: RDB storage where we look for study
+    :return: bool indicating presence of output
+    """
+    existing_study_summaries = optuna.study.get_all_study_summaries(
+        storage=storage
+    )
+    existing_study_names = [
+        item.study_name for item in existing_study_summaries
+    ]
+    return study_name in existing_study_names
+
+
+def has_local_output(study_name: str) -> bool:
+    """
+    Determines if local output exists for study named study_name
+    :param study_name: name of study
+    :return:
+    """
+    return (cfp.HYPERPARAMETER_OUTPUT_DIR / study_name).exists()
+
+
 class TunerDriver:
     """
     Instantiates and runs a HyperparameterTuner
@@ -31,8 +76,9 @@ class TunerDriver:
     def __init__(
         self,
         device: torch.device,
+        study_name: str = None,
         collate_fn_name: str = "x19m_collate_fn",
-        continue_tuning_dir: Path | str = None,
+        # continue_tuning_dir: Path | str = None,
         tuning_ranges: tuh.X19MLSTMTuningRanges = None,
         num_folds: int = cfg_set.TUNER_NUM_FOLDS,
         num_cv_epochs: int = cfg_set.TUNER_NUM_CV_EPOCHS,
@@ -48,11 +94,7 @@ class TunerDriver:
         pruner_kwargs: dict[str, Any] = None,
         sampler_name: str = "TPESampler",
         sampler_kwargs: dict[str, Any] = None,
-        study_name: str = None,
-        study_storage_name: str = "TUNING_STUDIES_STORAGE",
-        # study_storage: optuna.storages.RDBStorage = tsd.TUNING_STUDIES_STORAGE,
     ):
-
         self.device = device
         self.collate_fn = getattr(xmd, collate_fn_name)
         if study_name is None:
@@ -61,20 +103,12 @@ class TunerDriver:
             )
             study_name = f"model_tuning_{timestamp}"
         self.study_name = study_name
-        self.output_dir = cfg_path.HYPERPARAMETER_OUTPUT_DIR / self.study_name
-
-
-
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-        self.continue_tuning_dir = (
-            None if continue_tuning_dir is None else Path(continue_tuning_dir)
+        self.has_pre_existing_rdb_output = has_rdb_output(
+            study_name=self.study_name, storage=tsd.TUNING_STUDIES_STORAGE
         )
-        # if self.continue_tuning_dir is not None:
-        #     self.output_dir = self.continue_tuning_dir  # .parent.parent
-        # else:
-        #     self.output_dir = rio.create_timestamped_dir(
-        #         parent_path=cfg_path.HYPERPARAMETER_OUTPUT_DIR
-        #     )
+        self.output_dir = cfp.HYPERPARAMETER_OUTPUT_DIR / self.study_name
+        self.has_pre_existing_local_output = self.output_dir.exists()
+        self.output_dir.mkdir(parents=True, exist_ok=True)
         if tuning_ranges is None:
             tuning_ranges = tuh.X19MLSTMTuningRanges()
         self.tuning_ranges = tuning_ranges
@@ -100,7 +134,6 @@ class TunerDriver:
                 "n_warmup_steps": cfg_set.TUNER_PRUNER_NUM_WARMUP_STEPS,
             }
         self.pruner_kwargs = pruner_kwargs
-        # self.pruner = MedianPruner(**self.pruner_kwargs)
         self.pruner = getattr(optuna.pruners, pruner_name)(
             **self.pruner_kwargs
         )
@@ -111,13 +144,14 @@ class TunerDriver:
         self.hyperparameter_sampler = getattr(optuna.samplers, sampler_name)(
             **self.sampler_kwargs
         )
-        self.study_storage_name = study_storage_name
 
     @property
     def summary(self) -> eds.TunerDriverSummary:
         return eds.TunerDriverSummary(
             collate_fn_name=self.collate_fn.__name__,
-            is_continuation=self.continue_tuning_dir is not None,
+            study_name=self.study_name,
+            # TODO should continuation check be for local, RDB, or both?
+            is_continuation=self.has_pre_existing_local_output,
             cv_mean_metrics_of_interest=self.cv_mean_metrics_of_interest,
             device_name=str(self.device),
             epochs_per_fold=self.epochs_per_fold,
@@ -150,6 +184,15 @@ class TunerDriver:
                 obj=self.summary, path=summary_output_path
             )
 
+        study = optuna.create_study(
+            study_name=self.study_name,
+            storage=tsd.TUNING_STUDIES_STORAGE,
+            load_if_exists=True,
+            direction=self.optimization_direction_label,
+            sampler=self.hyperparameter_sampler,
+            pruner=self.pruner,
+        )
+
         tuner = htu.HyperParameterTuner(
             device=self.device,
             dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
@@ -159,7 +202,6 @@ class TunerDriver:
             num_cv_epochs=self.num_cv_epochs,
             epochs_per_fold=self.epochs_per_fold,
             fold_class=self.fold_class,
-            continue_tuning_dir=self.continue_tuning_dir,
             output_dir=self.output_dir,
             kfold_random_seed=self.kfold_random_seed,
             cv_mean_metrics_of_interest=self.cv_mean_metrics_of_interest,
@@ -167,8 +209,7 @@ class TunerDriver:
             optimization_direction=self.optimization_direction,
             pruner=self.pruner,
             hyperparameter_sampler=self.hyperparameter_sampler,
-            study_name=self.study_name,
-            study_storage=getattr(tsd, self.study_storage_name)
+            study=study,
         )
         # completed_study = self.tuner.tune(num_trials=num_trials)
         completed_study = tuner.tune(num_trials=num_trials)

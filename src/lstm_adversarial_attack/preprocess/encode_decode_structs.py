@@ -57,6 +57,7 @@ class PreprocessModuleSummary(msgspec.Struct):
 
 class TunerDriverSummary(msgspec.Struct):
     collate_fn_name: str
+    study_name: str
     is_continuation: bool
     cv_mean_metrics_of_interest: tuple[str, ...]
     device_name: str

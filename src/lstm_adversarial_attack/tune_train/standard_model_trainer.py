@@ -61,9 +61,9 @@ class StandardModelTrainer:
         train_loader: ud.DataLoader,
         test_loader: ud.DataLoader,
         checkpoint_dir: Path,
+        train_log_writer: slg.SimpleLogWriter,
+        eval_log_writer: slg.SimpleLogWriter,
         epoch_start_count: int = 0,
-        train_log_writer: slg.SimpleLogWriter = None,
-        eval_log_writer: slg.SimpleLogWriter = None,
         summary_writer: SummaryWriter = None,
         summary_writer_group: str = "",
         summary_writer_subgroup: str = "",
@@ -207,10 +207,9 @@ class StandardModelTrainer:
                 self.completed_epochs,
             )
 
-        if self.train_log_writer is not None:
-            self.train_log_writer.write_data(
-                data=(str(self.completed_epochs), str(epoch_loss))
-            )
+        self.train_log_writer.write_data(
+            data=(str(self.completed_epochs), str(epoch_loss))
+        )
 
     @torch.no_grad()
     def evaluate_model(self) -> ds.EvalLogEntry:
@@ -278,20 +277,19 @@ class StandardModelTrainer:
                     self.completed_epochs,
                 )
 
-        if self.eval_log_writer is not None:
-            eval_result_data = tuple(
-                [
-                    getattr(eval_results, metric)
-                    for metric in cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS
-                ]
-            )
+        eval_result_data = tuple(
+            [
+                getattr(eval_results, metric)
+                for metric in cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS
+            ]
+        )
 
-            self.eval_log_writer.write_data(
-                data=(
-                    self.completed_epochs,
-                    *eval_result_data,
-                )
+        self.eval_log_writer.write_data(
+            data=(
+                self.completed_epochs,
+                *eval_result_data,
             )
+        )
 
     def run_train_eval_cycles(
         self,

@@ -63,14 +63,13 @@ services:
     tty: true
 
   postgres_optuna:
+    env_file:
+      - tuning_dbs.env
     image: postgres
     container_name: postgres_optuna
-    environment:
-      - POSTGRES_PASSWORD=optuna
-      - POSTGRES_USER=optuna
-      - POSTGRES_DB=optuna
     volumes:
       - optuna_db:/var/lib/postgresql/data
+      - ../pg_init_scripts:/docker-entrypoint-initdb.d
     ports:
       - 5556:5432
 

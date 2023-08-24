@@ -8,10 +8,9 @@ from typing import Callable
 import optuna
 import torch
 import torch.nn as nn
-from optuna.pruners import BasePruner, MedianPruner
-from optuna.samplers import BaseSampler, TPESampler
+from optuna.pruners import BasePruner
+from optuna.samplers import BaseSampler
 from optuna.trial import TrialState
-from sklearn.model_selection import StratifiedKFold
 from torch.utils.data import DataLoader, Dataset, Subset
 from torch.utils.tensorboard import SummaryWriter
 
@@ -23,8 +22,25 @@ import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.simple_logger as slg
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
-import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.weighted_dataloader_builder as wdb
+
+
+class TuningOutputDirs:
+    def __init__(self, root_dir: Path):
+        self.root_dir = root_dir
+        self.cv_mean_logs_dir = self.root_dir / "cv_mean_logs"
+        self.tensorboard_dir = self.root_dir / "tensorboard"
+        self.trainer_output_dir = self.root_dir / "trainer_output"
+        self._post_init()
+
+    def _post_init(self):
+        self.root_dir.mkdir(parents=True, exist_ok=True)
+        self.cv_mean_logs_dir.mkdir(parents=True, exist_ok=True)
+        self.tensorboard_dir.mkdir(parents=True, exist_ok=True)
+        self.trainer_output_dir.mkdir(parents=True, exist_ok=True)
+
+
+
 
 
 # TODO Try to replace cross-validation work here with CrossValidator (if able
@@ -52,11 +68,12 @@ class HyperParameterTuner:
         pruner: BasePruner,
         hyperparameter_sampler: BaseSampler,
         output_dir: Path,
-        study_name: str,
-        study_storage: optuna.storages.RDBStorage,
+        study: optuna.Study,
+        # study_name: str,
+        # study_storage: optuna.storages.RDBStorage,
         trial_prefix: str = "trial_",
-        continue_tuning_dir: Path = None,
-
+        cv_means_log_writer: slg.SimpleLogWriter = None,
+        # continue_tuning_dir: Path = None,
     ):
         self.device = device
         self.dataset = dataset
@@ -81,14 +98,17 @@ class HyperParameterTuner:
         self.tuning_ranges = tuning_ranges
         self.hyperparameter_sampler = hyperparameter_sampler
         self.output_dir = output_dir
+        self.output_dirs = TuningOutputDirs(root_dir=self.output_dir)
         self.tensorboard_output_dir = self.output_dir / "tensorboard"
         # self.trainer_checkpoint_dir = self.output_dir / "checkpoints_trainer"
-        self.tuner_checkpoint_dir = self.output_dir / "checkpoints_tuner"
+        # self.tuner_checkpoint_dir = self.output_dir / "checkpoints_tuner"
         self.exporter = rio.ResourceExporter()
         self.trial_prefix = trial_prefix
-        self.continue_tuning_dir = continue_tuning_dir
-        self.study_name = study_name
-        self.study_storage = study_storage
+        # self.continue_tuning_dir = continue_tuning_dir
+        self.study = study
+        # self.study_name = study_name
+        # self.study_storage = study_storage
+        self.cv_means_log_writer = cv_means_log_writer
 
     def create_datasets(self) -> list[tuh.TrainEvalDatasetPair]:
         """
@@ -218,49 +238,51 @@ class HyperParameterTuner:
 
         return trainers
 
-    def export_trial_info(
-        self,
-        trial: optuna.Trial,
-        trainers: list[smt.StandardModelTrainer],
-        cv_means_log: ds.EvalLog,
-    ):
-        """
-        Saves a completed optuna.Trial object to pickle file.
-
-        Trial objective metric is a mean across all folds.
-        :param trial: completed optuna.Trial object
-        :param trainers: the StandardModelTrainers form trial (1 per fold)
-        :param cv_means_log: log of cross-fold means of performance metrics
-        """
-        if not self.tuner_checkpoint_dir.exists():
-            self.tuner_checkpoint_dir.mkdir()
-
-        trial_summary = ds.CVTrialLogs(
-            trainer_logs=[
-                ds.TrainEvalLogPair(
-                    train=trainer.train_log, eval=trainer.eval_log
-                )
-                for trainer in trainers
-            ],
-            cv_means_log=cv_means_log,
-        )
-
-        self.exporter.export(
-            resource=trial_summary,
-            path=self.tuner_checkpoint_dir
-            / f"{self.trial_prefix}{trial.number}_logs.pickle",
-        )
+    # def export_trial_info(
+    #     self,
+    #     trial: optuna.Trial,
+    #     trainers: list[smt.StandardModelTrainer],
+    #     cv_means_log: ds.EvalLog,
+    # ):
+    #     """
+    #     Saves a completed optuna.Trial object to pickle file.
+    #
+    #     Trial objective metric is a mean across all folds.
+    #     :param trial: completed optuna.Trial object
+    #     :param trainers: the StandardModelTrainers form trial (1 per fold)
+    #     :param cv_means_log: log of cross-fold means of performance metrics
+    #     """
+    #     if not self.tuner_checkpoint_dir.exists():
+    #         self.tuner_checkpoint_dir.mkdir()
+    #
+    #     trial_summary = ds.CVTrialLogs(
+    #         trainer_logs=[
+    #             ds.TrainEvalLogPair(
+    #                 train=trainer.train_log, eval=trainer.eval_log
+    #             )
+    #             for trainer in trainers
+    #         ],
+    #         cv_means_log=cv_means_log,
+    #     )
+    #
+    #     self.exporter.export(
+    #         resource=trial_summary,
+    #         path=self.tuner_checkpoint_dir
+    #         / f"{self.trial_prefix}{trial.number}_logs.pickle",
+    #     )
 
     def report_cv_means(
         self,
         log_entry: ds.EvalLogEntry,
         summary_writer: SummaryWriter,
+        cv_means_log_writer: slg.SimpleLogWriter,
         trial: optuna.Trial,
     ):
         """
         Writes cross-fold mean metric data to Tensorboard
         :param log_entry: metric mean data from block of epochs
         :param summary_writer: object that writes to Tensorboard output dir
+        :param cv_means_log_writer: writes cv_means to generic log file
         :param trial: ongoing optuna trial that generated data
         """
         for metric in self.cv_mean_metrics_of_interest:
@@ -269,6 +291,10 @@ class HyperParameterTuner:
                 getattr(log_entry.result, metric),
                 log_entry.epoch,
             )
+
+        cv_means_log_writer.write_data(
+            data=(log_entry.epoch, *self.cv_mean_metrics_of_interest)
+        )
 
     def build_objective_function_tools(self, trial: optuna.Trial):
         """
@@ -283,10 +309,21 @@ class HyperParameterTuner:
             self.tensorboard_output_dir / f"{self.trial_prefix}{trial.number}"
         )
 
+        cv_means_log_writer = slg.SimpleLogWriter(
+            name=f"cv_means{uuid.uuid1().int>>64}",
+            log_file=self.output_dirs.cv_mean_logs_dir
+            / f"{self.trial_prefix}{trial.number}.log",
+        )
+
+        cv_means_log_writer.activate(
+            data_col_names=("epoch", *self.cv_mean_metrics_of_interest)
+        )
+
         return tuh.ObjectiveFunctionTools(
             settings=settings,
             summary_writer=SummaryWriter(str(summary_writer_path)),
             cv_means_log=ds.EvalLog(),
+            cv_means_log_writer=cv_means_log_writer,
             trainers=self.create_trainers(
                 settings=settings,
                 summary_writer=SummaryWriter(str(summary_writer_path)),
@@ -337,6 +374,7 @@ class HyperParameterTuner:
             self.report_cv_means(
                 log_entry=cv_means_log_entry,
                 summary_writer=objective_tools.summary_writer,
+                cv_means_log_writer=objective_tools.cv_means_log_writer,
                 trial=trial,
             )
 
@@ -350,11 +388,11 @@ class HyperParameterTuner:
                 raise optuna.exceptions.TrialPruned()
 
         # if self.save_trial_info:
-        self.export_trial_info(
-            trial=trial,
-            trainers=objective_tools.trainers,
-            cv_means_log=objective_tools.cv_means_log,
-        )
+        # self.export_trial_info(
+        #     trial=trial,
+        #     trainers=objective_tools.trainers,
+        #     cv_means_log=objective_tools.cv_means_log,
+        # )
 
         return tuh.PerformanceSelector(
             optimize_direction=self.optimization_direction
@@ -365,54 +403,50 @@ class HyperParameterTuner:
             ]
         )
 
-    def export_study(self, study: optuna.Study):
-        """
-        Saves optuna.Study object to pickle.
-        :param study: the optuna.Study object ot be saved
-        """
-        if not self.tuner_checkpoint_dir.exists():
-            self.tuner_checkpoint_dir.mkdir()
-        study_filename = f"optuna_study.pickle"
-        study_export_path = self.tuner_checkpoint_dir / study_filename
-        self.exporter.export(resource=study, path=study_export_path)
+    # def export_study(self):
+    #     """
+    #     Saves .study object to pickle.
+    #     """
+    #     if not self.tuner_checkpoint_dir.exists():
+    #         self.tuner_checkpoint_dir.mkdir()
+    #     study_filename = f"optuna_study.pickle"
+    #     study_export_path = self.tuner_checkpoint_dir / study_filename
+    #     self.exporter.export(resource=self.study, path=study_export_path)
 
-    def export_best_trial_info(self, study: optuna.Study):
-        """
-        Exports best params of study to json
-        :param study: an Optuna Study
-        """
-        best_trial_info = {
-            "trial_number": study.best_trial.number,
-            "hyperparameters": study.best_params,
-        }
-        best_trial_info_export_path = (
-            self.tuner_checkpoint_dir / "best_trial_info.json"
-        )
-        with best_trial_info_export_path.open(mode="w") as out_file:
-            json.dump(obj=best_trial_info, fp=out_file)
+    # def export_best_trial_info(self):
+    #     """
+    #     Exports best params of study to json
+    #     """
+    #     best_trial_info = {
+    #         "trial_number": self.study.best_trial.number,
+    #         "hyperparameters": self.study.best_params,
+    #     }
+    #     best_trial_info_export_path = (
+    #         self.tuner_checkpoint_dir / "best_trial_info.json"
+    #     )
+    #     with best_trial_info_export_path.open(mode="w") as out_file:
+    #         json.dump(obj=best_trial_info, fp=out_file)
 
-    @staticmethod
-    def report_study_results(study: optuna.Study):
+    def report_study_results(self):
         """
         Prints summary info form study to terminal
-        :param study: an optuna.Study
         """
-        pruned_trials = study.get_trials(
+        pruned_trials = self.study.get_trials(
             deepcopy=False, states=[TrialState.PRUNED]
         )
-        complete_trials = study.get_trials(
+        complete_trials = self.study.get_trials(
             deepcopy=False, states=[TrialState.COMPLETE]
         )
 
         print("Study statistics: ")
-        print("  Number of finished trials: ", len(study.trials))
+        print("  Number of finished trials: ", len(self.study.trials))
         print("  Number of pruned trials: ", len(pruned_trials))
         print("  Number of complete trials: ", len(complete_trials))
 
         print("Best trial:")
-        print("  Value: ", study.best_trial.value)
+        print("  Value: ", self.study.best_trial.value)
         print("  Params: ")
-        for key, value in study.best_trial.params.items():
+        for key, value in self.study.best_trial.params.items():
             print("    {}: {}".format(key, value))
 
     def tune(
@@ -428,28 +462,35 @@ class HyperParameterTuner:
             "Starting hyperparameter tuning.\n\n"
             "Data for Tensorboard will be written to:\n"
             f"{self.tensorboard_output_dir}\n\n"
-            "Optuna trial and study objects will be saved in:\n"
-            f"{self.tuner_checkpoint_dir}\n\n"
+            "CV mean logs will be written to: \n"
+            f"{self.output_dirs.cv_mean_logs_dir}\n\n"
+            "Individual trainer logs will be written to: \n"
+            f"{self.output_dirs.trainer_output_dir}"
+            # "Optuna trial and study objects will be saved in:\n"
+            # f"{self.tuner_checkpoint_dir}\n\n"
         )
 
-        if self.continue_tuning_dir is not None:
-            study = rio.ResourceImporter().import_pickle_to_object(
-                path=self.continue_tuning_dir
-                / "checkpoints_tuner"
-                / "optuna_study.pickle"
-            )
-            assert study.direction == self.optimization_direction
-        else:
-            study = optuna.create_study(
-                study_name=self.study_name,
-                storage=self.study_storage,
-                direction=self.optimization_direction_label,
-                sampler=self.hyperparameter_sampler,
-                pruner=self.pruner,
-            )
+        # if self.continue_tuning_dir is not None:
+        #     study = rio.ResourceImporter().import_pickle_to_object(
+        #         path=self.continue_tuning_dir
+        #         / "checkpoints_tuner"
+        #         / "optuna_study.pickle"
+        #     )
+        #     assert study.direction == self.optimization_direction
+        # else:
+        #     study = optuna.create_study(
+        #         study_name=self.study_name,
+        #         storage=self.study_storage,
+        #         load_if_exists=True,
+        #         direction=self.optimization_direction_label,
+        #         sampler=self.hyperparameter_sampler,
+        #         pruner=self.pruner,
+        #     )
         for trial_num in range(num_trials):
-            study.optimize(func=self.objective_fn, n_trials=1, timeout=timeout)
-            self.export_study(study=study)
-            self.export_best_trial_info(study=study)
+            self.study.optimize(
+                func=self.objective_fn, n_trials=1, timeout=timeout
+            )
+            # self.export_study()
+            # self.export_best_trial_info()
 
-        return study
+        return self.study
