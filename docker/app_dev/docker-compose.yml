@@ -22,6 +22,8 @@ services:
       context: ../
       dockerfile: ./app_dev/Dockerfile
       args:
+        - PRIMARY_UID=${UID}
+        - PRIMARY_GID=${GID}
         - PRIMARY_USER=gen_user
         - JETBRAINS_USER=${JETBRAINS_USER}
         - WORK_GROUP=${WORK_GROUP}

@@ -1,6 +1,8 @@
 FROM ubuntu:22.04
 
 
+ARG PRIMARY_UID
+ARG PRIMARY_GID
 ARG PRIMARY_USER
 ARG PRIMARY_USER_HOME=/home/${PRIMARY_USER}
 ARG JETBRAINS_USER
@@ -15,7 +17,7 @@ ARG COMPONENTS=./app_resources/components
 SHELL [ "/bin/bash", "--login", "-c" ]
 
 COPY ${COMPONENTS}/create_sudo_user /tmp/create_sudo_user
-RUN /tmp/create_sudo_user/main.sh ${PRIMARY_USER} \
+RUN /tmp/create_sudo_user/main.sh ${PRIMARY_USER} ${PRIMARY_UID} ${PRIMARY_GID}\
     && sudo rm -rf /tmp/create_sudo_user
 
 USER ${PRIMARY_USER}
@@ -40,7 +42,6 @@ COPY ${COMPONENTS}/zsh_setup ${BUILD_DIR}/zsh_setup
 RUN ${BUILD_DIR}/zsh_setup/main.sh ${PRIMARY_USER} \
     && sudo rm -rf ${BUILD_DIR}/*
 
-# ARG CONTAINER_DEVSPACE=/home/devspace
 RUN sudo mkdir -p ${CONTAINER_DEVSPACE} \
     && sudo chown ${PRIMARY_USER}:${PRIMARY_USER} ${CONTAINER_DEVSPACE}
 ARG CONDA_INSTALL_DIR=${CONTAINER_DEVSPACE}/miniconda3
@@ -72,17 +73,11 @@ RUN sudo chown -R ${PRIMARY_USER}:${PRIMARY_USER} ${BUILD_DIR}/accessjd \
 
 RUN sudo mkdir ${CONTAINER_PROJECT_ROOT}
 WORKDIR ${CONTAINER_PROJECT_ROOT}
-RUN #sudo rm -rf ${BUILD_DIR}
+RUN sudo rm -rf ${BUILD_DIR}
 
-# Create rest of directory structure expected of local project
-# ARG CONTAINER_PROJECT_ROOT=${CONTAINER_DEVSPACE}/project
-# ARG CONTAINER_WORK_DIR=${CONTAINER_PROJECT_ROOT}/work
-
-# RUN sudo mkdir ${CONTAINER_PROJECT_ROOT} \
-    # && sudo mkdir ${CONTAINER_SRC_DIR} ${CONTAINER_DATA_DIR} \
-RUN sudo groupadd ${WORK_GROUP} \
-    && sudo usermod -a -G ${WORK_GROUP} ${PRIMARY_USER} \
-    && sudo chown ${PRIMARY_USER}:${WORK_GROUP} ${CONTAINER_PROJECT_ROOT}
+#RUN sudo groupadd ${WORK_GROUP} \
+#    && sudo usermod -a -G ${WORK_GROUP} ${PRIMARY_USER} \
+#    && sudo chown ${PRIMARY_USER}:${WORK_GROUP} ${CONTAINER_PROJECT_ROOT}
 
 RUN sudo mkdir -p /usr/local/entrypoints/jbs
 COPY ./app_resources/entrypoints/jbs /usr/local/entrypoints/jbs
