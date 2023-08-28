@@ -174,6 +174,12 @@ class AccessController(ABC):
         ...
 
 
+class SafeStateSetter(ABC):
+    @abstractmethod
+    def set_to_safe_state(self):
+        ...
+
+
 class SimpleAccessManager:
     def __init__(
         self,
@@ -181,11 +187,13 @@ class SimpleAccessManager:
         root_access_paths: list[Path],
         condition_checker: ConfigConditionsChecker,
         access_controller: AccessController,
+        safe_state_setter: SafeStateSetter
     ):
         self._user = username
         self._root_access_paths = root_access_paths
         self._condition_checker = condition_checker
         self._access_controller = access_controller
+        self._safe_state_setter = safe_state_setter
 
     @property
     def user(self) -> str:
@@ -275,16 +283,20 @@ class SimpleAccessManager:
     @abstractmethod
     def revoke_access(self):
         self._access_controller.revoke_access()
-        if self.has_any_access("w"):
-            trees_with_write_access = [
-                root_path
-                for root_path, access_status in self.any_root_access_dict(
-                    access_type="w"
-                ).items()
-                if access_status
-            ]
-            print(
-                f"Warning: {self._user} still has write access to some items"
-                "under the following root paths:\n"
-                f"{trees_with_write_access}"
-            )
+        self._safe_state_setter.set_to_safe_state()
+        # if self.has_any_access("w"):
+        #     trees_with_write_access = [
+        #         root_path
+        #         for root_path, access_status in self.any_root_access_dict(
+        #             access_type="w"
+        #         ).items()
+        #         if access_status
+        #     ]
+        #     print(
+        #         f"Warning: {self._user} still has write access to some items"
+        #         "under the following root paths:\n"
+        #         f"{trees_with_write_access}"
+        #     )
+
+    # def set_safe_access_state(self):
+    #     self._safe_state_setter.set_to_safe_state()

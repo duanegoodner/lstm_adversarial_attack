@@ -8,12 +8,14 @@ from pathlib import Path
 
 class DeploymentRiskFactorsBuilder:
     def __init__(
-            self,
-            project_config: JBDockerProjectConfig,
-            # xml: xdc.XMLDataContainer
+        self,
+        project_config: JBDockerProjectConfig,
+        # xml: xdc.XMLDataContainer
     ):
         self._project_config = project_config
-        self._xml = xdc.XMLDataContainer.from_file(project_config.deployment_xml_path)
+        self._xml = xdc.XMLDataContainer.from_file(
+            project_config.deployment_xml_path
+        )
 
     # @classmethod
     # def from_file(cls, deployment_xml_path: str | Path):
@@ -28,39 +30,37 @@ class DeploymentRiskFactorsBuilder:
     ]
 
     @property
-    def _required_settings(self): return [
-        xdc.ElementSettings(
-            tag="component",
-            key_val_pairs={
-                "autoUpload": None,
-                "remoteFilesAllowedToDisappearOnAutoupload": "false",
-            },
-        ),
-        xdc.ElementSettings(
-            tag="paths",
-            key_val_pairs={
-                "name": (
-                    "jetbrains@localhost:"
-                    f"{self._project_config.env.get('CONTAINER_SSH_PORT')} key"
-                )
-            },
-        ),
-        # TODO figure out why deploy doesn't appear any more. Now have web="/"
-        xdc.ElementSettings(
-            tag="mapping",
-            key_val_pairs={
-                # "deploy": self._project_config.env.get("CONTAINER_PROJECT_DIR"),
-                "local": "$PROJECT_DIR$",
-            },
-        ),
-        xdc.ElementSettings(
-            tag="excludedPath",
-            key_val_pairs={
-                "local": "true",
-                "path": "$PROJECT_DIR$"
-            },
-        ),
-    ]
+    def _required_settings(self):
+        return [
+            xdc.ElementSettings(
+                tag="component",
+                key_val_pairs={
+                    "autoUpload": None,
+                    "remoteFilesAllowedToDisappearOnAutoupload": "false",
+                },
+            ),
+            xdc.ElementSettings(
+                tag="paths",
+                key_val_pairs={
+                    "name": (
+                        "jetbrains@localhost:"
+                        f"{self._project_config.env.get('CONTAINER_SSH_PORT')} key"
+                    )
+                },
+            ),
+            # TODO figure out why deploy doesn't appear any more. Now have web="/"
+            xdc.ElementSettings(
+                tag="mapping",
+                key_val_pairs={
+                    # "deploy": self._project_config.env.get("CONTAINER_PROJECT_DIR"),
+                    "local": "$PROJECT_DIR$",
+                },
+            ),
+            xdc.ElementSettings(
+                tag="excludedPath",
+                key_val_pairs={"local": "true", "path": "$PROJECT_DIR$"},
+            ),
+        ]
 
     _prohibited_settings = [
         xdc.ElementSettings(
@@ -68,7 +68,7 @@ class DeploymentRiskFactorsBuilder:
         ),
         xdc.ElementSettings(
             tag="option", key_val_pairs={"name": "myAutoUpload"}
-        )
+        ),
         # Option element has a value attribute, but have not seen it take
         # on anything other than "ALWAYS" when name="myAutoUpload", so just
         # prohibit any option element with name="myAutoUpload"
@@ -119,6 +119,30 @@ class JetBrainsAccessController(sam.AccessController):
         subprocess.run(cmd)
 
 
+class DevEnvSafeStateSetter(sam.SafeStateSetter):
+    def __init__(self, work_group: str, primary_user: str, project_root: str):
+        self._work_group = work_group
+        self._primary_user = primary_user
+        self._project_root = project_root
+
+    def set_to_safe_state(self):
+        cmd_a = ["sudo", "gpasswd", self._work_group, "-M", ""]
+        cmd_b = [
+            "sudo",
+            "usermod",
+            "-a",
+            "-G",
+            self._work_group,
+            self._primary_user,
+        ]
+        cmd_c = ["sudo", "chmod", "775", "-R", self._project_root]
+        cmd_d = ["sudo", "setfacl", "-R", "-bn", self._project_root]
+        subprocess.run(cmd_a)
+        subprocess.run(cmd_b)
+        subprocess.run(cmd_c)
+        subprocess.run(cmd_d)
+
+
 class JetbrainsAccessManagerBuilder:
     def __init__(
         self,
@@ -135,8 +159,7 @@ class JetbrainsAccessManagerBuilder:
     @classmethod
     def from_project_root(cls, project_root: Path):
         dot_env_path = DotEnvFinder(project_root=project_root).get_dot_env()
-        project_config = JBDockerProjectConfig(
-            dot_env_path=dot_env_path)
+        project_config = JBDockerProjectConfig(dot_env_path=dot_env_path)
         return cls(project_config=project_config)
 
     @property
@@ -157,6 +180,11 @@ class JetbrainsAccessManagerBuilder:
                 username=self._username,
                 work_group=self._project_config.env.get("WORK_GROUP"),
             ),
+            safe_state_setter=DevEnvSafeStateSetter(
+                work_group=self._project_config.env.get("WORK_GROUP"),
+                primary_user=self._project_config.env.get("PRIMARY_USER"),
+                project_root=self._project_config.env.get(
+                    "CONTAINER_PROJECT_ROOT"
+                ),
+            ),
         )
-
-
