@@ -1,4 +1,3 @@
-import json
 import shutil
 import sys
 import uuid
@@ -15,7 +14,6 @@ from torch.utils.data import DataLoader, Dataset, Subset
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.resource_io as rio
@@ -38,8 +36,6 @@ class TuningOutputDirs:
         self.cv_mean_logs_dir.mkdir(parents=True, exist_ok=True)
         self.tensorboard_dir.mkdir(parents=True, exist_ok=True)
         self.trainer_output_dir.mkdir(parents=True, exist_ok=True)
-
-
 
 
 
@@ -69,11 +65,8 @@ class HyperParameterTuner:
         hyperparameter_sampler: BaseSampler,
         output_dir: Path,
         study: optuna.Study,
-        # study_name: str,
-        # study_storage: optuna.storages.RDBStorage,
         trial_prefix: str = "trial_",
         cv_means_log_writer: slg.SimpleLogWriter = None,
-        # continue_tuning_dir: Path = None,
     ):
         self.device = device
         self.dataset = dataset
@@ -100,14 +93,9 @@ class HyperParameterTuner:
         self.output_dir = output_dir
         self.output_dirs = TuningOutputDirs(root_dir=self.output_dir)
         self.tensorboard_output_dir = self.output_dir / "tensorboard"
-        # self.trainer_checkpoint_dir = self.output_dir / "checkpoints_trainer"
-        # self.tuner_checkpoint_dir = self.output_dir / "checkpoints_tuner"
         self.exporter = rio.ResourceExporter()
         self.trial_prefix = trial_prefix
-        # self.continue_tuning_dir = continue_tuning_dir
         self.study = study
-        # self.study_name = study_name
-        # self.study_storage = study_storage
         self.cv_means_log_writer = cv_means_log_writer
 
     def create_datasets(self) -> list[tuh.TrainEvalDatasetPair]:
@@ -238,39 +226,6 @@ class HyperParameterTuner:
 
         return trainers
 
-    # def export_trial_info(
-    #     self,
-    #     trial: optuna.Trial,
-    #     trainers: list[smt.StandardModelTrainer],
-    #     cv_means_log: ds.EvalLog,
-    # ):
-    #     """
-    #     Saves a completed optuna.Trial object to pickle file.
-    #
-    #     Trial objective metric is a mean across all folds.
-    #     :param trial: completed optuna.Trial object
-    #     :param trainers: the StandardModelTrainers form trial (1 per fold)
-    #     :param cv_means_log: log of cross-fold means of performance metrics
-    #     """
-    #     if not self.tuner_checkpoint_dir.exists():
-    #         self.tuner_checkpoint_dir.mkdir()
-    #
-    #     trial_summary = ds.CVTrialLogs(
-    #         trainer_logs=[
-    #             ds.TrainEvalLogPair(
-    #                 train=trainer.train_log, eval=trainer.eval_log
-    #             )
-    #             for trainer in trainers
-    #         ],
-    #         cv_means_log=cv_means_log,
-    #     )
-    #
-    #     self.exporter.export(
-    #         resource=trial_summary,
-    #         path=self.tuner_checkpoint_dir
-    #         / f"{self.trial_prefix}{trial.number}_logs.pickle",
-    #     )
-
     def report_cv_means(
         self,
         log_entry: ds.EvalLogEntry,
@@ -387,13 +342,6 @@ class HyperParameterTuner:
             if trial.should_prune():
                 raise optuna.exceptions.TrialPruned()
 
-        # if self.save_trial_info:
-        # self.export_trial_info(
-        #     trial=trial,
-        #     trainers=objective_tools.trainers,
-        #     cv_means_log=objective_tools.cv_means_log,
-        # )
-
         return tuh.PerformanceSelector(
             optimize_direction=self.optimization_direction
         ).choose_best_val(
@@ -402,30 +350,6 @@ class HyperParameterTuner:
                 for item in objective_tools.cv_means_log.data
             ]
         )
-
-    # def export_study(self):
-    #     """
-    #     Saves .study object to pickle.
-    #     """
-    #     if not self.tuner_checkpoint_dir.exists():
-    #         self.tuner_checkpoint_dir.mkdir()
-    #     study_filename = f"optuna_study.pickle"
-    #     study_export_path = self.tuner_checkpoint_dir / study_filename
-    #     self.exporter.export(resource=self.study, path=study_export_path)
-
-    # def export_best_trial_info(self):
-    #     """
-    #     Exports best params of study to json
-    #     """
-    #     best_trial_info = {
-    #         "trial_number": self.study.best_trial.number,
-    #         "hyperparameters": self.study.best_params,
-    #     }
-    #     best_trial_info_export_path = (
-    #         self.tuner_checkpoint_dir / "best_trial_info.json"
-    #     )
-    #     with best_trial_info_export_path.open(mode="w") as out_file:
-    #         json.dump(obj=best_trial_info, fp=out_file)
 
     def report_study_results(self):
         """
@@ -466,31 +390,11 @@ class HyperParameterTuner:
             f"{self.output_dirs.cv_mean_logs_dir}\n\n"
             "Individual trainer logs will be written to: \n"
             f"{self.output_dirs.trainer_output_dir}"
-            # "Optuna trial and study objects will be saved in:\n"
-            # f"{self.tuner_checkpoint_dir}\n\n"
         )
 
-        # if self.continue_tuning_dir is not None:
-        #     study = rio.ResourceImporter().import_pickle_to_object(
-        #         path=self.continue_tuning_dir
-        #         / "checkpoints_tuner"
-        #         / "optuna_study.pickle"
-        #     )
-        #     assert study.direction == self.optimization_direction
-        # else:
-        #     study = optuna.create_study(
-        #         study_name=self.study_name,
-        #         storage=self.study_storage,
-        #         load_if_exists=True,
-        #         direction=self.optimization_direction_label,
-        #         sampler=self.hyperparameter_sampler,
-        #         pruner=self.pruner,
-        #     )
         for trial_num in range(num_trials):
             self.study.optimize(
                 func=self.objective_fn, n_trials=1, timeout=timeout
             )
-            # self.export_study()
-            # self.export_best_trial_info()
 
         return self.study

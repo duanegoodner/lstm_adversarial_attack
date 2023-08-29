@@ -1,5 +1,6 @@
 import datetime
 import os
+from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
 from urllib.parse import quote
@@ -11,35 +12,56 @@ from optuna.storages import RDBStorage
 import lstm_adversarial_attack.config_paths as cfp
 
 
+def get_db_dotenv_info(
+    db_name_var: str,
+    dotenv_path: Path = cfp.TUNING_DBS_DOTENV_PATH,
+    username_var: str = "TUNING_DBS_USER",
+    password_file_var: str = "TUNING_DBS_PASSWORD_FILE",
+    host_var: str = "POSTGRES_DBS_HOST"
+) -> dict:
+    load_dotenv(dotenv_path=dotenv_path)
+    password_file = os.getenv(password_file_var)
+    with Path(password_file).open(mode="r") as in_file:
+        password = in_file.read()
+
+    return {
+        "user": os.getenv(username_var),
+        "password": password,
+        "db_name": os.getenv(db_name_var),
+        "host": os.getenv(host_var)
+    }
+
+
 class OptunaDatabase:
     def __init__(
         self,
-        env_var_db_name: str,
-        env_var_user: str = "TUNING_DBS_USER",
-        env_var_password_file: str = "TUNING_DBS_PASSWORD_FILE",
-        env_var_host: str = "POSTGRES_DBS_HOST",
-        dotenv_path: Path = cfp.TUNING_DBS_DOTENV_PATH,
+        user: str,
+        password: str,
+        db_name: str,
+        host: str,
         db_dialect: str = "postgresql",
         db_driver: str = "psycopg2",
     ):
-        load_dotenv(dotenv_path=dotenv_path)
-        self._dotenv_path = dotenv_path
-        self._env_var_host = env_var_host
-        self._host = os.getenv(env_var_host)
-        self._env_var_user = env_var_user
-        self._user = os.getenv(env_var_user)
-        self._env_var_password_file = env_var_password_file
-        self._password_file = os.getenv(env_var_password_file)
-        self._env_var_db_name = env_var_db_name
-        self._db_name = os.getenv(env_var_db_name)
+        self._user = user
+        self._password = password
+        self._db_name = db_name
+        self._host = host
         self._db_dialect = db_dialect
         self._db_driver = db_driver
 
+    @classmethod
+    def from_dotenv_info(
+        cls,
+        dot_env_path: Path,
+        env_var_user: str,
+        env_var_password_file: str,
+        env_var_db_name: str,
+    ):
+        pass
+
     @property
     def _encoded_password(self) -> str:
-        with Path(self._password_file).open(mode="r") as in_file:
-            password = in_file.read()
-        return quote(password, safe="")
+        return quote(self._password, safe="")
 
     @property
     def _db_url(self) -> str:
@@ -84,7 +106,8 @@ class OptunaDatabase:
         return sorted_studies[0]
 
 
-MODEL_TUNING_DB = OptunaDatabase(env_var_db_name="MODEL_TUNING_DB_NAME")
+model_tuning_db_info = get_db_dotenv_info(db_name_var="MODEL_TUNING_DB_NAME")
+MODEL_TUNING_DB = OptunaDatabase(**model_tuning_db_info)
 MODEL_TUNING_STORAGE = MODEL_TUNING_DB.storage
 
 

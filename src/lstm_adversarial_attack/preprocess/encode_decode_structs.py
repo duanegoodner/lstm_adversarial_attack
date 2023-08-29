@@ -57,6 +57,7 @@ class PreprocessModuleSummary(msgspec.Struct):
 
 class TunerDriverSummary(msgspec.Struct):
     collate_fn_name: str
+    db_env_var_name: str
     study_name: str
     is_continuation: bool
     cv_mean_metrics_of_interest: tuple[str, ...]
@@ -77,6 +78,8 @@ class TunerDriverSummary(msgspec.Struct):
     def to_dict(self):
         return {
             "collate_fn_name": self.collate_fn_name,
+            "db_env_var_name": self.db_env_var_name,
+            "study_name": self.study_name,
             "is_continuation": self.is_continuation,
             "cv_mean_metrics_of_interest": self.cv_mean_metrics_of_interest,
             "device_name": self.device_name,

@@ -1,15 +1,12 @@
+import sys
 from datetime import datetime
+from functools import cached_property
+from pathlib import Path
+from typing import Any
 
 import optuna
-import sys
-import torch
-from pathlib import Path
-
-from optuna.pruners import MedianPruner
-from optuna.samplers import TPESampler
-from sklearn.model_selection import StratifiedKFold
 import sklearn.model_selection
-from typing import Any, Callable
+import torch
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as cfp
@@ -19,8 +16,8 @@ import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.tune_train.hyperparameter_tuner as htu
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
-import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
+import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
 
 def validate_existing_output(
@@ -76,6 +73,7 @@ class TunerDriver:
     def __init__(
         self,
         device: torch.device,
+        db_env_var_name: str = "MODEL_TUNING_DB_NAME",
         study_name: str = None,
         collate_fn_name: str = "x19m_collate_fn",
         tuning_ranges: tuh.X19MLSTMTuningRanges = None,
@@ -95,15 +93,13 @@ class TunerDriver:
         sampler_kwargs: dict[str, Any] = None,
     ):
         self.device = device
+        self.db_env_var_name = db_env_var_name
         self.collate_fn = getattr(xmd, collate_fn_name)
         if study_name is None:
-            timestamp = "".join(
-                char for char in str(datetime.now()) if char.isdigit()
-            )
-            study_name = f"model_tuning_{timestamp}"
+            study_name = self.build_study_name()
         self.study_name = study_name
         self.has_pre_existing_rdb_output = has_rdb_output(
-            study_name=self.study_name, storage=tsd.MODEL_TUNING_STORAGE
+            study_name=self.study_name, storage=self.db.storage
         )
         self.output_dir = cfp.HYPERPARAMETER_OUTPUT_DIR / self.study_name
         self.has_pre_existing_local_output = self.output_dir.exists()
@@ -117,37 +113,62 @@ class TunerDriver:
         self.fold_class = getattr(sklearn.model_selection, fold_class_name)
         self.kfold_random_seed = kfold_random_seed
         self.performance_metric = performance_metric
-        assert (
-            optimization_direction_label == "minimize"
-            or optimization_direction_label == "maximize"
-        )
         self.optimization_direction_label = optimization_direction_label
-        self.optimization_direction = (
-            optuna.study.StudyDirection.MINIMIZE
-            if optimization_direction_label == "minimize"
-            else optuna.study.StudyDirection.MAXIMIZE
-        )
+        self.optimization_direction = self.get_optimization_direction()
         if pruner_kwargs is None:
             pruner_kwargs = {
                 "n_startup_trials": cfg_set.TUNER_PRUNER_NUM_STARTUP_TRIALS,
                 "n_warmup_steps": cfg_set.TUNER_PRUNER_NUM_WARMUP_STEPS,
             }
         self.pruner_kwargs = pruner_kwargs
-        self.pruner = getattr(optuna.pruners, pruner_name)(
-            **self.pruner_kwargs
-        )
+        self.pruner = self.get_pruner(pruner_name=pruner_name)
         self.cv_mean_metrics_of_interest = cv_mean_metrics_of_interest
         if sampler_kwargs is None:
             sampler_kwargs = {}
         self.sampler_kwargs = sampler_kwargs
-        self.hyperparameter_sampler = getattr(optuna.samplers, sampler_name)(
-            **self.sampler_kwargs
+        self.hyperparameter_sampler = self.get_sampler(
+            sampler_name=sampler_name
         )
+
+    @staticmethod
+    def build_study_name() -> str:
+        timestamp = "".join(
+            char for char in str(datetime.now()) if char.isdigit()
+        )
+        return f"model_tuning_{timestamp}"
+
+    def validate_optimization_direction_label(self):
+        assert (
+            self.optimization_direction_label == "minimize"
+            or self.optimization_direction_label == "maximize"
+        )
+
+    def get_optimization_direction(self) -> optuna.study.StudyDirection:
+        self.validate_optimization_direction_label()
+        return (
+            optuna.study.StudyDirection.MINIMIZE
+            if self.optimization_direction_label == "minimize"
+            else optuna.study.StudyDirection.MAXIMIZE
+        )
+
+    def get_pruner(self, pruner_name: str) -> optuna.pruners.BasePruner:
+        return getattr(optuna.pruners, pruner_name)(**self.pruner_kwargs)
+
+    def get_sampler(self, sampler_name: str) -> optuna.samplers.BaseSampler:
+        return getattr(optuna.samplers, sampler_name)(**self.sampler_kwargs)
+
+    @cached_property
+    def db(self) -> tsd.OptunaDatabase:
+        db_dotenv_info = tsd.get_db_dotenv_info(
+            db_name_var=self.db_env_var_name
+        )
+        return tsd.OptunaDatabase(**db_dotenv_info)
 
     @property
     def summary(self) -> eds.TunerDriverSummary:
         return eds.TunerDriverSummary(
             collate_fn_name=self.collate_fn.__name__,
+            db_env_var_name=self.db_env_var_name,
             study_name=self.study_name,
             # TODO should continuation check be for local, RDB, or both?
             is_continuation=self.has_pre_existing_local_output,
@@ -185,7 +206,7 @@ class TunerDriver:
 
         study = optuna.create_study(
             study_name=self.study_name,
-            storage=tsd.MODEL_TUNING_STORAGE,
+            storage=self.db.storage,
             load_if_exists=True,
             direction=self.optimization_direction_label,
             sampler=self.hyperparameter_sampler,

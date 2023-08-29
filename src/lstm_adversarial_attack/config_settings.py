@@ -83,7 +83,7 @@ TRAINER_EVAL_GENERAL_LOGGING_METRICS = (
     "validation_loss",
 )
 TRAINER_EVAL_TENSORBOARD_METRICS = (
-    "accuracy",
+    # "accuracy",
     "auc",
     "f1",
     "precision",
