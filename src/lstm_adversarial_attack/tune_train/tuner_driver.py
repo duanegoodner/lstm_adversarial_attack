@@ -78,7 +78,6 @@ class TunerDriver:
         device: torch.device,
         study_name: str = None,
         collate_fn_name: str = "x19m_collate_fn",
-        # continue_tuning_dir: Path | str = None,
         tuning_ranges: tuh.X19MLSTMTuningRanges = None,
         num_folds: int = cfg_set.TUNER_NUM_FOLDS,
         num_cv_epochs: int = cfg_set.TUNER_NUM_CV_EPOCHS,
@@ -104,7 +103,7 @@ class TunerDriver:
             study_name = f"model_tuning_{timestamp}"
         self.study_name = study_name
         self.has_pre_existing_rdb_output = has_rdb_output(
-            study_name=self.study_name, storage=tsd.TUNING_STUDIES_STORAGE
+            study_name=self.study_name, storage=tsd.MODEL_TUNING_STORAGE
         )
         self.output_dir = cfp.HYPERPARAMETER_OUTPUT_DIR / self.study_name
         self.has_pre_existing_local_output = self.output_dir.exists()
@@ -186,7 +185,7 @@ class TunerDriver:
 
         study = optuna.create_study(
             study_name=self.study_name,
-            storage=tsd.TUNING_STUDIES_STORAGE,
+            storage=tsd.MODEL_TUNING_STORAGE,
             load_if_exists=True,
             direction=self.optimization_direction_label,
             sampler=self.hyperparameter_sampler,

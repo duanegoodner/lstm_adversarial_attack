@@ -6,6 +6,8 @@ SRC_DIR = PROJECT_ROOT / "src"
 LSTM_ADVERSARIAL_ATTACK_PACKAGE = SRC_DIR / "lstm_adversarial_attack"
 DATA_DIR = PROJECT_ROOT / "data"
 EXAMPLE_DATA_DIR = DATA_DIR / "example_data"
+DOCKER_DIR = PROJECT_ROOT / "docker"
+
 
 # ##### Database #####
 DB_SUBPACKAGE = LSTM_ADVERSARIAL_ATTACK_PACKAGE / "query_db"
@@ -19,7 +21,7 @@ DB_QUERIES = [
     DB_DEFAULT_QUERY_DIR / "pivoted_vital.sql",
 ]
 TUNING_STUDY_DB_SUBPACKAGE = LSTM_ADVERSARIAL_ATTACK_PACKAGE / "tuning_db"
-OPTUNA_DB_DOTENV_PATH = TUNING_STUDY_DB_SUBPACKAGE / "tuning_studies_database.env"
+TUNING_DBS_DOTENV_PATH = DOCKER_DIR / "tuning_dbs.env"
 
 
 # ##### Preprocessor #####
