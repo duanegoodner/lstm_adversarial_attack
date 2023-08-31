@@ -3,6 +3,7 @@ import os
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote
 
 import optuna.study
@@ -17,7 +18,7 @@ def get_db_dotenv_info(
     dotenv_path: Path = cfp.TUNING_DBS_DOTENV_PATH,
     username_var: str = "TUNING_DBS_USER",
     password_file_var: str = "TUNING_DBS_PASSWORD_FILE",
-    host_var: str = "POSTGRES_DBS_HOST"
+    host_var: str = "POSTGRES_DBS_HOST",
 ) -> dict:
     load_dotenv(dotenv_path=dotenv_path)
     password_file = os.getenv(password_file_var)
@@ -28,7 +29,7 @@ def get_db_dotenv_info(
         "user": os.getenv(username_var),
         "password": password,
         "db_name": os.getenv(db_name_var),
-        "host": os.getenv(host_var)
+        "host": os.getenv(host_var),
     }
 
 
@@ -78,6 +79,17 @@ class OptunaDatabase:
     @property
     def study_summaries(self) -> list[optuna.study.StudySummary]:
         return optuna.study.get_all_study_summaries(storage=self.storage)
+
+    def get_study_summary(self, study_name: str) -> optuna.study.StudySummary:
+        return [
+            summary
+            for summary in self.study_summaries
+            if summary.study_name == study_name
+        ][0]
+
+    def get_best_params(self, study_name: str) -> dict[str, Any]:
+        study_summary = self.get_study_summary(study_name=study_name)
+        return study_summary.best_trial.params
 
     def get_all_studies(self) -> list[optuna.Study]:
         study_names = [item.study_name for item in self.study_summaries]

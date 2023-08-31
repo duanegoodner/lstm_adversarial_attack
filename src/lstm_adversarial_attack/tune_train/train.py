@@ -1,8 +1,9 @@
 import argparse
 import json
 import sys
-import torch
 from pathlib import Path
+
+import torch
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as cfg_paths
@@ -12,28 +13,26 @@ import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.tune_train.cross_validator_driver as cvd
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
+import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
 
 def main(
     # study_path: str = None,
-    hyperparameters_json_path: str = None,
+    # hyperparameters_json_path: str = None,
+    study_name: str = None,
     num_folds: int = None,
     epochs_per_fold: int = None,
 ) -> dict[int, ds.TrainEvalLogPair]:
     # use if is None syntax (instead of default args) for CLI integration
-    if hyperparameters_json_path is None:
-        hyperparameters_json_path = (
-            ps.latest_modified_file_with_name_condition(
-                component_string="best_trial_info.json",
-                root_dir=cfg_paths.HYPERPARAMETER_OUTPUT_DIR,
-            )
-        )
-    with Path(hyperparameters_json_path).open(mode="r") as input_file:
-        hyperparams_dict = json.load(input_file)
+    if study_name is None:
+        study_name = tsd.MODEL_TUNING_DB.get_latest_study().study_name
 
+    hyperparams_dict = tsd.MODEL_TUNING_DB.get_best_params(
+        study_name=study_name
+    )
     hyperparameters = tuh.X19LSTMHyperParameterSettings(
-        **hyperparams_dict["hyperparameters"]
+        **hyperparams_dict
     )
 
     if num_folds is None:
@@ -58,18 +57,13 @@ def main(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-j",
-        "--hyperparameters_json_path",
+        "-s",
+        "--study_name",
         type=str,
         action="store",
         nargs="?",
         help=(
-            "Path to an json file containing hyperparameters to use during "
-            "model training. Format must match that of file output by"
-            "HyperParameterTuner.export_best_trial_info(). If "
-            "not specified, the most recently modified file named "
-            "'best_trial_info.json' under path specified by "
-            "config_paths.HYPERPARAMETER_OUTPUT_DIR will be used."
+            "Name of the optuna study in RDB to obtain hyperparameters from"
         ),
     )
     parser.add_argument(
