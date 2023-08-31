@@ -1,3 +1,5 @@
+import collections
+
 import msgspec
 import numpy as np
 import torch
@@ -31,8 +33,7 @@ class ClassificationScores:
         )
 
 
-@dataclass
-class TrainEpochResult:
+class TrainEpochResult(msgspec.Struct):
     loss: float
 
     @classmethod
@@ -40,8 +41,8 @@ class TrainEpochResult:
         return cls(loss=np.mean([item.loss for item in results]))
 
 
-@dataclass
-class EvalEpochResult:
+# @dataclass
+class EvalEpochResult(msgspec.Struct):
     validation_loss: float
     accuracy: float
     auc: float
@@ -115,17 +116,14 @@ class EvalEpochResult:
         )
 
 
-@dataclass
-class TrainLogEntry:
+class TrainLogEntry(msgspec.Struct):
     epoch: int
     result: TrainEpochResult
 
 
-@dataclass
-class EvalLogEntry:
+class EvalLogEntry(msgspec.Struct):
     epoch: int
     result: EvalEpochResult
-
 
 @dataclass
 class TrainEvalLog(ABC):
@@ -187,3 +185,10 @@ class FullEvalResult:
     y_score: torch.tensor
     y_true: torch.tensor
 
+
+class TrainingCheckpoint(msgspec.Struct):
+    epoch_num: int
+    train_log_entry: TrainLogEntry
+    eval_log_entry: EvalLogEntry
+    state_dict: collections.OrderedDict
+    optimizer_state_dict: dict

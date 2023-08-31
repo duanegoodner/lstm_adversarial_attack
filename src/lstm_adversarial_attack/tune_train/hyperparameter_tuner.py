@@ -1,6 +1,7 @@
 import shutil
 import sys
 import uuid
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
@@ -36,6 +37,19 @@ class TuningOutputDirs:
         self.cv_mean_logs_dir.mkdir(parents=True, exist_ok=True)
         self.tensorboard_dir.mkdir(parents=True, exist_ok=True)
         self.trainer_output_dir.mkdir(parents=True, exist_ok=True)
+
+
+@dataclass
+class ObjectiveFunctionTools:
+    """
+    Collection of tools needed by HyperparameterTuner.objective_fn
+    """
+
+    settings: tuh.X19LSTMHyperParameterSettings
+    summary_writer: SummaryWriter
+    cv_means_log: ds.EvalLog
+    cv_means_log_writer: slg.SimpleLogWriter
+    trainers: list[smt.StandardModelTrainer]
 
 
 
@@ -274,7 +288,7 @@ class HyperParameterTuner:
             data_col_names=("epoch", *self.cv_mean_metrics_of_interest)
         )
 
-        return tuh.ObjectiveFunctionTools(
+        return ObjectiveFunctionTools(
             settings=settings,
             summary_writer=SummaryWriter(str(summary_writer_path)),
             cv_means_log=ds.EvalLog(),
@@ -306,13 +320,8 @@ class HyperParameterTuner:
             for fold_idx, trainer in enumerate(objective_tools.trainers):
                 trainer.train_model(num_epochs=self.epochs_per_fold)
                 eval_result = trainer.evaluate_model()
-                # eval_epoch_results.append(trainer.eval_log.latest_entry)
                 eval_epoch_results.append(eval_result)
                 trainer.model.to("cpu")
-
-            # mean_validation_vals = ds.EvalEpochResult.mean(
-            #     [item.result for item in eval_epoch_results]
-            # )
 
             mean_validation_vals = sum(
                 [item.result for item in eval_epoch_results]

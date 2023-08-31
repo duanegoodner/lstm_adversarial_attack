@@ -27,6 +27,7 @@ class CrossValidatorDriver:
         epochs_per_fold: int = lcs.CV_DRIVER_EPOCHS_PER_FOLD,
         num_folds: int = lcs.CV_DRIVER_NUM_FOLDS,
         eval_interval: int = lcs.CV_DRIVER_EVAL_INTERVAL,
+        tuning_study_name: str = None
     ):
         self.device = device
         self.dataset = dataset
@@ -34,35 +35,7 @@ class CrossValidatorDriver:
         self.epochs_per_fold = epochs_per_fold
         self.num_folds = num_folds
         self.eval_interval = eval_interval
-
-    @classmethod
-    def from_study_path(
-        cls,
-        device: torch.device,
-        dataset: Dataset,
-        study_path: Path,
-        num_folds: int = lcs.CV_DRIVER_NUM_FOLDS,
-        epochs_per_fold: int = lcs.CV_DRIVER_EPOCHS_PER_FOLD
-    ):
-        """
-        Creates CrossValidationDriver from path to optuna.Study pickle file
-        :param device: device to run on
-        :param dataset: full dataset for cross validation
-        :param study_path: path to optuna.Study pickle file
-        :param num_folds: number cross-validation folds
-        :param epochs_per_fold: number training epochs to run on each fold
-        """
-        study = rio.ResourceImporter().import_pickle_to_object(path=study_path)
-        hyperparameters = tuh.X19LSTMHyperParameterSettings(
-            **study.best_params
-        )
-        return cls(
-            device=device,
-            dataset=dataset,
-            hyperparameters=hyperparameters,
-            num_folds=num_folds,
-            epochs_per_fold=epochs_per_fold
-        )
+        self.tuning_study_name = tuning_study_name
 
     def run(self):
         """

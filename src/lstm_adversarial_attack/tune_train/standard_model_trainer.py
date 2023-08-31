@@ -1,6 +1,7 @@
 import shutil
 import sys
 from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,7 @@ import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.simple_logger as slg
+import lstm_adversarial_attack.preprocess.encode_decode as edc
 
 
 class TrainingOutputDirs:
@@ -128,6 +130,10 @@ class StandardModelTrainer:
             "optimizer_state_dict": deepcopy(self.optimizer.state_dict()),
         }
 
+    @property
+    def _current_checkpoint_struct(self) -> ds.TrainingCheckpoint:
+        return ds.TrainingCheckpoint(**self._current_checkpoint_info)
+
     def _save_checkpoint(
         self,
     ) -> dict[str, Any]:
@@ -148,6 +154,17 @@ class StandardModelTrainer:
         }
 
         torch.save(obj=checkpoint, f=output_path)
+
+        new_timestamp = "".join(
+            char for char in str(datetime.now()) if char.isdigit()
+        )
+        new_checkpoint_path = (
+            self.checkpoint_dir / f"training_checkpoint_{new_timestamp}.json"
+        )
+
+        edc.TrainingCheckpointWriter().export(
+            obj=self._current_checkpoint_struct, path=new_checkpoint_path
+        )
 
         return output_path
 

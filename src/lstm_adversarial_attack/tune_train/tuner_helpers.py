@@ -8,12 +8,8 @@ from torch.utils.tensorboard import SummaryWriter
 from typing import Iterable, TypeVar
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-# import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.config_settings as lcs
 import lstm_adversarial_attack.tune_train.lstm_model_stc as lms
-import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
-import lstm_adversarial_attack.data_structures as ds
-import lstm_adversarial_attack.simple_logger as slg
 
 
 @dataclass
@@ -230,19 +226,6 @@ class X19LSTMBuilder:
             ),
             nn.Softmax(dim=1),
         )
-
-
-@dataclass
-class ObjectiveFunctionTools:
-    """
-    Collection of tools needed by HyperparameterTuner.objective_fn
-    """
-
-    settings: X19LSTMHyperParameterSettings
-    summary_writer: SummaryWriter
-    cv_means_log: ds.EvalLog
-    cv_means_log_writer: slg.SimpleLogWriter
-    trainers: list[smt.StandardModelTrainer]
 
 
 _T = TypeVar("_T")

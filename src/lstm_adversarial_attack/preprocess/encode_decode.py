@@ -1,3 +1,4 @@
+import collections
 import time
 from abc import ABC, abstractmethod
 from functools import cached_property
@@ -7,10 +8,12 @@ from typing import Any, Type, TypeVar, Callable
 import msgspec
 import numpy as np
 import pandas as pd
+import torch
 
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
+import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 
 # TODO Consider creating DataWriter base class with encoder abstractmethod and
@@ -257,6 +260,18 @@ class TunerDriverSummaryWriter(StandardStructWriter):
             )
 
 
+class TrainingCheckpointWriter(StandardStructWriter):
+    def __init__(self):
+        super().__init__(struct_type=ds.TrainingCheckpoint)
+
+    @staticmethod
+    def enc_hook(obj: Any) -> Any:
+        if isinstance(obj, torch.Tensor):
+            return obj.tolist()
+        if isinstance(obj, np.float64):
+            return float(obj)
+
+
 DecodeType = TypeVar("DecodeType", bound=msgspec.Struct)
 
 
@@ -336,7 +351,39 @@ class TunerDriverSummaryReader(StandardStructReader):
             )
 
 
+class TrainingCheckpointReader(StandardStructReader):
+    def __init__(self):
+        super().__init__(struct_type=ds.TrainingCheckpoint)
+
+    @staticmethod
+    def dec_hook(decode_type: Type, obj: Any) -> Any:
+        if decode_type is collections.OrderedDict:
+            pass
+
+
 if __name__ == "__main__":
+    checkpoint_from_pickle = torch.load(
+        cfp.CV_ASSESSMENT_OUTPUT_DIR
+        / "cv_training_20230831101610664171"
+        / "checkpoints"
+        / "fold_0"
+        / "2023-08-31_10_17_32.828815.tar"
+    )
+
+    encoded_checkpoint = TrainingCheckpointWriter().encode(
+        checkpoint_from_pickle
+    )
+
+    json_output_path = cfp.CV_ASSESSMENT_OUTPUT_DIR / "example_checkpoint.json"
+
+    TrainingCheckpointWriter().export(
+        obj=checkpoint_from_pickle, path=json_output_path
+    )
+
+    # checkpoint_from_json = TrainingCheckpointReader().import_struct(
+    #     path=json_output_path
+    # )
+
     # import_path = cfp.FULL_ADMISSION_LIST_OUTPUT / "full_admission_list.json"
     # json_import_start = time.time()
     # result = import_admission_data_list(path=import_path)
@@ -363,8 +410,8 @@ if __name__ == "__main__":
     #     encoded_col_names
     # )
 
-    tuner_driver_summary = TunerDriverSummaryReader().import_struct(
-        path=cfp.HYPERPARAMETER_OUTPUT_DIR
-        / "2023-08-17_15_05_51.518571"
-        / "tuner_driver_summary_2023-08-17_15_05_51.519082.json"
-    )
+    # tuner_driver_summary = TunerDriverSummaryReader().import_struct(
+    #     path=cfp.HYPERPARAMETER_OUTPUT_DIR
+    #     / "2023-08-17_15_05_51.518571"
+    #     / "tuner_driver_summary_2023-08-17_15_05_51.519082.json"
+    # )

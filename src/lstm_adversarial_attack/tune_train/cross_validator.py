@@ -1,4 +1,6 @@
 import sys
+from datetime import datetime
+
 import torch
 from pathlib import Path
 from sklearn.model_selection import StratifiedKFold
@@ -33,6 +35,7 @@ class CrossValidator:
         kfold_random_seed: int = lcs.CV_ASSESSMENT_RANDOM_SEED,
         output_root_dir: Path = None,
         save_fold_info: bool = True,
+        tuning_study_name: str = None,
     ):
         self.device = device
         self.dataset = dataset
@@ -45,11 +48,21 @@ class CrossValidator:
         self.kfold_random_seed = kfold_random_seed
         self.cv_datasets = self.create_datasets()
         if output_root_dir is None:
-            output_root_dir = rio.create_timestamped_dir(
-                parent_path=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR
+            timestamp = "".join(
+                char for char in str(datetime.now()) if char.isdigit()
             )
+            output_root_dir = (
+                cfg_paths.CV_ASSESSMENT_OUTPUT_DIR / f"cv_training_{timestamp}"
+            )
+            # output_root_dir = Path(f"cv_training_{timestamp}")
+            #
+            # output_root_dir = rio.create_timestamped_dir(
+            #     parent_path=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR
+            # )
         self.output_root_dir = output_root_dir
+        self.output_root_dir.mkdir()
         self.save_fold_info = save_fold_info
+        self.tuning_study_name = tuning_study_name
 
     def create_single_fold_dataset(
         self, eval_fraction: float = lcs.CV_DRIVER_SINGLE_FOLD_EVAL_FRACTION
@@ -143,9 +156,7 @@ class CrossValidator:
         """
 
         for fold_idx, train_eval_pair in enumerate(self.cv_datasets):
-            self.run_fold(
-                fold_idx=fold_idx, train_eval_pair=train_eval_pair
-            )
+            self.run_fold(fold_idx=fold_idx, train_eval_pair=train_eval_pair)
 
 
 if __name__ == "__main__":

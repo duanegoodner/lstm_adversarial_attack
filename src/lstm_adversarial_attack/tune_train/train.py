@@ -18,8 +18,6 @@ import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
 
 def main(
-    # study_path: str = None,
-    # hyperparameters_json_path: str = None,
     study_name: str = None,
     num_folds: int = None,
     epochs_per_fold: int = None,
@@ -49,6 +47,7 @@ def main(
         hyperparameters=hyperparameters,
         epochs_per_fold=epochs_per_fold,
         num_folds=num_folds,
+        tuning_study_name=study_name
     )
 
     return cv_driver.run()

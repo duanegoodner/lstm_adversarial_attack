@@ -73,14 +73,14 @@ class TrainerDriver:
         self.summary_writer_add_graph = summary_writer_add_graph
 
     def initialize_output_content(self):
-        rio.ResourceExporter().export(
-            resource=self.model,
-            path=self.output_dirs.root_dir / "model.pickle",
-        )
-        rio.ResourceExporter().export(
-            resource=self.hyperparameter_settings,
-            path=self.output_dirs.root_dir / "hyperparameters.pickle",
-        )
+        # rio.ResourceExporter().export(
+        #     resource=self.model,
+        #     path=self.output_dirs.root_dir / "model.pickle",
+        # )
+        # rio.ResourceExporter().export(
+        #     resource=self.hyperparameter_settings,
+        #     path=self.output_dirs.root_dir / "hyperparameters.pickle",
+        # )
 
         hyperparameters_json_path = (
             self.output_dirs.root_dir / "hyperparameters.json"
