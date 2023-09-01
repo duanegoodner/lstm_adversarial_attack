@@ -186,9 +186,14 @@ class FullEvalResult:
     y_true: torch.tensor
 
 
+class OptimizerStateDict(msgspec.Struct):
+    param_groups: list[dict[str, Any]]
+    state: dict[int, dict[str, torch.Tensor]]
+
+
 class TrainingCheckpoint(msgspec.Struct):
     epoch_num: int
     train_log_entry: TrainLogEntry
     eval_log_entry: EvalLogEntry
     state_dict: collections.OrderedDict
-    optimizer_state_dict: dict
+    optimizer_state_dict: OptimizerStateDict

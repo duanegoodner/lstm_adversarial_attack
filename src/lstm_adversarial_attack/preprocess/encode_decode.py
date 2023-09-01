@@ -358,16 +358,25 @@ class TrainingCheckpointReader(StandardStructReader):
     @staticmethod
     def dec_hook(decode_type: Type, obj: Any) -> Any:
         if decode_type is collections.OrderedDict:
-            pass
+            state_dict = collections.OrderedDict()
+            for key, value in obj.items():
+                state_dict[key] = torch.tensor(value)
+            return state_dict
+        if decode_type is torch.Tensor:
+            return torch.tensor(obj)
+        else:
+            raise NotImplementedError(
+                f"Objects of type {type} are not supported"
+            )
 
 
 if __name__ == "__main__":
     checkpoint_from_pickle = torch.load(
         cfp.CV_ASSESSMENT_OUTPUT_DIR
-        / "cv_training_20230831101610664171"
+        / "cv_training_20230831232347009480"
         / "checkpoints"
         / "fold_0"
-        / "2023-08-31_10_17_32.828815.tar"
+        / "2023-08-31_23_25_12.647384.tar"
     )
 
     encoded_checkpoint = TrainingCheckpointWriter().encode(
@@ -380,9 +389,16 @@ if __name__ == "__main__":
         obj=checkpoint_from_pickle, path=json_output_path
     )
 
-    # checkpoint_from_json = TrainingCheckpointReader().import_struct(
-    #     path=json_output_path
-    # )
+    checkpoint_from_json = TrainingCheckpointReader().import_struct(
+        path=json_output_path
+    )
+
+    for key, val in checkpoint_from_json.state_dict.items():
+        checkpoint_from_json.state_dict[key] = val.to("cuda:0")
+        print(torch.equal(
+            checkpoint_from_json.state_dict[key],
+            checkpoint_from_pickle["state_dict"][key],
+        ))
 
     # import_path = cfp.FULL_ADMISSION_LIST_OUTPUT / "full_admission_list.json"
     # json_import_start = time.time()
