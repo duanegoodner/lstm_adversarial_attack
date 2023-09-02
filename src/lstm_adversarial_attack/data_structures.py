@@ -212,7 +212,7 @@ class ModelStateDictInfo(msgspec.Struct):
         )
 
 
-class TrainingCheckpoint(msgspec.Struct):
+class TrainingCheckpointStorage(msgspec.Struct):
     epoch_num: int
     train_log_entry: TrainLogEntry
     eval_log_entry: EvalLogEntry
@@ -222,3 +222,34 @@ class TrainingCheckpoint(msgspec.Struct):
     @property
     def state_dict(self) -> collections.OrderedDict:
         return self.state_dict_info.ordered_dict
+
+
+class TrainingCheckpoint(msgspec.Struct):
+    epoch_num: int
+    train_log_entry: TrainLogEntry
+    eval_log_entry: EvalLogEntry
+    state_dict: collections.OrderedDict
+    optimizer_state_dict: OptimizerStateDict
+
+    def to_storage(self) -> TrainingCheckpointStorage:
+        return TrainingCheckpointStorage(
+            epoch_num=self.epoch_num,
+            train_log_entry=self.train_log_entry,
+            eval_log_entry=self.eval_log_entry,
+            state_dict_info=ModelStateDictInfo.from_possibly_ordered_state_dict(
+                ordered_state_dict=self.state_dict
+            ),
+            optimizer_state_dict=self.optimizer_state_dict,
+        )
+
+    @classmethod
+    def from_storage(
+        cls, training_checkpoint_storage: TrainingCheckpointStorage
+    ):
+        return cls(
+            epoch_num=training_checkpoint_storage.epoch_num,
+            train_log_entry=training_checkpoint_storage.train_log_entry,
+            eval_log_entry=training_checkpoint_storage.eval_log_entry,
+            state_dict=training_checkpoint_storage.state_dict,
+            optimizer_state_dict=training_checkpoint_storage.optimizer_state_dict,
+        )

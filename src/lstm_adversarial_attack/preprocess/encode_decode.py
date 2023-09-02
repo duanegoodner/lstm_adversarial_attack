@@ -351,9 +351,9 @@ class TunerDriverSummaryReader(StandardStructReader):
             )
 
 
-class TrainingCheckpointReader(StandardStructReader):
+class TrainingCheckpointStorageReader(StandardStructReader):
     def __init__(self):
-        super().__init__(struct_type=ds.TrainingCheckpoint)
+        super().__init__(struct_type=ds.TrainingCheckpointStorage)
 
     @staticmethod
     def dec_hook(decode_type: Type, obj: Any) -> Any:
@@ -373,10 +373,10 @@ class TrainingCheckpointReader(StandardStructReader):
 if __name__ == "__main__":
     checkpoint_from_pickle = torch.load(
         cfp.CV_ASSESSMENT_OUTPUT_DIR
-        / "cv_training_20230901171425943398"
+        / "cv_training_20230901213745558067"
         / "checkpoints"
         / "fold_0"
-        / "2023-09-01_17_14_47.386296.tar"
+        / "2023-09-01_21_38_48.094853.tar"
     )
 
     # encoded_checkpoint = TrainingCheckpointWriter().encode(
@@ -385,22 +385,26 @@ if __name__ == "__main__":
 
     json_output_path = (
         cfp.CV_ASSESSMENT_OUTPUT_DIR
-        / "cv_training_20230901171425943398"
+        / "cv_training_20230901213745558067"
         / "checkpoints"
         / "fold_0"
-        / "training_checkpoint_20230901171447392441.json"
+        / "training_checkpoint_20230901213848100716.json"
     )
 
     # TrainingCheckpointWriter().export(
     #     obj=checkpoint_from_pickle, path=json_output_path
     # )
 
-    checkpoint_from_json = TrainingCheckpointReader().import_struct(
-        path=json_output_path
+    checkpoint_storage_from_json = (
+        TrainingCheckpointStorageReader().import_struct(path=json_output_path)
+    )
+
+    checkpoint_from_json = ds.TrainingCheckpoint.from_storage(
+        training_checkpoint_storage=checkpoint_storage_from_json
     )
 
     for key, val in checkpoint_from_json.state_dict.items():
-        checkpoint_from_json.state_dict_info.unordered_dict[key] = val.to("cuda:0")
+        checkpoint_from_json.state_dict[key] = val.to("cuda:0")
         print(
             torch.equal(
                 checkpoint_from_json.state_dict[key],

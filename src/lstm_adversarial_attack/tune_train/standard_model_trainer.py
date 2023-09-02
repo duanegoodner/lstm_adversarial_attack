@@ -132,15 +132,7 @@ class StandardModelTrainer:
 
     @property
     def _current_checkpoint_struct(self) -> ds.TrainingCheckpoint:
-        return ds.TrainingCheckpoint(
-            epoch_num=deepcopy(self.completed_epochs),
-            train_log_entry=deepcopy(self.train_log.latest_entry),
-            eval_log_entry=deepcopy(self.eval_log.latest_entry),
-            state_dict_info=ds.ModelStateDictInfo.from_possibly_ordered_state_dict(
-                ordered_state_dict=deepcopy(self.model.state_dict()),
-            ),
-            optimizer_state_dict=deepcopy(self.optimizer.state_dict())
-        )
+        return ds.TrainingCheckpoint(**self._current_checkpoint_info)
 
     def _save_checkpoint(
         self,
@@ -171,7 +163,8 @@ class StandardModelTrainer:
         )
 
         edc.TrainingCheckpointWriter().export(
-            obj=self._current_checkpoint_struct, path=new_checkpoint_path
+            obj=self._current_checkpoint_struct.to_storage(),
+            path=new_checkpoint_path,
         )
 
         return output_path
