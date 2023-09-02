@@ -357,11 +357,6 @@ class TrainingCheckpointStorageReader(StandardStructReader):
 
     @staticmethod
     def dec_hook(decode_type: Type, obj: Any) -> Any:
-        # if decode_type is collections.OrderedDict:
-        #     state_dict = collections.OrderedDict()
-        #     for key, value in obj.items():
-        #         state_dict[key] = torch.tensor(value)
-        #     return state_dict
         if decode_type is torch.Tensor:
             return torch.tensor(obj)
         else:
@@ -373,27 +368,19 @@ class TrainingCheckpointStorageReader(StandardStructReader):
 if __name__ == "__main__":
     checkpoint_from_pickle = torch.load(
         cfp.CV_ASSESSMENT_OUTPUT_DIR
-        / "cv_training_20230901213745558067"
+        / "cv_training_20230901215330316505"
         / "checkpoints"
-        / "fold_0"
-        / "2023-09-01_21_38_48.094853.tar"
+        / "fold_2"
+        / "2023-09-01_21_55_35.278089.tar"
     )
-
-    # encoded_checkpoint = TrainingCheckpointWriter().encode(
-    #     checkpoint_from_pickle
-    # )
 
     json_output_path = (
         cfp.CV_ASSESSMENT_OUTPUT_DIR
-        / "cv_training_20230901213745558067"
+        / "cv_training_20230901215330316505"
         / "checkpoints"
-        / "fold_0"
-        / "training_checkpoint_20230901213848100716.json"
+        / "fold_2"
+        / "training_checkpoint_20230901215535284037.json"
     )
-
-    # TrainingCheckpointWriter().export(
-    #     obj=checkpoint_from_pickle, path=json_output_path
-    # )
 
     checkpoint_storage_from_json = (
         TrainingCheckpointStorageReader().import_struct(path=json_output_path)

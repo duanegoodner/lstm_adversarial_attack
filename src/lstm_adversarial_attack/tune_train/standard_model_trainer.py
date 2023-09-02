@@ -132,7 +132,13 @@ class StandardModelTrainer:
 
     @property
     def _current_checkpoint_struct(self) -> ds.TrainingCheckpoint:
-        return ds.TrainingCheckpoint(**self._current_checkpoint_info)
+        return ds.TrainingCheckpoint(
+            epoch_num=deepcopy(self.completed_epochs),
+            train_log_entry=deepcopy(self.train_log.latest_entry),
+            eval_log_entry=deepcopy(self.eval_log.latest_entry),
+            state_dict=deepcopy(self.model.state_dict()),
+            optimizer_state_dict=deepcopy(self.optimizer.state_dict())
+        )
 
     def _save_checkpoint(
         self,
@@ -144,14 +150,6 @@ class StandardModelTrainer:
         output_path = rio.create_timestamped_filepath(
             parent_path=self.checkpoint_dir, file_extension="tar"
         )
-
-        # checkpoint = {
-        #     "epoch_num": self.completed_epochs,
-        #     "train_log_entry": self.train_log.latest_entry,
-        #     "eval_log_entry": self.eval_log.latest_entry,
-        #     "state_dict": self.model.state_dict(),
-        #     "optimizer_state_dict": self.optimizer.state_dict(),
-        # }
 
         torch.save(obj=self._current_checkpoint_info, f=output_path)
 
