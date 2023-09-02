@@ -125,6 +125,7 @@ class EvalLogEntry(msgspec.Struct):
     epoch: int
     result: EvalEpochResult
 
+
 @dataclass
 class TrainEvalLog(ABC):
     data: list[TrainLogEntry] | list[EvalLogEntry] = None
@@ -191,9 +192,33 @@ class OptimizerStateDict(msgspec.Struct):
     state: dict[int, dict[str, torch.Tensor]]
 
 
+class ModelStateDictInfo(msgspec.Struct):
+    unordered_dict: dict[str, torch.Tensor]
+    key_order: list
+
+    @classmethod
+    def from_possibly_ordered_state_dict(
+        cls, ordered_state_dict: collections.OrderedDict | dict
+    ):
+        return cls(
+            unordered_dict=dict(ordered_state_dict),
+            key_order=list(ordered_state_dict.keys()),
+        )
+
+    @property
+    def ordered_dict(self) -> collections.OrderedDict:
+        return collections.OrderedDict(
+            (key, self.unordered_dict[key]) for key in self.key_order
+        )
+
+
 class TrainingCheckpoint(msgspec.Struct):
     epoch_num: int
     train_log_entry: TrainLogEntry
     eval_log_entry: EvalLogEntry
-    state_dict: collections.OrderedDict
+    state_dict_info: ModelStateDictInfo
     optimizer_state_dict: OptimizerStateDict
+
+    @property
+    def state_dict(self) -> collections.OrderedDict:
+        return self.state_dict_info.ordered_dict

@@ -357,11 +357,11 @@ class TrainingCheckpointReader(StandardStructReader):
 
     @staticmethod
     def dec_hook(decode_type: Type, obj: Any) -> Any:
-        if decode_type is collections.OrderedDict:
-            state_dict = collections.OrderedDict()
-            for key, value in obj.items():
-                state_dict[key] = torch.tensor(value)
-            return state_dict
+        # if decode_type is collections.OrderedDict:
+        #     state_dict = collections.OrderedDict()
+        #     for key, value in obj.items():
+        #         state_dict[key] = torch.tensor(value)
+        #     return state_dict
         if decode_type is torch.Tensor:
             return torch.tensor(obj)
         else:
@@ -373,32 +373,40 @@ class TrainingCheckpointReader(StandardStructReader):
 if __name__ == "__main__":
     checkpoint_from_pickle = torch.load(
         cfp.CV_ASSESSMENT_OUTPUT_DIR
-        / "cv_training_20230831232347009480"
+        / "cv_training_20230901171425943398"
         / "checkpoints"
         / "fold_0"
-        / "2023-08-31_23_25_12.647384.tar"
+        / "2023-09-01_17_14_47.386296.tar"
     )
 
-    encoded_checkpoint = TrainingCheckpointWriter().encode(
-        checkpoint_from_pickle
+    # encoded_checkpoint = TrainingCheckpointWriter().encode(
+    #     checkpoint_from_pickle
+    # )
+
+    json_output_path = (
+        cfp.CV_ASSESSMENT_OUTPUT_DIR
+        / "cv_training_20230901171425943398"
+        / "checkpoints"
+        / "fold_0"
+        / "training_checkpoint_20230901171447392441.json"
     )
 
-    json_output_path = cfp.CV_ASSESSMENT_OUTPUT_DIR / "example_checkpoint.json"
-
-    TrainingCheckpointWriter().export(
-        obj=checkpoint_from_pickle, path=json_output_path
-    )
+    # TrainingCheckpointWriter().export(
+    #     obj=checkpoint_from_pickle, path=json_output_path
+    # )
 
     checkpoint_from_json = TrainingCheckpointReader().import_struct(
         path=json_output_path
     )
 
     for key, val in checkpoint_from_json.state_dict.items():
-        checkpoint_from_json.state_dict[key] = val.to("cuda:0")
-        print(torch.equal(
-            checkpoint_from_json.state_dict[key],
-            checkpoint_from_pickle["state_dict"][key],
-        ))
+        checkpoint_from_json.state_dict_info.unordered_dict[key] = val.to("cuda:0")
+        print(
+            torch.equal(
+                checkpoint_from_json.state_dict[key],
+                checkpoint_from_pickle["state_dict"][key],
+            )
+        )
 
     # import_path = cfp.FULL_ADMISSION_LIST_OUTPUT / "full_admission_list.json"
     # json_import_start = time.time()
