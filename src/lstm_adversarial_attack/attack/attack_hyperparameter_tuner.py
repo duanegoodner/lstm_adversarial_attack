@@ -107,6 +107,7 @@ class AttackHyperParameterTuner:
         tuning_ranges: ads.AttackTuningRanges,
         objective_name: str,
         sample_selection_seed: int,
+        study: optuna.Study,
         objective_extra_kwargs: dict[str, Any] = None,
         pruner: BasePruner = MedianPruner(),
         hyperparameter_sampler: BaseSampler = TPESampler(),
@@ -150,6 +151,7 @@ class AttackHyperParameterTuner:
             objective_extra_kwargs = {}
         self.objective_extra_kwargs = objective_extra_kwargs
         self.sample_selection_seed = sample_selection_seed
+        self.study = study
         self.pruner = pruner
         self.hyperparameter_sampler = hyperparameter_sampler
         self.output_dir, self.attack_results_dir = self.initialize_output_dir(
@@ -236,14 +238,14 @@ class AttackHyperParameterTuner:
             success_summary=success_summary, **self.objective_extra_kwargs
         )
 
-    def export_study(self, study: optuna.Study):
-        """
-        Saves optuna Study object (contains info for all trials) to pickle.
-        :param study: the Study object to save
-        """
-        study_filename = "optuna_study.pickle"
-        study_export_path = self.output_dir / study_filename
-        rio.ResourceExporter().export(resource=study, path=study_export_path)
+    # def export_study(self, study: optuna.Study):
+    #     """
+    #     Saves optuna Study object (contains info for all trials) to pickle.
+    #     :param study: the Study object to save
+    #     """
+    #     study_filename = "optuna_study.pickle"
+    #     study_export_path = self.output_dir / study_filename
+    #     rio.ResourceExporter().export(resource=study, path=study_export_path)
 
     def tune(
         self, num_trials: int, timeout: int | None = None
@@ -255,15 +257,6 @@ class AttackHyperParameterTuner:
         :param timeout: max time for study (default of None means no limit)
         :return: an optuna Study object
         """
-        if self.continue_study_path is not None:
-            study = rio.ResourceImporter().import_pickle_to_object(
-                path=self.continue_study_path
-            )
-        else:
-            study = optuna.create_study(
-                direction="maximize", sampler=self.hyperparameter_sampler
-            )
         for trial_num in range(num_trials):
-            study.optimize(func=self.objective_fn, n_trials=1, timeout=timeout)
-            self.export_study(study=study)
-        return study
+            self.study.optimize(func=self.objective_fn, n_trials=1, timeout=timeout)
+        return self.study

@@ -43,6 +43,10 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         sample_selection_seed: int = cfg_settings.ATTACK_SAMPLE_SELECTION_SEED,
         training_result_dir: Path = None,
         target_fold_index: int = None,
+        pruner_name: str = "MedianPruner",
+        pruner_kwargs: dict[str, Any] = None,
+        sampler_name: str = "TPESampler",
+        sampler_kwargs: dict[str, Any] = None
     ):
         """
         :param device: the device to run on
@@ -78,6 +82,14 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         self.sample_selection_seed = sample_selection_seed
         self.training_result_dir = training_result_dir
         self.target_fold_index = target_fold_index
+        if pruner_kwargs is None:
+            pruner_kwargs = {}
+        self.pruner_kwargs = pruner_kwargs
+        self.pruner = self.get_pruner(pruner_name=pruner_name)
+        if sampler_kwargs is None:
+            sampler_kwargs = {}
+        self.sampler_kwargs = sampler_kwargs
+        self.hyperparameter_sampler = self.get_sampler(sampler_name=sampler_name)
         # self.write_provenance()
         self.export(filename="attack_tuner_driver_dict.pickle")
 
@@ -111,6 +123,11 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         )
         return f"attack_tuning_{timestamp}"
 
+    def get_pruner(self, pruner_name: str) -> optuna.pruners.BasePruner:
+        return getattr(optuna.pruners, pruner_name)(**self.pruner_kwargs)
+
+    def get_sampler(self, sampler_name: str) -> optuna.samplers.BaseSampler:
+        return getattr(optuna.samplers, sampler_name)(**self.sampler_kwargs)
 
     def run(self, num_trials: int) -> optuna.Study:
         """
@@ -128,6 +145,16 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         model = tuh.X19LSTMBuilder(settings=hyperparameters).build()
         # model.load_state_dict(state_dict=)
 
+        study = optuna.create_study(
+            study_name=self.study_name,
+            storage=self.db.storage,
+            load_if_exists=True,
+            # TODO: don't hardcode direction
+            direction="maximize",
+            sampler=self.hyperparameter_sampler,
+            pruner=self.pruner
+        )
+
         tuner = aht.AttackHyperParameterTuner(
             device=self.device,
             model=model,
@@ -139,6 +166,7 @@ class AttackTunerDriver(dpr.HasDataProvenance):
             output_dir=self.output_dir,
             objective_name=self.objective_name,
             sample_selection_seed=self.sample_selection_seed,
+            study=study
         )
 
         return tuner.tune(num_trials=num_trials)
