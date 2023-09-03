@@ -1,4 +1,6 @@
 import sys
+from datetime import datetime
+from functools import cached_property
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +19,7 @@ import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
+import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 
 
 class AttackTunerDriver(dpr.HasDataProvenance):
@@ -28,20 +31,21 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         self,
         device: torch.device,
         hyperparameters_path: Path,
-        # target_model_path: Path,
         objective_name: str,
         target_model_checkpoint: ds.TrainingCheckpoint,
         objective_extra_kwargs: dict[str, Any] = None,
+        db_env_var_name: str = "ATTACK_TUNING_DB_NAME",
+        study_name: str = None,
         tuning_ranges: ads.AttackTuningRanges = None,
         output_dir: Path = None,
         epochs_per_batch: int = cfg_settings.ATTACK_TUNING_EPOCHS,
         max_num_samples: int = cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
         sample_selection_seed: int = cfg_settings.ATTACK_SAMPLE_SELECTION_SEED,
+        training_result_dir: Path = None,
         target_fold_index: int = None,
     ):
         """
         :param device: the device to run on
-        :param target_model_path: path to .pickle file w/ model to attack
         :param objective_name: name of method in AttackTunerObjectives to user
         for computation of Optuna tuner objective_fn return value
         :param target_model_checkpoint: checkpoint file w/ params to load into
@@ -56,6 +60,10 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         # self.target_model_path = target_model_path
         self.objective_name = objective_name
         self.objective_extra_kwargs = objective_extra_kwargs
+        self.db_env_var_name = db_env_var_name
+        if study_name is None:
+            study_name = self.build_study_name()
+        self.study_name = study_name
         self.target_model_checkpoint = target_model_checkpoint
         if tuning_ranges is None:
             tuning_ranges = ads.AttackTuningRanges()
@@ -68,6 +76,7 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         self.max_num_samples = max_num_samples
         self.output_dir = output_dir
         self.sample_selection_seed = sample_selection_seed
+        self.training_result_dir = training_result_dir
         self.target_fold_index = target_fold_index
         # self.write_provenance()
         self.export(filename="attack_tuner_driver_dict.pickle")
@@ -87,6 +96,21 @@ class AttackTunerDriver(dpr.HasDataProvenance):
             },
             output_dir=self.output_dir,
         )
+
+    @cached_property
+    def db(self) -> tsd.OptunaDatabase:
+        db_dotenv_info = tsd.get_db_dotenv_info(
+            db_name_var=self.db_env_var_name
+        )
+        return tsd.OptunaDatabase(**db_dotenv_info)
+
+    @staticmethod
+    def build_study_name() -> str:
+        timestamp = "".join(
+            char for char in str(datetime.now()) if char.isdigit()
+        )
+        return f"attack_tuning_{timestamp}"
+
 
     def run(self, num_trials: int) -> optuna.Study:
         """

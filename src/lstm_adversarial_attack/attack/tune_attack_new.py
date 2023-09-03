@@ -18,7 +18,7 @@ def start_new_tuning(
     num_trials: int,
     objective_name: str,
     max_perts: int = None,
-    target_model_dir: str = None,
+    training_result_dir: str = None,
     hyperparameters_path: str = None,
 ) -> optuna.Study:
     """
@@ -29,7 +29,7 @@ def start_new_tuning(
     calculating return val of tuner objective_fn from an attack TrainerResult
     :param max_perts: parameter needed for 'max_num_nonzero_perts' objective.
     Not needed when using other objectives.
-    :param target_model_dir: directory containing model and params
+    :param training_result_dir: directory containing model and params
     files for model to be attacked.
     :param hyperparameters_path: path to file containing predictive model
     hyperparameters
@@ -37,18 +37,17 @@ def start_new_tuning(
     """
     device = gh.get_device()
 
-    if target_model_dir is None:
-        target_model_dir = str(
+    if training_result_dir is None:
+        training_result_dir = str(
             ps.latest_modified_file_with_name_condition(
                 component_string=".json",
                 root_dir=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR,
                 comparison_type=ps.StringComparisonType.SUFFIX,
             ).parent.parent.parent
         )
-        # target_model_dir = str(cfg_paths.ATTACK_DEFAULT_TARGET_MODEL_DIR)
     if hyperparameters_path is None:
         hyperparameters_path = str(
-            Path(target_model_dir) / "hyperparameters.json"
+            Path(training_result_dir) / "hyperparameters.json"
         )
     if num_trials is None:
         num_trials = cfg_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS
@@ -61,7 +60,7 @@ def start_new_tuning(
     )
 
     model_retriever = amr.ModelRetriever(
-        training_output_dir=Path(target_model_dir)
+        training_output_dir=Path(training_result_dir)
     )
     fold_checkpoint_pair = model_retriever.get_model(
         eval_metric=cvs.EvalMetric.VALIDATION_LOSS,
@@ -75,6 +74,7 @@ def start_new_tuning(
         objective_name=objective_name,
         objective_extra_kwargs=objective_extra_kwargs,
         target_fold_index=fold_checkpoint_pair.fold,
+        training_result_dir=Path(training_result_dir)
     )
 
     print(
@@ -88,7 +88,7 @@ def start_new_tuning(
 
 
 def main(
-    target_model_dir: str = None,
+    training_result_dir: str = None,
     num_trials: int = None,
     objective_name: str = None,
     max_perts: int = None,
@@ -96,7 +96,7 @@ def main(
     """
     Takes arguments in format provided by command line interface and uses them
     to call start_new_tuning().
-    :param target_model_dir: directory containing model and params
+    :param training_result_dir: directory containing model and params
     files for model to be attacked
     :param num_trials: max num Optuna trials to run
     :param objective_name: name of method from AttackTunerObjectives to use for
@@ -110,7 +110,7 @@ def main(
         num_trials=num_trials,
         objective_name=objective_name,
         max_perts=max_perts,
-        target_model_dir=target_model_dir,
+        training_result_dir=training_result_dir,
     )
 
     return study
@@ -122,13 +122,13 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-m",
-        "--target_model_dir",
+        "--training_result_dir",
         type=str,
         action="store",
         nargs="?",
         help=(
             "Directory containing training results of model to attack. Default"
-            " is value saved in config_paths.ATTACK_DEFAULT_TARGET_MODEL_DIR"
+            " is value saved in config_paths.ATTACK_DEFAULT_training_result_dir"
             " (cast from Path to string)"
         ),
     )
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     )
 
     args_namespace = parser.parse_args()
-    # args_namespace.target_model_dir = str(
+    # args_namespace.training_result_dir = str(
     #     cfg_paths.CV_ASSESSMENT_OUTPUT_DIR / "2023-06-17_23_57_23.366142"
     # )
     completed_study = main(**args_namespace.__dict__)
