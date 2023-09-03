@@ -19,6 +19,7 @@ def start_new_tuning(
     objective_name: str,
     max_perts: int = None,
     target_model_dir: str = None,
+    hyperparameters_path: str = None,
 ) -> optuna.Study:
     """
     Creates a new AttackTunerDriver. Causes new Optuna Study to be created via
@@ -30,17 +31,25 @@ def start_new_tuning(
     Not needed when using other objectives.
     :param target_model_dir: directory containing model and params
     files for model to be attacked.
+    :param hyperparameters_path: path to file containing predictive model
+    hyperparameters
     :return: an Optuna study object (which also get saved as pickle)
     """
     device = gh.get_device()
 
     if target_model_dir is None:
-        target_model_dir = ps.latest_modified_file_with_name_condition(
-            component_string=".tar",
-            root_dir=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR,
-            comparison_type=ps.StringComparisonType.SUFFIX
-        ).parent.parent.parent
+        target_model_dir = str(
+            ps.latest_modified_file_with_name_condition(
+                component_string=".json",
+                root_dir=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR,
+                comparison_type=ps.StringComparisonType.SUFFIX,
+            ).parent.parent.parent
+        )
         # target_model_dir = str(cfg_paths.ATTACK_DEFAULT_TARGET_MODEL_DIR)
+    if hyperparameters_path is None:
+        hyperparameters_path = str(
+            Path(target_model_dir) / "hyperparameters.json"
+        )
     if num_trials is None:
         num_trials = cfg_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS
     if objective_name is None:
@@ -54,24 +63,25 @@ def start_new_tuning(
     model_retriever = amr.ModelRetriever(
         training_output_dir=Path(target_model_dir)
     )
-    model_path_checkpoint_trio = model_retriever.get_model(
+    fold_checkpoint_pair = model_retriever.get_model(
         eval_metric=cvs.EvalMetric.VALIDATION_LOSS,
-        optimize_direction=cvs.OptimizeDirection.MIN
+        optimize_direction=cvs.OptimizeDirection.MIN,
     )
 
     tuner_driver = atd.AttackTunerDriver(
         device=device,
-        target_model_path=model_path_checkpoint_trio.model_path,
-        target_model_checkpoint=model_path_checkpoint_trio.checkpoint,
+        hyperparameters_path=Path(hyperparameters_path),
+        target_model_checkpoint=fold_checkpoint_pair.checkpoint,
         objective_name=objective_name,
         objective_extra_kwargs=objective_extra_kwargs,
-        target_fold_index=model_path_checkpoint_trio.fold
+        target_fold_index=fold_checkpoint_pair.fold,
     )
 
     print(
-        "Starting new Attack Hyperparameter Tuning study using trained"
-        f" predictive model in:\n {tuner_driver.target_model_path}\n\n"
-        f"Tuning results will be saved in: {tuner_driver.output_dir}\n"
+        "Starting new Attack Hyperparameter Tuning study using"
+        f" hyperparameters in:\n {tuner_driver.hyperparameters_path} and"
+        f" checkpoint {tuner_driver.target_model_checkpoint}\n\nTuning results"
+        f" will be saved in: {tuner_driver.output_dir}\n"
     )
 
     return tuner_driver.run(num_trials=num_trials)

@@ -1,4 +1,5 @@
 import optuna
+import msgspec
 import sys
 import torch.nn as nn
 from pathlib import Path
@@ -59,8 +60,7 @@ class NonArchHyperParameterSettings:
     log_batch_size: int
 
 
-@dataclass
-class X19LSTMHyperParameterSettings:
+class X19LSTMHyperParameterSettings(msgspec.Struct):
     """
     Hyperparameter values
     """

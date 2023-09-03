@@ -272,6 +272,15 @@ class TrainingCheckpointWriter(StandardStructWriter):
             return float(obj)
 
 
+class X19LSTMHyperParameterSettingsWriter(StandardStructWriter):
+    def __init__(self):
+        super().__init__(struct_type=tuh.X19LSTMHyperParameterSettings)
+
+    @staticmethod
+    def enc_hook(obj: Any) -> Any:
+        pass  #json ready
+
+
 DecodeType = TypeVar("DecodeType", bound=msgspec.Struct)
 
 
@@ -363,6 +372,18 @@ class TrainingCheckpointStorageReader(StandardStructReader):
             raise NotImplementedError(
                 f"Objects of type {type} are not supported"
             )
+
+
+class X19LSTMHyperParameterSettingsReader(StandardStructReader):
+    def __init__(self):
+        super().__init__(struct_type=tuh.X19LSTMHyperParameterSettings)
+
+    @staticmethod
+    def dec_hook(decode_type: Type, obj: Any) -> Any:
+        # all expected types are supported
+        raise NotImplementedError(
+            f"Objects of type {type} are not supported"
+        )
 
 
 if __name__ == "__main__":

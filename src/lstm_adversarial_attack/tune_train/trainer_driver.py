@@ -1,23 +1,24 @@
 import sys
 import uuid
 from dataclasses import dataclass
-import json
+from pathlib import Path
+from typing import Callable
+
 import optuna
 import torch
 import torch.nn as nn
-from pathlib import Path
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from typing import Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.config_settings as lcs
-import lstm_adversarial_attack.weighted_dataloader_builder as wdl
-import lstm_adversarial_attack.x19_mort_general_dataset as xmd
+import lstm_adversarial_attack.preprocess.encode_decode as edc
+import lstm_adversarial_attack.resource_io as rio
+import lstm_adversarial_attack.simple_logger as slg
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
-import lstm_adversarial_attack.simple_logger as slg
+import lstm_adversarial_attack.weighted_dataloader_builder as wdl
+import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
 
 class TrainerDriver:
@@ -76,8 +77,11 @@ class TrainerDriver:
         hyperparameters_json_path = (
             self.output_dirs.root_dir / "hyperparameters.json"
         )
-        with hyperparameters_json_path.open(mode="w") as out_file:
-            json.dump(self.hyperparameter_settings.__dict__, out_file)
+        edc.X19LSTMHyperParameterSettingsWriter().export(
+            obj=self.hyperparameter_settings, path=hyperparameters_json_path
+        )
+        # with hyperparameters_json_path.open(mode="w") as out_file:
+        #     json.dump(self.hyperparameter_settings.__dict__, out_file)
 
     def build_data_loaders(self) -> tuh.TrainEvalDataLoaderPair:
         """

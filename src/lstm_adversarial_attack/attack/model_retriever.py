@@ -5,6 +5,7 @@ from pathlib import Path
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs
+import lstm_adversarial_attack.data_structures as ds
 
 
 class ModelAssessmentType(Enum):
@@ -17,10 +18,9 @@ class ModelAssessmentType(Enum):
 
 
 @dataclass
-class ModelPathFoldCheckpointTrio:
-    model_path: Path
+class FoldCheckpointPair:
     fold: int
-    checkpoint: dict
+    checkpoint: ds.TrainingCheckpoint
 
 
 class ModelRetriever:
@@ -44,13 +44,13 @@ class ModelRetriever:
         ).parent.parent.parent
         self.training_output_dir = training_output_dir
         self.checkpoints_dir = self.training_output_dir / "checkpoints"
-        self.model_path = self.training_output_dir / "model.pickle"
+        # self.model_path = self.training_output_dir / "model.pickle"
 
     def get_model(
         self,
         eval_metric: cvs.EvalMetric,
         optimize_direction: cvs.OptimizeDirection,
-    ) -> ModelPathFoldCheckpointTrio:
+    ) -> FoldCheckpointPair:
         """
         Calls appropriate method for model and checkpoint retrieval (depends
         on type of assessment we are pulling data from)
@@ -66,7 +66,7 @@ class ModelRetriever:
         self,
         eval_metric: cvs.EvalMetric,
         optimization_direction: cvs.OptimizeDirection,
-    ) -> ModelPathFoldCheckpointTrio:
+    ) -> FoldCheckpointPair:
         """
         Gets a ModelPathCheckPointPair corresponding to selected model &
         checkpoint from single fold evaluation.
@@ -82,8 +82,7 @@ class ModelRetriever:
             metric=eval_metric, optimize_direction=optimization_direction
         )
 
-        return ModelPathFoldCheckpointTrio(
-            model_path=self.model_path,
+        return FoldCheckpointPair(
             fold=0,
             checkpoint=checkpoint
         )
@@ -92,7 +91,7 @@ class ModelRetriever:
         self,
         metric: cvs.EvalMetric,
         optimize_direction: cvs.OptimizeDirection,
-    ) -> ModelPathFoldCheckpointTrio:
+    ) -> FoldCheckpointPair:
         """
          Gets a ModelPathCheckPointPair corresponding to selected model &
         checkpoint from cross validation model assessment. Gets best
@@ -106,14 +105,8 @@ class ModelRetriever:
             cv_checkpoints_dir=self.checkpoints_dir
         )
 
-        midrange_fold_checkpoint_pair = cv_summarizer.get_midrange_checkpoint(
+        return cv_summarizer.get_midrange_checkpoint(
             metric=metric, optimize_direction=optimize_direction
-        )
-
-        return ModelPathFoldCheckpointTrio(
-            model_path=self.model_path,
-            fold=midrange_fold_checkpoint_pair.fold,
-            checkpoint=midrange_fold_checkpoint_pair.checkpoint
         )
 
 

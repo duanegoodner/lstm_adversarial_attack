@@ -2,12 +2,13 @@ from dataclasses import dataclass
 
 import pandas as pd
 import sys
-import torch
 from enum import Enum, auto
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as lcp
+import lstm_adversarial_attack.data_structures as ds
+import lstm_adversarial_attack.preprocess.encode_decode as edc
 
 
 def get_newest_sub_dir(path: Path) -> Path | None:
@@ -48,7 +49,7 @@ class FoldSummarizer:
 
     def __init__(
         self,
-        fold_checkpoints: list[dict],
+        fold_checkpoints: list[ds.TrainingCheckpoint],
         checkpoints_dirname: str = None,
         fold_num: int = None,
     ):
@@ -57,7 +58,7 @@ class FoldSummarizer:
         :param checkpoints_dirname: directory where checkpoints are stored
         :param fold_num: integer index of fold
         """
-        fold_checkpoints.sort(key=lambda x: x["epoch_num"])
+        fold_checkpoints.sort(key=lambda x: x.epoch_num)
         self.fold_checkpoints = fold_checkpoints
         self.checkpoints_dirname = checkpoints_dirname
         self.fold_num = fold_num
@@ -81,8 +82,18 @@ class FoldSummarizer:
         :param fold_checkpoint_dir: directory containing checkpoints
         :param fold_num: integer index of fold
         """
-        checkpoint_files = sorted(fold_checkpoint_dir.glob("*.tar"))
-        fold_checkpoints = [torch.load(item) for item in checkpoint_files]
+        checkpoint_files = sorted(fold_checkpoint_dir.glob("*.json"))
+        fold_checkpoints_storage = [
+            edc.TrainingCheckpointStorageReader().import_struct(path=item)
+            for item in checkpoint_files
+        ]
+        fold_checkpoints = [
+            ds.TrainingCheckpoint.from_storage(
+                training_checkpoint_storage=item
+            )
+            for item in fold_checkpoints_storage
+        ]
+        # fold_checkpoints = [torch.load(item) for item in checkpoint_files]
         return cls(
             fold_checkpoints=fold_checkpoints,
             checkpoints_dirname=fold_checkpoint_dir.name,
@@ -95,33 +106,33 @@ class FoldSummarizer:
         :return: Dataframe of eval metrics and train loss. 1 row per epoch
         """
         result_dict = {
-            "epoch": [item["epoch_num"] for item in self.fold_checkpoints],
+            "epoch": [item.epoch_num for item in self.fold_checkpoints],
             "train_loss": [
-                item["train_log_entry"].result.loss
+                item.train_log_entry.result.loss
                 for item in self.fold_checkpoints
             ],
             "validation_loss": [
-                item["eval_log_entry"].result.validation_loss
+                item.eval_log_entry.result.validation_loss
                 for item in self.fold_checkpoints
             ],
             "auc": [
-                item["eval_log_entry"].result.auc
+                item.eval_log_entry.result.auc
                 for item in self.fold_checkpoints
             ],
             "accuracy": [
-                item["eval_log_entry"].result.accuracy
+                item.eval_log_entry.result.accuracy
                 for item in self.fold_checkpoints
             ],
             "f1": [
-                item["eval_log_entry"].result.f1
+                item.eval_log_entry.result.f1
                 for item in self.fold_checkpoints
             ],
             "precision": [
-                item["eval_log_entry"].result.precision
+                item.eval_log_entry.result.precision
                 for item in self.fold_checkpoints
             ],
             "recall": [
-                item["eval_log_entry"].result.recall
+                item.eval_log_entry.result.recall
                 for item in self.fold_checkpoints
             ],
         }
@@ -148,7 +159,7 @@ class FoldSummarizer:
 
     def get_extreme_checkpoint(
         self, metric: EvalMetric, optimize_direction: OptimizeDirection
-    ) -> dict:
+    ) -> ds.TrainingCheckpoint:
         """
         Gets the checkpoint dict corresponding to an extreme val of a metric
         :param metric: metric for criteria
@@ -172,7 +183,7 @@ class FoldSummarizer:
 @dataclass
 class FoldCheckpointPair:
     fold: int
-    checkpoint: dict
+    checkpoint: ds.TrainingCheckpoint
 
 
 class CrossValidationSummarizer:
@@ -210,7 +221,7 @@ class CrossValidationSummarizer:
 
     def get_optimal_checkpoints(
         self, metric: EvalMetric, optimize_direction: OptimizeDirection
-    ) -> list[dict]:
+    ) -> list[ds.TrainingCheckpoint]:
         return [
             fold.get_extreme_checkpoint(
                 metric=metric, optimize_direction=optimize_direction

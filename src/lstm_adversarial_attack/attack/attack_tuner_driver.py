@@ -12,8 +12,11 @@ import lstm_adversarial_attack.attack.model_retriever as amr
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.data_provenance as dpr
+import lstm_adversarial_attack.data_structures as ds
+import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs
+import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 
 
 class AttackTunerDriver(dpr.HasDataProvenance):
@@ -24,9 +27,10 @@ class AttackTunerDriver(dpr.HasDataProvenance):
     def __init__(
         self,
         device: torch.device,
-        target_model_path: Path,
+        hyperparameters_path: Path,
+        # target_model_path: Path,
         objective_name: str,
-        target_model_checkpoint: dict,
+        target_model_checkpoint: ds.TrainingCheckpoint,
         objective_extra_kwargs: dict[str, Any] = None,
         tuning_ranges: ads.AttackTuningRanges = None,
         output_dir: Path = None,
@@ -48,7 +52,8 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         data/attack/attack_hyperparamter_tuning
         """
         self.device = device
-        self.target_model_path = target_model_path
+        self.hyperparameters_path = hyperparameters_path
+        # self.target_model_path = target_model_path
         self.objective_name = objective_name
         self.objective_extra_kwargs = objective_extra_kwargs
         self.target_model_checkpoint = target_model_checkpoint
@@ -74,13 +79,13 @@ class AttackTunerDriver(dpr.HasDataProvenance):
             new_items={
                 "objective_name": self.objective_name,
                 "objective_extra_kwargs": self.objective_extra_kwargs,
-                "target_model_path": self.target_model_path,
+                "hyperparameters_path": self.hyperparameters_path,
                 "target_fold_index": self.target_fold_index,
-                "target_model_trained_to_epoch": self.target_model_checkpoint[
-                    "epoch_num"
-                ],
+                "target_model_trained_to_epoch": (
+                    self.target_model_checkpoint.epoch_num
+                ),
             },
-            output_dir=self.output_dir
+            output_dir=self.output_dir,
         )
 
     def run(self, num_trials: int) -> optuna.Study:
@@ -89,9 +94,20 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         :param num_trials:
         :return: an Optuna Study object (this also gets saved in .output_dir)
         """
+
+        hyperparameters = (
+            edc.X19LSTMHyperParameterSettingsReader().import_struct(
+                path=self.hyperparameters_path
+            )
+        )
+
+        model = tuh.X19LSTMBuilder(settings=hyperparameters).build()
+        # model.load_state_dict(state_dict=)
+
         tuner = aht.AttackHyperParameterTuner(
             device=self.device,
-            model_path=self.target_model_path,
+            model=model,
+            # model_path=self.target_model_path,
             checkpoint=self.target_model_checkpoint,
             epochs_per_batch=cfg_settings.ATTACK_TUNING_EPOCHS,
             max_num_samples=cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
@@ -127,6 +143,3 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         )
 
         return tuner.tune(num_trials=num_trials)
-
-
-

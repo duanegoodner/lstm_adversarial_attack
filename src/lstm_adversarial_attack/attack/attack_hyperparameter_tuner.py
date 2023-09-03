@@ -4,6 +4,7 @@ from typing import Any, Callable
 import numpy as np
 import optuna
 import torch
+import torch.nn as nn
 from optuna.pruners import BasePruner, MedianPruner
 from optuna.samplers import BaseSampler, TPESampler
 
@@ -12,6 +13,7 @@ import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.resource_io as rio
+import lstm_adversarial_attack.data_structures as ds
 
 
 class AttackTunerObjectives:
@@ -98,8 +100,8 @@ class AttackHyperParameterTuner:
     def __init__(
         self,
         device: torch.device,
-        model_path: Path,
-        checkpoint: dict,
+        model: nn.Module,
+        checkpoint: ds.TrainingCheckpoint,
         epochs_per_batch: int,
         max_num_samples: int,
         tuning_ranges: ads.AttackTuningRanges,
@@ -136,7 +138,8 @@ class AttackHyperParameterTuner:
         add on to
         """
         self.device = device
-        self.model_path = model_path
+        self.model = model
+        # self.model_path = model_path
         self.checkpoint = checkpoint
         self.epoch_per_batch = epochs_per_batch
         self.max_num_samples = max_num_samples
@@ -196,7 +199,8 @@ class AttackHyperParameterTuner:
         # )
         attack_driver = atk.AttackDriver(
             device=self.device,
-            model_path=self.model_path,
+            model=self.model,
+            # model_path=self.model_path,
             checkpoint=self.checkpoint,
             epochs_per_batch=self.epoch_per_batch,
             attack_hyperparameters=settings,
