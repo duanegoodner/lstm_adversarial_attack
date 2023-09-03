@@ -37,7 +37,7 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         db_env_var_name: str = "ATTACK_TUNING_DB_NAME",
         study_name: str = None,
         tuning_ranges: ads.AttackTuningRanges = None,
-        output_dir: Path = None,
+        # output_dir: Path = None,
         epochs_per_batch: int = cfg_settings.ATTACK_TUNING_EPOCHS,
         max_num_samples: int = cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
         sample_selection_seed: int = cfg_settings.ATTACK_SAMPLE_SELECTION_SEED,
@@ -55,7 +55,6 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         :param target_model_checkpoint: checkpoint file w/ params to load into
         model under attack
         :param tuning_ranges: hyperparamter tuning ranges (for use by Optuna)
-        :param output_dir: directory where results will be saved. If not
         specified, default is timestamped dir under
         data/attack/attack_hyperparamter_tuning
         """
@@ -68,17 +67,22 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         if study_name is None:
             study_name = self.build_study_name()
         self.study_name = study_name
+        self.output_dir = cfg_paths.ATTACK_HYPERPARAMETER_TUNING / study_name
+        self.has_pre_existing_local_output = self.output_dir.exists()
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
         self.target_model_checkpoint = target_model_checkpoint
         if tuning_ranges is None:
             tuning_ranges = ads.AttackTuningRanges()
         self.tuning_ranges = tuning_ranges
-        if output_dir is None:
-            output_dir = rio.create_timestamped_dir(
-                parent_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
-            )
+
+        # if output_dir is None:
+        #     output_dir = rio.create_timestamped_dir(
+        #         parent_path=cfg_paths.ATTACK_HYPERPARAMETER_TUNING
+        #     )
         self.epochs_per_batch = epochs_per_batch
         self.max_num_samples = max_num_samples
-        self.output_dir = output_dir
+        # self.output_dir = output_dir
         self.sample_selection_seed = sample_selection_seed
         self.training_result_dir = training_result_dir
         self.target_fold_index = target_fold_index
