@@ -137,7 +137,7 @@ class StandardModelTrainer:
             train_log_entry=deepcopy(self.train_log.latest_entry),
             eval_log_entry=deepcopy(self.eval_log.latest_entry),
             state_dict=deepcopy(self.model.state_dict()),
-            optimizer_state_dict=deepcopy(self.optimizer.state_dict())
+            optimizer_state_dict=deepcopy(self.optimizer.state_dict()),
         )
 
     def _save_checkpoint(
@@ -157,7 +157,8 @@ class StandardModelTrainer:
             char for char in str(datetime.now()) if char.isdigit()
         )
         new_checkpoint_path = (
-            self.checkpoint_dir / f"training_checkpoint_{new_timestamp}.json"
+            self.checkpoint_dir
+            / f"training_checkpoint_epoch_{self.completed_epochs}_{new_timestamp}.json"
         )
 
         edc.TrainingCheckpointWriter().export(

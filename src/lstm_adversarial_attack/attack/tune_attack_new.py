@@ -58,7 +58,7 @@ def start_new_tuning(
         {"max_perts": max_perts} if max_perts is not None else {}
     )
 
-    target_fold_checkpoint_pair = tmr.ModelRetriever(
+    target_fold_checkpoint_info_pair = tmr.ModelRetriever(
         training_output_dir=Path(training_result_dir)
     ).get_representative_checkpoint()
 
@@ -67,7 +67,10 @@ def start_new_tuning(
         hyperparameters_path=Path(hyperparameters_path),
         objective_name=objective_name,
         objective_extra_kwargs=objective_extra_kwargs,
-        training_result_dir=Path(training_result_dir)
+        training_result_dir=Path(training_result_dir),
+        target_checkpoint=target_fold_checkpoint_info_pair.checkpoint_info.checkpoint,
+        target_checkpoint_path=target_fold_checkpoint_info_pair.checkpoint_info.save_path,
+        target_fold=target_fold_checkpoint_info_pair.fold
     )
 
     print(
@@ -121,8 +124,9 @@ if __name__ == "__main__":
         nargs="?",
         help=(
             "Directory containing training results of model to attack. Default"
-            " is value saved in config_paths.ATTACK_DEFAULT_training_result_dir"
-            " (cast from Path to string)"
+            " is value saved in"
+            " config_paths.ATTACK_DEFAULT_training_result_dir (cast from Path"
+            " to string)"
         ),
     )
     parser.add_argument(

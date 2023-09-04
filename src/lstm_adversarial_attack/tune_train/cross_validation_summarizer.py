@@ -42,6 +42,18 @@ class EvalMetric(Enum):
     VALIDATION_LOSS = auto()
 
 
+@dataclass
+class CheckpointInfo:
+    """
+    Container for a checkpoints object and path to file it was loaded from.
+    Allow save_path to be None so container can still be used if CheckpointInfo
+    is not from file data.
+    """
+
+    checkpoint: ds.TrainingCheckpoint
+    save_path: Path = None
+
+
 class FoldSummarizer:
     """
     Summarizes train and eval data from single fold
@@ -49,18 +61,23 @@ class FoldSummarizer:
 
     def __init__(
         self,
-        fold_checkpoints: list[ds.TrainingCheckpoint],
+        fold_checkpoints_info: list[CheckpointInfo],
+        # fold_checkpoints: list[ds.TrainingCheckpoint],
         checkpoints_dirname: str = None,
+        fold_checkpoints_paths: list[Path] = None,
         fold_num: int = None,
     ):
         """
-        :param fold_checkpoints: list of checkpoint dictionaries
+        :param fold_checkpoints_info: list of CheckpointInfo objects
         :param checkpoints_dirname: directory where checkpoints are stored
         :param fold_num: integer index of fold
         """
-        fold_checkpoints.sort(key=lambda x: x.epoch_num)
-        self.fold_checkpoints = fold_checkpoints
+        # fold_checkpoints.sort(key=lambda x: x.epoch_num)
+        fold_checkpoints_info.sort(key=lambda x: x.checkpoint.epoch_num)
+        self.fold_checkpoints_info = fold_checkpoints_info
+        # self.fold_checkpoints = fold_checkpoints
         self.checkpoints_dirname = checkpoints_dirname
+        self.fold_checkpoints_paths = fold_checkpoints_paths
         self.fold_num = fold_num
 
     # translated enums into object attributes
@@ -93,12 +110,24 @@ class FoldSummarizer:
             )
             for item in fold_checkpoints_storage
         ]
+
+        fold_checkpoints_info = [
+            CheckpointInfo(
+                checkpoint=fold_checkpoints[i], save_path=checkpoint_files[i]
+            )
+            for i in range(len(fold_checkpoints))
+        ]
         # fold_checkpoints = [torch.load(item) for item in checkpoint_files]
         return cls(
-            fold_checkpoints=fold_checkpoints,
+            fold_checkpoints_info=fold_checkpoints_info,
+            # fold_checkpoints=fold_checkpoints,
             checkpoints_dirname=fold_checkpoint_dir.name,
             fold_num=fold_num,
         )
+
+    @property
+    def fold_checkpoints(self) -> list[ds.TrainingCheckpoint]:
+        return [item.checkpoint for item in self.fold_checkpoints_info]
 
     @property
     def result_df(self) -> pd.DataFrame:
@@ -170,6 +199,14 @@ class FoldSummarizer:
         )
         return self.fold_checkpoints[extreme_idx]
 
+    def get_extreme_checkpoint_info(
+        self, metric: EvalMetric, optimize_direction: OptimizeDirection
+    ) -> CheckpointInfo:
+        extreme_idx = self._get_optimal_idx(
+            metric=metric, optimize_direction=optimize_direction
+        )
+        return self.fold_checkpoints_info[extreme_idx]
+
     def get_optimal_result_row(
         self, metric: EvalMetric, optimize_direction: OptimizeDirection
     ) -> pd.DataFrame:
@@ -183,6 +220,12 @@ class FoldSummarizer:
 class FoldCheckpointPair:
     fold: int
     checkpoint: ds.TrainingCheckpoint
+
+
+@dataclass
+class FoldCheckpointInfoPair:
+    fold: int
+    checkpoint_info: CheckpointInfo
 
 
 class RelativeFoldResult(Enum):
@@ -234,6 +277,16 @@ class CrossValidationSummarizer:
             for index, fold in self.fold_summarizers.items()
         ]
 
+    def get_optimal_checkpoints_info(
+        self, metric: EvalMetric, optimize_direction: OptimizeDirection
+    ) -> list[CheckpointInfo]:
+        return [
+            fold.get_extreme_checkpoint_info(
+                metric=metric, optimize_direction=optimize_direction
+            )
+            for index, fold in self.fold_summarizers.items()
+        ]
+
     def get_optimal_results_df(
         self, metric: EvalMetric, optimize_direction: OptimizeDirection
     ) -> pd.DataFrame:
@@ -258,7 +311,7 @@ class CrossValidationSummarizer:
         metric: EvalMetric,
         optimize_direction: OptimizeDirection,
         rel_fold_result: RelativeFoldResult = RelativeFoldResult.MID_RANGE,
-    ):
+    ) -> int:
         optimal_results_df = self.get_optimal_results_df(
             metric=metric, optimize_direction=optimize_direction
         )
@@ -314,19 +367,26 @@ class CrossValidationSummarizer:
             fold=fold_with_rel_result, checkpoint=checkpoint
         )
 
-    def get_midrange_checkpoint(
-        self, metric: EvalMetric, optimize_direction: OptimizeDirection
-    ) -> FoldCheckpointPair:
-        midrange_fold = self.get_midrange_fold(
-            metric=metric, optimize_direction=optimize_direction
-        )
-        checkpoint = self.fold_summarizers[
-            midrange_fold
-        ].get_extreme_checkpoint(
-            metric=metric, optimize_direction=optimize_direction
+    def get_fold_checkpoint_info(
+        self,
+        metric: EvalMetric,
+        optimize_direction: OptimizeDirection,
+        rel_fold_result: RelativeFoldResult,
+    ) -> FoldCheckpointInfoPair:
+        fold_with_rel_result = self.get_fold_with_rel_result(
+            metric=metric,
+            optimize_direction=optimize_direction,
+            rel_fold_result=rel_fold_result,
         )
 
-        return FoldCheckpointPair(fold=midrange_fold, checkpoint=checkpoint)
+        checkpoint_info = self.fold_summarizers[
+            fold_with_rel_result
+        ].get_extreme_checkpoint_info(
+            metric=metric, optimize_direction=optimize_direction
+        )
+        return FoldCheckpointInfoPair(
+            fold=fold_with_rel_result, checkpoint_info=checkpoint_info
+        )
 
 
 def main():

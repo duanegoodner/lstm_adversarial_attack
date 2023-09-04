@@ -52,7 +52,7 @@ class ModelRetriever:
         eval_metric: cvs.EvalMetric = cvs.EvalMetric.VALIDATION_LOSS,
         optimize_direction: cvs.OptimizeDirection = cvs.OptimizeDirection.MIN,
         rel_fold_result: cvs.RelativeFoldResult = cvs.RelativeFoldResult.MID_RANGE,
-    ) -> FoldCheckpointPair:
+    ) -> cvs.FoldCheckpointInfoPair:
         """
         Calls appropriate method for model and checkpoint retrieval (depends
         on type of assessment we are pulling data from)
@@ -72,7 +72,7 @@ class ModelRetriever:
         self,
         eval_metric: cvs.EvalMetric,
         optimization_direction: cvs.OptimizeDirection,
-    ) -> FoldCheckpointPair:
+    ) -> cvs.FoldCheckpointInfoPair:
         """
         Gets a ModelPathCheckPointPair corresponding to selected model &
         checkpoint from single fold evaluation.
@@ -84,18 +84,20 @@ class ModelRetriever:
             fold_checkpoint_dir=self.checkpoints_dir, fold_num=0
         )
 
-        checkpoint = fold_summarizer.get_extreme_checkpoint(
+        checkpoint_info = fold_summarizer.get_extreme_checkpoint_info(
             metric=eval_metric, optimize_direction=optimization_direction
         )
 
-        return FoldCheckpointPair(fold=0, checkpoint=checkpoint)
+        return cvs.FoldCheckpointInfoPair(
+            fold=0, checkpoint_info=checkpoint_info
+        )
 
     def get_cv_trained_model(
         self,
         metric: cvs.EvalMetric,
         optimize_direction: cvs.OptimizeDirection,
         rel_fold_result: cvs.RelativeFoldResult,
-    ) -> FoldCheckpointPair:
+    ) -> cvs.FoldCheckpointInfoPair:
         """
          Gets a ModelPathCheckPointPair corresponding to selected model &
         checkpoint from cross validation model assessment. Gets best
@@ -111,20 +113,17 @@ class ModelRetriever:
             cv_checkpoints_dir=self.checkpoints_dir
         )
 
-        return cv_summarizer.get_fold_checkpoint(
+        return cv_summarizer.get_fold_checkpoint_info(
             metric=metric,
             optimize_direction=optimize_direction,
             rel_fold_result=rel_fold_result,
         )
 
-        # return cv_summarizer.get_midrange_checkpoint(
-        #     metric=metric, optimize_direction=optimize_direction
-        # )
-
 
 if __name__ == "__main__":
     kfold_model_retriever = ModelRetriever()
-    kfold_model_checkpoint_pair = kfold_model_retriever.get_cv_trained_model(
+    kfold_model_checkpoint_info_pair = kfold_model_retriever.get_cv_trained_model(
         metric=cvs.EvalMetric.VALIDATION_LOSS,
         optimize_direction=cvs.OptimizeDirection.MIN,
+        rel_fold_result=cvs.RelativeFoldResult.MID_RANGE
     )
