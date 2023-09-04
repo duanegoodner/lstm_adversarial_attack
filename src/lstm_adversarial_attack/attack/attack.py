@@ -15,9 +15,13 @@ import lstm_adversarial_attack.data_provenance as dpr
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.resource_io as rio
 from lstm_adversarial_attack.x19_mort_general_dataset import (
-    X19MGeneralDatasetWithIndex, x19m_with_index_collate_fn)
+    X19MGeneralDatasetWithIndex,
+    x19m_with_index_collate_fn,
+)
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
+import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
+import lstm_adversarial_attack.preprocess.encode_decode as edc
 
 
 class AttackDriver(dpr.HasDataProvenance):
@@ -105,9 +109,7 @@ class AttackDriver(dpr.HasDataProvenance):
             category_name="attack_driver",
             new_items={
                 "epochs_per_batch": self.epochs_per_batch,
-                "attack_hyperparameter_settings": (
-                    self.attack_hyperparameters
-                ),
+                "attack_hyperparameter_settings": self.attack_hyperparameters,
                 "hyperparameter_tuning_result_dir": (
                     self.hyperparameter_tuning_results_dir
                 ),
@@ -224,20 +226,60 @@ class AttackDriver(dpr.HasDataProvenance):
         return train_result
 
 
-def main(tuning_result_dir: str) -> ards.TrainerSuccessSummary:
+def main(study_name: str) -> ards.TrainerSuccessSummary:
     """
     Runs attack on dataset
-    :param tuning_result_dir: path to directory containing attack tuning
-    result to use for full attack
+    :param study_name: name of tuning study to use for hyperparameter selection
     """
     if torch.cuda.is_available():
         cur_device = torch.device("cuda:0")
     else:
         cur_device = torch.device("cpu")
 
-    tuning_result_dir_path = (
-        Path(tuning_result_dir) if tuning_result_dir is not None else None
+    if study_name is None:
+        study_name = tsd.ATTACK_TUNING_DB.get_latest_study().study_name
+
+    attack_hyperparameters = tsd.ATTACK_TUNING_DB.get_best_params(
+        study_name=study_name
     )
+
+    tuning_result_dir_path = (
+        cfg_paths.ATTACK_HYPERPARAMETER_TUNING / study_name
+    )
+
+    model_hyperparameters = (
+        edc.X19LSTMHyperParameterSettingsReader().import_struct(
+            path=tuning_result_dir_path / "model_hyperparameters.json"
+        )
+    )
+
+    attack_tuner_driver_summary_path = (
+        ps.latest_modified_file_with_name_condition(
+            component_string="attack_tuner_driver_summary_",
+            root_dir=tuning_result_dir_path,
+            comparison_type=ps.StringComparisonType.PREFIX,
+        )
+    )
+
+    attack_tuner_driver_summary = (
+        edc.AttackTunerDriverSummaryReader().import_struct(
+            path=attack_tuner_driver_summary_path
+        )
+    )
+
+    # TODO resume work here on delay targetmodel instantiation after modify
+    #  ModelRetriever to also provide checkpt Path. (& move call to
+    #  get_representative_checkpoint back to tune_attack_new.py)
+    # attack_driver = AttackDriver(
+    #     device=cur_device,
+    #     model_hyperparameters=model_hyperparameters,
+    #     checkpoint=attack_tuner_driver_summary.
+    #
+    # )
+
+    # tuning_result_dir_path = (
+    #     Path(tuning_result_dir) if tuning_result_dir is not None else None
+    # )
 
     attack_driver = AttackDriver.from_attack_hyperparameter_tuning(
         device=cur_device,
@@ -254,14 +296,13 @@ def main(tuning_result_dir: str) -> ards.TrainerSuccessSummary:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-t",
-        "--tuning_result_dir",
+        "-s",
+        "--study_name",
         action="store",
         nargs="?",
         help=(
-            "Path to directory containing attack tuning results to use for "
-            "attack on full dataset. Defaults to most recent tuning "
-            "result."
+            "Name of attack tuning study to use for attack hyperparameter "
+            "selection"
         ),
     )
     args_namespace = parser.parse_args()

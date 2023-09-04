@@ -142,6 +142,7 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         )
         return tsd.OptunaDatabase(**db_dotenv_info)
 
+    # TODO Move this to be part of __init__ and self.summary
     @cached_property
     def target_fold_checkpoint_pair(self) -> tmr.FoldCheckpointPair:
         return tmr.ModelRetriever(

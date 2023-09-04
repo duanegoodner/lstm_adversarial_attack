@@ -10,6 +10,7 @@ import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.path_searches as ps
+import lstm_adversarial_attack.tune_train.model_retriever as tmr
 
 
 def start_new_tuning(
@@ -56,6 +57,10 @@ def start_new_tuning(
     objective_extra_kwargs = (
         {"max_perts": max_perts} if max_perts is not None else {}
     )
+
+    target_fold_checkpoint_pair = tmr.ModelRetriever(
+        training_output_dir=Path(training_result_dir)
+    ).get_representative_checkpoint()
 
     tuner_driver = atd.AttackTunerDriver(
         device=device,
