@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 
 import torch
-import torch.nn as nn
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.adv_attack_trainer as aat
@@ -18,6 +17,7 @@ import lstm_adversarial_attack.resource_io as rio
 from lstm_adversarial_attack.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex, x19m_with_index_collate_fn)
 import lstm_adversarial_attack.data_structures as ds
+import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 
 
 class AttackDriver(dpr.HasDataProvenance):
@@ -28,7 +28,7 @@ class AttackDriver(dpr.HasDataProvenance):
     def __init__(
         self,
         device: torch.device,
-        model: nn.Module,
+        model_hyperparameters: tuh.X19LSTMHyperParameterSettings,
         checkpoint: ds.TrainingCheckpoint,
         attack_hyperparameters: ads.AttackHyperParameterSettings,
         epochs_per_batch: int,
@@ -65,7 +65,7 @@ class AttackDriver(dpr.HasDataProvenance):
         :param checkpoint_interval: number of batches per checkpoint
         """
         self.device = device
-        self.model = model
+        self.model_hyperparameters = model_hyperparameters
         self.checkpoint = checkpoint
         self.attack_hyperparameters = attack_hyperparameters
         self.epochs_per_batch = epochs_per_batch
@@ -172,7 +172,7 @@ class AttackDriver(dpr.HasDataProvenance):
 
         return cls(
             device=device,
-            model_path=tuner_driver.target_model_path,
+            # model_path=tuner_driver.target_model_path,
             checkpoint=tuner_driver.target_model_checkpoint,
             attack_hyperparameters=ads.AttackHyperParameterSettings(
                 **optuna_study.best_params
@@ -193,9 +193,13 @@ class AttackDriver(dpr.HasDataProvenance):
         # model = rio.ResourceImporter().import_pickle_to_object(
         #     path=self.model_path
         # )
+
+        model = tuh.X19LSTMBuilder(settings=self.model_hyperparameters).build()
+        model.load_state_dict(state_dict=self.checkpoint.state_dict)
+
         attack_trainer = aat.AdversarialAttackTrainer(
             device=self.device,
-            model=self.model,
+            model=model,
             state_dict=self.checkpoint.state_dict,
             attack_hyperparameters=self.attack_hyperparameters,
             epochs_per_batch=self.epochs_per_batch,

@@ -14,7 +14,7 @@ import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.data_structures as ds
-
+import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 
 class AttackTunerObjectives:
     """
@@ -100,6 +100,7 @@ class AttackHyperParameterTuner:
     def __init__(
         self,
         device: torch.device,
+        model_hyperparameters: tuh.X19LSTMHyperParameterSettings,
         model: nn.Module,
         checkpoint: ds.TrainingCheckpoint,
         epochs_per_batch: int,
@@ -109,14 +110,11 @@ class AttackHyperParameterTuner:
         sample_selection_seed: int,
         study: optuna.Study,
         objective_extra_kwargs: dict[str, Any] = None,
-        pruner: BasePruner = MedianPruner(),
-        hyperparameter_sampler: BaseSampler = TPESampler(),
         output_dir: Path = None,
         continue_study_path: Path = None,
     ):
         """
         :param device: device to run on
-        :param model_path: pickle file containing predictive model to attack
         :param checkpoint: params (from prev training) to load into model
         :param epochs_per_batch: number of times to run attack algo (run by
         AdversarialAttackTrainer / Adversarial Attacker) runs on each batch
@@ -125,20 +123,14 @@ class AttackHyperParameterTuner:
         attack samples misclassified by target model, so not all candidat
         samples get attacked.
         :param tuning_ranges: parameter ranges to explore during tuning
-        :param objective: function / method used to convert a TrainerResult
-        from attack w/ single set of params to scalar value quantifying
-        effectiveness of that set of params.
         :param sample_selection_seed: random seed set
-        :param pruner: Causes unpromising trials to stop early. Sublclass of
-        optuna.samplers.BasePruner.
-        :param hyperparameter_sampler: Selects hyperparameters to test.
-        Subclass of optuna.samplers.BaseSampler.
         :param output_dir: (optional) Directory where trial results are saved.
         New directory automatically created if not specified.
         :param continue_study_path: (optional) pickle of pre-existing study to
         add on to
         """
         self.device = device
+        self.model_hyperparameters = model_hyperparameters
         self.model = model
         # self.model_path = model_path
         self.checkpoint = checkpoint
@@ -152,8 +144,8 @@ class AttackHyperParameterTuner:
         self.objective_extra_kwargs = objective_extra_kwargs
         self.sample_selection_seed = sample_selection_seed
         self.study = study
-        self.pruner = pruner
-        self.hyperparameter_sampler = hyperparameter_sampler
+        # self.pruner = pruner
+        # self.hyperparameter_sampler = hyperparameter_sampler
         self.output_dir, self.attack_results_dir = self.initialize_output_dir(
             output_dir=output_dir
         )
@@ -201,7 +193,8 @@ class AttackHyperParameterTuner:
         # )
         attack_driver = atk.AttackDriver(
             device=self.device,
-            model=self.model,
+            model_hyperparameters=self.model_hyperparameters,
+            # model=self.model,
             checkpoint=self.checkpoint,
             epochs_per_batch=self.epoch_per_batch,
             attack_hyperparameters=settings,

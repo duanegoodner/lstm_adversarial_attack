@@ -86,6 +86,18 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         )
         # self.write_provenance()
         self.export(filename="attack_tuner_driver_dict.pickle")
+        self.save_model_hyperparameters()
+
+    def save_model_hyperparameters(self):
+        model_hyperparameters = (
+            edc.X19LSTMHyperParameterSettingsReader().import_struct(
+                path=self.hyperparameters_path
+            )
+        )
+        edc.X19LSTMHyperParameterSettingsWriter().export(
+            obj=model_hyperparameters,
+            path=self.output_dir / "model_hyperparameters.json",
+        )
 
     @property
     def summary(self) -> eds.AttackTunerDriverSummary:
@@ -169,7 +181,8 @@ class AttackTunerDriver(dpr.HasDataProvenance):
                 char for char in str(datetime.now()) if char.isdigit()
             )
             summary_output_path = (
-                self.output_dir / f"attack_tuner_driver_summary_{timestamp}.json"
+                self.output_dir
+                / f"attack_tuner_driver_summary_{timestamp}.json"
             )
             # summary_output_path = Path(f"attack_tuner_driver_summary_{timestamp}")
 
@@ -202,6 +215,7 @@ class AttackTunerDriver(dpr.HasDataProvenance):
 
         tuner = aht.AttackHyperParameterTuner(
             device=self.device,
+            model_hyperparameters=hyperparameters,
             model=model,
             checkpoint=self.target_model_checkpoint,
             epochs_per_batch=cfg_settings.ATTACK_TUNING_EPOCHS,
