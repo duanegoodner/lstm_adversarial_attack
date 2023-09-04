@@ -6,12 +6,10 @@ import optuna
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_tuner_driver as atd
-import lstm_adversarial_attack.attack.model_retriever as amr
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.path_searches as ps
-import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs
 
 
 def start_new_tuning(
@@ -59,21 +57,11 @@ def start_new_tuning(
         {"max_perts": max_perts} if max_perts is not None else {}
     )
 
-    model_retriever = amr.ModelRetriever(
-        training_output_dir=Path(training_result_dir)
-    )
-    fold_checkpoint_pair = model_retriever.get_model(
-        eval_metric=cvs.EvalMetric.VALIDATION_LOSS,
-        optimize_direction=cvs.OptimizeDirection.MIN,
-    )
-
     tuner_driver = atd.AttackTunerDriver(
         device=device,
         hyperparameters_path=Path(hyperparameters_path),
-        target_model_checkpoint=fold_checkpoint_pair.checkpoint,
         objective_name=objective_name,
         objective_extra_kwargs=objective_extra_kwargs,
-        target_fold_index=fold_checkpoint_pair.fold,
         training_result_dir=Path(training_result_dir)
     )
 

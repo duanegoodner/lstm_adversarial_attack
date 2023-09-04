@@ -4,6 +4,7 @@ import msgspec
 import numpy as np
 import pandas as pd
 
+import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 
 
@@ -96,5 +97,43 @@ class TunerDriverSummary(msgspec.Struct):
             "pruner_name": self.pruner_name,
             "tuning_ranges": self.tuning_ranges
         }
+
+
+class AttackTunerDriverSummary(msgspec.Struct):
+    hyperparameters_path: str
+    objective_name: str
+    objective_extra_kwargs: dict[str, Any]
+    db_env_var_name: str
+    study_name: str
+    is_continuation: bool
+    tuning_ranges: ads.AttackTuningRanges
+    epochs_per_batch: int
+    max_num_samples: int
+    sample_selection_seed: int
+    training_result_dir: str
+    pruner_name: str
+    pruner_kwargs: dict[str, Any]
+    sampler_name: str
+    sampler_kwargs: dict[str, Any]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "hyperparameters_path": self.hyperparameters_path,
+            "objective_name": self.objective_name,
+            "objective_extra_kwargs": self.objective_extra_kwargs,
+            "db_env_var_name": self.db_env_var_name,
+            "study_name": self.study_name,
+            "is_continuation": self.is_continuation,
+            "tuning_ranges": self.tuning_ranges,
+            "epochs_per_batch": self.epochs_per_batch,
+            "max_num_samples": self.max_num_samples,
+            "sample_selection_seed": self.sample_selection_seed,
+            "training_result_dir": self.training_result_dir,
+            "pruner_name": self.pruner_name,
+            "pruner_kwargs": self.pruner_kwargs,
+            "sampler_name": self.sampler_name,
+            "sampler_kwargs": self.sampler_kwargs
+        }
+
 
 

@@ -124,8 +124,7 @@ class FoldSummarizer:
                 for item in self.fold_checkpoints
             ],
             "f1": [
-                item.eval_log_entry.result.f1
-                for item in self.fold_checkpoints
+                item.eval_log_entry.result.f1 for item in self.fold_checkpoints
             ],
             "precision": [
                 item.eval_log_entry.result.precision
@@ -184,6 +183,12 @@ class FoldSummarizer:
 class FoldCheckpointPair:
     fold: int
     checkpoint: ds.TrainingCheckpoint
+
+
+class RelativeFoldResult(Enum):
+    MIN = auto()
+    MID_RANGE = auto()
+    MAX = auto()
 
 
 class CrossValidationSummarizer:
@@ -248,6 +253,32 @@ class CrossValidationSummarizer:
         df["epoch"] = df["epoch"].astype("int")
         return df
 
+    def get_fold_with_rel_result(
+        self,
+        metric: EvalMetric,
+        optimize_direction: OptimizeDirection,
+        rel_fold_result: RelativeFoldResult = RelativeFoldResult.MID_RANGE,
+    ):
+        optimal_results_df = self.get_optimal_results_df(
+            metric=metric, optimize_direction=optimize_direction
+        )
+        metric_name = FoldSummarizer.metric_dispatch[metric]
+        sorted_optimal_results_df = optimal_results_df.sort_values(
+            by=[metric_name]
+        )
+
+        df_row_dispatch = {
+            RelativeFoldResult.MIN: 0,
+            RelativeFoldResult.MID_RANGE: int(
+                len(sorted_optimal_results_df) / 2
+            ),
+            RelativeFoldResult.MAX: len(sorted_optimal_results_df) - 1,
+        }
+
+        df_row = df_row_dispatch[rel_fold_result]
+
+        return sorted_optimal_results_df.iloc[df_row]["fold"].astype("int")
+
     def get_midrange_fold(
         self, metric: EvalMetric, optimize_direction: OptimizeDirection
     ):
@@ -262,6 +293,26 @@ class CrossValidationSummarizer:
         return sorted_optimal_results_df.iloc[
             int(len(sorted_optimal_results_df) / 2)
         ]["fold"].astype("int")
+
+    def get_fold_checkpoint(
+        self,
+        metric: EvalMetric,
+        optimize_direction: OptimizeDirection,
+        rel_fold_result: RelativeFoldResult,
+    ):
+        fold_with_rel_result = self.get_fold_with_rel_result(
+            metric=metric,
+            optimize_direction=optimize_direction,
+            rel_fold_result=rel_fold_result,
+        )
+        checkpoint = self.fold_summarizers[
+            fold_with_rel_result
+        ].get_extreme_checkpoint(
+            metric=metric, optimize_direction=optimize_direction
+        )
+        return FoldCheckpointPair(
+            fold=fold_with_rel_result, checkpoint=checkpoint
+        )
 
     def get_midrange_checkpoint(
         self, metric: EvalMetric, optimize_direction: OptimizeDirection

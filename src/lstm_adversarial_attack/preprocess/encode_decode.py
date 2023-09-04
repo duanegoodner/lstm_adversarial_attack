@@ -281,6 +281,15 @@ class X19LSTMHyperParameterSettingsWriter(StandardStructWriter):
         pass  #json ready
 
 
+class AttackTunerDriverSummaryWriter(StandardStructWriter):
+    def __init__(self):
+        super().__init__(struct_type=eds.AttackTunerDriverSummary)
+
+    @staticmethod
+    def enc_hook(obj: Any) -> Any:
+        pass #json ready
+
+
 DecodeType = TypeVar("DecodeType", bound=msgspec.Struct)
 
 
@@ -358,6 +367,18 @@ class TunerDriverSummaryReader(StandardStructReader):
             raise NotImplementedError(
                 f"Objects of type {type} are not supported"
             )
+
+
+class AttackTunerDriverSummaryReader(StandardStructReader):
+    def __init__(self):
+        super().__init__(struct_type=eds.AttackTunerDriverSummary)
+
+    @staticmethod
+    def dec_hook(decode_type: Type, obj: Any) -> Any:
+        if decode_type is tuple:
+            return tuple(obj)
+        if decode_type is ads.AttackTuningRanges:
+            return ads.AttackTuningRanges(**obj)
 
 
 class TrainingCheckpointStorageReader(StandardStructReader):

@@ -29,12 +29,7 @@ class AdversarialAttackTrainer:
         model: nn.Module,
         attack_hyperparameters: ads.AttackHyperParameterSettings,
         state_dict: dict,
-        # batch_size: int,
         epochs_per_batch: int,
-        # kappa: float,
-        # lambda_1: float,
-        # optimizer_constructor: Callable,
-        # optimizer_constructor_kwargs: dict,
         dataset: dsi.DatasetWithIndex | Subset,
         collate_fn: Callable,
         attack_misclassified_samples: bool,
@@ -76,15 +71,11 @@ class AdversarialAttackTrainer:
             max_sequence_length=lcs.MAX_OBSERVATION_HOURS,
             batch_size=2**self.attack_hyperparameters.log_batch_size,
         )
-        # self.kappa = kappa
-        # self.lambda_1 = lambda_1
         self.epochs_per_batch = epochs_per_batch
         self.loss_fn = ath.AdversarialLoss(
             kappa=self.attack_hyperparameters.kappa,
             lambda_1=self.attack_hyperparameters.lambda_1,
         )
-        # self.optimizer_constructor = optimizer_constructor
-        # self.optimizer_constructor_kwargs = optimizer_constructor_kwargs
         self.optimizer_constructor_kwargs = {
             "lr": self.attack_hyperparameters.learning_rate
         }

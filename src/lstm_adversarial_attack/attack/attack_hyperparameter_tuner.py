@@ -202,17 +202,9 @@ class AttackHyperParameterTuner:
         attack_driver = atk.AttackDriver(
             device=self.device,
             model=self.model,
-            # model_path=self.model_path,
             checkpoint=self.checkpoint,
             epochs_per_batch=self.epoch_per_batch,
             attack_hyperparameters=settings,
-            # batch_size=2**settings.log_batch_size,
-            # kappa=settings.kappa,
-            # lambda_1=settings.lambda_1,
-            # optimizer_constructor=getattr(
-            #     torch.optim, settings.optimizer_name
-            # ),
-            # optimizer_constructor_kwargs={"lr": settings.learning_rate},
             max_num_samples=self.max_num_samples,
             sample_selection_seed=self.sample_selection_seed,
             output_dir=self.attack_results_dir,
@@ -237,15 +229,6 @@ class AttackHyperParameterTuner:
         return self.objective(
             success_summary=success_summary, **self.objective_extra_kwargs
         )
-
-    # def export_study(self, study: optuna.Study):
-    #     """
-    #     Saves optuna Study object (contains info for all trials) to pickle.
-    #     :param study: the Study object to save
-    #     """
-    #     study_filename = "optuna_study.pickle"
-    #     study_export_path = self.output_dir / study_filename
-    #     rio.ResourceExporter().export(resource=study, path=study_export_path)
 
     def tune(
         self, num_trials: int, timeout: int | None = None

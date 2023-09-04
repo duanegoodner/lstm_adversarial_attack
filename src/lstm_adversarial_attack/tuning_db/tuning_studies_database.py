@@ -122,6 +122,10 @@ model_tuning_db_info = get_db_dotenv_info(db_name_var="MODEL_TUNING_DB_NAME")
 MODEL_TUNING_DB = OptunaDatabase(**model_tuning_db_info)
 MODEL_TUNING_STORAGE = MODEL_TUNING_DB.storage
 
+attack_tuning_db_info = get_db_dotenv_info(db_name_var="ATTACK_TUNING_DB_NAME")
+ATTACK_TUNING_DB = OptunaDatabase(**attack_tuning_db_info)
+ATTACK_TUNING_STORAGE = ATTACK_TUNING_DB.storage
+
 
 # if __name__ == "__main__":
 # model_tuning_db = OptunaDatabase(env_var_db_name="MODEL_TUNING_DB_NAME")

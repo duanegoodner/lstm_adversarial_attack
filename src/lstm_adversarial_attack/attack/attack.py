@@ -1,7 +1,6 @@
 import argparse
 import sys
 from pathlib import Path
-from typing import Callable
 
 import torch
 import torch.nn as nn
@@ -30,15 +29,9 @@ class AttackDriver(dpr.HasDataProvenance):
         self,
         device: torch.device,
         model: nn.Module,
-        # model_path: Path,
         checkpoint: ds.TrainingCheckpoint,
         attack_hyperparameters: ads.AttackHyperParameterSettings,
-        # batch_size: int,
         epochs_per_batch: int,
-        # kappa: float,
-        # lambda_1: float,
-        # optimizer_constructor: Callable,
-        # optimizer_constructor_kwargs: dict = None,
         max_num_samples=None,
         sample_selection_seed=None,
         attack_misclassified_samples: bool = False,
@@ -50,19 +43,13 @@ class AttackDriver(dpr.HasDataProvenance):
     ):
         """
         :param device: device to run on
-        :param model_path: path to pickle file with model to be attacked
         :param checkpoint: Info saved during training classifier. Contents
         include model params.
-        :param batch_size: num samples per batch
         :param epochs_per_batch: number of attack iterations per batch
-        :param kappa: Parameter from Equation 1 in Sun et al
         (https://arxiv.org/abs/1802.04822). Defines a margin by which alternate
         class logit value needs to exceed original class logit value in order
         to reduce loss function.
-        :param lambda_1: L1 regularization constant applied to perturbations
-        :param optimizer_constructor: constructor of optimizer used when
         searching for adversarial example_data
-        :param optimizer_constructor_kwargs: kwargs passed to optimizer
         constructor
         :param max_num_samples: Number candidate samples to take from a dataset
         for attack. Default behavior of AdversarialAttackTrainer is to not
@@ -79,17 +66,9 @@ class AttackDriver(dpr.HasDataProvenance):
         """
         self.device = device
         self.model = model
-        # self.model_path = model_path
         self.checkpoint = checkpoint
         self.attack_hyperparameters = attack_hyperparameters
-        # self.batch_size = batch_size
         self.epochs_per_batch = epochs_per_batch
-        # self.kappa = kappa
-        # self.lambda_1 = lambda_1
-        # self.optimizer_constructor = optimizer_constructor
-        # if optimizer_constructor_kwargs is None:
-        #     optimizer_constructor_kwargs = {"lr": 1e-1}
-        # self.optimizer_constructor_kwargs = optimizer_constructor_kwargs
         self.max_num_samples = max_num_samples
         self.sample_selection_seed = sample_selection_seed
         if self.sample_selection_seed is not None:
@@ -206,21 +185,6 @@ class AttackDriver(dpr.HasDataProvenance):
             hyperparameter_tuning_result_dir=tuning_result_dir,
         )
 
-        # return cls.from_attack_hyperparameter_settings(
-        #     device=device,
-        #     model_path=tuner_driver.target_model_path,
-        #     checkpoint=tuner_driver.target_model_checkpoint,
-        #     settings=ads.AttackHyperParameterSettings(
-        #         **optuna_study.best_params
-        #     ),
-        #     epochs_per_batch=epochs_per_batch,
-        #     max_num_samples=max_num_samples,
-        #     sample_selection_seed=sample_selection_seed,
-        #     save_attack_driver=save_attack_driver,
-        #     checkpoint_interval=checkpoint_interval,
-        #     tuning_result_dir=tuning_result_dir,
-        # )
-
     def __call__(self) -> aat.AdversarialAttackTrainer | ards.TrainerResult:
         """
         Imports model to attack, then trains and runs attack driver
@@ -234,12 +198,7 @@ class AttackDriver(dpr.HasDataProvenance):
             model=self.model,
             state_dict=self.checkpoint.state_dict,
             attack_hyperparameters=self.attack_hyperparameters,
-            # batch_size=self.batch_size,
-            # kappa=self.kappa,
-            # lambda_1=self.lambda_1,
             epochs_per_batch=self.epochs_per_batch,
-            # optimizer_constructor=self.optimizer_constructor,
-            # optimizer_constructor_kwargs=self.optimizer_constructor_kwargs,
             dataset=self.dataset,
             collate_fn=self.collate_fn,
             attack_misclassified_samples=self.attack_misclassified_samples,
