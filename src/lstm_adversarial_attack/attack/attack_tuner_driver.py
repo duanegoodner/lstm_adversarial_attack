@@ -214,28 +214,3 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         )
 
         return tuner.tune(num_trials=num_trials)
-
-    def restart(self, output_dir: Path, num_trials: int) -> optuna.Study:
-        """
-        Restarts tuning using params of self. Uses existing AttackDriver.
-        Creates new AttackHyperParamterTuner
-        :param output_dir: directory containing previous output and where new
-        output will be written.
-        :param num_trials: max number of trials to run (OK to stop early with
-        CTRL-C since results get saved after each trial)
-        :return: Optuna Study object
-        """
-        tuner = aht.AttackHyperParameterTuner(
-            device=self.device,
-            model_path=self.target_model_path,
-            checkpoint=self.target_model_checkpoint,
-            epochs_per_batch=self.epochs_per_batch,
-            max_num_samples=self.max_num_samples,
-            tuning_ranges=self.tuning_ranges,
-            continue_study_path=output_dir / "optuna_study.pickle",
-            output_dir=output_dir,
-            objective_name=self.objective_name,
-            sample_selection_seed=self.sample_selection_seed,
-        )
-
-        return tuner.tune(num_trials=num_trials)
