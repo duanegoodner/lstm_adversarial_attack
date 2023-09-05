@@ -1,5 +1,5 @@
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 
@@ -8,13 +8,13 @@ import pandas as pd
 
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
-import lstm_adversarial_attack.preprocess.new_preprocessor as pre
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
+import lstm_adversarial_attack.preprocess.preprocessor as pre
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 @dataclass
-class NewFeatureFinalizerSettings:
+class FeatureFinalizerSettings:
     """
     Container for FeatureFinalizer config settings
     """
@@ -28,22 +28,22 @@ class NewFeatureFinalizerSettings:
 
 
 @dataclass
-class NewFeatureFinalizer(pre.NewPreprocessModule):
+class FeatureFinalizer(pre.PreprocessModule):
     def __init__(
         self,
-        resources: rds.NewFeatureFinalizerResources = None,
+        resources: rds.FeatureFinalizerResources = None,
         output_dir: cfp.PREPROCESS_OUTPUT_DIR = None,
-        settings: NewFeatureFinalizerSettings = None,
-        output_constructors: rds.NewFeatureFinalizerOutputConstructors = None,
+        settings: FeatureFinalizerSettings = None,
+        output_constructors: rds.FeatureFinalizerOutputConstructors = None,
     ):
         if resources is None:
-            resources = rds.NewFeatureFinalizerResources()
+            resources = rds.FeatureFinalizerResources()
         if output_dir is None:
             output_dir = cfp.FEATURE_FINALIZER_OUTPUT
         if settings is None:
-            settings = NewFeatureFinalizerSettings()
+            settings = FeatureFinalizerSettings()
         if output_constructors is None:
-            output_constructors = rds.NewFeatureFinalizerOutputConstructors()
+            output_constructors = rds.FeatureFinalizerOutputConstructors()
         super().__init__(
             resources=resources,
             output_dir=output_dir,
@@ -89,7 +89,7 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
         ]
 
     def _get_feature_array(
-        self, sample: eds.NewFullAdmissionData
+        self, sample: eds.FullAdmissionData
     ) -> np.ndarray | None:
         """
         Filters time series df to window of interest & converts to array
@@ -148,7 +148,7 @@ class NewFeatureFinalizer(pre.NewPreprocessModule):
 
 if __name__ == "__main__":
     init_start = time.time()
-    feature_finalizer = NewFeatureFinalizer()
+    feature_finalizer = FeatureFinalizer()
     init_end = time.time()
     print(f"feature finalizer init time = {init_end - init_start}")
 

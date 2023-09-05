@@ -7,12 +7,12 @@ import pandas as pd
 
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
-import lstm_adversarial_attack.preprocess.new_preprocessor as pre
+import lstm_adversarial_attack.preprocess.preprocessor as pre
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 @dataclass
-class NewICUStayMeasurementMergerSettings:
+class ICUStayMeasurementMergerSettings:
     """
     Container for ICUStayMeasurementCombiner config settings
     """
@@ -32,22 +32,22 @@ class NewICUStayMeasurementMergerSettings:
         return self.bg_data_cols + self.lab_data_cols + self.vital_data_cols
 
 
-class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
+class ICUStayMeasurementMerger(pre.PreprocessModule):
     def __init__(
         self,
-        resources: rds.NewICUStayMeasurementMergerResources = None,
+        resources: rds.ICUStayMeasurementMergerResources = None,
         output_dir: Path = None,
-        settings: NewICUStayMeasurementMergerSettings = None,
-        output_constructors: rds.NewICUStayMeasurementMergerOutputConstructors = None,
+        settings: ICUStayMeasurementMergerSettings = None,
+        output_constructors: rds.ICUStayMeasurementMergerOutputConstructors = None,
     ):
         if resources is None:
-            resources = rds.NewICUStayMeasurementMergerResources()
+            resources = rds.ICUStayMeasurementMergerResources()
         if output_dir is None:
             output_dir = cfp.STAY_MEASUREMENT_OUTPUT
         if settings is None:
-            settings = NewICUStayMeasurementMergerSettings()
+            settings = ICUStayMeasurementMergerSettings()
         if output_constructors is None:
-            output_constructors = rds.NewICUStayMeasurementMergerOutputConstructors()
+            output_constructors = rds.ICUStayMeasurementMergerOutputConstructors()
         super().__init__(
             resources=resources,
             output_dir=output_dir,
@@ -165,7 +165,7 @@ class NewICUStayMeasurementMerger(pre.NewPreprocessModule):
 
 if __name__ == "__main__":
     init_start = time.time()
-    measurement_merger = NewICUStayMeasurementMerger()
+    measurement_merger = ICUStayMeasurementMerger()
     init_end = time.time()
     print(f"measurement merger init time = {init_end - init_start}")
 

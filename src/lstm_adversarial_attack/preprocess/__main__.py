@@ -1,23 +1,24 @@
 import time
 
 import lstm_adversarial_attack.config_paths as cfp
-import lstm_adversarial_attack.preprocess.new_admission_list_builder as alb
-import lstm_adversarial_attack.preprocess.new_feature_builder as fb
-import lstm_adversarial_attack.preprocess.new_feature_finalizer as ff
-import lstm_adversarial_attack.preprocess.new_icustay_measurement_merger as imm
-import lstm_adversarial_attack.preprocess.new_prefilter as prf
-import lstm_adversarial_attack.preprocess.new_preprocessor as ppr
+import lstm_adversarial_attack.preprocess.admission_list_builder as alb
+import lstm_adversarial_attack.preprocess.feature_builder as fb
+import lstm_adversarial_attack.preprocess.feature_finalizer as ff
+import lstm_adversarial_attack.preprocess.icustay_measurement_merger as imm
+import lstm_adversarial_attack.preprocess.prefilter as prf
+import lstm_adversarial_attack.preprocess.preprocessor as ppr
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 def main():
     prefilter_info = ppr.ModuleInfo(
-        module_constructor=prf.NewPrefilter,
-        resources_constructor=rds.NewPrefilterResources,
+        module_constructor=prf.Prefilter,
+        resources_constructor=rds.PrefilterResources,
         individual_resources_info=[
             rds.FileResourceInfo(
                 key="icustay",
-                path=cfp.PREFILTER_INPUT_FILES["icustay"],
+                # path=cfp.PREFILTER_INPUT_FILES["icustay"],
+                path=cfp.DB_OUTPUT_DIR / "icustay_500.csv",
                 constructor=rds.IncomingCSVDataFrame
             ),
             rds.FileResourceInfo(
@@ -39,8 +40,8 @@ def main():
     )
 
     combiner_info = ppr.ModuleInfo(
-        module_constructor=imm.NewICUStayMeasurementMerger,
-        resources_constructor=rds.NewICUStayMeasurementMergerResources,
+        module_constructor=imm.ICUStayMeasurementMerger,
+        resources_constructor=rds.ICUStayMeasurementMergerResources,
         individual_resources_info=[
             rds.PoolResourceInfo(
                 key="prefiltered_icustay",
@@ -62,8 +63,8 @@ def main():
     )
 
     list_builder_info = ppr.ModuleInfo(
-        module_constructor=alb.NewAdmissionListBuilder,
-        resources_constructor=rds.NewAdmissionListBuilderResources,
+        module_constructor=alb.AdmissionListBuilder,
+        resources_constructor=rds.AdmissionListBuilderResources,
         individual_resources_info=[
             rds.PoolResourceInfo(
                 key="icustay_bg_lab_vital",
@@ -74,8 +75,8 @@ def main():
     )
 
     feature_builder_info = ppr.ModuleInfo(
-        module_constructor=fb.NewFeatureBuilder,
-        resources_constructor=rds.NewFeatureBuilderResources,
+        module_constructor=fb.FeatureBuilder,
+        resources_constructor=rds.FeatureBuilderResources,
         individual_resources_info=[
             rds.PoolResourceInfo(
                 key="full_admission_list",
@@ -86,14 +87,14 @@ def main():
                 constructor=rds.IncomingFeatherDataFrame
             )
         ],
-        # output_info=rds.NewFeatureBuilderOutputConstructors(
+        # output_info=rds.FeatureBuilderOutputConstructors(
         #     processed_admission_list=rds.OutgoingPreprocessPickle
         # )
     )
 
     feature_finalizer_info = ppr.ModuleInfo(
-        module_constructor=ff.NewFeatureFinalizer,
-        resources_constructor=rds.NewFeatureFinalizerResources,
+        module_constructor=ff.FeatureFinalizer,
+        resources_constructor=rds.FeatureFinalizerResources,
         individual_resources_info=[
             rds.PoolResourceInfo(
                 key="processed_admission_list",
@@ -110,7 +111,7 @@ def main():
         feature_finalizer_info
     ]
 
-    preprocessor = ppr.NewPreprocessor(
+    preprocessor = ppr.Preprocessor(
         modules_info=modules_info,
         save_checkpoints=True
     )

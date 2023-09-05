@@ -7,15 +7,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-import msgspec
-
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.preprocess.resource_data_structs as rds
-import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.preprocess.encode_decode as edc
+import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
+import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
-class NewPreprocessModule(ABC):
+class PreprocessModule(ABC):
     def __init__(
         self,
         resources: dataclass,
@@ -73,7 +71,7 @@ class NewPreprocessModule(ABC):
 
 @dataclass
 class ModuleInfo:
-    module_constructor: Callable[..., NewPreprocessModule]
+    module_constructor: Callable[..., PreprocessModule]
     resources_constructor: Callable[..., dataclass]
     individual_resources_info: list[rds.SingleResourceInfo]
     output_constructors: dataclass = None
@@ -83,7 +81,7 @@ class ModuleInfo:
 
     def build_module(
         self, resource_pool: dict[str, rds.OutgoingPreprocessResource]
-    ) -> NewPreprocessModule:
+    ) -> PreprocessModule:
         module_resources = {}
         for item in self.individual_resources_info:
             module_resources.update(
@@ -98,7 +96,7 @@ class ModuleInfo:
         )
 
 
-class NewPreprocessor:
+class Preprocessor:
     def __init__(
         self,
         modules_info: list[ModuleInfo],
@@ -124,7 +122,7 @@ class NewPreprocessor:
             )
 
     def run_preprocess_module(
-        self, module: NewPreprocessModule, save_output: bool
+        self, module: PreprocessModule, save_output: bool
     ):
         process_start = time.time()
         module_output = module.process()

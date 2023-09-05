@@ -1,21 +1,19 @@
-import collections
-import time
 from abc import ABC, abstractmethod
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Type, TypeVar, Callable
+from typing import Any, Callable, Type, TypeVar
 
 import msgspec
 import numpy as np
 import pandas as pd
 import torch
 
+import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
-import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.data_structures as ds
+import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
-import lstm_adversarial_attack.attack.attack_data_structs as ads
 
 # TODO Consider creating DataWriter base class with encoder abstractmethod and
 #  encode() & export() concrete methods
@@ -51,7 +49,7 @@ class AdmissionDataWriter:
         return msgspec.json.Encoder(enc_hook=self.enc_hook)
 
     def encode(
-        self, full_admission_data_list: list[eds.NewFullAdmissionData]
+        self, full_admission_data_list: list[eds.FullAdmissionData]
     ) -> bytes:
         example_df = full_admission_data_list[0].time_series
         timestamp_col_name = "charttime"
@@ -62,7 +60,7 @@ class AdmissionDataWriter:
         data_only_df = example_df[data_cols_names]
         data_cols_dtype = np.unique(data_only_df.dtypes).item().name
 
-        header = eds.NewFullAdmissionDataListHeader(
+        header = eds.FullAdmissionDataListHeader(
             timestamp_col_name=timestamp_col_name,
             timestamp_dtype=timestamp_dtype,
             data_cols_names=data_cols_names,
@@ -84,7 +82,7 @@ class AdmissionDataWriter:
 
 
 def export_admission_data_list(
-    admission_data_list: list[eds.NewFullAdmissionData], path: Path
+    admission_data_list: list[eds.FullAdmissionData], path: Path
 ):
     AdmissionDataWriter().export(obj=admission_data_list, path=path)
 
@@ -125,10 +123,10 @@ class AdmissionDataListReader:
 
     @cached_property
     def _header_decoder(self) -> msgspec.json.Decoder:
-        return msgspec.json.Decoder(eds.NewFullAdmissionDataListHeader)
+        return msgspec.json.Decoder(eds.FullAdmissionDataListHeader)
 
     @cached_property
-    def _header(self) -> eds.NewFullAdmissionDataListHeader:
+    def _header(self) -> eds.FullAdmissionDataListHeader:
         return self._header_decoder.decode(self._header_bytes)
 
     def _body_dec_hook(self, type: Type, obj: Any) -> Any:
@@ -150,14 +148,14 @@ class AdmissionDataListReader:
     @cached_property
     def body_decoder(self) -> msgspec.json.Decoder:
         return msgspec.json.Decoder(
-            list[eds.NewFullAdmissionData], dec_hook=self._body_dec_hook
+            list[eds.FullAdmissionData], dec_hook=self._body_dec_hook
         )
 
-    def decode(self) -> list[eds.NewFullAdmissionData]:
+    def decode(self) -> list[eds.FullAdmissionData]:
         return self.body_decoder.decode(self._body_bytes)
 
 
-def import_admission_data_list(path: Path) -> list[eds.NewFullAdmissionData]:
+def import_admission_data_list(path: Path) -> list[eds.FullAdmissionData]:
     data_reader = AdmissionDataListReader.from_file(
         path=path, delimiter=cfs.ADMISSION_DATA_JSON_DELIMITER
     )

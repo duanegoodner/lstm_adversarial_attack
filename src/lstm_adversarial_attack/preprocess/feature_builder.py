@@ -6,12 +6,12 @@ import pandas as pd
 
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfs
-import lstm_adversarial_attack.preprocess.new_preprocessor as pre
+import lstm_adversarial_attack.preprocess.preprocessor as pre
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 @dataclass
-class NewFeatureBuilderSettings:
+class FeatureBuilderSettings:
     """
     Container for FeatureBuilder config settings
     """
@@ -22,22 +22,22 @@ class NewFeatureBuilderSettings:
     resample_limit_direction: str = cfs.DEFAULT_RESAMPLE_LIMIT_DIRECTION
 
 
-class NewFeatureBuilder(pre.NewPreprocessModule):
+class FeatureBuilder(pre.PreprocessModule):
     def __init__(
         self,
-        resources: rds.NewFeatureBuilderResources = None,
+        resources: rds.FeatureBuilderResources = None,
         output_dir: Path = None,
-        settings: NewFeatureBuilderSettings = None,
-        output_constructors: rds.NewFeatureBuilderOutputConstructors = None,
+        settings: FeatureBuilderSettings = None,
+        output_constructors: rds.FeatureBuilderOutputConstructors = None,
     ):
         if resources is None:
-            resources = rds.NewFeatureBuilderResources()
+            resources = rds.FeatureBuilderResources()
         if output_dir is None:
             output_dir = cfp.FEATURE_BUILDER_OUTPUT
         if settings is None:
-            settings = NewFeatureBuilderSettings()
+            settings = FeatureBuilderSettings()
         if output_constructors is None:
-            output_constructors = rds.NewFeatureBuilderOutputConstructors()
+            output_constructors = rds.FeatureBuilderOutputConstructors()
         super().__init__(
             resources=resources,
             output_dir=output_dir,
@@ -171,7 +171,7 @@ class NewFeatureBuilder(pre.NewPreprocessModule):
 
 if __name__ == "__main__":
     init_start = time.time()
-    feature_builder = NewFeatureBuilder()
+    feature_builder = FeatureBuilder()
     init_end = time.time()
     print(f"feature builder init time = {init_end - init_start}")
 

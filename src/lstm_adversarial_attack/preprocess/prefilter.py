@@ -6,12 +6,12 @@ import pandas as pd
 
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.config_settings as cfg_set
-import lstm_adversarial_attack.preprocess.new_preprocessor as pre
+import lstm_adversarial_attack.preprocess.preprocessor as pre
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 @dataclass
-class NewPrefilterSettings:
+class PrefilterSettings:
     """
     Container for objects imported by Prefilter
     """
@@ -30,22 +30,22 @@ class NewPrefilterSettings:
     )
 
 
-class NewPrefilter(pre.NewPreprocessModule):
+class Prefilter(pre.PreprocessModule):
     def __init__(
         self,
-        resources: rds.NewPrefilterResources = None,
+        resources: rds.PrefilterResources = None,
         output_dir: Path = None,
-        settings: NewPrefilterSettings = None,
-        output_constructors: rds.NewPrefilterOutputConstructors = None,
+        settings: PrefilterSettings = None,
+        output_constructors: rds.PrefilterOutputConstructors = None,
     ):
         if resources is None:
-            resources = rds.NewPrefilterResources()
+            resources = rds.PrefilterResources()
         if output_dir is None:
             output_dir = cfp.PREFILTER_OUTPUT
         if settings is None:
-            settings = NewPrefilterSettings()
+            settings = PrefilterSettings()
         if output_constructors is None:
-            output_constructors = rds.NewPrefilterOutputConstructors()
+            output_constructors = rds.PrefilterOutputConstructors()
         super().__init__(
             resources=resources,
             output_dir=output_dir,
@@ -208,7 +208,7 @@ class NewPrefilter(pre.NewPreprocessModule):
 
 if __name__ == "__main__":
     init_prefilter_start = time.time()
-    prefilter_resources = rds.NewPrefilterResources(
+    prefilter_resources = rds.PrefilterResources(
         icustay=rds.IncomingCSVDataFrame(
             resource_id=cfp.PREFILTER_INPUT_FILES["icustay"]
         ),
@@ -223,7 +223,7 @@ if __name__ == "__main__":
         ),
     )
 
-    prefilter = NewPrefilter(resources=prefilter_resources)
+    prefilter = Prefilter(resources=prefilter_resources)
     init_prefilter_end = time.time()
     print(f"prefilter init time = {init_prefilter_end - init_prefilter_start}")
 

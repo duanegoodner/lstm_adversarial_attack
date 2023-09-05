@@ -125,15 +125,8 @@ class IncomingCSVDataFrame(IncomingPreprocessResource):
         return pd.read_csv(filepath_or_buffer=self.resource_id)
 
 
-class IncomingPreprocessPickle(IncomingPreprocessResource):
-    def _import_object(self) -> object:
-        return rio.ResourceImporter().import_pickle_to_object(
-            path=self.resource_id
-        )
-
-
 class IncomingFullAdmissionData(IncomingPreprocessResource):
-    def _import_object(self) -> list[eds.NewFullAdmissionData]:
+    def _import_object(self) -> list[eds.FullAdmissionData]:
         return edc.import_admission_data_list(path=self.resource_id)
 
 
@@ -216,7 +209,7 @@ class OutgoingMeasurementColumnNames(OutgoingPreprocessResource):
 
 
 @dataclass
-class NewPrefilterResources:
+class PrefilterResources:
     icustay: IncomingPreprocessResource = field(
         default_factory=lambda: IncomingCSVDataFrame(
             resource_id=cfp.PREFILTER_INPUT_FILES["icustay"]
@@ -240,7 +233,7 @@ class NewPrefilterResources:
 
 
 @dataclass
-class NewPrefilterOutputConstructors:
+class PrefilterOutputConstructors:
     prefiltered_icustay: Callable[..., OutgoingPreprocessResource] = (
         OutgoingPreprocessDataFrame
     )
@@ -256,7 +249,7 @@ class NewPrefilterOutputConstructors:
 
 
 @dataclass
-class NewICUStayMeasurementMergerResources:
+class ICUStayMeasurementMergerResources:
     prefiltered_icustay: IncomingFeatherDataFrame = field(
         default_factory=lambda: IncomingFeatherDataFrame(
             resource_id=cfp.STAY_MEASUREMENT_INPUT_FILES["prefiltered_icustay"]
@@ -280,7 +273,7 @@ class NewICUStayMeasurementMergerResources:
 
 
 @dataclass
-class NewICUStayMeasurementMergerOutputConstructors:
+class ICUStayMeasurementMergerOutputConstructors:
     icustay_bg_lab_vital: Callable[..., OutgoingPreprocessResource] = (
         OutgoingPreprocessDataFrame
     )
@@ -290,7 +283,7 @@ class NewICUStayMeasurementMergerOutputConstructors:
 
 
 @dataclass
-class NewAdmissionListBuilderResources:
+class AdmissionListBuilderResources:
     icustay_bg_lab_vital: IncomingFeatherDataFrame = field(
         default_factory=lambda: IncomingFeatherDataFrame(
             resource_id=cfp.FULL_ADMISSION_LIST_INPUT_FILES[
@@ -301,14 +294,14 @@ class NewAdmissionListBuilderResources:
 
 
 @dataclass
-class NewAdmissionListBuilderOutputConstructors:
+class AdmissionListBuilderOutputConstructors:
     full_admission_list: Callable[..., OutgoingPreprocessResource] = (
         OutgoingFullAdmissionData
     )
 
 
 @dataclass
-class NewFeatureBuilderResources:
+class FeatureBuilderResources:
     full_admission_list: IncomingPreprocessResource = field(
         default_factory=lambda: IncomingFullAdmissionData(
             resource_id=cfp.FEATURE_BUILDER_INPUT_FILES["full_admission_list"]
@@ -324,14 +317,14 @@ class NewFeatureBuilderResources:
 
 
 @dataclass
-class NewFeatureBuilderOutputConstructors:
+class FeatureBuilderOutputConstructors:
     processed_admission_list: Callable[..., OutgoingPreprocessResource] = (
         OutgoingFullAdmissionData
     )
 
 
 @dataclass
-class NewFeatureFinalizerResources:
+class FeatureFinalizerResources:
     processed_admission_list: IncomingFullAdmissionData = field(
         default_factory=lambda: IncomingFullAdmissionData(
             resource_id=cfp.FEATURE_FINALIZER_INPUT_FILES[
@@ -342,7 +335,7 @@ class NewFeatureFinalizerResources:
 
 
 @dataclass
-class NewFeatureFinalizerOutputConstructors:
+class FeatureFinalizerOutputConstructors:
     in_hospital_mortality_list: Callable[..., OutgoingPreprocessResource] = (
         OutgoingClassLabels
     )

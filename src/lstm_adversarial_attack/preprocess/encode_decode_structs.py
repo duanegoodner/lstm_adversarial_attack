@@ -8,11 +8,10 @@ import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 
 
-class NewFullAdmissionData(msgspec.Struct):
+class FullAdmissionData(msgspec.Struct):
     """
     Container used as elements list build by FullAdmissionListBuilder
     """
-
     subject_id: int
     hadm_id: int
     icustay_id: int
@@ -30,7 +29,7 @@ class DecomposedTimeSeries(msgspec.Struct):
     data: list[list[float]]
 
 
-class NewFullAdmissionDataListHeader(msgspec.Struct):
+class FullAdmissionDataListHeader(msgspec.Struct):
     timestamp_col_name: str
     timestamp_dtype: str
     data_cols_names: list[str]
