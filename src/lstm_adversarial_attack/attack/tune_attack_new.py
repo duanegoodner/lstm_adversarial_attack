@@ -68,9 +68,9 @@ def start_new_tuning(
         objective_name=objective_name,
         objective_extra_kwargs=objective_extra_kwargs,
         training_result_dir=Path(training_result_dir),
-        target_checkpoint=checkpoint_info.checkpoint,
-        target_checkpoint_path=checkpoint_info.save_path,
-        target_fold=checkpoint_info.fold
+        # target_checkpoint=checkpoint_info.checkpoint,
+        # target_checkpoint_path=checkpoint_info.save_path,
+        # target_fold=checkpoint_info.fold
     )
 
     print(

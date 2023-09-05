@@ -6,7 +6,6 @@ import pandas as pd
 
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
-import lstm_adversarial_attack.data_structures as ds
 
 
 class NewFullAdmissionData(msgspec.Struct):
@@ -100,33 +99,9 @@ class TunerDriverSummary(msgspec.Struct):
         }
 
 
-class AttackTunerDriverSummaryStorage(msgspec.Struct):
-    hyperparameters_path: str
-    objective_name: str
-    target_checkpoint: ds.TrainingCheckpointStorage
-    target_checkpoint_path: str
-    target_fold: int
-    objective_extra_kwargs: dict[str, Any]
-    db_env_var_name: str
-    study_name: str
-    is_continuation: bool
-    tuning_ranges: ads.AttackTuningRanges
-    epochs_per_batch: int
-    max_num_samples: int
-    sample_selection_seed: int
-    training_result_dir: str
-    pruner_name: str
-    pruner_kwargs: dict[str, Any]
-    sampler_name: str
-    sampler_kwargs: dict[str, Any]
-
-
 class AttackTunerDriverSummary(msgspec.Struct):
     hyperparameters_path: str
     objective_name: str
-    target_checkpoint: ds.TrainingCheckpointStorage
-    target_checkpoint_path: str
-    target_fold: int
     objective_extra_kwargs: dict[str, Any]
     db_env_var_name: str
     study_name: str
@@ -145,9 +120,6 @@ class AttackTunerDriverSummary(msgspec.Struct):
         return {
             "hyperparameters_path": self.hyperparameters_path,
             "objective_name": self.objective_name,
-            "target_checkpoint": self.target_checkpoint,
-            "target_checkpoint_path": self.target_checkpoint_path,
-            "target_fold": self.target_fold,
             "objective_extra_kwargs": self.objective_extra_kwargs,
             "db_env_var_name": self.db_env_var_name,
             "study_name": self.study_name,
