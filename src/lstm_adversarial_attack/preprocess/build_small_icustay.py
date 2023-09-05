@@ -1,3 +1,7 @@
+"""
+Dev script for building small version of icustay data
+"""
+
 import pandas as pd
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.resource_io as rio
