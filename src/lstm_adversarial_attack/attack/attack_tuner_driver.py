@@ -15,10 +15,9 @@ import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.data_provenance as dpr
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.preprocess.encode_decode as edc
-import lstm_adversarial_attack.tune_train.model_retriever as tmr
+import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
-import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 
 
 class AttackTunerDriver(dpr.HasDataProvenance):
@@ -56,6 +55,9 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         data/attack/attack_hyperparamter_tuning
         """
         self.device = device
+        self.target_fold_index = target_fold
+        self.target_model_checkpoint = target_checkpoint
+        self.target_checkpoint_path = Path(target_checkpoint_path)
         self.hyperparameters_path = Path(hyperparameters_path)
         self.objective_name = objective_name
         self.objective_extra_kwargs = objective_extra_kwargs
@@ -107,6 +109,9 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         return eds.AttackTunerDriverSummary(
             hyperparameters_path=str(self.hyperparameters_path),
             objective_name=self.objective_name,
+            target_checkpoint=self.target_model_checkpoint.to_storage(),
+            target_checkpoint_path=str(self.target_checkpoint_path),
+            target_fold=self.target_fold_index,
             objective_extra_kwargs=self.objective_extra_kwargs,
             db_env_var_name=self.db_env_var_name,
             study_name=self.study_name,
@@ -146,19 +151,19 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         return tsd.OptunaDatabase(**db_dotenv_info)
 
     # TODO Move this to be part of __init__ and self.summary
-    @cached_property
-    def target_fold_checkpoint_pair(self) -> tmr.FoldCheckpointPair:
-        return tmr.ModelRetriever(
-            training_output_dir=self.training_result_dir
-        ).get_representative_checkpoint()
+    # @cached_property
+    # def target_fold_checkpoint_pair(self) -> cvs.CheckpointInfo:
+    #     return tmr.ModelRetriever(
+    #         training_output_dir=self.training_result_dir
+    #     ).get_representative_checkpoint()
 
-    @property
-    def target_fold_index(self) -> int:
-        return self.target_fold_checkpoint_pair.fold
+    # @property
+    # def target_fold_index(self) -> int:
+    #     return self.target_fold_checkpoint_pair.fold
 
-    @property
-    def target_model_checkpoint(self) -> ds.TrainingCheckpoint:
-        return self.target_fold_checkpoint_pair.checkpoint
+    # @property
+    # def target_model_checkpoint(self) -> ds.TrainingCheckpoint:
+    #     return self.target_fold_checkpoint_pair.checkpoint
 
     @staticmethod
     def build_study_name() -> str:

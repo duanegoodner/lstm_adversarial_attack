@@ -58,7 +58,7 @@ def start_new_tuning(
         {"max_perts": max_perts} if max_perts is not None else {}
     )
 
-    target_fold_checkpoint_info_pair = tmr.ModelRetriever(
+    checkpoint_info = tmr.ModelRetriever(
         training_output_dir=Path(training_result_dir)
     ).get_representative_checkpoint()
 
@@ -68,9 +68,9 @@ def start_new_tuning(
         objective_name=objective_name,
         objective_extra_kwargs=objective_extra_kwargs,
         training_result_dir=Path(training_result_dir),
-        target_checkpoint=target_fold_checkpoint_info_pair.checkpoint_info.checkpoint,
-        target_checkpoint_path=target_fold_checkpoint_info_pair.checkpoint_info.save_path,
-        target_fold=target_fold_checkpoint_info_pair.fold
+        target_checkpoint=checkpoint_info.checkpoint,
+        target_checkpoint_path=checkpoint_info.save_path,
+        target_fold=checkpoint_info.fold
     )
 
     print(

@@ -52,6 +52,7 @@ class CheckpointInfo:
 
     checkpoint: ds.TrainingCheckpoint
     save_path: Path = None
+    fold: int = None
 
 
 class FoldSummarizer:
@@ -113,7 +114,9 @@ class FoldSummarizer:
 
         fold_checkpoints_info = [
             CheckpointInfo(
-                checkpoint=fold_checkpoints[i], save_path=checkpoint_files[i]
+                checkpoint=fold_checkpoints[i],
+                save_path=checkpoint_files[i],
+                fold=fold_num,
             )
             for i in range(len(fold_checkpoints))
         ]
@@ -372,7 +375,7 @@ class CrossValidationSummarizer:
         metric: EvalMetric,
         optimize_direction: OptimizeDirection,
         rel_fold_result: RelativeFoldResult,
-    ) -> FoldCheckpointInfoPair:
+    ) -> CheckpointInfo:
         fold_with_rel_result = self.get_fold_with_rel_result(
             metric=metric,
             optimize_direction=optimize_direction,
@@ -384,9 +387,11 @@ class CrossValidationSummarizer:
         ].get_extreme_checkpoint_info(
             metric=metric, optimize_direction=optimize_direction
         )
-        return FoldCheckpointInfoPair(
-            fold=fold_with_rel_result, checkpoint_info=checkpoint_info
-        )
+
+        return checkpoint_info
+        # return FoldCheckpointInfoPair(
+        #     fold=fold_with_rel_result, checkpoint_info=checkpoint_info
+        # )
 
 
 def main():

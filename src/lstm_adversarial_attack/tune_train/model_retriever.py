@@ -1,11 +1,9 @@
-from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
 
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs
-import lstm_adversarial_attack.data_structures as ds
 
 
 class ModelAssessmentType(Enum):
@@ -18,10 +16,10 @@ class ModelAssessmentType(Enum):
     SINGLE_FOLD = auto()
 
 
-@dataclass
-class FoldCheckpointPair:
-    fold: int
-    checkpoint: ds.TrainingCheckpoint
+# @dataclass
+# class FoldCheckpointPair:
+#     fold: int
+#     checkpoint: ds.TrainingCheckpoint
 
 
 class ModelRetriever:
@@ -52,7 +50,7 @@ class ModelRetriever:
         eval_metric: cvs.EvalMetric = cvs.EvalMetric.VALIDATION_LOSS,
         optimize_direction: cvs.OptimizeDirection = cvs.OptimizeDirection.MIN,
         rel_fold_result: cvs.RelativeFoldResult = cvs.RelativeFoldResult.MID_RANGE,
-    ) -> cvs.FoldCheckpointInfoPair:
+    ) -> cvs.CheckpointInfo:
         """
         Calls appropriate method for model and checkpoint retrieval (depends
         on type of assessment we are pulling data from)
@@ -72,7 +70,7 @@ class ModelRetriever:
         self,
         eval_metric: cvs.EvalMetric,
         optimization_direction: cvs.OptimizeDirection,
-    ) -> cvs.FoldCheckpointInfoPair:
+    ) -> cvs.CheckpointInfo:
         """
         Gets a ModelPathCheckPointPair corresponding to selected model &
         checkpoint from single fold evaluation.
@@ -84,20 +82,20 @@ class ModelRetriever:
             fold_checkpoint_dir=self.checkpoints_dir, fold_num=0
         )
 
-        checkpoint_info = fold_summarizer.get_extreme_checkpoint_info(
+        return fold_summarizer.get_extreme_checkpoint_info(
             metric=eval_metric, optimize_direction=optimization_direction
         )
 
-        return cvs.FoldCheckpointInfoPair(
-            fold=0, checkpoint_info=checkpoint_info
-        )
+        # return cvs.FoldCheckpointInfoPair(
+        #     fold=0, checkpoint_info=checkpoint_info
+        # )
 
     def get_cv_trained_model(
         self,
         metric: cvs.EvalMetric,
         optimize_direction: cvs.OptimizeDirection,
         rel_fold_result: cvs.RelativeFoldResult,
-    ) -> cvs.FoldCheckpointInfoPair:
+    ) -> cvs.CheckpointInfo:
         """
          Gets a ModelPathCheckPointPair corresponding to selected model &
         checkpoint from cross validation model assessment. Gets best

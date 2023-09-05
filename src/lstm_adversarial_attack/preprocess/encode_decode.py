@@ -15,6 +15,7 @@ import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
+import lstm_adversarial_attack.attack.attack_data_structs as ads
 
 # TODO Consider creating DataWriter base class with encoder abstractmethod and
 #  encode() & export() concrete methods
@@ -278,7 +279,7 @@ class X19LSTMHyperParameterSettingsWriter(StandardStructWriter):
 
     @staticmethod
     def enc_hook(obj: Any) -> Any:
-        pass  #json ready
+        pass  # json ready
 
 
 class AttackTunerDriverSummaryWriter(StandardStructWriter):
@@ -287,7 +288,16 @@ class AttackTunerDriverSummaryWriter(StandardStructWriter):
 
     @staticmethod
     def enc_hook(obj: Any) -> Any:
-        pass #json ready
+        if isinstance(obj, torch.Tensor):
+            return obj.tolist()
+        if isinstance(obj, np.float64):
+            return float(obj)
+        if isinstance(obj, ds.TrainingCheckpoint):
+            return obj.to_storage()
+        else:
+            raise NotImplementedError(
+                f"Encoder does not support objects of type {type(obj)}"
+            )
 
 
 DecodeType = TypeVar("DecodeType", bound=msgspec.Struct)
@@ -377,6 +387,10 @@ class AttackTunerDriverSummaryReader(StandardStructReader):
     def dec_hook(decode_type: Type, obj: Any) -> Any:
         if decode_type is tuple:
             return tuple(obj)
+        if decode_type is torch.Tensor:
+            return torch.tensor(obj)
+        if decode_type is ds.TrainingCheckpoint:
+            return ds.TrainingCheckpointStorage(obj)
         if decode_type is ads.AttackTuningRanges:
             return ads.AttackTuningRanges(**obj)
 
@@ -402,9 +416,7 @@ class X19LSTMHyperParameterSettingsReader(StandardStructReader):
     @staticmethod
     def dec_hook(decode_type: Type, obj: Any) -> Any:
         # all expected types are supported
-        raise NotImplementedError(
-            f"Objects of type {type} are not supported"
-        )
+        raise NotImplementedError(f"Objects of type {type} are not supported")
 
 
 if __name__ == "__main__":
