@@ -1,9 +1,9 @@
 import argparse
 import sys
+from pathlib import Path
 
 import optuna
 import torch
-from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_settings as cfg_settings
@@ -52,5 +52,3 @@ if __name__ == "__main__":
     )
     args_namespace = parser.parse_args()
     completed_study = main(**args_namespace.__dict__)
-
-

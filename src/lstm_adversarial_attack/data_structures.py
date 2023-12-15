@@ -9,6 +9,13 @@ from enum import Enum, auto
 from typing import Iterable, TypeVar, Type, Callable, Any
 
 
+class MsgSpecStructWithDict(msgspec.Struct):
+
+    @property
+    def __dict__(self) -> dict:
+        return {field: getattr(self, field) for field in self.__struct_fields__}
+
+
 @dataclass
 class VariableLengthFeatures:
     features: torch.tensor
@@ -42,7 +49,7 @@ class TrainEpochResult(msgspec.Struct):
 
 
 # @dataclass
-class EvalEpochResult(msgspec.Struct):
+class EvalEpochResult(MsgSpecStructWithDict):
     validation_loss: float
     accuracy: float
     auc: float

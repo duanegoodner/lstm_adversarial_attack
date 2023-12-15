@@ -60,7 +60,7 @@ class CrossValidator:
             #     parent_path=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR
             # )
         self.output_root_dir = output_root_dir
-        self.output_root_dir.mkdir()
+        self.output_root_dir.mkdir(parents=True, exist_ok=True)
         self.save_fold_info = save_fold_info
         self.tuning_study_name = tuning_study_name
 

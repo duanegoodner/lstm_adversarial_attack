@@ -8,22 +8,21 @@ from IPython.display import HTML, display
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
 
-from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
-
 sys.path.append(str(Path(__file__).parent.parent))
 import lstm_adversarial_attack.config_paths as cfp
+import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.resource_io as rio
 from lstm_adversarial_attack.data_structures import VariableLengthFeatures
-import lstm_adversarial_attack.preprocess.encode_decode as edc
+from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
 
 
 class X19MGeneralDataset(Dataset):
     def __init__(
-        self,
-        measurements: list[torch.tensor],
-        in_hosp_mort: list[torch.tensor],
-        max_num_samples: int = None,
-        random_seed: int = None,
+            self,
+            measurements: list[torch.tensor],
+            in_hosp_mort: list[torch.tensor],
+            max_num_samples: int = None,
+            random_seed: int = None,
     ):
         if max_num_samples is not None and max_num_samples < len(in_hosp_mort):
             if random_seed:
@@ -47,13 +46,15 @@ class X19MGeneralDataset(Dataset):
     # TODO change this to import from json files instead of pickles (will use
     #  preprocess.encode_decode.FeatureArraysReader & .ClassLabelsReader
     def from_feature_finalizer_output(
-        cls,
-        measurements_path: Path = cfp.PREPROCESS_OUTPUT_DIR
-        / cfp.PREPROCESS_OUTPUT_FILES["measurement_data_list"],
-        in_hospital_mort_path: Path = cfp.PREPROCESS_OUTPUT_DIR
-        / cfp.PREPROCESS_OUTPUT_FILES["in_hospital_mortality_list"],
-        max_num_samples: int = None,
-        random_seed: int = None,
+            cls,
+            measurements_path: Path = cfp.PREPROCESS_OUTPUT_DIR
+                                      / cfp.PREPROCESS_OUTPUT_FILES[
+                                          "measurement_data_list"],
+            in_hospital_mort_path: Path = cfp.PREPROCESS_OUTPUT_DIR
+                                          / cfp.PREPROCESS_OUTPUT_FILES[
+                                              "in_hospital_mortality_list"],
+            max_num_samples: int = None,
+            random_seed: int = None,
     ):
         measurements_np_list = (
             edc.FeatureArraysReader()

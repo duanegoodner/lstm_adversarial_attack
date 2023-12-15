@@ -1,4 +1,7 @@
+import sys
+from pathlib import Path
 import time
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.preprocess.admission_list_builder as alb
@@ -17,8 +20,8 @@ def main():
         individual_resources_info=[
             rds.FileResourceInfo(
                 key="icustay",
-                # path=cfp.PREFILTER_INPUT_FILES["icustay"],
-                path=cfp.DB_OUTPUT_DIR / "icustay_500.csv",
+                path=cfp.PREFILTER_INPUT_FILES["icustay"],
+                # path=cfp.DB_OUTPUT_DIR / "icustay_500.csv",
                 constructor=rds.IncomingCSVDataFrame
             ),
             rds.FileResourceInfo(
