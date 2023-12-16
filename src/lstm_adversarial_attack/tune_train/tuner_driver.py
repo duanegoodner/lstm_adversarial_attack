@@ -20,24 +20,6 @@ import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
 
-def validate_existing_output(
-    storage: optuna.storages.RDBStorage, study_name: str
-):
-    existing_study_summaries = optuna.study.get_all_study_summaries(
-        storage=storage
-    )
-    existing_study_names = [
-        item.study_name for item in existing_study_summaries
-    ]
-
-    study_in_db = study_name in existing_study_names
-    local_study_output_exists = (
-        cfp.HYPERPARAMETER_OUTPUT_DIR / study_name
-    ).exists()
-
-    assert study_in_db == local_study_output_exists
-
-
 def has_rdb_output(
     study_name: str, storage: optuna.storages.RDBStorage
 ) -> bool:
