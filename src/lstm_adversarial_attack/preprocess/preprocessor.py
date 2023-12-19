@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
+import lstm_adversarial_attack.config_reader as config_reader
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
@@ -15,11 +16,11 @@ import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 class PreprocessModule(ABC):
     def __init__(
-        self,
-        resources: dataclass,
-        output_dir: Path,
-        settings: dataclass,
-        output_constructors: dataclass,
+            self,
+            resources: dataclass,
+            output_dir: Path,
+            settings: dataclass,
+            output_constructors: dataclass,
     ):
         self._resources = resources
         self._output_dir = output_dir
@@ -40,7 +41,7 @@ class PreprocessModule(ABC):
 
     @abstractmethod
     def process(
-        self,
+            self,
     ) -> dict[str, rds.OutgoingPreprocessResource]:
         pass
 
@@ -80,7 +81,7 @@ class ModuleInfo:
     settings: dataclass = None
 
     def build_module(
-        self, resource_pool: dict[str, rds.OutgoingPreprocessResource]
+            self, resource_pool: dict[str, rds.OutgoingPreprocessResource]
     ) -> PreprocessModule:
         module_resources = {}
         for item in self.individual_resources_info:
@@ -98,10 +99,10 @@ class ModuleInfo:
 
 class Preprocessor:
     def __init__(
-        self,
-        modules_info: list[ModuleInfo],
-        save_checkpoints: bool = False,
-        available_resources: dict[str, Any] = None,
+            self,
+            modules_info: list[ModuleInfo],
+            save_checkpoints: bool = False,
+            available_resources: dict[str, Any] = None,
     ):
         self.modules_info = modules_info
         if available_resources is None:
@@ -113,8 +114,8 @@ class Preprocessor:
 
     @staticmethod
     def export_resources(
-        module_output: dict[str, rds.OutgoingPreprocessResource],
-        output_dir: Path,
+            module_output: dict[str, rds.OutgoingPreprocessResource],
+            output_dir: Path,
     ):
         for key, outgoing_resource in module_output.items():
             outgoing_resource.export(
@@ -122,7 +123,7 @@ class Preprocessor:
             )
 
     def run_preprocess_module(
-        self, module: PreprocessModule, save_output: bool
+            self, module: PreprocessModule, save_output: bool
     ):
         process_start = time.time()
         module_output = module.process()
