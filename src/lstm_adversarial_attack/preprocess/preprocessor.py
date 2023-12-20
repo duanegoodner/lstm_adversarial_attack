@@ -70,6 +70,62 @@ class PreprocessModule(ABC):
         )
 
 
+class PreprocessModuleNew(ABC):
+    def __init__(
+            self,
+            resources: dataclass,
+            output_dir: Path,
+            settings: dataclass,
+            output_constructors: dataclass,
+    ):
+        self._resources = resources
+        self._output_dir = output_dir
+        self._settings = settings
+        self._output_constructors = output_constructors
+
+    @property
+    def settings(self) -> dataclass:
+        return self._settings
+
+    @property
+    def output_dir(self) -> Path:
+        return self._output_dir
+
+    @property
+    def output_constructors(self) -> dataclass:
+        return self._output_constructors
+
+    @abstractmethod
+    def process(
+            self,
+    ) -> dict[str, rds.OutgoingPreprocessResource]:
+        pass
+
+    @property
+    def summary(self) -> eds.PreprocessModuleSummary:
+        return eds.PreprocessModuleSummary(
+            output_dir=str(self._output_dir),
+            output_constructors={
+                key: val.__name__
+                for key, val in self._output_constructors.__dict__.items()
+            },
+            resources={
+                key: {
+                    "resource_name": val.__class__.__name__,
+                    "resource_id": str(val.resource_id),
+                }
+                for key, val in self._resources.__dict__.items()
+            },
+            settings=self._settings.__dict__,
+        )
+
+    def save_summary(self):
+        edc.PreprocessModuleSummaryWriter().export(
+            obj=self.summary,
+            path=self._output_dir / f"{self.__class__.__name__}_summary.json",
+        )
+
+
 @dataclass
 class ModuleInfo:
     module_constructor: Callable[..., PreprocessModule]

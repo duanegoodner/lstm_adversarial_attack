@@ -20,6 +20,8 @@ COPY ${COMPONENTS}/create_sudo_user /tmp/create_sudo_user
 RUN /tmp/create_sudo_user/main.sh ${PRIMARY_USER} ${PRIMARY_UID} ${PRIMARY_GID}\
     && sudo rm -rf /tmp/create_sudo_user
 
+RUN echo "CONTAINER_PROJECT_ROOT=${CONTAINER_PROJECT_ROOT}" | tee -a /etc/environment
+
 USER ${PRIMARY_USER}
 ARG BUILD_DIR=${PRIMARY_USER_HOME}/docker_build
 WORKDIR ${BUILD_DIR}

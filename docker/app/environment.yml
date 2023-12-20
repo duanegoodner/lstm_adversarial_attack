@@ -22,6 +22,7 @@ dependencies:
   - scikit-learn
   - seaborn
   - setuptools
+  - toml
   - pip:
     - git+https://github.com/duanegoodner/pygetfacl@0.0.5
     - graphviz
