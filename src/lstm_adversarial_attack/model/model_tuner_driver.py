@@ -1,5 +1,5 @@
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
@@ -24,7 +24,7 @@ import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
 
 def has_rdb_output(
-    study_name: str, storage: optuna.storages.RDBStorage
+        study_name: str, storage: optuna.storages.RDBStorage
 ) -> bool:
     """
     Determines if output exists for study named study_name in storage.
@@ -41,32 +41,26 @@ def has_rdb_output(
     return study_name in existing_study_names
 
 
-# def has_local_output(study_name: str) -> bool:
-#     """
-#     Determines if local output exists for study named study_name
-#     :param study_name: name of study
-#     :return:
-#     """
-#     return (cfp.HYPERPARAMETER_OUTPUT_DIR / study_name).exists()
-
-
 @dataclass
 class ModelTunerDriverSettings:
     num_folds: int
     num_cv_epochs: int
     epochs_per_fold: int
     kfold_random_seed: int
-    cv_mean_metrics_of_interest: list[str]
+    cv_mean_tensorboard_metrics: list[str]
     performance_metric: str
-    optimization_direction_label: str
-    hyperparameter_output_dir: Path
+    optimization_direction: str
+    output_dir: str
 
-    # @classmethod
-    # def from_config(cls, config_path: Path = None):
-    #     config_reader = ConfigReader(config_path=config_path)
-    #     return cls(
-    #         num_folds=config_reader.
-    #     )
+    @classmethod
+    def from_config(cls, config_path: Path = None):
+        config_reader = ConfigReader(config_path=config_path)
+        settings_fields = [field.name for field in
+                           fields(ModelTunerDriverSettings)]
+        constructor_kwargs = {field_name: config_reader.get_config_value(
+            f"model.tuner_driver.{field_name}") for field_name in
+                              settings_fields}
+        return cls(**constructor_kwargs)
 
 
 class ModelTunerDriver:
@@ -75,30 +69,30 @@ class ModelTunerDriver:
     """
 
     def __init__(
-        self,
-        device: torch.device,
-        # settings: ModelTunerDriverSettings,
-        db_env_var_name: str = "MODEL_TUNING_DB_NAME",
-        study_name: str = None,
-        collate_fn_name: str = "x19m_collate_fn",
-        tuning_ranges: tuh.X19MLSTMTuningRanges = None,
-        num_folds: int = cfg_set.TUNER_NUM_FOLDS,
-        num_cv_epochs: int = cfg_set.TUNER_NUM_CV_EPOCHS,
-        epochs_per_fold: int = cfg_set.TUNER_EPOCHS_PER_FOLD,
-        fold_class_name: str = "StratifiedKFold",
-        kfold_random_seed: int = cfg_set.TUNER_KFOLD_RANDOM_SEED,
-        cv_mean_metrics_of_interest: tuple[
-            str, ...
-        ] = cfg_set.TUNER_CV_MEAN_TENSORBOARD_METRICS,
-        performance_metric: str = cfg_set.TUNER_PERFORMANCE_METRIC,
-        optimization_direction_label: str = cfg_set.TUNER_OPTIMIZATION_DIRECTION,
-        pruner_name: str = "MedianPruner",
-        pruner_kwargs: dict[str, Any] = None,
-        sampler_name: str = "TPESampler",
-        sampler_kwargs: dict[str, Any] = None,
+            self,
+            device: torch.device,
+            settings: ModelTunerDriverSettings,
+            db_env_var_name: str = "MODEL_TUNING_DB_NAME",
+            study_name: str = None,
+            collate_fn_name: str = "x19m_collate_fn",
+            tuning_ranges: tuh.X19MLSTMTuningRanges = None,
+            # num_folds: int = cfg_set.TUNER_NUM_FOLDS,
+            # num_cv_epochs: int = cfg_set.TUNER_NUM_CV_EPOCHS,
+            # epochs_per_fold: int = cfg_set.TUNER_EPOCHS_PER_FOLD,
+            fold_class_name: str = "StratifiedKFold",
+            # kfold_random_seed: int = cfg_set.TUNER_KFOLD_RANDOM_SEED,
+            # cv_mean_metrics_of_interest: tuple[
+            #     str, ...
+            # ] = cfg_set.TUNER_CV_MEAN_TENSORBOARD_METRICS,
+            # performance_metric: str = cfg_set.TUNER_PERFORMANCE_METRIC,
+            # optimization_direction_label: str = cfg_set.TUNER_OPTIMIZATION_DIRECTION,
+            pruner_name: str = "MedianPruner",
+            pruner_kwargs: dict[str, Any] = None,
+            sampler_name: str = "TPESampler",
+            sampler_kwargs: dict[str, Any] = None,
     ):
         self.device = device
-        # self.settings = settings
+        self.settings = settings
         self.db_env_var_name = db_env_var_name
         self.collate_fn = getattr(xmd, collate_fn_name)
         if study_name is None:
@@ -113,13 +107,13 @@ class ModelTunerDriver:
         if tuning_ranges is None:
             tuning_ranges = tuh.X19MLSTMTuningRanges()
         self.tuning_ranges = tuning_ranges
-        self.num_folds = num_folds
-        self.num_cv_epochs = num_cv_epochs
-        self.epochs_per_fold = epochs_per_fold
+        self.num_folds = self.settings.num_folds
+        self.num_cv_epochs = self.settings.num_cv_epochs
+        self.epochs_per_fold = self.settings.epochs_per_fold
         self.fold_class = getattr(sklearn.model_selection, fold_class_name)
-        self.kfold_random_seed = kfold_random_seed
-        self.performance_metric = performance_metric
-        self.optimization_direction_label = optimization_direction_label
+        self.kfold_random_seed = self.settings.kfold_random_seed
+        self.performance_metric = self.settings.performance_metric
+        self.optimization_direction_label = self.settings.optimization_direction
         self.optimization_direction = self.get_optimization_direction()
         if pruner_kwargs is None:
             pruner_kwargs = {
@@ -128,7 +122,7 @@ class ModelTunerDriver:
             }
         self.pruner_kwargs = pruner_kwargs
         self.pruner = self.get_pruner(pruner_name=pruner_name)
-        self.cv_mean_metrics_of_interest = cv_mean_metrics_of_interest
+        self.cv_mean_metrics_of_interest = self.settings.cv_mean_tensorboard_metrics
         if sampler_kwargs is None:
             sampler_kwargs = {}
         self.sampler_kwargs = sampler_kwargs
@@ -145,8 +139,8 @@ class ModelTunerDriver:
 
     def validate_optimization_direction_label(self):
         assert (
-            self.optimization_direction_label == "minimize"
-            or self.optimization_direction_label == "maximize"
+                self.optimization_direction_label == "minimize"
+                or self.optimization_direction_label == "maximize"
         )
 
     def get_optimization_direction(self) -> optuna.study.StudyDirection:

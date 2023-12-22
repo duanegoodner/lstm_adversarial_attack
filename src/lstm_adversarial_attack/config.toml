@@ -2,7 +2,7 @@
 [paths.db]
 mimiciii_db_dotenv = "src/lstm_adversarial_attack/query_db/mimiciii_database.env"
 query_output_dir = "data/query_db"
-queries =  [
+queries = [
     "src/lstm_adversarial_attack/query_db/mimiciii_queries/icustay_detail.sql",
     "src/lstm_adversarial_attack/query_db/mimiciii_queries/pivoted_bg.sql",
     "src/lstm_adversarial_attack/query_db/mimiciii_queries/pivoted_lab.sql",
@@ -51,4 +51,19 @@ observation_window_start = "intime"
 [preprocess.prefilter]
 icustay_input = "tst_icustay_input.csv"
 
-[]
+[model.tuner_driver]
+num_folds = 3
+num_cv_epochs = 2
+epochs_per_fold = 2
+kfold_random_seed = 1234
+cv_mean_tensorboard_metrics = [
+    "accuracy",
+    "auc",
+    "f1",
+    "precision",
+    "recall",
+    "validation_loss"]
+performance_metric = "validation_loss"
+optimization_direction = "minimize"
+output_dir = "data/model/tuning"
+

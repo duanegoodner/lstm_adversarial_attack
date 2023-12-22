@@ -32,6 +32,7 @@ def main(num_trials: int = None) -> optuna.Study:
 
     tuner_driver = td.ModelTunerDriver(
         device=cur_device,
+        settings=td.ModelTunerDriverSettings.from_config()
     )
 
     study = tuner_driver(num_trials=num_trials)
