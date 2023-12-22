@@ -17,7 +17,7 @@ from torch.utils.tensorboard import SummaryWriter
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.data_structures as ds
-import lstm_adversarial_attack.resource_io as rio
+# import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.simple_logger as slg
 import lstm_adversarial_attack.tune_train.standard_model_trainer as smt
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
@@ -106,7 +106,7 @@ class HyperParameterTuner:
         self.output_dir = output_dir
         self.output_dirs = TuningOutputDirs(root_dir=self.output_dir)
         self.tensorboard_output_dir = self.output_dir / "tensorboard"
-        self.exporter = rio.ResourceExporter()
+        # self.exporter = rio.ResourceExporter()
         self.trial_prefix = trial_prefix
         self.study = study
         self.cv_means_log_writer = cv_means_log_writer
