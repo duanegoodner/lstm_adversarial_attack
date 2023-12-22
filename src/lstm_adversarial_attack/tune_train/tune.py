@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.tune_train.tuner_driver as td
+import lstm_adversarial_attack.tune_train.model_tuner_driver as td
 
 
 def main(continue_default_tuning: bool, custom_study_path: str):
@@ -29,7 +29,7 @@ def main(continue_default_tuning: bool, custom_study_path: str):
     else:
         continue_tuning_dir = None
 
-    tuner_driver = td.TunerDriver(
+    tuner_driver = td.ModelTunerDriver(
         device=cur_device,
         continue_tuning_dir=continue_tuning_dir,
         # output_dir=cfg_paths.ONGOING_TUNING_STUDY_DIR,

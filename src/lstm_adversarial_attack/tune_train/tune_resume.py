@@ -10,7 +10,7 @@ import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.preprocess.encode_decode as edc
-import lstm_adversarial_attack.tune_train.tuner_driver as td
+import lstm_adversarial_attack.tune_train.model_tuner_driver as td
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 
 
@@ -51,7 +51,7 @@ def main(study_name: str = None, num_trials: int = None) -> optuna.Study:
         **partial_constructor_kwargs,
     }
 
-    tuner_driver = td.TunerDriver(**constructor_kwargs)
+    tuner_driver = td.ModelTunerDriver(**constructor_kwargs)
 
     study = tuner_driver(num_trials=num_trials)
 
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=(
             "Runs additional hyperparameter tuning trials using "
-            "previously saved TunerDriver and optuna.Study as starting"
+            "previously saved ModelTunerDriver and optuna.Study as starting"
             "points. New trial results are added to the existing Study."
         )
     )

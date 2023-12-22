@@ -15,7 +15,7 @@ import lstm_adversarial_attack.config_settings as cfg_set
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.resource_io as rio
-import lstm_adversarial_attack.tune_train.hyperparameter_tuner as htu
+import lstm_adversarial_attack.tune_train.model_tuner as htu
 import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
@@ -49,7 +49,7 @@ def has_rdb_output(
 
 
 @dataclass
-class TunerDriverSettings:
+class ModelTunerDriverSettings:
     num_folds: int
     num_cv_epochs: int
     epochs_per_fold: int
@@ -60,7 +60,7 @@ class TunerDriverSettings:
     hyperparameter_output_dir: Path
 
 
-class TunerDriver:
+class ModelTunerDriver:
     """
     Instantiates and runs a HyperparameterTuner
     """

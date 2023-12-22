@@ -7,7 +7,7 @@ import torch
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_settings as cfg_settings
-import lstm_adversarial_attack.tune_train.tuner_driver as td
+import lstm_adversarial_attack.tune_train.model_tuner_driver as td
 
 
 def main(num_trials: int = None) -> optuna.Study:
@@ -30,7 +30,7 @@ def main(num_trials: int = None) -> optuna.Study:
     else:
         cur_device = torch.device("cpu")
 
-    tuner_driver = td.TunerDriver(
+    tuner_driver = td.ModelTunerDriver(
         device=cur_device,
     )
 
