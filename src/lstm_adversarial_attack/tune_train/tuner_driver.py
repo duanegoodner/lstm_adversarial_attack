@@ -1,4 +1,5 @@
 import sys
+from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
@@ -38,13 +39,25 @@ def has_rdb_output(
     return study_name in existing_study_names
 
 
-def has_local_output(study_name: str) -> bool:
-    """
-    Determines if local output exists for study named study_name
-    :param study_name: name of study
-    :return:
-    """
-    return (cfp.HYPERPARAMETER_OUTPUT_DIR / study_name).exists()
+# def has_local_output(study_name: str) -> bool:
+#     """
+#     Determines if local output exists for study named study_name
+#     :param study_name: name of study
+#     :return:
+#     """
+#     return (cfp.HYPERPARAMETER_OUTPUT_DIR / study_name).exists()
+
+
+@dataclass
+class TunerDriverSettings:
+    num_folds: int
+    num_cv_epochs: int
+    epochs_per_fold: int
+    kfold_random_seed: int
+    cv_mean_metrics_of_interest: list[str]
+    performance_metric: str
+    optimization_direction_label: str
+    hyperparameter_output_dir: Path
 
 
 class TunerDriver:

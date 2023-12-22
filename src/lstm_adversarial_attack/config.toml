@@ -11,10 +11,6 @@ queries =  [
 
 
 
-
-
-
-
 #lstm_adversarial_attack_package = $src"/lstm_adversarial_attack"
 
 [preprocess]
