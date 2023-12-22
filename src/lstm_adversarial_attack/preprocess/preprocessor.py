@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_reader as config_reader
+import lstm_adversarial_attack.config as config_reader
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds

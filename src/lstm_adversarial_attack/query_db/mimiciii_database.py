@@ -1,10 +1,12 @@
 import csv
 import os
-import psycopg2
 import sys
 import time
-from dotenv import load_dotenv
 from pathlib import Path
+
+import psycopg2
+from dotenv import load_dotenv
+
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 
@@ -12,6 +14,7 @@ class MimiciiiDatabaseAccess:
     """
     Connects to and runs queries on MIMIC-III Postgres database
     """
+
     def __init__(self, dotenv_path: Path, output_dir: Path):
         """
         :param dotenv_path: path .env file w/ values needed for connection
@@ -21,7 +24,6 @@ class MimiciiiDatabaseAccess:
         self._connection = None
         self._dotenv_path = dotenv_path
         self._output_dir = output_dir
-
 
     def connect(self):
         """
@@ -35,7 +37,8 @@ class MimiciiiDatabaseAccess:
             password=os.getenv("MIMICIII_DATABASE_PASSWORD"),
         )
 
-    def _execute_query(self, sql_file_path: Path) -> tuple[list[str], list[tuple]]:
+    def _execute_query(self, sql_file_path: Path) -> tuple[
+        list[str], list[tuple]]:
         """
         Executes sql query.
         :param sql_file_path:
@@ -56,7 +59,7 @@ class MimiciiiDatabaseAccess:
         return headers, result
 
     def _write_query_to_csv(
-        self, query_result: tuple[list, list], query_gen_name: str
+            self, query_result: tuple[list, list], query_gen_name: str
     ):
         """
         Saves result of query to .csv file.
@@ -78,8 +81,7 @@ class MimiciiiDatabaseAccess:
 
         # give file creator and work group full access to csv
         # (for work in app_dev container when connecting through Pycharm)
-        output_path.chmod(0o775)
-
+        # output_path.chmod(0o775)
 
     def _run_query_and_save_to_csv(self, sql_file_path: Path):
         """
@@ -95,7 +97,7 @@ class MimiciiiDatabaseAccess:
         )
 
     def run_sql_queries(
-        self, sql_query_paths: list[Path]
+            self, sql_query_paths: list[Path]
     ) -> list[Path]:
         """
         Runs and saves results of queries in a list of .sql filepaths.
@@ -104,7 +106,7 @@ class MimiciiiDatabaseAccess:
         """
         result_paths = []
         for query_idx in range(len(sql_query_paths)):
-        # for query_path in sql_query_paths:
+            # for query_path in sql_query_paths:
             print(f"Query {query_idx + 1} of {len(sql_query_paths)}")
             query_path = sql_query_paths[query_idx]
             self._run_query_and_save_to_csv(sql_file_path=query_path)
@@ -118,5 +120,3 @@ class MimiciiiDatabaseAccess:
         """
         if self._connection is not None:
             self._connection.close()
-
-
