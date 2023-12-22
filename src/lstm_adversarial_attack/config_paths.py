@@ -84,7 +84,7 @@ PREPROCESS_OUTPUT_FILES = {
 }
 
 
-TUNE_TRAIN_OUTPUT_DIR = DATA_DIR / "tune_train"
+TUNE_TRAIN_OUTPUT_DIR = DATA_DIR / "model"
 
 # ##### Model Hyperparameter Tuning
 HYPERPARAMETER_OUTPUT_DIR = TUNE_TRAIN_OUTPUT_DIR / "hyperparameter_tuning"

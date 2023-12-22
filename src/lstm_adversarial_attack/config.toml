@@ -51,11 +51,4 @@ observation_window_start = "intime"
 [preprocess.prefilter]
 icustay_input = "tst_icustay_input.csv"
 
-[test]
-top_level_item = "a"
-
-[test.second_tier]
-second_level_item = "b"
-
-[test.second_tier.third_tier_a]
-third_level_item = "c"
+[]

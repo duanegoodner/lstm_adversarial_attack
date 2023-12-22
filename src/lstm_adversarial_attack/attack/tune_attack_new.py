@@ -10,7 +10,7 @@ import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.path_searches as ps
-import lstm_adversarial_attack.tune_train.model_retriever as tmr
+import lstm_adversarial_attack.model.model_retriever as tmr
 
 
 def start_new_tuning(

@@ -92,7 +92,7 @@ if __name__ == "__main__":
             "Runs hyperparameter tuning on the attack algorithm. "
             "If no args passed, will start a new Optuna study "
             "using the model data from the most recent data saved in "
-            "data/tune_train/cross_validation (uses fold with "
+            "data/model/cross_validation (uses fold with "
             "median or near median best performance)"
         )
     )

@@ -6,7 +6,7 @@ class CustomUnpickler(dill.Unpickler):
     def find_class(self, module, name):
         renamed_module = module
         if module == "lstm_adversarial_attack.lstm_model_stc":
-            renamed_module = "lstm_adversarial_attack.tune_train.lstm_model_stc"
+            renamed_module = "lstm_adversarial_attack.model.lstm_model_stc"
 
         return super(CustomUnpickler, self).find_class(renamed_module, name)
 

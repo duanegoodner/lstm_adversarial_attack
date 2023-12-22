@@ -14,7 +14,7 @@ import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.data_structures as ds
-import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
+import lstm_adversarial_attack.model.tuner_helpers as tuh
 
 class AttackTunerObjectives:
     """

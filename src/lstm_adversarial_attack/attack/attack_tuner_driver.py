@@ -16,10 +16,10 @@ import lstm_adversarial_attack.data_provenance as dpr
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
-import lstm_adversarial_attack.tune_train.model_retriever as tmr
-import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
+import lstm_adversarial_attack.model.model_retriever as tmr
+import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
-import lstm_adversarial_attack.tune_train.cross_validation_summarizer as cvs
+import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
 
 
 class AttackTunerDriver(dpr.HasDataProvenance):

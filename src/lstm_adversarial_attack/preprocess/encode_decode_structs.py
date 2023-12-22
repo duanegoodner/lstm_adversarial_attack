@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 import lstm_adversarial_attack.attack.attack_data_structs as ads
-import lstm_adversarial_attack.tune_train.tuner_helpers as tuh
+import lstm_adversarial_attack.model.tuner_helpers as tuh
 
 
 class FullAdmissionData(msgspec.Struct):
