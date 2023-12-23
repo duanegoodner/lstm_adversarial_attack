@@ -71,7 +71,7 @@ class HyperParameterTuner:
             epochs_per_fold: int,
             fold_class: Callable,
             kfold_random_seed: int,
-            cv_mean_metrics_of_interest: tuple[str],
+            cv_mean_metrics_of_interest: list[str],
             performance_metric: str,
             optimization_direction: optuna.study.StudyDirection,
             pruner: BasePruner,

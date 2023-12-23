@@ -1,0 +1,9 @@
+timestamp,epoch,accuracy,auc,f1,precision,recall,validation_loss
+2023-12-22 13:22:52.150230,2,accuracy,auc,f1,precision,recall,validation_loss
+2023-12-22 13:32:02.834756,2,accuracy,auc,f1,precision,recall,validation_loss
+2023-12-22 17:15:10.924402,2,accuracy,auc,f1,precision,recall,validation_loss
+2023-12-22 17:15:23.624655,4,accuracy,auc,f1,precision,recall,validation_loss
+2023-12-22 17:21:22.460684,2,accuracy,auc,f1,precision,recall,validation_loss
+2023-12-22 17:23:46.887121,2,accuracy,auc,f1,precision,recall,validation_loss
+2023-12-22 17:28:58.314831,2,accuracy,auc,f1,precision,recall,validation_loss
+2023-12-22 17:29:11.061664,4,accuracy,auc,f1,precision,recall,validation_loss

@@ -15,13 +15,13 @@ class ConfigReader:
     def project_root(self) -> Path:
         return Path(__file__).parent.parent.parent
 
-    def _to_absolute_path(self, path_rel_project_root: str | Path) -> Path:
+    def _to_absolute_path(self, path_rel_project_root: str | Path) -> str:
         relative_path = Path(path_rel_project_root)
         if relative_path.is_absolute():
             raise TypeError(
                 f"{path_rel_project_root} is an absolute path. "
                 f"Must be a relative path.")
-        return self.project_root / relative_path
+        return str(self.project_root / relative_path)
 
     def get_config_value(self, config_key: str) -> Any:
         with self._config_path.open(mode="r") as config_file:
@@ -33,7 +33,7 @@ class ConfigReader:
 
         return result
 
-    def read_path(self, config_key: str) -> Path | list[Path]:
+    def read_path(self, config_key: str) -> str | list[str]:
         path_rel_project_root = self.get_config_value(config_key=config_key)
         value_type = type(path_rel_project_root)
         assert value_type == str or value_type == list

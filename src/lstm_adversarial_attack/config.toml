@@ -64,6 +64,17 @@ cv_mean_tensorboard_metrics = [
     "recall",
     "validation_loss"]
 performance_metric = "validation_loss"
-optimization_direction = "minimize"
-output_dir = "data/model/tuning"
+optimization_direction_label = "minimize"
+tuning_output_dir = "data/model/tuning"
+pruner_name = "MedianPruner"
+sampler_name = "TPESampler"
+db_env_var_name = "MODEL_TUNING_DB_NAME"
+fold_class_name = "StratifiedKFold"
+collate_fn_name = "x19m_collate_fn"
+
+
+[model.tuner_driver.pruner_kwargs]
+n_startup_trials = 5
+n_warmup_steps = 3
+[model.tuner_driver.sampler_kwargs]
 

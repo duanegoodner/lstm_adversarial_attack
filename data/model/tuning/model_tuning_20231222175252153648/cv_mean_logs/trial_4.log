@@ -1,0 +1,3 @@
+timestamp,epoch,accuracy,auc,f1,precision,recall,validation_loss
+2023-12-22 17:54:21.250699,2,accuracy,auc,f1,precision,recall,validation_loss
+2023-12-22 17:54:29.652319,4,accuracy,auc,f1,precision,recall,validation_loss

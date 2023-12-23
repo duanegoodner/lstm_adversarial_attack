@@ -56,6 +56,8 @@ class PreprocessModuleSummary(msgspec.Struct):
 
 
 class TunerDriverSummary(msgspec.Struct):
+    settings: dict[str, Any]
+    paths: dict[str, str]
     collate_fn_name: str
     db_env_var_name: str
     study_name: str
