@@ -3,7 +3,7 @@ from dataclasses import dataclass, fields
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import optuna
 import sklearn.model_selection
@@ -55,6 +55,7 @@ class ModelTunerDriverSettings:
     db_env_var_name: str
     fold_class_name: str
     collate_fn_name: str
+    tuning_ranges: dict[str, Any]
 
     @classmethod
     def from_config(cls, config_path: Path = None):
@@ -93,31 +94,18 @@ class ModelTunerDriver:
             settings: ModelTunerDriverSettings,
             paths: ModelTunerDriverPaths,
             study_name: str = None,
-            tuning_ranges: tuh.X19MLSTMTuningRanges = None,
     ):
         self.device = device
         self.settings = settings
         self.paths = paths
-        self.collate_fn = getattr(xmd, self.settings.collate_fn_name)
         if study_name is None:
             study_name = self.build_study_name()
         self.study_name = study_name
         self.has_pre_existing_rdb_output = has_rdb_output(
             study_name=self.study_name, storage=self.db.storage
         )
-        self.output_dir = Path(self.paths.tuning_output_dir) / self.study_name
         self.has_pre_existing_local_output = self.output_dir.exists()
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        if tuning_ranges is None:
-            tuning_ranges = tuh.X19MLSTMTuningRanges()
-        self.tuning_ranges = tuning_ranges
-        self.fold_class = getattr(sklearn.model_selection,
-                                  self.settings.fold_class_name)
-        self.optimization_direction = self.get_optimization_direction()
-        self.pruner = self.get_pruner(pruner_name=self.settings.pruner_name)
-        self.hyperparameter_sampler = self.get_sampler(
-            sampler_name=self.settings.sampler_name
-        )
 
     @staticmethod
     def build_study_name() -> str:
@@ -126,13 +114,30 @@ class ModelTunerDriver:
         )
         return f"model_tuning_{timestamp}"
 
+    @property
+    def collate_fn(self) -> Callable:
+        return getattr(xmd, self.settings.collate_fn_name)
+
+    @property
+    def output_dir(self) -> Path:
+        return Path(self.paths.tuning_output_dir) / self.study_name
+
+    @property
+    def tuning_ranges(self) -> tuh.X19MLSTMTuningRanges:
+        return tuh.X19MLSTMTuningRanges(**self.settings.tuning_ranges)
+
+    @property
+    def fold_class(self) -> sklearn.model_selection.BaseCrossValidator:
+        return getattr(sklearn.model_selection, self.settings.fold_class_name)
+
     def validate_optimization_direction_label(self):
         assert (
                 self.settings.optimization_direction_label == "minimize"
                 or self.settings.optimization_direction_label == "maximize"
         )
 
-    def get_optimization_direction(self) -> optuna.study.StudyDirection:
+    @property
+    def optimization_direction(self) -> optuna.study.StudyDirection:
         self.validate_optimization_direction_label()
         return (
             optuna.study.StudyDirection.MINIMIZE
@@ -140,12 +145,14 @@ class ModelTunerDriver:
             else optuna.study.StudyDirection.MAXIMIZE
         )
 
-    def get_pruner(self, pruner_name: str) -> optuna.pruners.BasePruner:
-        return getattr(optuna.pruners, pruner_name)(
+    @property
+    def pruner(self) -> optuna.pruners.BasePruner:
+        return getattr(optuna.pruners, self.settings.pruner_name)(
             **self.settings.pruner_kwargs)
 
-    def get_sampler(self, sampler_name: str) -> optuna.samplers.BaseSampler:
-        return getattr(optuna.samplers, sampler_name)(
+    @property
+    def hyperparameter_sampler(self) -> optuna.samplers.BaseSampler:
+        return getattr(optuna.samplers, self.settings.sampler_name)(
             **self.settings.sampler_kwargs)
 
     @cached_property
@@ -160,25 +167,12 @@ class ModelTunerDriver:
         return eds.TunerDriverSummary(
             settings=self.settings.__dict__,
             paths=self.paths.__dict__,
-            collate_fn_name=self.collate_fn.__name__,
-            db_env_var_name=self.settings.db_env_var_name,
             study_name=self.study_name,
             # TODO should continuation check be for local, RDB, or both?
             is_continuation=self.has_pre_existing_local_output,
-            cv_mean_metrics_of_interest=self.settings.cv_mean_tensorboard_metrics,
             device_name=str(self.device),
-            epochs_per_fold=self.settings.epochs_per_fold,
-            fold_class_name=self.fold_class.__name__,
             output_dir=str(self.output_dir),
-            sampler_name=self.hyperparameter_sampler.__class__.__name__,
-            sampler_kwargs=self.settings.sampler_kwargs,
-            kfold_random_seed=self.settings.kfold_random_seed,
-            num_cv_epochs=self.settings.num_cv_epochs,
-            num_folds=self.settings.num_folds,
-            optimization_direction_label=self.settings.optimization_direction_label,
-            performance_metric=self.settings.performance_metric,
-            pruner_name=self.pruner.__class__.__name__,
-            tuning_ranges=self.tuning_ranges,
+            # tuning_ranges=self.tuning_ranges,
         )
 
     def run(self, num_trials: int) -> optuna.Study:

@@ -6,6 +6,7 @@ from pathlib import Path
 import torch
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
+import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_set
 import lstm_adversarial_attack.data_structures as ds
@@ -33,8 +34,11 @@ def main(
         **hyperparams_dict
     )
 
+    config_reader = config.ConfigReader()
+
     if num_folds is None:
         num_folds = cfg_set.CV_DRIVER_NUM_FOLDS
+        num_folds = config_reader.get_config_value()
     if epochs_per_fold is None:
         epochs_per_fold = cfg_set.CV_DRIVER_EPOCHS_PER_FOLD
     assert num_folds > 0

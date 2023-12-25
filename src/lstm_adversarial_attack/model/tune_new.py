@@ -6,10 +6,11 @@ import optuna
 import torch
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_settings as cfg_settings
+import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.model.model_tuner_driver as td
 
 
+# TODO add ability to pass path to alternate .toml config file
 def main(num_trials: int = None) -> optuna.Study:
     """
     Runs a new optuna study consisting of multiple trials to find
@@ -23,7 +24,9 @@ def main(num_trials: int = None) -> optuna.Study:
     :return: an optuna.Study object with results of completed trials.
     """
     if num_trials is None:
-        num_trials = cfg_settings.TUNER_NUM_TRIALS
+        config_reader = config.ConfigReader()
+        num_trials = config_reader.get_config_value(
+            "model.tuner_driver.num_trials")
 
     if torch.cuda.is_available():
         cur_device = torch.device("cuda:0")

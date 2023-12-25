@@ -5,12 +5,11 @@ from pathlib import Path
 import optuna
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.config_settings as cfg_settings
+import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.gpu_helpers as gh
+import lstm_adversarial_attack.model.model_tuner_driver as td
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.preprocess.encode_decode as edc
-import lstm_adversarial_attack.model.model_tuner_driver as td
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 
 
@@ -26,9 +25,14 @@ def main(study_name: str = None, num_trials: int = None) -> optuna.Study:
     if study_name is None:
         study_name = tsd.MODEL_TUNING_DB.get_latest_study().study_name
 
-    study_dir = cfg_paths.HYPERPARAMETER_OUTPUT_DIR / study_name
+    config_reader = config.ConfigReader()
+    tuning_output_dir = config_reader.read_path(
+        "model.tuner_driver.tuning_output_dir")
+
+    study_dir = Path(tuning_output_dir) / study_name
     if num_trials is None:
-        num_trials = cfg_settings.TUNER_NUM_TRIALS
+        num_trials = config_reader.get_config_value(
+            "model.tuner_driver.num_trials")
     cur_device = gh.get_device()
 
     tuner_driver_summary_path = ps.latest_modified_file_with_name_condition(
@@ -40,18 +44,12 @@ def main(study_name: str = None, num_trials: int = None) -> optuna.Study:
         path=tuner_driver_summary_path
     )
 
-    partial_constructor_kwargs = {
-        key: val
-        for key, val in tuner_driver_summary.to_dict().items()
-        if key not in ["is_continuation", "device_name", "output_dir"]
-    }
-
-    constructor_kwargs = {
-        **{"device": cur_device},
-        **partial_constructor_kwargs,
-    }
-
-    tuner_driver = td.ModelTunerDriver(**constructor_kwargs)
+    tuner_driver = td.ModelTunerDriver(
+        device=cur_device,
+        settings=td.ModelTunerDriverSettings(**tuner_driver_summary.settings),
+        paths=td.ModelTunerDriverPaths(**tuner_driver_summary.paths),
+        study_name=study_name
+    )
 
     study = tuner_driver(num_trials=num_trials)
 

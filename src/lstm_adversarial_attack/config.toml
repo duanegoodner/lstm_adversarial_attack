@@ -9,10 +9,6 @@ queries = [
     "src/lstm_adversarial_attack/query_db/mimiciii_queries/pivoted_vital.sql",
 ]
 
-
-
-#lstm_adversarial_attack_package = $src"/lstm_adversarial_attack"
-
 [preprocess]
 min_age = 18
 min_los_hospital = 1
@@ -52,6 +48,7 @@ observation_window_start = "intime"
 icustay_input = "tst_icustay_input.csv"
 
 [model.tuner_driver]
+num_trials = 30
 num_folds = 3
 num_cv_epochs = 2
 epochs_per_fold = 2
@@ -72,9 +69,18 @@ db_env_var_name = "MODEL_TUNING_DB_NAME"
 fold_class_name = "StratifiedKFold"
 collate_fn_name = "x19m_collate_fn"
 
+[model.tuner_driver.tuning_ranges]
+log_lstm_hidden_size = [5, 7]
+lstm_act_options = ["ReLU", "Tanh"]
+dropout = [0.0, 0.5]
+log_fc_hidden_size = [4, 8]
+optimizer_options = ["Adam", "RMSprop", "SGD"]
+learning_rate = [0.00001, 0.1]
+log_batch_size = [5, 8]
 
 [model.tuner_driver.pruner_kwargs]
 n_startup_trials = 5
 n_warmup_steps = 3
+
 [model.tuner_driver.sampler_kwargs]
 
