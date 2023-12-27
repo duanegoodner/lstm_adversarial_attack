@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 import time
+
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 import lstm_adversarial_attack.config_paths as cfp
@@ -119,6 +120,7 @@ def main():
         save_checkpoints=True
     )
     return preprocessor.run_all_modules()
+
 
 if __name__ == "__main__":
     start = time.time()

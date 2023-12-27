@@ -43,8 +43,13 @@
     require_exact_num_hours = false
     observation_window_start = "intime"
 
-[preprocess.prefilter]
-    icustay_input = "tst_icustay_input.csv"
+[preprocess.prefilter.input_files]
+icustay = "data/query_db/icustay_detail.csv"
+bg = "data/query_db/pivoted_bg.csv"
+lab = "data/query_db/pivoted_lab.csv"
+vital = "data/query_db/pivoted_vital.csv"
+
+
 
 [model.tuner_driver]
     num_trials = 30

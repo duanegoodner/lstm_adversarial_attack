@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any, Callable
 
@@ -14,63 +14,18 @@ import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
+@dataclass
+class PreprocessModuleSettings(ABC):
+    config: config_reader.ConfigReader = config_reader.ConfigReader()
+
+    def __post_init__(self):
+        for field in fields(self):
+            if getattr(self, field.name) is None:
+                attr = self.config.get_config_value("preprocess." + field.name)
+                setattr(self, field.name, attr)
+
+
 class PreprocessModule(ABC):
-    def __init__(
-            self,
-            resources: dataclass,
-            output_dir: Path,
-            settings: dataclass,
-            output_constructors: dataclass,
-    ):
-        self._resources = resources
-        self._output_dir = output_dir
-        self._settings = settings
-        self._output_constructors = output_constructors
-
-    @property
-    def settings(self) -> dataclass:
-        return self._settings
-
-    @property
-    def output_dir(self) -> Path:
-        return self._output_dir
-
-    @property
-    def output_constructors(self) -> dataclass:
-        return self._output_constructors
-
-    @abstractmethod
-    def process(
-            self,
-    ) -> dict[str, rds.OutgoingPreprocessResource]:
-        pass
-
-    @property
-    def summary(self) -> eds.PreprocessModuleSummary:
-        return eds.PreprocessModuleSummary(
-            output_dir=str(self._output_dir),
-            output_constructors={
-                key: val.__name__
-                for key, val in self._output_constructors.__dict__.items()
-            },
-            resources={
-                key: {
-                    "resource_name": val.__class__.__name__,
-                    "resource_id": str(val.resource_id),
-                }
-                for key, val in self._resources.__dict__.items()
-            },
-            settings=self._settings.__dict__,
-        )
-
-    def save_summary(self):
-        edc.PreprocessModuleSummaryWriter().export(
-            obj=self.summary,
-            path=self._output_dir / f"{self.__class__.__name__}_summary.json",
-        )
-
-
-class PreprocessModuleNew(ABC):
     def __init__(
             self,
             resources: dataclass,

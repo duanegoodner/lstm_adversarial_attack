@@ -5,29 +5,21 @@ from pathlib import Path
 import pandas as pd
 
 import lstm_adversarial_attack.config_paths as cfp
-import lstm_adversarial_attack.config_settings as cfg_set
 import lstm_adversarial_attack.preprocess.preprocessor as pre
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 @dataclass
-class PrefilterSettings:
+class PrefilterSettings(pre.PreprocessModuleSettings):
     """
     Container for objects imported by Prefilter
     """
-
-    min_age: int = 18
-    min_los_hospital: int = 1
-    min_los_icu: int = 1
-    bg_data_cols: list[str] = field(
-        default_factory=lambda: cfg_set.PREPROCESS_BG_DATA_COLS
-    )
-    lab_data_cols: list[str] = field(
-        default_factory=lambda: cfg_set.PREPROCESS_LAB_DATA_COLS
-    )
-    vital_data_cols: list[str] = field(
-        default_factory=lambda: cfg_set.PREPROCESS_VITAL_DATA_COLS
-    )
+    min_age: int = None
+    min_los_hospital: int = None
+    min_los_icu: int = None
+    bg_data_cols: list[str] = None
+    lab_data_cols: list[str] = None
+    vital_data_cols: list[str] = None
 
 
 class Prefilter(pre.PreprocessModule):
@@ -38,12 +30,13 @@ class Prefilter(pre.PreprocessModule):
         settings: PrefilterSettings = None,
         output_constructors: rds.PrefilterOutputConstructors = None,
     ):
+        if settings is None:
+            settings = PrefilterSettings()
         if resources is None:
             resources = rds.PrefilterResources()
         if output_dir is None:
             output_dir = cfp.PREFILTER_OUTPUT
-        if settings is None:
-            settings = PrefilterSettings()
+
         if output_constructors is None:
             output_constructors = rds.PrefilterOutputConstructors()
         super().__init__(
