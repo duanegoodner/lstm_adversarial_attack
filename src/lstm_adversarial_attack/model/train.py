@@ -1,17 +1,11 @@
 import argparse
-import json
 import sys
 from pathlib import Path
 
-import torch
-
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config as config
-import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.config_settings as cfg_set
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.gpu_helpers as gh
-import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.model.cross_validator_driver as cvd
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
@@ -19,14 +13,15 @@ import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
 
 def main(
-    study_name: str = None,
-    num_folds: int = None,
-    epochs_per_fold: int = None,
+        study_name: str = None,
+        num_folds: int = None,
+        epochs_per_fold: int = None,
 ) -> dict[int, ds.TrainEvalLogPair]:
-    # use if is None syntax (instead of default args) for CLI integration
+
     if study_name is None:
         study_name = tsd.MODEL_TUNING_DB.get_latest_study().study_name
 
+    # get hyperparameters from database
     hyperparams_dict = tsd.MODEL_TUNING_DB.get_best_params(
         study_name=study_name
     )
@@ -34,23 +29,25 @@ def main(
         **hyperparams_dict
     )
 
+    # build settings object for CrossValidatorDriver
     config_reader = config.ConfigReader()
+    config_settings = config_reader.get_config_value("model.cv_driver_settings")
+    cv_driver_settings = cvd.CrossValidatorDriverSettings(**config_settings)
+    if num_folds is not None:
+        cv_driver_settings.num_folds = num_folds
+    if epochs_per_fold is not None:
+        cv_driver_settings.epochs_per_fold = epochs_per_fold
 
-    if num_folds is None:
-        num_folds = cfg_set.CV_DRIVER_NUM_FOLDS
-        num_folds = config_reader.get_config_value()
-    if epochs_per_fold is None:
-        epochs_per_fold = cfg_set.CV_DRIVER_EPOCHS_PER_FOLD
-    assert num_folds > 0
-
-    cur_device = gh.get_device()
+    # build paths object for CrossValidatorDriver
+    config_paths = config_reader.read_path("model.cv_driver_paths")
+    cv_driver_paths = cvd.CrossValidatorDriverPaths(**config_paths)
 
     cv_driver = cvd.CrossValidatorDriver(
-        device=cur_device,
+        device=gh.get_device(),
         dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
         hyperparameters=hyperparameters,
-        epochs_per_fold=epochs_per_fold,
-        num_folds=num_folds,
+        settings=cv_driver_settings,
+        paths=cv_driver_paths,
         tuning_study_name=study_name
     )
 

@@ -1,15 +1,32 @@
 import sys
+from dataclasses import dataclass
+from typing import Callable
+
+import sklearn.model_selection
 import torch
 from pathlib import Path
 from torch.utils.data import Dataset
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_paths as cfg_path
-import lstm_adversarial_attack.config_settings as lcs
-import lstm_adversarial_attack.data_structures as ds
-import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.model.cross_validator as cv
 import lstm_adversarial_attack.model.tuner_helpers as tuh
+import lstm_adversarial_attack.x19_mort_general_dataset as xmd
+
+
+@dataclass
+class CrossValidatorDriverSettings:
+    epochs_per_fold: int
+    num_folds: int
+    eval_interval: int
+    kfold_random_seed: int
+    fold_class_name: str
+    collate_fn_name: str
+    single_fold_eval_fraction: float
+
+
+@dataclass
+class CrossValidatorDriverPaths:
+    cv_output_root_dir: str
 
 
 class CrossValidatorDriver:
@@ -20,22 +37,28 @@ class CrossValidatorDriver:
     """
 
     def __init__(
-        self,
-        device: torch.device,
-        dataset: Dataset,
-        hyperparameters: tuh.X19LSTMHyperParameterSettings,
-        epochs_per_fold: int = lcs.CV_DRIVER_EPOCHS_PER_FOLD,
-        num_folds: int = lcs.CV_DRIVER_NUM_FOLDS,
-        eval_interval: int = lcs.CV_DRIVER_EVAL_INTERVAL,
-        tuning_study_name: str = None
+            self,
+            device: torch.device,
+            dataset: Dataset,
+            hyperparameters: tuh.X19LSTMHyperParameterSettings,
+            settings: CrossValidatorDriverSettings,
+            paths: CrossValidatorDriverPaths,
+            tuning_study_name: str = None
     ):
         self.device = device
         self.dataset = dataset
         self.hyperparameters = hyperparameters
-        self.epochs_per_fold = epochs_per_fold
-        self.num_folds = num_folds
-        self.eval_interval = eval_interval
+        self.settings = settings
+        self.paths = paths
         self.tuning_study_name = tuning_study_name
+
+    @property
+    def fold_class(self) -> sklearn.model_selection.BaseCrossValidator:
+        return getattr(sklearn.model_selection, self.settings.fold_class_name)
+
+    @property
+    def collate_fn(self) -> Callable:
+        return getattr(xmd, self.settings.collate_fn_name)
 
     def run(self):
         """
@@ -45,8 +68,13 @@ class CrossValidatorDriver:
             device=self.device,
             dataset=self.dataset,
             hyperparameter_settings=self.hyperparameters,
-            num_folds=self.num_folds,
-            epochs_per_fold=self.epochs_per_fold,
-            eval_interval=self.eval_interval,
+            num_folds=self.settings.num_folds,
+            epochs_per_fold=self.settings.epochs_per_fold,
+            eval_interval=self.settings.eval_interval,
+            kfold_random_seed=self.settings.kfold_random_seed,
+            fold_class=self.fold_class,
+            collate_fn=self.collate_fn,
+            single_fold_eval_fraction=self.settings.single_fold_eval_fraction,
+            cv_output_root_dir=self.paths.cv_output_root_dir
         )
         cross_validator.run_all_folds()

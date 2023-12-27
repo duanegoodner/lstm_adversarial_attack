@@ -5,11 +5,9 @@ import torch.nn as nn
 from pathlib import Path
 from dataclasses import dataclass
 from torch.utils.data import DataLoader, Dataset
-from torch.utils.tensorboard import SummaryWriter
 from typing import Iterable, TypeVar
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_settings as lcs
 import lstm_adversarial_attack.model.lstm_model_stc as lms
 
 
@@ -39,14 +37,14 @@ class X19MLSTMTuningRanges:
     Container of hyperparameter tuning ranges intended for use with Optuna
     """
 
-    log_lstm_hidden_size: tuple[int, int] = lcs.TUNING_LOG_LSTM_HIDDEN_SIZE
-    lstm_act_options: tuple[str, ...] = lcs.TUNING_LSTM_ACT_OPTIONS
-    dropout: tuple[float, float] = lcs.TUNING_DROPOUT
-    log_fc_hidden_size: tuple[int, int] = lcs.TUNING_LOG_FC_HIDDEN_SIZE
-    fc_act_options: tuple[str, ...] = lcs.TUNING_FC_ACT_OPTIONS
-    optimizer_options: tuple[str, ...] = lcs.TUNING_OPTIMIZER_OPTIONS
-    learning_rate: tuple[float, float] = lcs.TUNING_LEARNING_RATE
-    log_batch_size: tuple[int, int] = lcs.TUNING_LOG_BATCH_SIZE
+    log_lstm_hidden_size: tuple[int, int]
+    lstm_act_options: tuple[str, ...]
+    dropout: tuple[float, float]
+    log_fc_hidden_size: tuple[int, int]
+    fc_act_options: tuple[str, ...]
+    optimizer_options: tuple[str, ...]
+    learning_rate: tuple[float, float]
+    log_batch_size: tuple[int, int]
 
 
 @dataclass

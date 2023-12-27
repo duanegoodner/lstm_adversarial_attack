@@ -33,16 +33,19 @@ class ConfigReader:
 
         return result
 
-    def read_path(self, config_key: str) -> str | list[str]:
+    def read_path(self, config_key: str) -> str | list[str] | dict[str, str]:
         path_rel_project_root = self.get_config_value(config_key=config_key)
         value_type = type(path_rel_project_root)
-        assert value_type == str or value_type == list
+        assert value_type == str or value_type == list or value_type == dict
         if value_type == str:
             return self._to_absolute_path(
                 path_rel_project_root=path_rel_project_root)
         if value_type == list:
             return [self._to_absolute_path(path_rel_project_root=path) for path
                     in path_rel_project_root]
+        if value_type == dict:
+            return {key: self._to_absolute_path(path_rel_project_root=val) for
+                    key, val in path_rel_project_root.items()}
 
 
 if __name__ == "__main__":

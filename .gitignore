@@ -17,9 +17,9 @@ data/attack/*
 data/backups
 
 
-data/tune_train/*
-data/tune_train/cross_validation/*
-!data/tune_train/cross_validation/.gitkeep
+data/model/*
+data/model/cross_validation/*
+!data/model/cross_validation/.gitkeep
 
 
 data/query_db/*

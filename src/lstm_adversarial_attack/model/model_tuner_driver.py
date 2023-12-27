@@ -87,7 +87,6 @@ class ModelTunerDriver:
     """
     Instantiates and runs a HyperparameterTuner
     """
-
     def __init__(
             self,
             device: torch.device,

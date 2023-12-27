@@ -17,7 +17,6 @@ from torch.utils.tensorboard import SummaryWriter
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.data_structures as ds
-# import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.simple_logger as slg
 import lstm_adversarial_attack.model.standard_model_trainer as smt
 import lstm_adversarial_attack.model.tuner_helpers as tuh

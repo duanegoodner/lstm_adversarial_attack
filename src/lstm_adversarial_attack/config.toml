@@ -1,86 +1,100 @@
-[paths]
-[paths.db]
-mimiciii_db_dotenv = "src/lstm_adversarial_attack/query_db/mimiciii_database.env"
-query_output_dir = "data/query_db"
-queries = [
-    "src/lstm_adversarial_attack/query_db/mimiciii_queries/icustay_detail.sql",
-    "src/lstm_adversarial_attack/query_db/mimiciii_queries/pivoted_bg.sql",
-    "src/lstm_adversarial_attack/query_db/mimiciii_queries/pivoted_lab.sql",
-    "src/lstm_adversarial_attack/query_db/mimiciii_queries/pivoted_vital.sql",
-]
+[db.paths]
+    mimiciii_db_dotenv = "src/lstm_adversarial_attack/query_db/mimiciii_database.env"
+    query_output_dir = "data/query_db"
+    queries = [
+        "src/lstm_adversarial_attack/query_db/mimiciii_queries/icustay_detail.sql",
+        "src/lstm_adversarial_attack/query_db/mimiciii_queries/pivoted_bg.sql",
+        "src/lstm_adversarial_attack/query_db/mimiciii_queries/pivoted_lab.sql",
+        "src/lstm_adversarial_attack/query_db/mimiciii_queries/pivoted_vital.sql",
+    ]
 
 [preprocess]
-min_age = 18
-min_los_hospital = 1
-min_los_icu = 1
-bg_data_cols = [
-    "potassium", "calcium", "ph", "pco2", "lactate"
-]
-lab_data_cols = [
-    "albumin",
-    "bun",
-    "creatinine",
-    "sodium",
-    "bicarbonate",
-    "platelet",
-    "glucose",
-    "magnesium"
-]
-vital_data_cols = [
-    "heartrate",
-    "sysbp",
-    "diasbp",
-    "tempc",
-    "resprate",
-    "spo2"
-]
-admission_data_json_delimiter = "END_TIME_SERIES_DF_METADATA"
-winsorize_low = "5%"
-winsorize_high = "95%"
-resample_interpolation = "linear"
-resample_limit_direction = "both"
-min_observation_hours = 1
-max_observation_hours = 48
-require_exact_num_hours = false
-observation_window_start = "intime"
+    min_age = 18
+    min_los_hospital = 1
+    min_los_icu = 1
+    bg_data_cols = [
+        "potassium", "calcium", "ph", "pco2", "lactate"
+    ]
+    lab_data_cols = [
+        "albumin",
+        "bun",
+        "creatinine",
+        "sodium",
+        "bicarbonate",
+        "platelet",
+        "glucose",
+        "magnesium"
+    ]
+    vital_data_cols = [
+        "heartrate",
+        "sysbp",
+        "diasbp",
+        "tempc",
+        "resprate",
+        "spo2"
+    ]
+    admission_data_json_delimiter = "END_TIME_SERIES_DF_METADATA"
+    winsorize_low = "5%"
+    winsorize_high = "95%"
+    resample_interpolation = "linear"
+    resample_limit_direction = "both"
+    min_observation_hours = 1
+    max_observation_hours = 48
+    require_exact_num_hours = false
+    observation_window_start = "intime"
 
 [preprocess.prefilter]
-icustay_input = "tst_icustay_input.csv"
+    icustay_input = "tst_icustay_input.csv"
 
 [model.tuner_driver]
-num_trials = 30
-num_folds = 3
-num_cv_epochs = 2
-epochs_per_fold = 2
-kfold_random_seed = 1234
-cv_mean_tensorboard_metrics = [
-    "accuracy",
-    "auc",
-    "f1",
-    "precision",
-    "recall",
-    "validation_loss"]
-performance_metric = "validation_loss"
-optimization_direction_label = "minimize"
-tuning_output_dir = "data/model/tuning"
-pruner_name = "MedianPruner"
-sampler_name = "TPESampler"
-db_env_var_name = "MODEL_TUNING_DB_NAME"
-fold_class_name = "StratifiedKFold"
-collate_fn_name = "x19m_collate_fn"
+    num_trials = 30
+    num_folds = 3
+    num_cv_epochs = 2
+    epochs_per_fold = 2
+    kfold_random_seed = 1234
+    cv_mean_tensorboard_metrics = [
+        "accuracy",
+        "auc",
+        "f1",
+        "precision",
+        "recall",
+        "validation_loss"]
+    performance_metric = "validation_loss"
+    optimization_direction_label = "minimize"
+    tuning_output_dir = "data/model/tuning"
+    pruner_name = "MedianPruner"
+    sampler_name = "TPESampler"
+    db_env_var_name = "MODEL_TUNING_DB_NAME"
+    fold_class_name = "StratifiedKFold"
+    collate_fn_name = "x19m_collate_fn"
 
-[model.tuner_driver.tuning_ranges]
-log_lstm_hidden_size = [5, 7]
-lstm_act_options = ["ReLU", "Tanh"]
-dropout = [0.0, 0.5]
-log_fc_hidden_size = [4, 8]
-optimizer_options = ["Adam", "RMSprop", "SGD"]
-learning_rate = [0.00001, 0.1]
-log_batch_size = [5, 8]
+        [model.tuner_driver.tuning_ranges]
+        log_lstm_hidden_size = [5, 7]
+        lstm_act_options = ["ReLU", "Tanh"]
+        dropout = [0.0, 0.5]
+        log_fc_hidden_size = [4, 8]
+        fc_act_options = ["ReLU", "Tanh"]
+        optimizer_options = ["Adam", "RMSprop", "SGD"]
+        learning_rate = [0.00001, 0.1]
+        log_batch_size = [5, 8]
 
-[model.tuner_driver.pruner_kwargs]
-n_startup_trials = 5
-n_warmup_steps = 3
+        [model.tuner_driver.pruner_kwargs]
+        n_startup_trials = 5
+        n_warmup_steps = 3
 
 [model.tuner_driver.sampler_kwargs]
+
+[model.cv_driver_settings]
+kfold_random_seed = 86420
+epochs_per_fold = 20
+num_folds = 5
+eval_interval = 10
+single_fold_eval_fraction = 0.2
+fold_class_name = "StratifiedKFold"
+collate_fn_name = "x19m_collate_fn"
+[model.cv_driver_paths]
+cv_output_root_dir = "data/model/cross_validation"
+
+
+
 

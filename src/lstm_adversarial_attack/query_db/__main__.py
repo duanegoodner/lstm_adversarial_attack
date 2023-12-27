@@ -1,11 +1,8 @@
 import sys
 from pathlib import Path
 
-from lstm_adversarial_attack import config_paths
-
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.config as cfr
-import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.query_db.mimiciii_database as mdb
 
 
@@ -19,13 +16,15 @@ def main() -> list[Path]:
     config_reader = cfr.ConfigReader()
 
     db_access = mdb.MimiciiiDatabaseAccess(
-        dotenv_path=config_reader.read_path(
-            config_key="paths.db.mimiciii_db_dotenv"),
-        output_dir=config_reader.read_path(config_key="paths.db.query_output_dir"),
+        dotenv_path=Path(config_reader.read_path(
+            config_key="db.paths.mimiciii_db_dotenv")),
+        output_dir=Path(
+            config_reader.read_path(config_key="db.paths.query_output_dir")),
     )
     db_access.connect()
     db_query_results = db_access.run_sql_queries(
-        sql_query_paths=config_reader.read_path(config_key="paths.db.queries")
+        sql_query_paths=[Path(item) for item in
+                         config_reader.read_path(config_key="db.paths.queries")]
     )
     db_access.close_connection()
 
