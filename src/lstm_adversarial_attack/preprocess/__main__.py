@@ -18,6 +18,7 @@ def main():
     prefilter_info = ppr.ModuleInfo(
         module_constructor=prf.Prefilter,
         resources_constructor=rds.PrefilterResources,
+        settings_constructor=prf.PrefilterSettings,
         individual_resources_info=[
             rds.FileResourceInfo(
                 key="icustay",
@@ -46,6 +47,7 @@ def main():
     combiner_info = ppr.ModuleInfo(
         module_constructor=imm.ICUStayMeasurementMerger,
         resources_constructor=rds.ICUStayMeasurementMergerResources,
+        settings_constructor=imm.ICUStayMeasurementMergerSettings,
         individual_resources_info=[
             rds.PoolResourceInfo(
                 key="prefiltered_icustay", constructor=rds.IncomingFeatherDataFrame
@@ -65,6 +67,7 @@ def main():
     list_builder_info = ppr.ModuleInfo(
         module_constructor=alb.AdmissionListBuilder,
         resources_constructor=rds.AdmissionListBuilderResources,
+        settings_constructor=alb.AdmissionListBuilderSettings,
         individual_resources_info=[
             rds.PoolResourceInfo(
                 key="icustay_bg_lab_vital", constructor=rds.IncomingFeatherDataFrame
@@ -75,6 +78,7 @@ def main():
     feature_builder_info = ppr.ModuleInfo(
         module_constructor=fb.FeatureBuilder,
         resources_constructor=rds.FeatureBuilderResources,
+        settings_constructor=fb.FeatureBuilderSettings,
         individual_resources_info=[
             rds.PoolResourceInfo(
                 key="full_admission_list", constructor=rds.IncomingFullAdmissionData
@@ -92,6 +96,7 @@ def main():
     feature_finalizer_info = ppr.ModuleInfo(
         module_constructor=ff.FeatureFinalizer,
         resources_constructor=rds.FeatureFinalizerResources,
+        settings_constructor=ff.FeatureFinalizerSettings,
         individual_resources_info=[
             rds.PoolResourceInfo(
                 key="processed_admission_list",

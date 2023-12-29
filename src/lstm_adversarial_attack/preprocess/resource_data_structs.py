@@ -219,11 +219,6 @@ class PreprocessModuleResources(ABC):
                 value = config_reader.get_config_value(f"preprocess.{self.module_name}.resources.{object_field.name}")
 
 
-
-
-
-
-
 @dataclass
 class PrefilterResources:
     icustay: IncomingPreprocessResource = field(

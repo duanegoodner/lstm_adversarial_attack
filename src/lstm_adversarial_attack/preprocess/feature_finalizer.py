@@ -14,17 +14,15 @@ import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 @dataclass
-class FeatureFinalizerSettings:
+class FeatureFinalizerSettings(pre.PreprocessModuleSettings):
     """
     Container for FeatureFinalizer config settings
     """
 
-    max_hours: int = cfs.MAX_OBSERVATION_HOURS
-    min_hours: int = cfs.MIN_OBSERVATION_HOURS
-    require_exact_num_hours: bool = (
-        cfs.REQUIRE_EXACT_NUM_HOURS  # when True, no need for padding
-    )
-    observation_window_start: str = cfs.OBSERVATION_WINDOW_START
+    max_observation_hours: int = None
+    min_observation_hours: int = None
+    require_exact_num_hours: bool = None
+    observation_window_start: str = None
 
 
 @dataclass
@@ -99,9 +97,9 @@ class FeatureFinalizer(pre.PreprocessModule):
         observation_start_time = getattr(
             sample, self.settings.observation_window_start
         )
-        if self.settings.max_hours is not None:
+        if self.settings.max_observation_hours is not None:
             observation_end_time = observation_start_time + pd.Timedelta(
-                hours=self.settings.max_hours
+                hours=self.settings.max_observation_hours
             )
         else:
             observation_end_time = None
@@ -112,7 +110,7 @@ class FeatureFinalizer(pre.PreprocessModule):
             time_series=sample.time_series,
         )
 
-        if data_in_range.shape[0] >= self.settings.min_hours:
+        if data_in_range.shape[0] >= self.settings.min_observation_hours:
             return data_in_range.loc[
                 :, ~data_in_range.columns.isin(["charttime"])
             ].values

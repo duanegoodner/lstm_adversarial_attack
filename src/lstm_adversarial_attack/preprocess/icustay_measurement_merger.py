@@ -12,20 +12,13 @@ import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 @dataclass
-class ICUStayMeasurementMergerSettings:
+class ICUStayMeasurementMergerSettings(pre.PreprocessModuleSettings):
     """
     Container for ICUStayMeasurementCombiner config settings
     """
-
-    bg_data_cols: list[str] = field(
-        default_factory=lambda: cfs.PREPROCESS_BG_DATA_COLS
-    )
-    lab_data_cols: list[str] = field(
-        default_factory=lambda: cfs.PREPROCESS_LAB_DATA_COLS
-    )
-    vital_data_cols: list[str] = field(
-        default_factory=lambda: cfs.PREPROCESS_VITAL_DATA_COLS
-    )
+    bg_data_cols: list[str] = None
+    lab_data_cols: list[str] = None
+    vital_data_cols: list[str] = None
 
     @property
     def all_measurement_cols(self) -> list[str]:

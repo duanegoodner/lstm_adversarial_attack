@@ -14,12 +14,19 @@ import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 @dataclass
-class AdmissionListBuilderSettings:
-    measurement_cols: list[str] = field(
-        default_factory=lambda: cfs.PREPROCESS_BG_DATA_COLS
-        + cfs.PREPROCESS_LAB_DATA_COLS
-        + cfs.PREPROCESS_VITAL_DATA_COLS
-    )
+class AdmissionListBuilderSettings(pre.PreprocessModuleSettings):
+    bg_data_cols: list[str] = None
+    lab_data_cols: list[str] = None
+    vital_data_cols: list[str] = None
+
+    @property
+    def measurement_cols(self) -> list[str]:
+        return self.bg_data_cols + self.lab_data_cols + self.vital_data_cols
+    # measurement_cols: list[str] = field(
+    #     default_factory=lambda: cfs.PREPROCESS_BG_DATA_COLS
+    #     + cfs.PREPROCESS_LAB_DATA_COLS
+    #     + cfs.PREPROCESS_VITAL_DATA_COLS
+    # )
 
     @property
     def time_series_cols(self) -> list[str]:

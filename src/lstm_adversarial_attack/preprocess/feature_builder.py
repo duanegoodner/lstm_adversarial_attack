@@ -11,15 +11,15 @@ import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 @dataclass
-class FeatureBuilderSettings:
+class FeatureBuilderSettings(pre.PreprocessModuleSettings):
     """
     Container for FeatureBuilder config settings
     """
 
-    winsorize_low: str = cfs.DEFAULT_WINSORIZE_LOW
-    winsorize_high: str = cfs.DEFAULT_WINSORIZE_HIGH
-    resample_interpolation_method: str = cfs.DEFAULT_RESAMPLE_INTERPOLATION
-    resample_limit_direction: str = cfs.DEFAULT_RESAMPLE_LIMIT_DIRECTION
+    winsorize_low: str = None
+    winsorize_high: str = None
+    resample_interpolation_method: str = None
+    resample_limit_direction: str = None
 
 
 class FeatureBuilder(pre.PreprocessModule):

@@ -30,10 +30,10 @@ class Prefilter(pre.PreprocessModule):
         settings: PrefilterSettings = None,
         output_constructors: rds.PrefilterOutputConstructors = None,
     ):
-        if settings is None:
-            settings = PrefilterSettings()
-        if resources is None:
-            resources = rds.PrefilterResources()
+        # if settings is None:
+        #     settings = PrefilterSettings()
+        # if resources is None:
+        #     resources = rds.PrefilterResources()
         if output_dir is None:
             output_dir = cfp.PREFILTER_OUTPUT
 

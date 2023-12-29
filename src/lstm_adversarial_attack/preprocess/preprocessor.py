@@ -26,12 +26,13 @@ class PreprocessModuleSettings(ABC):
                 setattr(self, field.name, attr)
 
 
+@dataclass
 class PreprocessModule(ABC):
     def __init__(
             self,
             resources: dataclass,
             output_dir: Path,
-            settings: dataclass,
+            settings: PreprocessModuleSettings,
             output_constructors: dataclass,
     ):
         self._resources = resources
@@ -86,11 +87,11 @@ class PreprocessModule(ABC):
 class ModuleInfo:
     module_constructor: Callable[..., PreprocessModule]
     resources_constructor: Callable[..., dataclass]
+    settings_constructor: Callable[..., PreprocessModuleSettings]
     individual_resources_info: list[rds.SingleResourceInfo]
     output_constructors: dataclass = None
     output_dir: Path = None
     save_output: bool = False
-    settings: dataclass = None
 
     def build_module(
             self, resource_pool: dict[str, rds.OutgoingPreprocessResource]
@@ -104,7 +105,7 @@ class ModuleInfo:
         return self.module_constructor(
             resources=resources,
             output_dir=self.output_dir,
-            settings=self.settings,
+            settings=self.settings_constructor(),
             output_constructors=self.output_constructors,
         )
 
