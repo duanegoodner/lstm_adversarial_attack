@@ -23,24 +23,24 @@ def main():
                 key="icustay",
                 path=cfp.PREFILTER_INPUT_FILES["icustay"],
                 # path=cfp.DB_OUTPUT_DIR / "icustay_500.csv",
-                constructor=rds.IncomingCSVDataFrame
+                constructor=rds.IncomingCSVDataFrame,
             ),
             rds.FileResourceInfo(
                 key="bg",
                 path=cfp.PREFILTER_INPUT_FILES["bg"],
-                constructor=rds.IncomingCSVDataFrame
+                constructor=rds.IncomingCSVDataFrame,
             ),
             rds.FileResourceInfo(
                 key="vital",
                 path=cfp.PREFILTER_INPUT_FILES["vital"],
-                constructor=rds.IncomingCSVDataFrame
+                constructor=rds.IncomingCSVDataFrame,
             ),
             rds.FileResourceInfo(
                 key="lab",
                 path=cfp.PREFILTER_INPUT_FILES["lab"],
-                constructor=rds.IncomingCSVDataFrame
-            )
-        ]
+                constructor=rds.IncomingCSVDataFrame,
+            ),
+        ],
     )
 
     combiner_info = ppr.ModuleInfo(
@@ -48,22 +48,18 @@ def main():
         resources_constructor=rds.ICUStayMeasurementMergerResources,
         individual_resources_info=[
             rds.PoolResourceInfo(
-                key="prefiltered_icustay",
-                constructor=rds.IncomingFeatherDataFrame
+                key="prefiltered_icustay", constructor=rds.IncomingFeatherDataFrame
             ),
             rds.PoolResourceInfo(
-                key="prefiltered_bg",
-                constructor=rds.IncomingFeatherDataFrame
+                key="prefiltered_bg", constructor=rds.IncomingFeatherDataFrame
             ),
             rds.PoolResourceInfo(
-                key="prefiltered_vital",
-                constructor=rds.IncomingFeatherDataFrame
+                key="prefiltered_vital", constructor=rds.IncomingFeatherDataFrame
             ),
             rds.PoolResourceInfo(
-                key="prefiltered_lab",
-                constructor=rds.IncomingFeatherDataFrame
-            )
-        ]
+                key="prefiltered_lab", constructor=rds.IncomingFeatherDataFrame
+            ),
+        ],
     )
 
     list_builder_info = ppr.ModuleInfo(
@@ -71,11 +67,9 @@ def main():
         resources_constructor=rds.AdmissionListBuilderResources,
         individual_resources_info=[
             rds.PoolResourceInfo(
-                key="icustay_bg_lab_vital",
-                constructor=rds.IncomingFeatherDataFrame
+                key="icustay_bg_lab_vital", constructor=rds.IncomingFeatherDataFrame
             )
         ],
-
     )
 
     feature_builder_info = ppr.ModuleInfo(
@@ -83,13 +77,12 @@ def main():
         resources_constructor=rds.FeatureBuilderResources,
         individual_resources_info=[
             rds.PoolResourceInfo(
-                key="full_admission_list",
-                constructor=rds.IncomingFullAdmissionData
+                key="full_admission_list", constructor=rds.IncomingFullAdmissionData
             ),
             rds.PoolResourceInfo(
                 key="bg_lab_vital_summary_stats",
-                constructor=rds.IncomingFeatherDataFrame
-            )
+                constructor=rds.IncomingFeatherDataFrame,
+            ),
         ],
         # output_info=rds.FeatureBuilderOutputConstructors(
         #     processed_admission_list=rds.OutgoingPreprocessPickle
@@ -102,23 +95,20 @@ def main():
         individual_resources_info=[
             rds.PoolResourceInfo(
                 key="processed_admission_list",
-                constructor=rds.IncomingFullAdmissionData
+                constructor=rds.IncomingFullAdmissionData,
             )
         ],
-        save_output=True
+        save_output=True,
     )
     modules_info = [
         prefilter_info,
         combiner_info,
         list_builder_info,
         feature_builder_info,
-        feature_finalizer_info
+        feature_finalizer_info,
     ]
 
-    preprocessor = ppr.Preprocessor(
-        modules_info=modules_info,
-        save_checkpoints=True
-    )
+    preprocessor = ppr.Preprocessor(modules_info=modules_info, save_checkpoints=True)
     return preprocessor.run_all_modules()
 
 

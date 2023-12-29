@@ -16,12 +16,13 @@ import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 @dataclass
 class PreprocessModuleSettings(ABC):
-    config: config_reader.ConfigReader = config_reader.ConfigReader()
+    # config: config_reader.ConfigReader = config_reader.ConfigReader()
 
     def __post_init__(self):
+        config = config_reader.ConfigReader()
         for field in fields(self):
             if getattr(self, field.name) is None:
-                attr = self.config.get_config_value("preprocess." + field.name)
+                attr = config.get_config_value(f"preprocess.{field.name}")
                 setattr(self, field.name, attr)
 
 

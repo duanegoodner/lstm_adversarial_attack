@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Any, Callable, TypeVar
 
 import pandas as pd
-
+import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
@@ -206,6 +206,22 @@ class OutgoingMeasurementColumnNames(OutgoingPreprocessResource):
     @property
     def file_ext(self) -> str:
         return ".json"
+
+
+@dataclass
+class PreprocessModuleResources(ABC):
+    module_name: str = None
+
+    def __post_init__(self):
+        config_reader = config.ConfigReader()
+        for object_field in fields(self):
+            if object_field.name != "name" and getattr(self, object_field.name) is None:
+                value = config_reader.get_config_value(f"preprocess.{self.module_name}.resources.{object_field.name}")
+
+
+
+
+
 
 
 @dataclass

@@ -43,7 +43,7 @@
     require_exact_num_hours = false
     observation_window_start = "intime"
 
-[preprocess.prefilter.input_files]
+[preprocess.prefilter.resources]
 icustay = "data/query_db/icustay_detail.csv"
 bg = "data/query_db/pivoted_bg.csv"
 lab = "data/query_db/pivoted_lab.csv"
