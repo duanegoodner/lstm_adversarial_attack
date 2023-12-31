@@ -3,27 +3,56 @@ from __future__ import annotations
 import sys
 import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, Field
 from pathlib import Path
 from typing import Any, Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config as config_reader
+import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 @dataclass
-class PreprocessModuleSettings(ABC):
-    # config: config_reader.ConfigReader = config_reader.ConfigReader()
+class PreprocessModuleResources(ABC):
+    module_name: str
 
     def __post_init__(self):
-        config = config_reader.ConfigReader()
-        for field in fields(self):
-            if getattr(self, field.name) is None:
-                attr = config.get_config_value(f"preprocess.{field.name}")
-                setattr(self, field.name, attr)
+        config_reader = config.ConfigReader()
+        for object_field in fields(self):
+            if object_field.name != "module_name" and getattr(self, object_field.name) is None:
+                value = config_reader.get_config_value(
+                    f"preprocess.{self.module_name}.resources.{object_field.name}"
+                )
+
+
+@dataclass
+class PreprocessModuleSettings(ABC):
+    module_name: str
+    output_dir: str = None
+
+    @property
+    def standard_fields(self) -> tuple[Field, ...]:
+        return fields(PreprocessModuleSettings)
+
+    @property
+    def module_specific_fields(self) -> tuple[Field, ...]:
+        return tuple([object_field for object_field in fields(self) if
+                      object_field not in self.standard_fields])
+
+    def __post_init__(self):
+        config_reader = config.ConfigReader()
+
+        if self.output_dir is None:
+            self.output_dir = config_reader.read_path(
+                f"preprocess.output_dirs.{self.module_name}")
+
+        for object_field in self.module_specific_fields:
+            if getattr(self, object_field.name) is None:
+                attr = config_reader.get_config_value(
+                    f"preprocess.{object_field.name}")
+                setattr(self, object_field.name, attr)
 
 
 @dataclass
@@ -31,12 +60,12 @@ class PreprocessModule(ABC):
     def __init__(
             self,
             resources: dataclass,
-            output_dir: Path,
+            # output_dir: Path,
             settings: PreprocessModuleSettings,
             output_constructors: dataclass,
     ):
         self._resources = resources
-        self._output_dir = output_dir
+        # self._output_dir = output_dir
         self._settings = settings
         self._output_constructors = output_constructors
 
@@ -46,7 +75,7 @@ class PreprocessModule(ABC):
 
     @property
     def output_dir(self) -> Path:
-        return self._output_dir
+        return Path(self.settings.output_dir)
 
     @property
     def output_constructors(self) -> dataclass:
@@ -61,7 +90,7 @@ class PreprocessModule(ABC):
     @property
     def summary(self) -> eds.PreprocessModuleSummary:
         return eds.PreprocessModuleSummary(
-            output_dir=str(self._output_dir),
+            output_dir=str(self.output_dir),
             output_constructors={
                 key: val.__name__
                 for key, val in self._output_constructors.__dict__.items()
@@ -79,12 +108,13 @@ class PreprocessModule(ABC):
     def save_summary(self):
         edc.PreprocessModuleSummaryWriter().export(
             obj=self.summary,
-            path=self._output_dir / f"{self.__class__.__name__}_summary.json",
+            path=self.output_dir / f"{self.__class__.__name__}_summary.json",
         )
 
 
 @dataclass
 class ModuleInfo:
+    module_name: str
     module_constructor: Callable[..., PreprocessModule]
     resources_constructor: Callable[..., dataclass]
     settings_constructor: Callable[..., PreprocessModuleSettings]
@@ -104,8 +134,8 @@ class ModuleInfo:
         resources = self.resources_constructor(**module_resources)
         return self.module_constructor(
             resources=resources,
-            output_dir=self.output_dir,
-            settings=self.settings_constructor(),
+            # output_dir=self.output_dir,
+            settings=self.settings_constructor(module_name=self.module_name),
             output_constructors=self.output_constructors,
         )
 

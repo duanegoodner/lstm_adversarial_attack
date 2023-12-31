@@ -16,6 +16,7 @@ import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 def main():
     prefilter_info = ppr.ModuleInfo(
+        module_name="prefilter",
         module_constructor=prf.Prefilter,
         resources_constructor=rds.PrefilterResources,
         settings_constructor=prf.PrefilterSettings,
@@ -45,6 +46,7 @@ def main():
     )
 
     combiner_info = ppr.ModuleInfo(
+        module_name="measurement_merger",
         module_constructor=imm.ICUStayMeasurementMerger,
         resources_constructor=rds.ICUStayMeasurementMergerResources,
         settings_constructor=imm.ICUStayMeasurementMergerSettings,
@@ -65,6 +67,7 @@ def main():
     )
 
     list_builder_info = ppr.ModuleInfo(
+        module_name="admission_list_builder",
         module_constructor=alb.AdmissionListBuilder,
         resources_constructor=rds.AdmissionListBuilderResources,
         settings_constructor=alb.AdmissionListBuilderSettings,
@@ -76,6 +79,7 @@ def main():
     )
 
     feature_builder_info = ppr.ModuleInfo(
+        module_name="feature_builder",
         module_constructor=fb.FeatureBuilder,
         resources_constructor=rds.FeatureBuilderResources,
         settings_constructor=fb.FeatureBuilderSettings,
@@ -94,6 +98,7 @@ def main():
     )
 
     feature_finalizer_info = ppr.ModuleInfo(
+        module_name="feature_finalizer",
         module_constructor=ff.FeatureFinalizer,
         resources_constructor=rds.FeatureFinalizerResources,
         settings_constructor=ff.FeatureFinalizerSettings,

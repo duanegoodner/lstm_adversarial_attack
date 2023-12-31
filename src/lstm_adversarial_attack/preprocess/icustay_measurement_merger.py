@@ -29,21 +29,21 @@ class ICUStayMeasurementMerger(pre.PreprocessModule):
     def __init__(
         self,
         resources: rds.ICUStayMeasurementMergerResources = None,
-        output_dir: Path = None,
+        # output_dir: Path = None,
         settings: ICUStayMeasurementMergerSettings = None,
         output_constructors: rds.ICUStayMeasurementMergerOutputConstructors = None,
     ):
-        if resources is None:
-            resources = rds.ICUStayMeasurementMergerResources()
-        if output_dir is None:
-            output_dir = cfp.STAY_MEASUREMENT_OUTPUT
-        if settings is None:
-            settings = ICUStayMeasurementMergerSettings()
+        # if resources is None:
+        #     resources = rds.ICUStayMeasurementMergerResources()
+        # if output_dir is None:
+        #     output_dir = cfp.STAY_MEASUREMENT_OUTPUT
+        # if settings is None:
+        #     settings = ICUStayMeasurementMergerSettings()
         if output_constructors is None:
             output_constructors = rds.ICUStayMeasurementMergerOutputConstructors()
         super().__init__(
             resources=resources,
-            output_dir=output_dir,
+            # output_dir=output_dir,
             settings=settings,
             output_constructors=output_constructors,
         )

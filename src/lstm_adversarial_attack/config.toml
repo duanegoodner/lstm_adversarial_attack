@@ -43,6 +43,14 @@
     require_exact_num_hours = false
     observation_window_start = "intime"
 
+[preprocess.output_dirs]
+prefilter = "data/preprocess/checkpoints/1_prefilter"
+measurement_merger = "data/preprocess/checkpoints/2_merged_stay_measurements"
+admission_list_builder = "data/preprocess/checkpoints/3_full_admission_list"
+feature_builder = "data/preprocess/checkpoints/4_feature_builder"
+feature_finalizer = "data/preprocess/checkpoints/5_feature_finalizer"
+
+
 [preprocess.prefilter.resources]
 icustay = "data/query_db/icustay_detail.csv"
 bg = "data/query_db/pivoted_bg.csv"

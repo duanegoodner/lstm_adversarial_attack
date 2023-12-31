@@ -26,7 +26,7 @@ class Prefilter(pre.PreprocessModule):
     def __init__(
         self,
         resources: rds.PrefilterResources = None,
-        output_dir: Path = None,
+        # output_dir: Path = None,
         settings: PrefilterSettings = None,
         output_constructors: rds.PrefilterOutputConstructors = None,
     ):
@@ -34,14 +34,14 @@ class Prefilter(pre.PreprocessModule):
         #     settings = PrefilterSettings()
         # if resources is None:
         #     resources = rds.PrefilterResources()
-        if output_dir is None:
-            output_dir = cfp.PREFILTER_OUTPUT
+        # if output_dir is None:
+        #     output_dir = cfp.PREFILTER_OUTPUT
 
         if output_constructors is None:
             output_constructors = rds.PrefilterOutputConstructors()
         super().__init__(
             resources=resources,
-            output_dir=output_dir,
+            # output_dir=output_dir,
             settings=settings,
             output_constructors=output_constructors,
         )

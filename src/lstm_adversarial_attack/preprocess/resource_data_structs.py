@@ -103,9 +103,7 @@ class FileResourceInfo(SingleResourceInfo):
     path: Path
     constructor: Callable[..., IncomingPreprocessResource]
 
-    def build_resource(
-        self, **kwargs
-    ) -> dict[str, IncomingPreprocessResource]:
+    def build_resource(self, **kwargs) -> dict[str, IncomingPreprocessResource]:
         return {self.key: self.constructor(resource_id=self.path)}
 
 
@@ -150,9 +148,7 @@ class OutgoingPreprocessPickle(OutgoingPreprocessResource):
 
 class OutgoingFullAdmissionData(OutgoingPreprocessResource):
     def export(self, path: Path):
-        edc.export_admission_data_list(
-            admission_data_list=self._resource, path=path
-        )
+        edc.export_admission_data_list(admission_data_list=self._resource, path=path)
 
     @property
     def file_ext(self) -> str:
@@ -209,17 +205,6 @@ class OutgoingMeasurementColumnNames(OutgoingPreprocessResource):
 
 
 @dataclass
-class PreprocessModuleResources(ABC):
-    module_name: str = None
-
-    def __post_init__(self):
-        config_reader = config.ConfigReader()
-        for object_field in fields(self):
-            if object_field.name != "name" and getattr(self, object_field.name) is None:
-                value = config_reader.get_config_value(f"preprocess.{self.module_name}.resources.{object_field.name}")
-
-
-@dataclass
 class PrefilterResources:
     icustay: IncomingPreprocessResource = field(
         default_factory=lambda: IncomingCSVDataFrame(
@@ -245,18 +230,18 @@ class PrefilterResources:
 
 @dataclass
 class PrefilterOutputConstructors:
-    prefiltered_icustay: Callable[..., OutgoingPreprocessResource] = (
-        OutgoingPreprocessDataFrame
-    )
-    prefiltered_bg: Callable[..., OutgoingPreprocessResource] = (
-        OutgoingPreprocessDataFrame
-    )
-    prefiltered_lab: Callable[..., OutgoingPreprocessResource] = (
-        OutgoingPreprocessDataFrame
-    )
-    prefiltered_vital: Callable[..., OutgoingPreprocessResource] = (
-        OutgoingPreprocessDataFrame
-    )
+    prefiltered_icustay: Callable[
+        ..., OutgoingPreprocessResource
+    ] = OutgoingPreprocessDataFrame
+    prefiltered_bg: Callable[
+        ..., OutgoingPreprocessResource
+    ] = OutgoingPreprocessDataFrame
+    prefiltered_lab: Callable[
+        ..., OutgoingPreprocessResource
+    ] = OutgoingPreprocessDataFrame
+    prefiltered_vital: Callable[
+        ..., OutgoingPreprocessResource
+    ] = OutgoingPreprocessDataFrame
 
 
 @dataclass
@@ -285,30 +270,28 @@ class ICUStayMeasurementMergerResources:
 
 @dataclass
 class ICUStayMeasurementMergerOutputConstructors:
-    icustay_bg_lab_vital: Callable[..., OutgoingPreprocessResource] = (
-        OutgoingPreprocessDataFrame
-    )
-    bg_lab_vital_summary_stats: Callable[..., OutgoingPreprocessResource] = (
-        OutgoingPreprocessDataFrame
-    )
+    icustay_bg_lab_vital: Callable[
+        ..., OutgoingPreprocessResource
+    ] = OutgoingPreprocessDataFrame
+    bg_lab_vital_summary_stats: Callable[
+        ..., OutgoingPreprocessResource
+    ] = OutgoingPreprocessDataFrame
 
 
 @dataclass
 class AdmissionListBuilderResources:
     icustay_bg_lab_vital: IncomingFeatherDataFrame = field(
         default_factory=lambda: IncomingFeatherDataFrame(
-            resource_id=cfp.FULL_ADMISSION_LIST_INPUT_FILES[
-                "icustay_bg_lab_vital"
-            ]
+            resource_id=cfp.FULL_ADMISSION_LIST_INPUT_FILES["icustay_bg_lab_vital"]
         )
     )
 
 
 @dataclass
 class AdmissionListBuilderOutputConstructors:
-    full_admission_list: Callable[..., OutgoingPreprocessResource] = (
-        OutgoingFullAdmissionData
-    )
+    full_admission_list: Callable[
+        ..., OutgoingPreprocessResource
+    ] = OutgoingFullAdmissionData
 
 
 @dataclass
@@ -320,39 +303,35 @@ class FeatureBuilderResources:
     )
     bg_lab_vital_summary_stats: IncomingFeatherDataFrame = field(
         default_factory=lambda: IncomingFeatherDataFrame(
-            resource_id=cfp.FEATURE_BUILDER_INPUT_FILES[
-                "bg_lab_vital_summary_stats"
-            ]
+            resource_id=cfp.FEATURE_BUILDER_INPUT_FILES["bg_lab_vital_summary_stats"]
         )
     )
 
 
 @dataclass
 class FeatureBuilderOutputConstructors:
-    processed_admission_list: Callable[..., OutgoingPreprocessResource] = (
-        OutgoingFullAdmissionData
-    )
+    processed_admission_list: Callable[
+        ..., OutgoingPreprocessResource
+    ] = OutgoingFullAdmissionData
 
 
 @dataclass
 class FeatureFinalizerResources:
     processed_admission_list: IncomingFullAdmissionData = field(
         default_factory=lambda: IncomingFullAdmissionData(
-            resource_id=cfp.FEATURE_FINALIZER_INPUT_FILES[
-                "processed_admission_list"
-            ]
+            resource_id=cfp.FEATURE_FINALIZER_INPUT_FILES["processed_admission_list"]
         )
     )
 
 
 @dataclass
 class FeatureFinalizerOutputConstructors:
-    in_hospital_mortality_list: Callable[..., OutgoingPreprocessResource] = (
-        OutgoingClassLabels
-    )
-    measurement_col_names: Callable[..., OutgoingPreprocessResource] = (
-        OutgoingMeasurementColumnNames
-    )
-    measurement_data_list: Callable[..., OutgoingPreprocessResource] = (
-        OutgoingFeatureArrays
-    )
+    in_hospital_mortality_list: Callable[
+        ..., OutgoingPreprocessResource
+    ] = OutgoingClassLabels
+    measurement_col_names: Callable[
+        ..., OutgoingPreprocessResource
+    ] = OutgoingMeasurementColumnNames
+    measurement_data_list: Callable[
+        ..., OutgoingPreprocessResource
+    ] = OutgoingFeatureArrays

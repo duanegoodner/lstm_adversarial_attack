@@ -38,21 +38,21 @@ class AdmissionListBuilder(pre.PreprocessModule):
     def __init__(
         self,
         resources: rds.AdmissionListBuilderResources = None,
-        output_dir: Path = None,
+        # output_dir: Path = None,
         settings: AdmissionListBuilderSettings = None,
         output_constructors: rds.AdmissionListBuilderOutputConstructors = None,
     ):
-        if resources is None:
-            resources = rds.AdmissionListBuilderResources()
-        if output_dir is None:
-            output_dir = cfp.FULL_ADMISSION_LIST_OUTPUT
-        if settings is None:
-            settings = AdmissionListBuilderSettings()
+        # if resources is None:
+        #     resources = rds.AdmissionListBuilderResources()
+        # if output_dir is None:
+        #     output_dir = cfp.FULL_ADMISSION_LIST_OUTPUT
+        # if settings is None:
+        #     settings = AdmissionListBuilderSettings()
         if output_constructors is None:
             output_constructors = rds.AdmissionListBuilderOutputConstructors()
         super().__init__(
             resources=resources,
-            output_dir=output_dir,
+            # output_dir=output_dir,
             settings=settings,
             output_constructors=output_constructors,
         )

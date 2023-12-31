@@ -26,21 +26,21 @@ class FeatureBuilder(pre.PreprocessModule):
     def __init__(
         self,
         resources: rds.FeatureBuilderResources = None,
-        output_dir: Path = None,
+        # output_dir: Path = None,
         settings: FeatureBuilderSettings = None,
         output_constructors: rds.FeatureBuilderOutputConstructors = None,
     ):
-        if resources is None:
-            resources = rds.FeatureBuilderResources()
-        if output_dir is None:
-            output_dir = cfp.FEATURE_BUILDER_OUTPUT
-        if settings is None:
-            settings = FeatureBuilderSettings()
+        # if resources is None:
+        #     resources = rds.FeatureBuilderResources()
+        # if output_dir is None:
+        #     output_dir = cfp.FEATURE_BUILDER_OUTPUT
+        # if settings is None:
+        #     settings = FeatureBuilderSettings()
         if output_constructors is None:
             output_constructors = rds.FeatureBuilderOutputConstructors()
         super().__init__(
             resources=resources,
-            output_dir=output_dir,
+            # output_dir=output_dir,
             settings=settings,
             output_constructors=output_constructors,
         )

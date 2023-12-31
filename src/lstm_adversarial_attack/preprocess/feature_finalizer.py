@@ -30,21 +30,21 @@ class FeatureFinalizer(pre.PreprocessModule):
     def __init__(
         self,
         resources: rds.FeatureFinalizerResources = None,
-        output_dir: cfp.PREPROCESS_OUTPUT_DIR = None,
+        # output_dir: cfp.PREPROCESS_OUTPUT_DIR = None,
         settings: FeatureFinalizerSettings = None,
         output_constructors: rds.FeatureFinalizerOutputConstructors = None,
     ):
-        if resources is None:
-            resources = rds.FeatureFinalizerResources()
-        if output_dir is None:
-            output_dir = cfp.FEATURE_FINALIZER_OUTPUT
-        if settings is None:
-            settings = FeatureFinalizerSettings()
+        # if resources is None:
+        #     resources = rds.FeatureFinalizerResources()
+        # if output_dir is None:
+        #     output_dir = cfp.FEATURE_FINALIZER_OUTPUT
+        # if settings is None:
+        #     settings = FeatureFinalizerSettings()
         if output_constructors is None:
             output_constructors = rds.FeatureFinalizerOutputConstructors()
         super().__init__(
             resources=resources,
-            output_dir=output_dir,
+            # output_dir=output_dir,
             settings=settings,
             output_constructors=output_constructors,
         )
