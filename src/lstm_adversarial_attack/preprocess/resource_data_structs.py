@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, TypeVar
 
 import pandas as pd
-import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
@@ -76,14 +75,14 @@ class IncomingPreprocessResource(ABC):
 
 
 @dataclass
-class SingleResourceInfo(ABC):
+class ResourceInfo(ABC):
     @abstractmethod
     def build_resource(self, **kwargs):
         pass
 
 
 @dataclass
-class PoolResourceInfo(SingleResourceInfo):
+class PoolResourceInfo(ResourceInfo):
     key: str
     constructor: Callable[..., IncomingPreprocessResource]
 
@@ -98,7 +97,7 @@ class PoolResourceInfo(SingleResourceInfo):
 
 
 @dataclass
-class FileResourceInfo(SingleResourceInfo):
+class FileResourceInfo(ResourceInfo):
     key: str
     path: Path
     constructor: Callable[..., IncomingPreprocessResource]
@@ -206,6 +205,10 @@ class OutgoingMeasurementColumnNames(OutgoingPreprocessResource):
 
 @dataclass
 class PrefilterResources:
+    # icustay: IncomingCSVDataFrame
+    # bg: IncomingCSVDataFrame
+    # vital: IncomingCSVDataFrame
+    # lab: IncomingCSVDataFrame
     icustay: IncomingPreprocessResource = field(
         default_factory=lambda: IncomingCSVDataFrame(
             resource_id=cfp.PREFILTER_INPUT_FILES["icustay"]

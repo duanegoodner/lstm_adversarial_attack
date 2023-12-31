@@ -1,12 +1,9 @@
 import time
 from dataclasses import dataclass, field
 from functools import cached_property
-from pathlib import Path
 
 import pandas as pd
 
-import lstm_adversarial_attack.config_paths as cfp
-import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.preprocess.preprocessor as pre
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
@@ -29,21 +26,13 @@ class ICUStayMeasurementMerger(pre.PreprocessModule):
     def __init__(
         self,
         resources: rds.ICUStayMeasurementMergerResources = None,
-        # output_dir: Path = None,
         settings: ICUStayMeasurementMergerSettings = None,
         output_constructors: rds.ICUStayMeasurementMergerOutputConstructors = None,
     ):
-        # if resources is None:
-        #     resources = rds.ICUStayMeasurementMergerResources()
-        # if output_dir is None:
-        #     output_dir = cfp.STAY_MEASUREMENT_OUTPUT
-        # if settings is None:
-        #     settings = ICUStayMeasurementMergerSettings()
         if output_constructors is None:
             output_constructors = rds.ICUStayMeasurementMergerOutputConstructors()
         super().__init__(
             resources=resources,
-            # output_dir=output_dir,
             settings=settings,
             output_constructors=output_constructors,
         )

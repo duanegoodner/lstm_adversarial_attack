@@ -118,7 +118,7 @@ class ModuleInfo:
     module_constructor: Callable[..., PreprocessModule]
     resources_constructor: Callable[..., dataclass]
     settings_constructor: Callable[..., PreprocessModuleSettings]
-    individual_resources_info: list[rds.SingleResourceInfo]
+    individual_resources_info: list[rds.ResourceInfo]
     output_constructors: dataclass = None
     output_dir: Path = None
     save_output: bool = False
@@ -134,7 +134,6 @@ class ModuleInfo:
         resources = self.resources_constructor(**module_resources)
         return self.module_constructor(
             resources=resources,
-            # output_dir=self.output_dir,
             settings=self.settings_constructor(module_name=self.module_name),
             output_constructors=self.output_constructors,
         )

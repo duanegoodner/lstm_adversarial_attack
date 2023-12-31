@@ -1,13 +1,10 @@
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import cached_property
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-import lstm_adversarial_attack.config_paths as cfp
-import lstm_adversarial_attack.config_settings as cfs
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.preprocess.preprocessor as pre
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
@@ -22,11 +19,6 @@ class AdmissionListBuilderSettings(pre.PreprocessModuleSettings):
     @property
     def measurement_cols(self) -> list[str]:
         return self.bg_data_cols + self.lab_data_cols + self.vital_data_cols
-    # measurement_cols: list[str] = field(
-    #     default_factory=lambda: cfs.PREPROCESS_BG_DATA_COLS
-    #     + cfs.PREPROCESS_LAB_DATA_COLS
-    #     + cfs.PREPROCESS_VITAL_DATA_COLS
-    # )
 
     @property
     def time_series_cols(self) -> list[str]:
@@ -38,21 +30,13 @@ class AdmissionListBuilder(pre.PreprocessModule):
     def __init__(
         self,
         resources: rds.AdmissionListBuilderResources = None,
-        # output_dir: Path = None,
         settings: AdmissionListBuilderSettings = None,
         output_constructors: rds.AdmissionListBuilderOutputConstructors = None,
     ):
-        # if resources is None:
-        #     resources = rds.AdmissionListBuilderResources()
-        # if output_dir is None:
-        #     output_dir = cfp.FULL_ADMISSION_LIST_OUTPUT
-        # if settings is None:
-        #     settings = AdmissionListBuilderSettings()
         if output_constructors is None:
             output_constructors = rds.AdmissionListBuilderOutputConstructors()
         super().__init__(
             resources=resources,
-            # output_dir=output_dir,
             settings=settings,
             output_constructors=output_constructors,
         )
