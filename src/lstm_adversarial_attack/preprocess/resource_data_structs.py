@@ -36,9 +36,9 @@ class IncomingPreprocessResource(ABC):
     """
 
     def __init__(
-        self,
-        resource_id: str | Path,
-        resource_pool: dict[str, OutgoingPreprocessResource] = None,
+            self,
+            resource_id: str | Path,
+            resource_pool: dict[str, OutgoingPreprocessResource] = None,
     ):
         """
         Initializes resource by assigning an object to self._item. If
@@ -58,6 +58,7 @@ class IncomingPreprocessResource(ABC):
         else:
             self._item = self._import_object()
 
+    @abstractmethod
     def _import_object(self) -> _T:
         pass
 
@@ -87,7 +88,7 @@ class PoolResourceInfo(ResourceInfo):
     constructor: Callable[..., IncomingPreprocessResource]
 
     def build_resource(
-        self, resource_pool: dict[str, OutgoingPreprocessResource]
+            self, resource_pool: dict[str, OutgoingPreprocessResource]
     ) -> dict[str, IncomingPreprocessResource]:
         return {
             self.key: self.constructor(
@@ -112,14 +113,35 @@ class SingleOutputInfo:
     constructor: Callable[..., OutgoingPreprocessResource]
 
 
-class IncomingFeatherDataFrame(IncomingPreprocessResource):
+class IncomingDataFrame(IncomingPreprocessResource):
+    _import_dispatch = {
+        ".csv": pd.read_csv,
+        ".feather": rio.feather_to_df
+    }
+
+    def __init__(
+            self,
+            resource_id: str | Path,
+            resource_pool: dict[str, OutgoingPreprocessResource] = None,
+    ):
+        if type(resource_id) is Path:
+            assert resource_id.suffix in self._import_dispatch
+        super().__init__(resource_id=resource_id,
+                         resource_pool=resource_pool)
+
     def _import_object(self) -> pd.DataFrame:
-        return rio.feather_to_df(path=self.resource_id)
+        file_extension = self.resource_id.suffix
+        return self._import_dispatch[file_extension](self._resource_id)
 
 
-class IncomingCSVDataFrame(IncomingPreprocessResource):
-    def _import_object(self) -> pd.DataFrame:
-        return pd.read_csv(filepath_or_buffer=self.resource_id)
+# class IncomingFeatherDataFrame(IncomingPreprocessResource):
+#     def _import_object(self) -> pd.DataFrame:
+#         return rio.feather_to_df(path=self.resource_id)
+#
+#
+# class IncomingCSVDataFrame(IncomingPreprocessResource):
+#     def _import_object(self) -> pd.DataFrame:
+#         return pd.read_csv(filepath_or_buffer=self.resource_id)
 
 
 class IncomingFullAdmissionData(IncomingPreprocessResource):
@@ -147,7 +169,8 @@ class OutgoingPreprocessPickle(OutgoingPreprocessResource):
 
 class OutgoingFullAdmissionData(OutgoingPreprocessResource):
     def export(self, path: Path):
-        edc.export_admission_data_list(admission_data_list=self._resource, path=path)
+        edc.export_admission_data_list(admission_data_list=self._resource,
+                                       path=path)
 
     @property
     def file_ext(self) -> str:
@@ -210,22 +233,22 @@ class PrefilterResources:
     # vital: IncomingCSVDataFrame
     # lab: IncomingCSVDataFrame
     icustay: IncomingPreprocessResource = field(
-        default_factory=lambda: IncomingCSVDataFrame(
+        default_factory=lambda: IncomingDataFrame(
             resource_id=cfp.PREFILTER_INPUT_FILES["icustay"]
         )
     )
     bg: IncomingPreprocessResource = field(
-        default_factory=lambda: IncomingCSVDataFrame(
+        default_factory=lambda: IncomingDataFrame(
             resource_id=cfp.PREFILTER_INPUT_FILES["bg"]
         )
     )
     vital: IncomingPreprocessResource = field(
-        default_factory=lambda: IncomingCSVDataFrame(
+        default_factory=lambda: IncomingDataFrame(
             resource_id=cfp.PREFILTER_INPUT_FILES["vital"]
         )
     )
     lab: IncomingPreprocessResource = field(
-        default_factory=lambda: IncomingCSVDataFrame(
+        default_factory=lambda: IncomingDataFrame(
             resource_id=cfp.PREFILTER_INPUT_FILES["lab"]
         )
     )
@@ -249,23 +272,23 @@ class PrefilterOutputConstructors:
 
 @dataclass
 class ICUStayMeasurementMergerResources:
-    prefiltered_icustay: IncomingFeatherDataFrame = field(
-        default_factory=lambda: IncomingFeatherDataFrame(
+    prefiltered_icustay: IncomingDataFrame = field(
+        default_factory=lambda: IncomingDataFrame(
             resource_id=cfp.STAY_MEASUREMENT_INPUT_FILES["prefiltered_icustay"]
         )
     )
-    prefiltered_bg: IncomingFeatherDataFrame = field(
-        default_factory=lambda: IncomingFeatherDataFrame(
+    prefiltered_bg: IncomingDataFrame = field(
+        default_factory=lambda: IncomingDataFrame(
             resource_id=cfp.STAY_MEASUREMENT_INPUT_FILES["prefiltered_bg"]
         )
     )
-    prefiltered_lab: IncomingFeatherDataFrame = field(
-        default_factory=lambda: IncomingFeatherDataFrame(
+    prefiltered_lab: IncomingDataFrame = field(
+        default_factory=lambda: IncomingDataFrame(
             resource_id=cfp.STAY_MEASUREMENT_INPUT_FILES["prefiltered_lab"]
         )
     )
-    prefiltered_vital: IncomingFeatherDataFrame = field(
-        default_factory=lambda: IncomingFeatherDataFrame(
+    prefiltered_vital: IncomingDataFrame = field(
+        default_factory=lambda: IncomingDataFrame(
             resource_id=cfp.STAY_MEASUREMENT_INPUT_FILES["prefiltered_vital"]
         )
     )
@@ -283,9 +306,10 @@ class ICUStayMeasurementMergerOutputConstructors:
 
 @dataclass
 class AdmissionListBuilderResources:
-    icustay_bg_lab_vital: IncomingFeatherDataFrame = field(
-        default_factory=lambda: IncomingFeatherDataFrame(
-            resource_id=cfp.FULL_ADMISSION_LIST_INPUT_FILES["icustay_bg_lab_vital"]
+    icustay_bg_lab_vital: IncomingDataFrame = field(
+        default_factory=lambda: IncomingDataFrame(
+            resource_id=cfp.FULL_ADMISSION_LIST_INPUT_FILES[
+                "icustay_bg_lab_vital"]
         )
     )
 
@@ -304,9 +328,10 @@ class FeatureBuilderResources:
             resource_id=cfp.FEATURE_BUILDER_INPUT_FILES["full_admission_list"]
         )
     )
-    bg_lab_vital_summary_stats: IncomingFeatherDataFrame = field(
-        default_factory=lambda: IncomingFeatherDataFrame(
-            resource_id=cfp.FEATURE_BUILDER_INPUT_FILES["bg_lab_vital_summary_stats"]
+    bg_lab_vital_summary_stats: IncomingDataFrame = field(
+        default_factory=lambda: IncomingDataFrame(
+            resource_id=cfp.FEATURE_BUILDER_INPUT_FILES[
+                "bg_lab_vital_summary_stats"]
         )
     )
 
@@ -322,7 +347,8 @@ class FeatureBuilderOutputConstructors:
 class FeatureFinalizerResources:
     processed_admission_list: IncomingFullAdmissionData = field(
         default_factory=lambda: IncomingFullAdmissionData(
-            resource_id=cfp.FEATURE_FINALIZER_INPUT_FILES["processed_admission_list"]
+            resource_id=cfp.FEATURE_FINALIZER_INPUT_FILES[
+                "processed_admission_list"]
         )
     )
 

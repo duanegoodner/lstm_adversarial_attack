@@ -25,22 +25,22 @@ def main():
                 key="icustay",
                 path=cfp.PREFILTER_INPUT_FILES["icustay"],
                 # path=cfp.DB_OUTPUT_DIR / "icustay_500.csv",
-                constructor=rds.IncomingCSVDataFrame,
+                constructor=rds.IncomingDataFrame,
             ),
             rds.FileResourceInfo(
                 key="bg",
                 path=cfp.PREFILTER_INPUT_FILES["bg"],
-                constructor=rds.IncomingCSVDataFrame,
+                constructor=rds.IncomingDataFrame,
             ),
             rds.FileResourceInfo(
                 key="vital",
                 path=cfp.PREFILTER_INPUT_FILES["vital"],
-                constructor=rds.IncomingCSVDataFrame,
+                constructor=rds.IncomingDataFrame,
             ),
             rds.FileResourceInfo(
                 key="lab",
                 path=cfp.PREFILTER_INPUT_FILES["lab"],
-                constructor=rds.IncomingCSVDataFrame,
+                constructor=rds.IncomingDataFrame,
             ),
         ],
     )
@@ -52,16 +52,16 @@ def main():
         settings_constructor=imm.ICUStayMeasurementMergerSettings,
         individual_resources_info=[
             rds.PoolResourceInfo(
-                key="prefiltered_icustay", constructor=rds.IncomingFeatherDataFrame
+                key="prefiltered_icustay", constructor=rds.IncomingDataFrame
             ),
             rds.PoolResourceInfo(
-                key="prefiltered_bg", constructor=rds.IncomingFeatherDataFrame
+                key="prefiltered_bg", constructor=rds.IncomingDataFrame
             ),
             rds.PoolResourceInfo(
-                key="prefiltered_vital", constructor=rds.IncomingFeatherDataFrame
+                key="prefiltered_vital", constructor=rds.IncomingDataFrame
             ),
             rds.PoolResourceInfo(
-                key="prefiltered_lab", constructor=rds.IncomingFeatherDataFrame
+                key="prefiltered_lab", constructor=rds.IncomingDataFrame
             ),
         ],
     )
@@ -73,7 +73,7 @@ def main():
         settings_constructor=alb.AdmissionListBuilderSettings,
         individual_resources_info=[
             rds.PoolResourceInfo(
-                key="icustay_bg_lab_vital", constructor=rds.IncomingFeatherDataFrame
+                key="icustay_bg_lab_vital", constructor=rds.IncomingDataFrame
             )
         ],
     )
@@ -89,7 +89,7 @@ def main():
             ),
             rds.PoolResourceInfo(
                 key="bg_lab_vital_summary_stats",
-                constructor=rds.IncomingFeatherDataFrame,
+                constructor=rds.IncomingDataFrame,
             ),
         ],
         # output_info=rds.FeatureBuilderOutputConstructors(
