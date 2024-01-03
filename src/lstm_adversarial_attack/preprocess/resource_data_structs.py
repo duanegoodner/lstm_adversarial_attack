@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field, fields, Field
+from dataclasses import Field, dataclass, fields
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Callable, TypeVar, NamedTuple
+from typing import Any, Callable, TypeVar
 
 import pandas as pd
+
 import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
@@ -79,75 +80,6 @@ class IncomingPreprocessResource(ABC):
         return self._resource_pool
 
 
-class ResourceDetails(NamedTuple):
-    data_source_type: DataSourceType
-    constructor: Callable[..., IncomingPreprocessResource]
-
-
-@dataclass
-class ResourceInfoNew:
-    module_name: str
-    key: str
-    constructor: Callable[..., IncomingPreprocessResource]
-    data_source_type: DataSourceType
-    config_path: Path = None
-
-    def build_resource(
-        self, resource_pool: dict[str, OutgoingPreprocessResource] = None
-    ) -> IncomingPreprocessResource:
-        config_reader = config.ConfigReader(config_path=self.config_path)
-
-        if self.data_source_type == DataSourceType.POOL:
-            assert resource_pool is not None and self.key in resource_pool
-            return self.constructor(resource_id=self.key, resource_pool=resource_pool)
-        if self.data_source_type == DataSourceType.FILE:
-            path = Path(
-                config_reader.read_path(
-                    config_key=f"preprocess.{self.module_name}.resources.{self.key}"
-                )
-            )
-            assert path.exists()
-            return self.constructor(resource_id=path)
-
-
-@dataclass
-class ResourceInfo(ABC):
-    @abstractmethod
-    def build_resource(self, **kwargs):
-        pass
-
-
-@dataclass
-class PoolResourceInfo(ResourceInfo):
-    key: str
-    constructor: Callable[..., IncomingPreprocessResource]
-
-    def build_resource(
-        self, resource_pool: dict[str, OutgoingPreprocessResource]
-    ) -> dict[str, IncomingPreprocessResource]:
-        return {
-            self.key: self.constructor(
-                resource_id=self.key, resource_pool=resource_pool
-            )
-        }
-
-
-@dataclass
-class FileResourceInfo(ResourceInfo):
-    key: str
-    path: Path
-    constructor: Callable[..., IncomingPreprocessResource]
-
-    def build_resource(self, **kwargs) -> dict[str, IncomingPreprocessResource]:
-        return {self.key: self.constructor(resource_id=self.path)}
-
-
-@dataclass
-class SingleOutputInfo:
-    key: str
-    constructor: Callable[..., OutgoingPreprocessResource]
-
-
 class IncomingDataFrame(IncomingPreprocessResource):
     _import_dispatch = {".csv": pd.read_csv, ".feather": rio.feather_to_df}
 
@@ -191,7 +123,6 @@ class OutgoingFullAdmissionData(OutgoingPreprocessResource):
 class OutgoingFeaturesList(OutgoingPreprocessResource):
     def export(self, path: Path):
         edc.AdmissionDataWriter().export(obj=self.resource, path=path)
-        # edc.export_feature_arrays(np_arrays=self.resource, path=path)
 
     @property
     def file_ext(self) -> str:
@@ -294,38 +225,6 @@ class PrefilterResources(PreprocessModuleResources):
     lab: IncomingDataFrame = None
     vital: IncomingDataFrame = None
 
-    # icustay: IncomingDataFrame = IncomingDataFrame(
-    #     module_name="prefilter", resource_id="icustay"
-    # )
-    # bg: IncomingDataFrame = IncomingDataFrame(module_name="prefilter", resource_id="bg")
-    # vital: IncomingDataFrame = IncomingDataFrame(
-    #     module_name="prefilter", resource_id="vital"
-    # )
-    # lab: IncomingDataFrame = IncomingDataFrame(
-    #     module_name="prefilter", resource_id="lab"
-    # )
-
-    # icustay: IncomingPreprocessResource = field(
-    #     default_factory=lambda: IncomingDataFrame(
-    #         resource_id=cfp.PREFILTER_INPUT_FILES["icustay"]
-    #     )
-    # )
-    # bg: IncomingPreprocessResource = field(
-    #     default_factory=lambda: IncomingDataFrame(
-    #         resource_id=cfp.PREFILTER_INPUT_FILES["bg"]
-    #     )
-    # )
-    # vital: IncomingPreprocessResource = field(
-    #     default_factory=lambda: IncomingDataFrame(
-    #         resource_id=cfp.PREFILTER_INPUT_FILES["vital"]
-    #     )
-    # )
-    # lab: IncomingPreprocessResource = field(
-    #     default_factory=lambda: IncomingDataFrame(
-    #         resource_id=cfp.PREFILTER_INPUT_FILES["lab"]
-    #     )
-    # )
-
 
 @dataclass
 class PrefilterOutputConstructors:
@@ -350,27 +249,6 @@ class ICUStayMeasurementMergerResources(PreprocessModuleResources):
     prefiltered_lab: IncomingDataFrame = None
     prefiltered_vital: IncomingDataFrame = None
 
-    # prefiltered_icustay: IncomingDataFrame = field(
-    #     default_factory=lambda: IncomingDataFrame(
-    #         resource_id=cfp.STAY_MEASUREMENT_INPUT_FILES["prefiltered_icustay"]
-    #     )
-    # )
-    # prefiltered_bg: IncomingDataFrame = field(
-    #     default_factory=lambda: IncomingDataFrame(
-    #         resource_id=cfp.STAY_MEASUREMENT_INPUT_FILES["prefiltered_bg"]
-    #     )
-    # )
-    # prefiltered_lab: IncomingDataFrame = field(
-    #     default_factory=lambda: IncomingDataFrame(
-    #         resource_id=cfp.STAY_MEASUREMENT_INPUT_FILES["prefiltered_lab"]
-    #     )
-    # )
-    # prefiltered_vital: IncomingDataFrame = field(
-    #     default_factory=lambda: IncomingDataFrame(
-    #         resource_id=cfp.STAY_MEASUREMENT_INPUT_FILES["prefiltered_vital"]
-    #     )
-    # )
-
 
 @dataclass
 class ICUStayMeasurementMergerOutputConstructors:
@@ -385,12 +263,6 @@ class ICUStayMeasurementMergerOutputConstructors:
 @dataclass
 class AdmissionListBuilderResources(PreprocessModuleResources):
     icustay_bg_lab_vital: IncomingDataFrame = None
-    # icustay_bg_lab_vital: IncomingDataFrame = field(
-    #     default_factory=lambda: IncomingDataFrame(
-    #         resource_id=cfp.FULL_ADMISSION_LIST_INPUT_FILES[
-    #             "icustay_bg_lab_vital"]
-    #     )
-    # )
 
 
 @dataclass
@@ -404,17 +276,6 @@ class AdmissionListBuilderOutputConstructors:
 class FeatureBuilderResources(PreprocessModuleResources):
     full_admission_list: IncomingFullAdmissionData = None
     bg_lab_vital_summary_stats: IncomingDataFrame = None
-    # full_admission_list: IncomingPreprocessResource = field(
-    #     default_factory=lambda: IncomingFullAdmissionData(
-    #         resource_id=cfp.FEATURE_BUILDER_INPUT_FILES["full_admission_list"]
-    #     )
-    # )
-    # bg_lab_vital_summary_stats: IncomingDataFrame = field(
-    #     default_factory=lambda: IncomingDataFrame(
-    #         resource_id=cfp.FEATURE_BUILDER_INPUT_FILES[
-    #             "bg_lab_vital_summary_stats"]
-    #     )
-    # )
 
 
 @dataclass
@@ -427,12 +288,6 @@ class FeatureBuilderOutputConstructors:
 @dataclass
 class FeatureFinalizerResources(PreprocessModuleResources):
     processed_admission_list: IncomingFullAdmissionData = None
-    # processed_admission_list: IncomingFullAdmissionData = field(
-    #     default_factory=lambda: IncomingFullAdmissionData(
-    #         resource_id=cfp.FEATURE_FINALIZER_INPUT_FILES[
-    #             "processed_admission_list"]
-    #     )
-    # )
 
 
 @dataclass

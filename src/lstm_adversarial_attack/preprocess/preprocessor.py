@@ -68,12 +68,10 @@ class PreprocessModule(ABC):
     def __init__(
         self,
         resources: dataclass,
-        # output_dir: Path,
         settings: PreprocessModuleSettings,
         output_constructors: dataclass,
     ):
         self._resources = resources
-        # self._output_dir = output_dir
         self._settings = settings
         self._output_constructors = output_constructors
 
@@ -135,20 +133,6 @@ class ModuleInfo:
     def build_module(
         self, resource_pool: dict[str, rds.OutgoingPreprocessResource]
     ) -> PreprocessModule:
-        # module_resources = {"module_name": self.module_name}
-        # for item in self.resources_info:
-        #     module_resources.update(
-        #         {item.key: item.build_resource(resource_pool=resource_pool)}
-        #     )
-        # resource_info = rds.ResourceInfoNew(
-        #     module_name=self.module_name,
-        #     key=key,
-        #     data_source_type=data_source_type,
-        #     constructor
-        #
-        # )
-        # resources = self.resources_constructor(**module_resources)
-        # resources = self.resources_constructor(module_name=self.module_name)
         return self.module_constructor(
             resources=self.resources_constructor(
                 module_name=self.module_name,
