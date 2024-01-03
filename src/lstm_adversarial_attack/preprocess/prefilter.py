@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.preprocess.preprocessor as pre
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
@@ -13,6 +12,7 @@ class PrefilterSettings(pre.PreprocessModuleSettings):
     """
     Container for objects imported by Prefilter
     """
+
     min_age: int = None
     min_los_hospital: int = None
     min_los_icu: int = None
@@ -94,9 +94,7 @@ class Prefilter(pre.PreprocessModule):
         df = df.dropna(subset=measurements_of_interest, how="all")
         return df
 
-    def _filter_bg(
-        self, bg: pd.DataFrame, icustay: pd.DataFrame
-    ) -> pd.DataFrame:
+    def _filter_bg(self, bg: pd.DataFrame, icustay: pd.DataFrame) -> pd.DataFrame:
         """
         Filters the dataframe obtained from importing output of pivoted_bg.sql
         :param bg: dataframe with "blood group" data
@@ -114,9 +112,7 @@ class Prefilter(pre.PreprocessModule):
 
         return bg
 
-    def _filter_lab(
-        self, lab: pd.DataFrame, icustay: pd.DataFrame
-    ) -> pd.DataFrame:
+    def _filter_lab(self, lab: pd.DataFrame, icustay: pd.DataFrame) -> pd.DataFrame:
         """
         Filters the dataframe obtained from importing output of pivoted_lab.sql
         :param lab: dataframe with "blood group" data
@@ -139,9 +135,7 @@ class Prefilter(pre.PreprocessModule):
         )
         return lab
 
-    def _filter_vital(
-        self, vital: pd.DataFrame, icustay: pd.DataFrame
-    ) -> pd.DataFrame:
+    def _filter_vital(self, vital: pd.DataFrame, icustay: pd.DataFrame) -> pd.DataFrame:
         """
         Filters the dataframe obtained by importing output of pivoted_vital.sql
         :param vital: dataframe with "blood group" data
@@ -169,9 +163,7 @@ class Prefilter(pre.PreprocessModule):
         filtered_icustay = self._filter_icustay(df=self.icustay)
         filtered_bg = self._filter_bg(bg=self.bg, icustay=filtered_icustay)
         filtered_lab = self._filter_lab(lab=self.lab, icustay=filtered_icustay)
-        filtered_vital = self._filter_vital(
-            vital=self.vital, icustay=filtered_icustay
-        )
+        filtered_vital = self._filter_vital(vital=self.vital, icustay=filtered_icustay)
 
         return {
             "prefiltered_icustay": self.output_constructors.prefiltered_icustay(
@@ -192,21 +184,14 @@ class Prefilter(pre.PreprocessModule):
 if __name__ == "__main__":
     init_prefilter_start = time.time()
     prefilter_resources = rds.PrefilterResources(
-        icustay=rds.IncomingCSVDataFrame(
-            resource_id=cfp.PREFILTER_INPUT_FILES["icustay"]
-        ),
-        bg=rds.IncomingCSVDataFrame(
-            resource_id=cfp.PREFILTER_INPUT_FILES["bg"]
-        ),
-        vital=rds.IncomingCSVDataFrame(
-            resource_id=cfp.PREFILTER_INPUT_FILES["vital"]
-        ),
-        lab=rds.IncomingCSVDataFrame(
-            resource_id=cfp.PREFILTER_INPUT_FILES["lab"]
-        ),
+        module_name="prefilter",
+        default_data_source_type=rds.DataSourceType.FILE
     )
 
-    prefilter = Prefilter(resources=prefilter_resources)
+    prefilter = Prefilter(
+        resources=prefilter_resources,
+        settings=PrefilterSettings(module_name="prefilter"),
+    )
     init_prefilter_end = time.time()
     print(f"prefilter init time = {init_prefilter_end - init_prefilter_start}")
 

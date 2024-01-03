@@ -1,5 +1,5 @@
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import cached_property
 
 import pandas as pd
@@ -13,6 +13,7 @@ class ICUStayMeasurementMergerSettings(pre.PreprocessModuleSettings):
     """
     Container for ICUStayMeasurementCombiner config settings
     """
+
     bg_data_cols: list[str] = None
     lab_data_cols: list[str] = None
     vital_data_cols: list[str] = None
@@ -147,7 +148,14 @@ class ICUStayMeasurementMerger(pre.PreprocessModule):
 
 if __name__ == "__main__":
     init_start = time.time()
-    measurement_merger = ICUStayMeasurementMerger()
+    measurement_merger_resources = rds.ICUStayMeasurementMergerResources(
+        module_name="measurement_merger",
+        default_data_source_type=rds.DataSourceType.FILE
+    )
+    measurement_merger = ICUStayMeasurementMerger(
+        resources=measurement_merger_resources,
+        settings=ICUStayMeasurementMergerSettings(module_name="measurement_merger"),
+    )
     init_end = time.time()
     print(f"measurement merger init time = {init_end - init_start}")
 
@@ -159,8 +167,7 @@ if __name__ == "__main__":
     export_start = time.time()
     for key, outgoing_resource in result.items():
         outgoing_resource.export(
-            path=measurement_merger.output_dir
-            / f"{key}{outgoing_resource.file_ext}"
+            path=measurement_merger.output_dir / f"{key}{outgoing_resource.file_ext}"
         )
     export_end = time.time()
     print(f"measurement merger export time = {export_end - export_start}")

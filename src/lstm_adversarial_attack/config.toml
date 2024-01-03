@@ -50,14 +50,27 @@ admission_list_builder = "data/preprocess/checkpoints/3_full_admission_list"
 feature_builder = "data/preprocess/checkpoints/4_feature_builder"
 feature_finalizer = "data/preprocess/checkpoints/5_feature_finalizer"
 
-
 [preprocess.prefilter.resources]
 icustay = "data/query_db/icustay_detail.csv"
 bg = "data/query_db/pivoted_bg.csv"
 lab = "data/query_db/pivoted_lab.csv"
 vital = "data/query_db/pivoted_vital.csv"
 
+[preprocess.measurement_merger.resources]
+prefiltered_icustay = "data/preprocess/checkpoints/1_prefilter/prefiltered_icustay.feather"
+prefiltered_bg = "data/preprocess/checkpoints/1_prefilter/prefiltered_bg.feather"
+prefiltered_lab = "data/preprocess/checkpoints/1_prefilter/prefiltered_lab.feather"
+prefiltered_vital = "data/preprocess/checkpoints/1_prefilter/prefiltered_vital.feather"
 
+[preprocess.admission_list_builder.resources]
+icustay_bg_lab_vital = "data/preprocess/checkpoints/2_merged_stay_measurements/icustay_bg_lab_vital.feather"
+
+[preprocess.feature_builder.resources]
+bg_lab_vital_summary_stats = "data/preprocess/checkpoints/2_merged_stay_measurements/bg_lab_vital_summary_stats.feather"
+full_admission_list = "data/preprocess/checkpoints/3_full_admission_list/full_admission_list.json"
+
+[preprocess.feature_finalizer.resources]
+processed_admission_list = "data/preprocess/checkpoints/4_feature_builder/processed_admission_list.json"
 
 [model.tuner_driver]
     num_trials = 30

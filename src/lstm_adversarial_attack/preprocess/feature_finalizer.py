@@ -136,7 +136,14 @@ class FeatureFinalizer(pre.PreprocessModule):
 
 if __name__ == "__main__":
     init_start = time.time()
-    feature_finalizer = FeatureFinalizer()
+    feature_finalizer_resources = rds.FeatureFinalizerResources(
+        module_name="feature_finalizer",
+        default_data_source_type=rds.DataSourceType.FILE
+    )
+    feature_finalizer = FeatureFinalizer(
+        resources=feature_finalizer_resources,
+        settings=FeatureFinalizerSettings(module_name="feature_finalizer")
+    )
     init_end = time.time()
     print(f"feature finalizer init time = {init_end - init_start}")
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, fields, Field
+from dataclasses import Field, dataclass, fields
 from pathlib import Path
 from typing import Any, Callable
 
@@ -21,7 +21,10 @@ class PreprocessModuleResources(ABC):
     def __post_init__(self):
         config_reader = config.ConfigReader()
         for object_field in fields(self):
-            if object_field.name != "module_name" and getattr(self, object_field.name) is None:
+            if (
+                object_field.name != "module_name"
+                and getattr(self, object_field.name) is None
+            ):
                 value = config_reader.get_config_value(
                     f"preprocess.{self.module_name}.resources.{object_field.name}"
                 )
@@ -38,31 +41,36 @@ class PreprocessModuleSettings(ABC):
 
     @property
     def module_specific_fields(self) -> tuple[Field, ...]:
-        return tuple([object_field for object_field in fields(self) if
-                      object_field not in self.standard_fields])
+        return tuple(
+            [
+                object_field
+                for object_field in fields(self)
+                if object_field not in self.standard_fields
+            ]
+        )
 
     def __post_init__(self):
         config_reader = config.ConfigReader()
 
         if self.output_dir is None:
             self.output_dir = config_reader.read_path(
-                f"preprocess.output_dirs.{self.module_name}")
+                f"preprocess.output_dirs.{self.module_name}"
+            )
 
         for object_field in self.module_specific_fields:
             if getattr(self, object_field.name) is None:
-                attr = config_reader.get_config_value(
-                    f"preprocess.{object_field.name}")
+                attr = config_reader.get_config_value(f"preprocess.{object_field.name}")
                 setattr(self, object_field.name, attr)
 
 
 @dataclass
 class PreprocessModule(ABC):
     def __init__(
-            self,
-            resources: dataclass,
-            # output_dir: Path,
-            settings: PreprocessModuleSettings,
-            output_constructors: dataclass,
+        self,
+        resources: dataclass,
+        # output_dir: Path,
+        settings: PreprocessModuleSettings,
+        output_constructors: dataclass,
     ):
         self._resources = resources
         # self._output_dir = output_dir
@@ -83,7 +91,7 @@ class PreprocessModule(ABC):
 
     @abstractmethod
     def process(
-            self,
+        self,
     ) -> dict[str, rds.OutgoingPreprocessResource]:
         pass
 
@@ -100,7 +108,7 @@ class PreprocessModule(ABC):
                     "resource_name": val.__class__.__name__,
                     "resource_id": str(val.resource_id),
                 }
-                for key, val in self._resources.__dict__.items()
+                for key, val in self._resources.resources_dict.items()
             },
             settings=self._settings.__dict__,
         )
@@ -118,22 +126,35 @@ class ModuleInfo:
     module_constructor: Callable[..., PreprocessModule]
     resources_constructor: Callable[..., dataclass]
     settings_constructor: Callable[..., PreprocessModuleSettings]
-    individual_resources_info: list[rds.ResourceInfo]
+    # resources_info: list[rds.ResourceInfoNew]
+    default_data_source_type: rds.DataSourceType
     output_constructors: dataclass = None
     output_dir: Path = None
-    save_output: bool = False
+    save_output: bool = True
 
     def build_module(
-            self, resource_pool: dict[str, rds.OutgoingPreprocessResource]
+        self, resource_pool: dict[str, rds.OutgoingPreprocessResource]
     ) -> PreprocessModule:
-        module_resources = {}
-        for item in self.individual_resources_info:
-            module_resources.update(
-                item.build_resource(resource_pool=resource_pool)
-            )
-        resources = self.resources_constructor(**module_resources)
+        # module_resources = {"module_name": self.module_name}
+        # for item in self.resources_info:
+        #     module_resources.update(
+        #         {item.key: item.build_resource(resource_pool=resource_pool)}
+        #     )
+        # resource_info = rds.ResourceInfoNew(
+        #     module_name=self.module_name,
+        #     key=key,
+        #     data_source_type=data_source_type,
+        #     constructor
+        #
+        # )
+        # resources = self.resources_constructor(**module_resources)
+        # resources = self.resources_constructor(module_name=self.module_name)
         return self.module_constructor(
-            resources=resources,
+            resources=self.resources_constructor(
+                module_name=self.module_name,
+                default_data_source_type=self.default_data_source_type,
+                resource_pool=resource_pool
+            ),
             settings=self.settings_constructor(module_name=self.module_name),
             output_constructors=self.output_constructors,
         )
@@ -141,10 +162,10 @@ class ModuleInfo:
 
 class Preprocessor:
     def __init__(
-            self,
-            modules_info: list[ModuleInfo],
-            save_checkpoints: bool = False,
-            available_resources: dict[str, Any] = None,
+        self,
+        modules_info: list[ModuleInfo],
+        save_checkpoints: bool = False,
+        available_resources: dict[str, Any] = None,
     ):
         self.modules_info = modules_info
         if available_resources is None:
@@ -156,17 +177,15 @@ class Preprocessor:
 
     @staticmethod
     def export_resources(
-            module_output: dict[str, rds.OutgoingPreprocessResource],
-            output_dir: Path,
+        module_output: dict[str, rds.OutgoingPreprocessResource],
+        output_dir: Path,
     ):
         for key, outgoing_resource in module_output.items():
             outgoing_resource.export(
                 path=output_dir / f"{key}{outgoing_resource.file_ext}"
             )
 
-    def run_preprocess_module(
-            self, module: PreprocessModule, save_output: bool
-    ):
+    def run_preprocess_module(self, module: PreprocessModule, save_output: bool):
         process_start = time.time()
         module_output = module.process()
         process_end = time.time()
@@ -191,13 +210,10 @@ class Preprocessor:
         for module_info in self.modules_info:
             print(f"Running {module_info.module_constructor.__name__}")
             init_start = time.time()
-            module = module_info.build_module(
-                resource_pool=self.available_resources
-            )
+            module = module_info.build_module(resource_pool=self.available_resources)
             init_end = time.time()
             print(
-                f"{module.__class__.__name__} init time ="
-                f" {init_end - init_start}"
+                f"{module.__class__.__name__} init time =" f" {init_end - init_start}"
             )
             self.run_preprocess_module(
                 module=module,

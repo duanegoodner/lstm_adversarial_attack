@@ -160,7 +160,14 @@ class FeatureBuilder(pre.PreprocessModule):
 
 if __name__ == "__main__":
     init_start = time.time()
-    feature_builder = FeatureBuilder()
+    feature_builder_resources = rds.FeatureBuilderResources(
+        module_name="feature_builder",
+        default_data_source_type=rds.DataSourceType.FILE
+    )
+    feature_builder = FeatureBuilder(
+        resources=feature_builder_resources,
+        settings=FeatureBuilderSettings(module_name="feature_builder")
+    )
     init_end = time.time()
     print(f"feature builder init time = {init_end - init_start}")
 

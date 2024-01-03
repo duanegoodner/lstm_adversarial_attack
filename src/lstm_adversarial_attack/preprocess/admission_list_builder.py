@@ -91,7 +91,14 @@ class AdmissionListBuilder(pre.PreprocessModule):
 
 if __name__ == "__main__":
     init_start = time.time()
-    full_admission_list_builder = AdmissionListBuilder()
+    admission_list_builder_resources = rds.AdmissionListBuilderResources(
+        module_name="admission_list_builder",
+        default_data_source_type=rds.DataSourceType.FILE
+    )
+    full_admission_list_builder = AdmissionListBuilder(
+        resources=admission_list_builder_resources,
+        settings=AdmissionListBuilderSettings(module_name="admission_list_builder")
+    )
     init_end = time.time()
     print(f"list builder init time = {init_end - init_start}")
 
