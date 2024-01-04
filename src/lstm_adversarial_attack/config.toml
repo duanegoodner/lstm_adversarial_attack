@@ -72,6 +72,11 @@ full_admission_list = "data/preprocess/checkpoints/3_full_admission_list/full_ad
 [preprocess.feature_finalizer.resources]
 processed_admission_list = "data/preprocess/checkpoints/4_feature_builder/processed_admission_list.json"
 
+[preprocess.feature_finalizer.output]
+measurement_data_list = "data/preprocess/checkpoints/5_feature_finalizer/measurement_data_list.json"
+in_hospital_mortality_list = "data/preprocess/checkpoints/5_feature_finalizer/in_hospital_mortality_list.json"
+measurement_col_names = "data/preprocess/checkpoints/5_feature_finalizer/measurement_col_names.json"
+
 [model.tuner_driver]
     num_trials = 30
     num_folds = 3

@@ -1,5 +1,4 @@
 import logging
-import lstm_adversarial_attack.config_paths as cfp
 from pathlib import Path
 
 # Create loggers for two different parts of your application
@@ -7,8 +6,8 @@ logger_a = logging.getLogger('logger_a')
 logger_b = logging.getLogger('logger_b')
 
 # Configure handlers for each logger
-handler_a = logging.FileHandler(cfp.HYPERPARAMETER_OUTPUT_DIR / 'log_file_a.csv')
-handler_b = logging.FileHandler(cfp.HYPERPARAMETER_OUTPUT_DIR / 'log_file_b.csv')
+handler_a = logging.FileHandler(Path('log_file_a.csv'))
+handler_b = logging.FileHandler(Path('log_file_b.csv'))
 
 # Create formatters for the log messages
 formatter = logging.Formatter('%(asctime)s')

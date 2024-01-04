@@ -1,18 +1,25 @@
 """
 Dev script for building small version of icustay data
 """
+from pathlib import Path
 
 import pandas as pd
-import lstm_adversarial_attack.config_paths as cfp
-import lstm_adversarial_attack.resource_io as rio
 
-full_icustay = pd.read_csv(
-    filepath_or_buffer=cfp.PREFILTER_INPUT_FILES["icustay"]
-)
+import lstm_adversarial_attack.config as config
 
-icustay_4000 = full_icustay.iloc[:4000, :]
+if __name__ == "__main__":
+    config_reader = config.ConfigReader()
+    full_icustay_path = Path(
+        config_reader.read_path("preprocess.prefilter.resources.icustay")
+    )
+    full_icustay = pd.read_csv(full_icustay_path)
 
-output_path = cfp.DB_OUTPUT_DIR / "icustay_4000.csv"
+    icustay_4000 = full_icustay.iloc[:4000, :]
 
-icustay_4000.to_csv(output_path)
+    db_output_dir = Path(
+        config_reader.read_path(config_key="db.paths.query_output_dir")
+    )
 
+    output_path = db_output_dir / "icustay_4000.csv"
+
+    icustay_4000.to_csv(output_path)

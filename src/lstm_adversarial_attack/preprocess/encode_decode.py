@@ -9,18 +9,24 @@ import pandas as pd
 import torch
 
 import lstm_adversarial_attack.attack.attack_data_structs as ads
-import lstm_adversarial_attack.config_paths as cfp
-import lstm_adversarial_attack.config_settings as cfs
+import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.data_structures as ds
-import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
+import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
+
+# import lstm_adversarial_attack.config_paths as cfp
+
 
 # TODO Consider creating DataWriter base class with encoder abstractmethod and
 #  encode() & export() concrete methods
 
+ADMISSION_DATA_JSON_DELIMITER = config.ConfigReader().get_config_value(
+    config_key="preprocess.admission_data_json_delimiter"
+)
+
 
 class AdmissionDataWriter:
-    def __init__(self, delimiter: str = cfs.ADMISSION_DATA_JSON_DELIMITER):
+    def __init__(self, delimiter: str = ADMISSION_DATA_JSON_DELIMITER):
         self._delimiter = delimiter
 
     @staticmethod
@@ -31,9 +37,7 @@ class AdmissionDataWriter:
             return eds.DecomposedTimeSeries(
                 index=obj.index.tolist(),
                 time_vals=obj["charttime"].tolist(),
-                data=obj.loc[:, obj.columns != "charttime"]
-                .to_numpy()
-                .tolist(),
+                data=obj.loc[:, obj.columns != "charttime"].to_numpy().tolist(),
             )
         if isinstance(obj, np.datetime64):
             return pd.Timestamp(obj)
@@ -48,9 +52,7 @@ class AdmissionDataWriter:
     def encoder(self) -> msgspec.json.Encoder:
         return msgspec.json.Encoder(enc_hook=self.enc_hook)
 
-    def encode(
-        self, full_admission_data_list: list[eds.FullAdmissionData]
-    ) -> bytes:
+    def encode(self, full_admission_data_list: list[eds.FullAdmissionData]) -> bytes:
         example_df = full_admission_data_list[0].time_series
         timestamp_col_name = "charttime"
         timestamp_dtype = example_df[timestamp_col_name].dtype.name
@@ -91,15 +93,13 @@ class AdmissionDataListReader:
     def __init__(
         self,
         encoded_data: bytes,
-        delimiter: str = cfs.ADMISSION_DATA_JSON_DELIMITER,
+        delimiter: str = ADMISSION_DATA_JSON_DELIMITER,
     ):
         self._encoded_data = encoded_data
         self._delimiter = delimiter
 
     @classmethod
-    def from_file(
-        cls, path: Path, delimiter: str = cfs.ADMISSION_DATA_JSON_DELIMITER
-    ):
+    def from_file(cls, path: Path, delimiter: str = ADMISSION_DATA_JSON_DELIMITER):
         with path.open(mode="rb") as in_file:
             encoded_data = in_file.read()
         return cls(encoded_data=encoded_data, delimiter=delimiter)
@@ -134,16 +134,12 @@ class AdmissionDataListReader:
             return pd.Timestamp(obj)
         if type is pd.DataFrame:
             time_vals = np.array(obj["time_vals"], dtype="datetime64[ns]")
-            df = pd.DataFrame(
-                np.array(obj["data"], dtype=self._header.data_cols_dtype)
-            )
+            df = pd.DataFrame(np.array(obj["data"], dtype=self._header.data_cols_dtype))
             df.columns = self._header.data_cols_names
             df[self._header.timestamp_col_name] = time_vals
             return df
         else:
-            raise NotImplementedError(
-                f"Objects of type {type} are not supported"
-            )
+            raise NotImplementedError(f"Objects of type {type} are not supported")
 
     @cached_property
     def body_decoder(self) -> msgspec.json.Decoder:
@@ -157,7 +153,7 @@ class AdmissionDataListReader:
 
 def import_admission_data_list(path: Path) -> list[eds.FullAdmissionData]:
     data_reader = AdmissionDataListReader.from_file(
-        path=path, delimiter=cfs.ADMISSION_DATA_JSON_DELIMITER
+        path=path, delimiter=ADMISSION_DATA_JSON_DELIMITER
     )
     return data_reader.decode()
 
@@ -332,9 +328,7 @@ class FeatureArraysReader(StandardStructReader):
         if decode_type is np.ndarray:
             return np.array(obj)
         else:
-            raise NotImplementedError(
-                f"Objects of type {type} are not supported"
-            )
+            raise NotImplementedError(f"Objects of type {type} are not supported")
 
 
 class ClassLabelsReader(StandardStructReader):
@@ -356,9 +350,7 @@ class MeasurementColumnNamesReader(StandardStructReader):
         if decode_type is tuple[str]:
             return tuple(obj)
         else:
-            raise NotImplementedError(
-                f"Objects of type {type} are not supported"
-            )
+            raise NotImplementedError(f"Objects of type {type} are not supported")
 
 
 class TunerDriverSummaryReader(StandardStructReader):
@@ -372,9 +364,7 @@ class TunerDriverSummaryReader(StandardStructReader):
         if decode_type is tuh.X19MLSTMTuningRanges:
             return tuh.X19MLSTMTuningRanges(**obj)
         else:
-            raise NotImplementedError(
-                f"Objects of type {type} are not supported"
-            )
+            raise NotImplementedError(f"Objects of type {type} are not supported")
 
 
 class AttackTunerDriverSummaryReader(StandardStructReader):
@@ -402,9 +392,7 @@ class TrainingCheckpointStorageReader(StandardStructReader):
         if decode_type is torch.Tensor:
             return torch.tensor(obj)
         else:
-            raise NotImplementedError(
-                f"Objects of type {type} are not supported"
-            )
+            raise NotImplementedError(f"Objects of type {type} are not supported")
 
 
 class X19LSTMHyperParameterSettingsReader(StandardStructReader):
@@ -418,8 +406,14 @@ class X19LSTMHyperParameterSettingsReader(StandardStructReader):
 
 
 if __name__ == "__main__":
+    CV_ASSESSMENT_OUTPUT_DIR = Path(
+        config.ConfigReader().read_path(
+            config_key="model.cv_driver_settings.cv_output_root_dir"
+        )
+    )
+
     checkpoint_from_pickle = torch.load(
-        cfp.CV_ASSESSMENT_OUTPUT_DIR
+        CV_ASSESSMENT_OUTPUT_DIR
         / "cv_training_20230901215330316505"
         / "checkpoints"
         / "fold_2"
@@ -427,15 +421,15 @@ if __name__ == "__main__":
     )
 
     json_output_path = (
-        cfp.CV_ASSESSMENT_OUTPUT_DIR
+        CV_ASSESSMENT_OUTPUT_DIR
         / "cv_training_20230901215330316505"
         / "checkpoints"
         / "fold_2"
         / "training_checkpoint_20230901215535284037.json"
     )
 
-    checkpoint_storage_from_json = (
-        TrainingCheckpointStorageReader().import_struct(path=json_output_path)
+    checkpoint_storage_from_json = TrainingCheckpointStorageReader().import_struct(
+        path=json_output_path
     )
 
     checkpoint_from_json = ds.TrainingCheckpoint.from_storage(
@@ -450,35 +444,3 @@ if __name__ == "__main__":
                 checkpoint_from_pickle["state_dict"][key],
             )
         )
-
-    # import_path = cfp.FULL_ADMISSION_LIST_OUTPUT / "full_admission_list.json"
-    # json_import_start = time.time()
-    # result = import_admission_data_list(path=import_path)
-    # json_import_end = time.time()
-
-    # my_features = [
-    #     np.array([[1.1, 2.2, 3.3]]),
-    #     np.array([[4.4, 5.5, 6.6], [7.7, 8.8, 9.9]]),
-    # ]
-    #
-    # feature_arrays = eds.FeatureArrays(data=my_features)
-    # encoded_feature_arrays = FeatureArraysWriter().encode(feature_arrays)
-    # decoded_features = FeatureArraysReader().decode(encoded_feature_arrays)
-    #
-    # my_class_labels = [0, 0, 1]
-    # class_labels = eds.ClassLabels(data=my_class_labels)
-    # encoded_class_labels = ClassLabelsWriter().encode(class_labels)
-    # decoded_class_labels = ClassLabelsReader().decode(encoded_class_labels)
-    #
-    # my_col_names = ("col_one", "col_two", "col_three")
-    # col_names = eds.MeasurementColumnNames(data=my_col_names)
-    # encoded_col_names = MeasurementColumnNamesWriter().encode(col_names)
-    # decoded_col_names = MeasurementColumnNamesReader().decode(
-    #     encoded_col_names
-    # )
-
-    # tuner_driver_summary = TunerDriverSummaryReader().import_struct(
-    #     path=cfp.HYPERPARAMETER_OUTPUT_DIR
-    #     / "2023-08-17_15_05_51.518571"
-    #     / "tuner_driver_summary_2023-08-17_15_05_51.519082.json"
-    # )

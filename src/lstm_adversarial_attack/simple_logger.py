@@ -5,8 +5,6 @@ from typing import Any
 
 import pandas as pd
 
-import lstm_adversarial_attack.config_paths as cfp
-
 
 # https://stackoverflow.com/a/75036813
 class MyFormatter(logging.Formatter):
@@ -83,7 +81,7 @@ class SimpleLogWriter:
 if __name__ == "__main__":
     my_logger = SimpleLogWriter(
         name="test_logger",
-        log_file=cfp.HYPERPARAMETER_OUTPUT_DIR / "test_log.csv",
+        log_file=Path("test_log.csv"),
     )
     my_logger.activate(data_col_names=("a", "b", "c"))
     my_logger.write_data(data=("1", "2", "3"))

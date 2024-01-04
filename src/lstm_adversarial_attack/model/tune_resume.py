@@ -23,7 +23,9 @@ def main(study_name: str = None, num_trials: int = None) -> optuna.Study:
     :return: the updated optuna Study.
     """
     if study_name is None:
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
         study_name = tsd.MODEL_TUNING_DB.get_latest_study().study_name
+        optuna.logging.set_verbosity(optuna.logging.INFO)
 
     config_reader = config.ConfigReader()
     tuning_output_dir = config_reader.read_path(
