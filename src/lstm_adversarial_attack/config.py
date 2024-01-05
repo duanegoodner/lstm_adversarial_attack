@@ -1,8 +1,7 @@
-import json
 import pprint
 import toml
 from pathlib import Path
-from typing import Callable, Any
+from typing import Any
 
 
 class ConfigReader:
@@ -34,24 +33,24 @@ class ConfigReader:
 
         return result
 
-    def read_path(self, config_key: str) -> str | list[str] | dict[str, str]:
-        path_rel_project_root = self.get_config_value(config_key=config_key)
-        value_type = type(path_rel_project_root)
-        assert value_type == str or value_type == list or value_type == dict
-        if value_type == str:
-            return self._to_absolute_path(path_rel_project_root=path_rel_project_root)
-        if value_type == list:
-            return [
-                self._to_absolute_path(path_rel_project_root=path)
-                for path in path_rel_project_root
-            ]
-        if value_type == dict:
-            return {
-                key: self._to_absolute_path(path_rel_project_root=val)
-                for key, val in path_rel_project_root.items()
-            }
+    # def read_path(self, config_key: str) -> str | list[str] | dict[str, str]:
+    #     path_rel_project_root = self.get_config_value(config_key=config_key)
+    #     value_type = type(path_rel_project_root)
+    #     assert value_type == str or value_type == list or value_type == dict
+    #     if value_type == str:
+    #         return self._to_absolute_path(path_rel_project_root=path_rel_project_root)
+    #     if value_type == list:
+    #         return [
+    #             self._to_absolute_path(path_rel_project_root=path)
+    #             for path in path_rel_project_root
+    #         ]
+    #     if value_type == dict:
+    #         return {
+    #             key: self._to_absolute_path(path_rel_project_root=val)
+    #             for key, val in path_rel_project_root.items()
+    #         }
 
-    def read_dotted_info(
+    def read_path(
         self, config_key: str, extension: str = ""
     ) -> str | list[str] | dict[str, str]:
         config_val = self.get_config_value(config_key=config_key)
@@ -77,7 +76,7 @@ class ConfigReader:
         if len(path_components) == 1:
             return self._to_absolute_path(end_path)
         else:
-            return self.read_dotted_info(
+            return self.read_path(
                 config_key=f"{path_components[0]}", extension=f"/{end_path}"
             )
 
