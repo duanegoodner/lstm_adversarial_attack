@@ -14,15 +14,6 @@ class ConfigReader:
     def project_root(self) -> Path:
         return Path(__file__).parent.parent.parent
 
-    def _to_absolute_path(self, path_rel_project_root: str | Path) -> str:
-        relative_path = Path(path_rel_project_root)
-        if relative_path.is_absolute():
-            raise TypeError(
-                f"{path_rel_project_root} is an absolute path. "
-                f"Must be a relative path."
-            )
-        return str(self.project_root / relative_path)
-
     def get_config_value(self, config_key: str) -> Any:
         with self._config_path.open(mode="r") as config_file:
             project_config = toml.load(config_file)
@@ -33,22 +24,21 @@ class ConfigReader:
 
         return result
 
-    # def read_path(self, config_key: str) -> str | list[str] | dict[str, str]:
-    #     path_rel_project_root = self.get_config_value(config_key=config_key)
-    #     value_type = type(path_rel_project_root)
-    #     assert value_type == str or value_type == list or value_type == dict
-    #     if value_type == str:
-    #         return self._to_absolute_path(path_rel_project_root=path_rel_project_root)
-    #     if value_type == list:
-    #         return [
-    #             self._to_absolute_path(path_rel_project_root=path)
-    #             for path in path_rel_project_root
-    #         ]
-    #     if value_type == dict:
-    #         return {
-    #             key: self._to_absolute_path(path_rel_project_root=val)
-    #             for key, val in path_rel_project_root.items()
-    #         }
+
+class PathReader(ConfigReader):
+    def __init__(self, config_path: Path = None):
+        if config_path is None:
+            config_path = Path(__file__).parent / "paths.toml"
+        super().__init__(config_path=config_path)
+
+    def _to_absolute_path(self, path_rel_project_root: str | Path) -> str:
+        relative_path = Path(path_rel_project_root)
+        if relative_path.is_absolute():
+            raise TypeError(
+                f"{path_rel_project_root} is an absolute path. "
+                f"Must be a relative path."
+            )
+        return str(self.project_root / relative_path)
 
     def read_path(
         self, config_key: str, extension: str = ""

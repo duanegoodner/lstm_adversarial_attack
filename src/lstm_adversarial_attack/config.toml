@@ -1,11 +1,29 @@
-[db.paths]
-    mimiciii_db_dotenv = "src/lstm_adversarial_attack/query_db/mimiciii_database.env"
-    query_output_dir = "data/query_db"
+[paths]
+root_pkg = "src/lstm_adversarial_attack"
+db_sub_pkg = "root_pkg::query_db"
+preprocess_sub_pkg = "root_pkg::preprocess"
+project_output_data = "data"
+[paths.db]
+    mimiciii_db_dotenv = "db_sub_pkg::mimiciii_database.env"
+    query_output_dir = "project_output_data::query_db"
+    queries_dir = "db_sub_pkg::mimiciii_queries"
     queries = [
-        "src/lstm_adversarial_attack/query_db/mimiciii_queries/icustay_detail.sql",
-        "src/lstm_adversarial_attack/query_db/mimiciii_queries/pivoted_bg.sql",
-        "src/lstm_adversarial_attack/query_db/mimiciii_queries/pivoted_lab.sql",
-        "src/lstm_adversarial_attack/query_db/mimiciii_queries/pivoted_vital.sql",
+        "db.paths.queries_dir::icustay_detail.sql",
+        "db.paths.queries_dir::pivoted_bg.sql",
+        "db.paths.queries_dir::pivoted_lab.sql",
+        "db.paths.queries_dir::pivoted_vital.sql",
+    ]
+
+
+[db.paths]
+    mimiciii_db_dotenv = "db_sub_pkg::mimiciii_database.env"
+    query_output_dir = "project_output_data::query_db"
+    queries_dir = "db_sub_pkg::mimiciii_queries"
+    queries = [
+        "db.paths.queries_dir::icustay_detail.sql",
+        "db.paths.queries_dir::pivoted_bg.sql",
+        "db.paths.queries_dir::pivoted_lab.sql",
+        "db.paths.queries_dir::pivoted_vital.sql",
     ]
 
 [preprocess]
@@ -44,11 +62,12 @@
     observation_window_start = "intime"
 
 [preprocess.output_dirs]
-prefilter = "data/preprocess/checkpoints/1_prefilter"
-measurement_merger = "data/preprocess/checkpoints/2_merged_stay_measurements"
-admission_list_builder = "data/preprocess/checkpoints/3_full_admission_list"
-feature_builder = "data/preprocess/checkpoints/4_feature_builder"
-feature_finalizer = "data/preprocess/checkpoints/5_feature_finalizer"
+root = "project_output_data::preprocess/checkpoints"
+prefilter = "preprocess.output_dirs.root::1_prefilter"
+measurement_merger = "preprocess.output_dirs.root::2_merged_stay_measurements"
+admission_list_builder = "preprocess.output_dirs.root::3_full_admission_list"
+feature_builder = "preprocess.output_dirs.root::4_feature_builder"
+feature_finalizer = "preprocess.output_dirs.root::5_feature_finalizer"
 
 [preprocess.prefilter.resources]
 icustay = "data/query_db/icustay_detail.csv"
