@@ -20,7 +20,8 @@ class ConfigReader:
         if relative_path.is_absolute():
             raise TypeError(
                 f"{path_rel_project_root} is an absolute path. "
-                f"Must be a relative path.")
+                f"Must be a relative path."
+            )
         return str(self.project_root / relative_path)
 
     def get_config_value(self, config_key: str) -> Any:
@@ -38,20 +39,52 @@ class ConfigReader:
         value_type = type(path_rel_project_root)
         assert value_type == str or value_type == list or value_type == dict
         if value_type == str:
-            return self._to_absolute_path(
-                path_rel_project_root=path_rel_project_root)
+            return self._to_absolute_path(path_rel_project_root=path_rel_project_root)
         if value_type == list:
-            return [self._to_absolute_path(path_rel_project_root=path) for path
-                    in path_rel_project_root]
+            return [
+                self._to_absolute_path(path_rel_project_root=path)
+                for path in path_rel_project_root
+            ]
         if value_type == dict:
-            return {key: self._to_absolute_path(path_rel_project_root=val) for
-                    key, val in path_rel_project_root.items()}
+            return {
+                key: self._to_absolute_path(path_rel_project_root=val)
+                for key, val in path_rel_project_root.items()
+            }
+
+    def read_dotted_info(
+        self, config_key: str, extension: str = ""
+    ) -> str | list[str] | dict[str, str]:
+        config_val = self.get_config_value(config_key=config_key)
+        if type(config_val) is str:
+            return self.read_dotted_val_str(path_val=config_val, extension=extension)
+        if type(config_val) is list:
+            return [
+                self.read_dotted_val_str(path_val=entry, extension=extension)
+                for entry in config_val
+            ]
+        if type(config_val) is dict:
+            return {
+                key: self.read_dotted_val_str(path_val=val, extension=extension)
+                for key, val in config_val.items()
+            }
+
+    def read_dotted_val_str(
+        self, path_val: str, extension: str = ""
+    ) -> str | list[str] | dict[str, str]:
+        # path_val = self.get_config_value(config_key=config_key)
+        path_components = path_val.split("::")
+        end_path = f"{path_components[-1]}{extension}"
+        if len(path_components) == 1:
+            return self._to_absolute_path(end_path)
+        else:
+            return self.read_dotted_info(
+                config_key=f"{path_components[0]}", extension=f"/{end_path}"
+            )
 
 
 if __name__ == "__main__":
     config_reader = ConfigReader()
-    config_value = config_reader.get_config_value(
-        config_key="preprocess.bg_data_cols")
+    config_value = config_reader.get_config_value(config_key="preprocess.bg_data_cols")
     pprint.pprint(config_value)
 
 # class ModuleSettingsBuilder:

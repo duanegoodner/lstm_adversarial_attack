@@ -1,0 +1,11 @@
+a = "src"
+b = "a::lstm_adversarial_attack"
+c = "b::preprocess"
+z = ["a::lstm_adversarial_attack", "a::other_pkg"]
+d = ["z::hello", "z::world"]
+[paths.e]
+q = "d::foo"
+r = "d::bar"
+
+[more_paths]
+x = "paths.e.q::happy_day"
