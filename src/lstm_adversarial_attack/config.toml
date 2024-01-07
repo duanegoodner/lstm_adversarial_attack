@@ -1,31 +1,3 @@
-[paths]
-root_pkg = "src/lstm_adversarial_attack"
-db_sub_pkg = "root_pkg::query_db"
-preprocess_sub_pkg = "root_pkg::preprocess"
-project_output_data = "data"
-[paths.db]
-    mimiciii_db_dotenv = "db_sub_pkg::mimiciii_database.env"
-    query_output_dir = "project_output_data::query_db"
-    queries_dir = "db_sub_pkg::mimiciii_queries"
-    queries = [
-        "db.paths.queries_dir::icustay_detail.sql",
-        "db.paths.queries_dir::pivoted_bg.sql",
-        "db.paths.queries_dir::pivoted_lab.sql",
-        "db.paths.queries_dir::pivoted_vital.sql",
-    ]
-
-
-[db.paths]
-    mimiciii_db_dotenv = "db_sub_pkg::mimiciii_database.env"
-    query_output_dir = "project_output_data::query_db"
-    queries_dir = "db_sub_pkg::mimiciii_queries"
-    queries = [
-        "db.paths.queries_dir::icustay_detail.sql",
-        "db.paths.queries_dir::pivoted_bg.sql",
-        "db.paths.queries_dir::pivoted_lab.sql",
-        "db.paths.queries_dir::pivoted_vital.sql",
-    ]
-
 [preprocess]
     min_age = 18
     min_los_hospital = 1
@@ -142,8 +114,76 @@ eval_interval = 10
 single_fold_eval_fraction = 0.2
 fold_class_name = "StratifiedKFold"
 collate_fn_name = "x19m_collate_fn"
-[model.cv_driver_paths]
-cv_output_root_dir = "data/model/cross_validation"
+
+
+[paths]
+root_pkg = "src/lstm_adversarial_attack"
+output_data = "data"
+
+[paths.sub_packages]
+db = "root_pkg::query_db"
+preprocess = "root_pkg::preprocess"
+
+[paths.db]
+mimiciii_dotenv = "sub_packages.db::mimiciii_database.env"
+queries_dir = "sub_packages.db::mimiciii_queries"
+query_files = [
+    "db.queries_dir::icustay_detail.sql",
+    "db.queries_dir::pivoted_bg.sql",
+    "db.queries_dir::pivoted_lab.sql",
+    "db.queries_dir::pivoted_vital.sql"
+]
+query_output_dir = "output_data::query_db"
+
+
+[paths.preprocess]
+output_root = "output_data::preprocess/checkpoints"
+
+[paths.preprocess.prefilter]
+output_dir = "preprocess.output_root::1_prefilter"
+[paths.preprocess.prefilter.resources]
+icustay = "db.query_output_dir::icustay_detail.csv"
+bg = "db.query_output_dir::pivoted_bg.csv"
+lab = "db.query_output_dir::pivoted_lab.csv"
+vital = "db.query_output_dir::pivoted_vital.csv"
+
+[paths.preprocess.measurement_merger]
+output_dir = "preprocess.output_root::2_merged_stay_measurements"
+[paths.preprocess.measurement_merger.resources]
+prefiltered_icustay = "preprocess.prefilter.output_dir::prefiltered_icustay.feather"
+prefiltered_bg = "preprocess.prefilter.output_dir::prefiltered_bg.feather"
+prefiltered_lab = "preprocess.prefilter.output_dir::prefiltered_lab.feather"
+prefiltered_vital = "preprocess.prefilter.output_dir::prefiltered_vital.feather"
+
+[paths.preprocess.admission_list_builder]
+output_dir = "preprocess.output_root::3_full_admission_list"
+[paths.preprocess.admission_list_builder.resources]
+icustay_bg_lab_vital = "preprocess.measurement_merger.output_dir::icustay_bg_lab_vital.feather"
+
+[paths.preprocess.feature_builder]
+output_dir = "preprocess.output_root::4_feature_builder"
+[paths.preprocess.feature_builder.resources]
+bg_lab_vital_summary_stats = "preprocess.measurement_merger.output_dir::bg_lab_vital_summary_stats.feather"
+full_admission_list = "preprocess.admission_list_builder.output_dir::full_admission_list.json"
+
+[paths.preprocess.feature_finalizer]
+output_dir = "preprocess.output_root::5_feature_finalizer"
+[paths.preprocess.feature_finalizer.resources]
+processed_admission_list = "preprocess.feature_builder.output_dir::processed_admission_list.json"
+
+[paths.dataset.resources]
+measurement_data_list = "preprocess.feature_finalizer.output_dir::measurement_data_list.json"
+in_hospital_mortality_list = "preprocess.feature_finalizer.output_dir::in_hospital_mortality_list.json"
+measurement_col_names = "preprocess.feature_finalizer.output_dir::measurement_col_names.json"
+
+[paths.model.tuner_driver]
+output_dir = "output_data::model/tuning"
+
+[paths.model.cv_driver]
+output_dir = "output_data::model/cross_validation"
+
+
+
 
 
 

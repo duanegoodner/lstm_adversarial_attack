@@ -26,7 +26,7 @@ class CrossValidatorDriverSettings:
 
 @dataclass
 class CrossValidatorDriverPaths:
-    cv_output_root_dir: str
+    output_dir: str
 
 
 class CrossValidatorDriver:
@@ -75,6 +75,6 @@ class CrossValidatorDriver:
             fold_class=self.fold_class,
             collate_fn=self.collate_fn,
             single_fold_eval_fraction=self.settings.single_fold_eval_fraction,
-            cv_output_root_dir=self.paths.cv_output_root_dir
+            cv_output_root_dir=self.paths.output_dir
         )
         cross_validator.run_all_folds()

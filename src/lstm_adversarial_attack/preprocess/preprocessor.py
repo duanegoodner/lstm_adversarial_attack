@@ -54,7 +54,7 @@ class PreprocessModuleSettings(ABC):
 
         if self.output_dir is None:
             self.output_dir = config_reader.read_path(
-                f"preprocess.output_dirs.{self.module_name}"
+                f"preprocess.{self.module_name}.output_dir"
             )
 
         for object_field in self.module_specific_fields:

@@ -70,7 +70,7 @@ class ModelTunerDriverSettings:
 
 @dataclass
 class ModelTunerDriverPaths:
-    tuning_output_dir: str
+    output_dir: str
 
     @classmethod
     def from_config(cls, config_path: Path = None):
@@ -119,7 +119,7 @@ class ModelTunerDriver:
 
     @property
     def output_dir(self) -> Path:
-        return Path(self.paths.tuning_output_dir) / self.study_name
+        return Path(self.paths.output_dir) / self.study_name
 
     @property
     def tuning_ranges(self) -> tuh.X19MLSTMTuningRanges:

@@ -29,7 +29,7 @@ def main(study_name: str = None, num_trials: int = None) -> optuna.Study:
 
     config_reader = config.ConfigReader()
     tuning_output_dir = config_reader.read_path(
-        "model.tuner_driver.tuning_output_dir")
+        "model.tuner_driver.output_dir")
 
     study_dir = Path(tuning_output_dir) / study_name
     if num_trials is None:

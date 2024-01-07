@@ -57,12 +57,12 @@ class X19MGeneralDataset(Dataset):
         config_reader = config.ConfigReader()
         measurements_path = Path(
             config_reader.read_path(
-                config_key="preprocess.feature_finalizer.output.measurement_data_list"
+                config_key="dataset.resources.measurement_data_list"
             )
         )
         in_hospital_mort_path = Path(
             config_reader.read_path(
-                config_key="preprocess.feature_finalizer.output.in_hospital_mortality_list"
+                config_key="dataset.resources.in_hospital_mortality_list"
             )
         )
         measurements_np_list = (

@@ -39,7 +39,7 @@ def main(
         cv_driver_settings.epochs_per_fold = epochs_per_fold
 
     # build paths object for CrossValidatorDriver
-    config_paths = config_reader.read_path("model.cv_driver_paths")
+    config_paths = config_reader.read_path("model.cv_driver")
     cv_driver_paths = cvd.CrossValidatorDriverPaths(**config_paths)
 
     cv_driver = cvd.CrossValidatorDriver(

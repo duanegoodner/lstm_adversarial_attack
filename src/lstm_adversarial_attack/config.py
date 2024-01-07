@@ -24,13 +24,6 @@ class ConfigReader:
 
         return result
 
-
-class PathReader(ConfigReader):
-    def __init__(self, config_path: Path = None):
-        if config_path is None:
-            config_path = Path(__file__).parent / "paths.toml"
-        super().__init__(config_path=config_path)
-
     def _to_absolute_path(self, path_rel_project_root: str | Path) -> str:
         relative_path = Path(path_rel_project_root)
         if relative_path.is_absolute():
@@ -43,7 +36,7 @@ class PathReader(ConfigReader):
     def read_path(
         self, config_key: str, extension: str = ""
     ) -> str | list[str] | dict[str, str]:
-        config_val = self.get_config_value(config_key=config_key)
+        config_val = self.get_config_value(config_key=f"paths.{config_key}")
         if type(config_val) is str:
             return self.read_dotted_val_str(path_val=config_val, extension=extension)
         if type(config_val) is list:
