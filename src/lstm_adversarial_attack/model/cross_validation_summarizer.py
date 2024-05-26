@@ -6,7 +6,7 @@ from enum import Enum, auto
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_paths as lcp
+# import lstm_adversarial_attack.config_paths as lcp
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 
@@ -242,12 +242,13 @@ class CrossValidationSummarizer:
         self.fold_summarizers = fold_summarizers
 
     @classmethod
-    def from_cv_checkpoints_dir(cls, cv_checkpoints_dir: Path = None):
-        if cv_checkpoints_dir is None:
-            cv_output_root = get_newest_sub_dir(
-                path=lcp.CV_ASSESSMENT_OUTPUT_DIR
-            )
-            cv_checkpoints_dir = cv_output_root / "checkpoints"
+    # def from_cv_checkpoints_dir(cls, cv_checkpoints_dir: Path = None):
+    def from_cv_checkpoints_dir(cls, cv_checkpoints_dir: Path):
+        # if cv_checkpoints_dir is None:
+        #     cv_output_root = get_newest_sub_dir(
+        #         path=lcp.CV_ASSESSMENT_OUTPUT_DIR
+        #     )
+        #     cv_checkpoints_dir = cv_output_root / "checkpoints"
 
         fold_checkpoint_dirs = list(cv_checkpoints_dir.glob("fold*"))
         fold_checkpoint_dirs.sort(key=lambda x: x.stat().st_mtime)

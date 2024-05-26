@@ -6,11 +6,10 @@ import optuna
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_tuner_driver as atd
-import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.config_settings as cfg_settings
+import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.gpu_helpers as gh
-import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.model.model_retriever as tmr
+import lstm_adversarial_attack.path_searches as ps
 
 
 def start_new_tuning(
@@ -19,6 +18,7 @@ def start_new_tuning(
     max_perts: int = None,
     training_result_dir: str = None,
     hyperparameters_path: str = None,
+    custom_config: Path = None,
 ) -> optuna.Study:
     """
     Creates a new AttackTunerDriver. Causes new Optuna Study to be created via
@@ -32,31 +32,29 @@ def start_new_tuning(
     files for model to be attacked.
     :param hyperparameters_path: path to file containing predictive model
     hyperparameters
+    :param custom_config: path to custom config.toml file
     :return: an Optuna study object (which also get saved as pickle)
     """
     device = gh.get_device()
+    config_reader = config.ConfigReader(config_path=custom_config)
 
     if training_result_dir is None:
         training_result_dir = str(
             ps.latest_modified_file_with_name_condition(
                 component_string=".json",
-                root_dir=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR,
+                root_dir=Path(config_reader.read_path("model.cv_driver.output_dir")),
                 comparison_type=ps.StringComparisonType.SUFFIX,
             ).parent.parent.parent
         )
     if hyperparameters_path is None:
-        hyperparameters_path = str(
-            Path(training_result_dir) / "hyperparameters.json"
-        )
+        hyperparameters_path = str(Path(training_result_dir) / "hyperparameters.json")
     if num_trials is None:
-        num_trials = cfg_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS
+        num_trials = config_reader.get_config_value("attack.tune.num_trials")
     if objective_name is None:
-        objective_name = cfg_settings.ATTACK_TUNING_DEFAULT_OBJECTIVE
+        objective_name = config_reader.get_config_value("attack.tune.objective_name")
     if objective_name == "max_num_nonzero_perts":
         assert max_perts is not None
-    objective_extra_kwargs = (
-        {"max_perts": max_perts} if max_perts is not None else {}
-    )
+    objective_extra_kwargs = {"max_perts": max_perts} if max_perts is not None else {}
 
     checkpoint_info = tmr.ModelRetriever(
         training_output_dir=Path(training_result_dir)
@@ -88,6 +86,7 @@ def main(
     num_trials: int = None,
     objective_name: str = None,
     max_perts: int = None,
+    custom_config: Path = None,
 ) -> optuna.Study:
     """
     Takes arguments in format provided by command line interface and uses them
@@ -100,6 +99,7 @@ def main(
     :param max_perts: Specifies the maximum number of nonzero elements an
     adversarial perturbation can have and still be counted as a success by the
     tuning objective function.
+    :param custom_config: path of config file (needs to be a .toml file)
     :return: an optuna Study with results of trials
     """
     study = start_new_tuning(
@@ -107,6 +107,7 @@ def main(
         objective_name=objective_name,
         max_perts=max_perts,
         training_result_dir=training_result_dir,
+        custom_config=custom_config,
     )
 
     return study
@@ -169,7 +170,4 @@ if __name__ == "__main__":
     )
 
     args_namespace = parser.parse_args()
-    # args_namespace.training_result_dir = str(
-    #     cfg_paths.CV_ASSESSMENT_OUTPUT_DIR / "2023-06-17_23_57_23.366142"
-    # )
     completed_study = main(**args_namespace.__dict__)

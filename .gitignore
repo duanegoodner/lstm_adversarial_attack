@@ -9,10 +9,10 @@ __pycache__/
 .vscode/
 
 data/attack/*
-!data/attack/attack_hyperparameter_tuning/.gitkeep
-!data/attack/attack_hyperparameter_tuning/2023-06-28_12_11_46.874267
-!data/attack/attack_hyperparameter_tuning/2023-06-30_10_52_24.059982
-!data/attack/attack_hyperparameter_tuning/2023-07-01_11_03_13.591090
+!data/attack/tuning/.gitkeep
+!data/attack/tuning/2023-06-28_12_11_46.874267
+!data/attack/tuning/2023-06-30_10_52_24.059982
+!data/attack/tuning/2023-07-01_11_03_13.591090
 
 data/backups
 

@@ -115,10 +115,15 @@ single_fold_eval_fraction = 0.2
 fold_class_name = "StratifiedKFold"
 collate_fn_name = "x19m_collate_fn"
 
+[attack.tune]
+num_trials = 75
+objective_name = "sparse_small_max"
+
 
 [paths]
 root_pkg = "src/lstm_adversarial_attack"
 output_data = "data"
+docker = "docker"
 
 [paths.sub_packages]
 db = "root_pkg::query_db"
@@ -182,9 +187,5 @@ output_dir = "output_data::model/tuning"
 [paths.model.cv_driver]
 output_dir = "output_data::model/cross_validation"
 
-
-
-
-
-
-
+[paths.attack.tune]
+output_dir = "output_data::attack/tuning"

@@ -1,4 +1,5 @@
 import sys
+from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
@@ -21,6 +22,10 @@ import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
 
+@dataclass
+class AttackTunerDriverSettings:
+
+
 
 class AttackTunerDriver(dpr.HasDataProvenance):
     """
@@ -32,9 +37,6 @@ class AttackTunerDriver(dpr.HasDataProvenance):
         device: torch.device,
         hyperparameters_path: Path | str,
         objective_name: str,
-        # target_checkpoint: ds.TrainingCheckpoint,
-        # target_checkpoint_path: Path = None,
-        # target_fold: int = None,
         objective_extra_kwargs: dict[str, Any] = None,
         db_env_var_name: str = "ATTACK_TUNING_DB_NAME",
         study_name: str = None,
