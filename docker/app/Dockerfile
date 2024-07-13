@@ -26,7 +26,6 @@ COPY ${COMPONENTS}/zsh_setup ${BUILD_DIR}/zsh_setup
 RUN ${BUILD_DIR}/zsh_setup/main.sh ${PRIMARY_USER} \
     && sudo rm -rf ${BUILD_DIR}/*
 
-# ARG CONTAINER_DEVSPACE=/home/devspace
 RUN sudo mkdir -p ${CONTAINER_DEVSPACE} \
     && sudo chown ${PRIMARY_USER}:${PRIMARY_USER} ${CONTAINER_DEVSPACE}
 ARG CONDA_INSTALL_DIR=${CONTAINER_DEVSPACE}/miniconda3
