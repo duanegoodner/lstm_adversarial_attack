@@ -53,7 +53,7 @@ Go to https://github.com/duanegoodner/docker_postgres_mimiciii, and follow that 
 ### 2.3 Clone the lstm_adversarial_attack repository to your machine:
 
 ```shell
-$ git clone https://github.com/duanegoodner/lstm_adversarial_attack
+git clone https://github.com/duanegoodner/lstm_adversarial_attack
 ```
 
 
@@ -79,7 +79,7 @@ CONTAINER_PROJECT_ROOT=${CONTAINER_DEVSPACE}/project
 `cd` into directory `lstm_adversarial_attack/docker`, and run:
 
 ```shell
-$ docker compose build
+docker compose build
 ```
 
 Image `lstm_aa_app` includes an installation of Miniconda3 and has a conda environment created in `/home/devspace/env`. All of the Python dependencies needed for the project are installed in this environment. All of these dependencies are shown in  `lstm_adversarial_attack/docker/app/environment.yml`. 
@@ -89,9 +89,19 @@ Image `lstm_aa_app` includes an installation of Miniconda3 and has a conda envir
 From directory `lstm_adversarial_attack/docker` run:
 
 ```
-$ docker compose up -d
+docker compose up -d
 ```
-
+Now confirm that the project containers are running with:
+```
+docker ps
+```
+You should see something like this:
+```
+CONTAINER ID   IMAGE               COMMAND                  CREATED       STATUS       PORTS                                                                        NAMES
+e0790e9c2156   lstm_aa_app_dev     "/bin/bash /usr/loca…"   2 hours ago   Up 2 hours   127.0.0.1:6006->6006/tcp, 127.0.0.1:8888->8888/tcp, 127.0.0.1:2200->22/tcp   lstm_aa_app_dev
+860dba19f68f   postgres_mimiciii   "docker-entrypoint.s…"   2 hours ago   Up 2 hours   0.0.0.0:5555->5432/tcp, :::5555->5432/tcp                                    postgres_mimiciii_dev
+3fea80bc8e85   postgres            "docker-entrypoint.s…"   2 hours ago   Up 2 hours   0.0.0.0:5556->5432/tcp, :::5556->5432/tcp                                    postgres_optuna
+```
 
 
 ### 2.7 Exec into the `lstm_aa_app` container
