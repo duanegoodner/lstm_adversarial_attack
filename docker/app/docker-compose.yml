@@ -1,5 +1,3 @@
-version: "3.8"
-
 #secrets:
 #  jetbrains_user_pubkey:
 #    file: ${JETBRAINS_USER_PUBKEY}
