@@ -47,7 +47,7 @@ class FeatureBuilder(pre.PreprocessModule):
         :return: time series df with hourly values / averages
         """
         resampled_df = (
-            raw_time_series_df.resample("H")
+            raw_time_series_df.resample("h")
             .mean()
             .interpolate(
                 method=self.settings.resample_interpolation_method,
