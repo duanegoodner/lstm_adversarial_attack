@@ -8,7 +8,7 @@ import torch.nn as nn
 from optuna.pruners import BasePruner, MedianPruner
 from optuna.samplers import BaseSampler, TPESampler
 
-import lstm_adversarial_attack.attack.attack as atk
+import lstm_adversarial_attack.attack.attack_driver as ad
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.config_paths as cfg_paths
@@ -177,7 +177,7 @@ class AttackHyperParameterTuner:
 
         return initialized_output_dir, attack_results_dir
 
-    def build_attack_driver(self, trial: optuna.Trial) -> atk.AttackDriver:
+    def build_attack_driver(self, trial: optuna.Trial) -> ad.AttackDriver:
         """
         Builds AttackDriver for attack with a single set of hyperparams.
         :param trial:
@@ -191,7 +191,7 @@ class AttackHyperParameterTuner:
         # settings = ads.AttackHyperParameterSettings.from_optuna_active_trial(
         #     trial=trial, tuning_ranges=self.tuning_ranges
         # )
-        attack_driver = atk.AttackDriver(
+        attack_driver = ad.AttackDriver(
             device=self.device,
             model_hyperparameters=self.model_hyperparameters,
             # model=self.model,
