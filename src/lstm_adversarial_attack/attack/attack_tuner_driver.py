@@ -10,10 +10,9 @@ import torch
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_data_structs as ads
-import lstm_adversarial_attack.attack.attack_hyperparameter_tuner as aht
+import lstm_adversarial_attack.attack.attack_tuner as atn
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
-import lstm_adversarial_attack.data_provenance as dpr
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
@@ -27,9 +26,9 @@ import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
 
 
 
-class AttackTunerDriver(dpr.HasDataProvenance):
+class AttackTunerDriver:
     """
-    Instantiates and runs (or re-starts) an AttackHyperParameterTuner
+    Instantiates and runs (or re-starts) an AttackTuner
     """
 
     def __init__(
@@ -94,7 +93,7 @@ class AttackTunerDriver(dpr.HasDataProvenance):
             sampler_name=sampler_name
         )
         # self.write_provenance()
-        self.export(filename="attack_tuner_driver_dict.pickle")
+        # self.export(filename="attack_tuner_driver_dict.pickle")
         self.save_model_hyperparameters()
 
     def save_model_hyperparameters(self):
@@ -129,22 +128,6 @@ class AttackTunerDriver(dpr.HasDataProvenance):
             pruner_kwargs=self.pruner_kwargs,
             sampler_name=self.hyperparameter_sampler.__class__.__name__,
             sampler_kwargs=self.sampler_kwargs,
-        )
-
-    @property
-    def provenance_info(self) -> dpr.ProvenanceInfo:
-        return dpr.ProvenanceInfo(
-            category_name="attack_tuner_driver",
-            new_items={
-                "objective_name": self.objective_name,
-                "objective_extra_kwargs": self.objective_extra_kwargs,
-                "hyperparameters_path": self.hyperparameters_path,
-                "target_fold_index": self.target_fold_index,
-                "target_model_trained_to_epoch": (
-                    self.target_model_checkpoint.epoch_num
-                ),
-            },
-            output_dir=self.output_dir,
         )
 
     @cached_property
@@ -188,7 +171,7 @@ class AttackTunerDriver(dpr.HasDataProvenance):
 
     def run(self, num_trials: int) -> optuna.Study:
         """
-        Instantiates and runs an AttackHyperParameterTuner
+        Instantiates and runs an AttackTuner
         :param num_trials:
         :return: an Optuna Study object (this also gets saved in .output_dir)
         """
@@ -230,7 +213,7 @@ class AttackTunerDriver(dpr.HasDataProvenance):
             pruner=self.pruner,
         )
 
-        tuner = aht.AttackHyperParameterTuner(
+        tuner = atn.AttackTuner(
             device=self.device,
             model_hyperparameters=hyperparameters,
             model=model,

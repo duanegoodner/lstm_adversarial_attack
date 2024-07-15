@@ -1,13 +1,13 @@
 """
 Dev script used to modify existing pickle files to match change in
-AttackHyperParameterTuner definition
+AttackTuner definition
 """
 
 import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.attack.attack_hyperparameter_tuner as aht
+import lstm_adversarial_attack.attack.attack_tuner as aht
 import lstm_adversarial_attack.config_paths as cfg_path
 import lstm_adversarial_attack.resource_io as rio
 

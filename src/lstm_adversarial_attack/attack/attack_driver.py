@@ -9,7 +9,6 @@ import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.attack.attack_tuner_driver as atd
 import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.data_provenance as dpr
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.resource_io as rio
 from lstm_adversarial_attack.x19_mort_general_dataset import (
@@ -20,7 +19,7 @@ import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 
 
-class AttackDriver(dpr.HasDataProvenance):
+class AttackDriver:
     """
     Instantiates and runs an AdversarialAttackTrainer
     """
@@ -87,30 +86,6 @@ class AttackDriver(dpr.HasDataProvenance):
         self.output_dir = self.initialize_output_dir(output_dir=output_dir)
         self.hyperparameter_tuning_results_dir = (
             hyperparameter_tuning_result_dir
-        )
-        self.export(filename="attack_driver_dict.pickle")
-
-    @property
-    def provenance_info(self) -> dpr.ProvenanceInfo:
-        return dpr.ProvenanceInfo(
-            previous_info=(
-                self.hyperparameter_tuning_results_dir / "provenance.pickle"
-                if self.hyperparameter_tuning_results_dir is not None
-                and (
-                    self.hyperparameter_tuning_results_dir
-                    / "provenance.pickle"
-                ).exists()
-                else None
-            ),
-            category_name="attack_driver",
-            new_items={
-                "epochs_per_batch": self.epochs_per_batch,
-                "attack_hyperparameter_settings": self.attack_hyperparameters,
-                "hyperparameter_tuning_result_dir": (
-                    self.hyperparameter_tuning_results_dir
-                ),
-            },
-            output_dir=self.output_dir,
         )
 
     @staticmethod
@@ -188,9 +163,6 @@ class AttackDriver(dpr.HasDataProvenance):
         Imports model to attack, then trains and runs attack driver
         :return: TrainerResult (dataclass with attack results)
         """
-        # model = rio.ResourceImporter().import_pickle_to_object(
-        #     path=self.model_path
-        # )
 
         model = tuh.X19LSTMBuilder(settings=self.model_hyperparameters).build()
         model.load_state_dict(state_dict=self.checkpoint.state_dict)

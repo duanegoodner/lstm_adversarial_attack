@@ -8,13 +8,19 @@ import torch.nn as nn
 from optuna.pruners import BasePruner, MedianPruner
 from optuna.samplers import BaseSampler, TPESampler
 
-import lstm_adversarial_attack.attack.attack_driver as ad
+import lstm_adversarial_attack.attack.adv_attack_trainer as ata
+# import lstm_adversarial_attack.attack.attack_driver as ad
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
+from lstm_adversarial_attack.x19_mort_general_dataset import (
+    X19MGeneralDatasetWithIndex,
+    x19m_with_index_collate_fn,
+)
+
 
 class AttackTunerObjectives:
     """
@@ -22,6 +28,7 @@ class AttackTunerObjectives:
     return value of tuner objective_fn from a TrainerSuccessSummary. Each method
     uses different attribute of a TrainerSuccessSummary for its calc.
     """
+
     @staticmethod
     def sparse_small(success_summary: ards.TrainerSuccessSummary) -> float:
         """
@@ -90,7 +97,7 @@ class AttackTunerObjectives:
         )
 
 
-class AttackHyperParameterTuner:
+class AttackTuner:
     """
     Tunes hyperparameters of AdversarialAttackTrainers and their associated
     Adversarial Attackers. (Each test of a new set of params instantiates new
@@ -112,6 +119,7 @@ class AttackHyperParameterTuner:
         objective_extra_kwargs: dict[str, Any] = None,
         output_dir: Path = None,
         continue_study_path: Path = None,
+        attack_misclassifiied_samples: bool = False,
     ):
         """
         :param device: device to run on
@@ -143,6 +151,12 @@ class AttackHyperParameterTuner:
             objective_extra_kwargs = {}
         self.objective_extra_kwargs = objective_extra_kwargs
         self.sample_selection_seed = sample_selection_seed
+        self.dataset = (
+            X19MGeneralDatasetWithIndex.from_feature_finalizer_output(
+                max_num_samples=max_num_samples,
+                random_seed=sample_selection_seed,
+            )
+        )
         self.study = study
         # self.pruner = pruner
         # self.hyperparameter_sampler = hyperparameter_sampler
@@ -150,6 +164,7 @@ class AttackHyperParameterTuner:
             output_dir=output_dir
         )
         self.continue_study_path = continue_study_path
+        self.attack_misclassified_samples = attack_misclassifiied_samples
 
     # TODO Simplify this method with `parents` and `exist_ok` args of mkdir().
     def initialize_output_dir(
@@ -177,34 +192,59 @@ class AttackHyperParameterTuner:
 
         return initialized_output_dir, attack_results_dir
 
-    def build_attack_driver(self, trial: optuna.Trial) -> ad.AttackDriver:
-        """
-        Builds AttackDriver for attack with a single set of hyperparams.
-        :param trial:
-        :return: an AttackDriver
-        """
+    # def build_attack_driver(self, trial: optuna.Trial) -> ad.AttackDriver:
+    #     """
+    #     Builds AttackDriver for attack with a single set of hyperparams.
+    #     :param trial:
+    #     :return: an AttackDriver
+    #     """
+    #
+    #     settings = ads.BuildAttackHyperParameterSettings.from_optuna_trial(
+    #         trial=trial, tuning_ranges=self.tuning_ranges
+    #     )
+    #
+    #     # settings = ads.AttackHyperParameterSettings.from_optuna_active_trial(
+    #     #     trial=trial, tuning_ranges=self.tuning_ranges
+    #     # )
+    #     attack_driver = ad.AttackDriver(
+    #         device=self.device,
+    #         model_hyperparameters=self.model_hyperparameters,
+    #         # model=self.model,
+    #         checkpoint=self.checkpoint,
+    #         epochs_per_batch=self.epoch_per_batch,
+    #         attack_hyperparameters=settings,
+    #         max_num_samples=self.max_num_samples,
+    #         sample_selection_seed=self.sample_selection_seed,
+    #         output_dir=self.attack_results_dir,
+    #         result_file_prefix=f"_trial_{trial.number}",
+    #     )
+    #
+    #     return attack_driver
+
+    def create_attack_trainer(
+        self, trial: optuna.Trial
+    ) -> ata.AdversarialAttackTrainer:
 
         settings = ads.BuildAttackHyperParameterSettings.from_optuna_trial(
             trial=trial, tuning_ranges=self.tuning_ranges
         )
 
-        # settings = ads.AttackHyperParameterSettings.from_optuna_active_trial(
-        #     trial=trial, tuning_ranges=self.tuning_ranges
-        # )
-        attack_driver = ad.AttackDriver(
+        attack_trainer = ata.AdversarialAttackTrainer(
             device=self.device,
-            model_hyperparameters=self.model_hyperparameters,
-            # model=self.model,
-            checkpoint=self.checkpoint,
-            epochs_per_batch=self.epoch_per_batch,
+            model=self.model,
             attack_hyperparameters=settings,
-            max_num_samples=self.max_num_samples,
-            sample_selection_seed=self.sample_selection_seed,
-            output_dir=self.attack_results_dir,
-            result_file_prefix=f"_trial_{trial.number}",
+            state_dict=self.checkpoint.state_dict,
+            epochs_per_batch=self.epoch_per_batch,
+            dataset=self.dataset,
+            collate_fn=x19m_with_index_collate_fn,
+            attack_misclassified_samples=self.attack_misclassified_samples,
+            # inference_batch_size=,
+            # use_weighted_data_loader=,
+            # checkpoint_interval=,
+            output_dir=self.output_dir,
         )
 
-        return attack_driver
+        return attack_trainer
 
     def objective_fn(self, trial: optuna.Trial) -> float:
         """
@@ -213,8 +253,12 @@ class AttackHyperParameterTuner:
         :param trial: current Optuna trial.
         :return: value quantifying success of attack
         """
-        attack_driver = self.build_attack_driver(trial=trial)
-        trainer_result = attack_driver()
+
+        attack_trainer = self.create_attack_trainer(trial=trial)
+        trainer_result = attack_trainer.train_attacker()
+
+        # attack_driver = self.build_attack_driver(trial=trial)
+        # trainer_result = attack_driver()
         success_summary = ards.TrainerSuccessSummary(
             trainer_result=trainer_result
         )
@@ -234,5 +278,7 @@ class AttackHyperParameterTuner:
         :return: an optuna Study object
         """
         for trial_num in range(num_trials):
-            self.study.optimize(func=self.objective_fn, n_trials=1, timeout=timeout)
+            self.study.optimize(
+                func=self.objective_fn, n_trials=1, timeout=timeout
+            )
         return self.study
