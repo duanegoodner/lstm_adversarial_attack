@@ -22,8 +22,8 @@ import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
 
-@dataclass
-class AttackTunerDriverSettings:
+# @dataclass
+# class AttackTunerDriverSettings:
 
 
 

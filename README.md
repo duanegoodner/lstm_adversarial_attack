@@ -53,7 +53,7 @@ Go to https://github.com/duanegoodner/docker_postgres_mimiciii, and follow that 
 ### 2.3 Clone the lstm_adversarial_attack repository to your machine:
 
 ```shell
-git clone https://github.com/duanegoodner/lstm_adversarial_attack
+$ git clone https://github.com/duanegoodner/lstm_adversarial_attack
 ```
 
 
@@ -79,29 +79,28 @@ CONTAINER_PROJECT_ROOT=${CONTAINER_DEVSPACE}/project
 `cd` into directory `lstm_adversarial_attack/docker`, and run:
 
 ```shell
-docker compose build
+$ UID=${UID} GID=${GID} docker compose build
 ```
-
 Image `lstm_aa_app` includes an installation of Miniconda3 and has a conda environment created in `/home/devspace/env`. All of the Python dependencies needed for the project are installed in this environment. All of these dependencies are shown in  `lstm_adversarial_attack/docker/app/environment.yml`. 
 
 ### 2.6 Run the `lstm_aa_app` and `postgres_mimiciii` containers
 
 From directory `lstm_adversarial_attack/docker` run:
 
+```shell
+$ UID=${UID} GID=${GID} docker compose up -d
 ```
-docker compose up -d
+The output should look like this:
+
+```bash
+[+] Running 4/4
+ ✔ Network app_default              Created                                                                                                  0.2s 
+ ✔ Container postgres_mimiciii_dev  Started                                                                                                  0.7s 
+ ✔ Container postgres_optuna        Started                                                                                                  0.7s 
+ ✔ Container lstm_aa_app            Started 
 ```
-Now confirm that the project containers are running with:
-```
-docker ps
-```
-You should see something like this:
-```
-CONTAINER ID   IMAGE               COMMAND                  CREATED       STATUS       PORTS                                                                        NAMES
-e0790e9c2156   lstm_aa_app_dev     "/bin/bash /usr/loca…"   2 hours ago   Up 2 hours   127.0.0.1:6006->6006/tcp, 127.0.0.1:8888->8888/tcp, 127.0.0.1:2200->22/tcp   lstm_aa_app_dev
-860dba19f68f   postgres_mimiciii   "docker-entrypoint.s…"   2 hours ago   Up 2 hours   0.0.0.0:5555->5432/tcp, :::5555->5432/tcp                                    postgres_mimiciii_dev
-3fea80bc8e85   postgres            "docker-entrypoint.s…"   2 hours ago   Up 2 hours   0.0.0.0:5556->5432/tcp, :::5556->5432/tcp                                    postgres_optuna
-```
+
+LSTM modeling and adversarial attack work will run in container `lstm_aa_app`. `postres_mimiciii` hosts a database with the healthcare data that will feed our model, and the `postgres_optuna` container holds a database that will store data generatd during model and adversarial attack tuning.
 
 
 ### 2.7 Exec into the `lstm_aa_app` container
@@ -110,7 +109,7 @@ The `lstm_aa_app` image has a sudo-privileged non-root user,  named `gen_user`. 
 
 To launch a `zsh` shell in the container run:
 
-``` 
+```bash 
 $ docker exec -it lstm_aa_app /bin/zsh
 ```
 
@@ -124,10 +123,6 @@ $ pwd
 /home/devspace/lstm_adversarial_attack
 # docker-compose maps directory /home/devspace/lstm_adversarial_attack to the local lstm_adversarial_attack repository root
 ```
-
-> **Note**: `gen_user`'s `zsh`profile uses OhMyZsh with a Powerlevel10k theme. The shell features provided by these settings are not reflected in this Markdown file. 
-
-
 
 ### 2.8 Launch Jupyter Lab
 

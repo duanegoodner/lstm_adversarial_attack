@@ -31,6 +31,8 @@ data/model_training/*
 docker/tuning_dbs.env
 docker/app_dev/postgres_password.txt
 docker/app_dev/tuner_password.txt
+docker/app/postgres_password.txt
+docker/app/tuner_password.txt
 
 data/preprocess/final_output/*
 !data/preprocess/final_output/.gitkeep
