@@ -30,7 +30,6 @@ class CrossValidator:
             kfold_random_seed: int,
             single_fold_eval_fraction: float,
             cv_output_root_dir: str,
-            tuning_study_name: str = None,
     ):
         self.device = device
         self.dataset = dataset
@@ -46,7 +45,6 @@ class CrossValidator:
         self.cv_output_root_dir = cv_output_root_dir
         self.output_dir = self.create_output_dir()
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        self.tuning_study_name = tuning_study_name
 
     def create_output_dir(self):
         timestamp = "".join(
