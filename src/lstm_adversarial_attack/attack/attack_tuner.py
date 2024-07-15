@@ -192,35 +192,6 @@ class AttackTuner:
 
         return initialized_output_dir, attack_results_dir
 
-    # def build_attack_driver(self, trial: optuna.Trial) -> ad.AttackDriver:
-    #     """
-    #     Builds AttackDriver for attack with a single set of hyperparams.
-    #     :param trial:
-    #     :return: an AttackDriver
-    #     """
-    #
-    #     settings = ads.BuildAttackHyperParameterSettings.from_optuna_trial(
-    #         trial=trial, tuning_ranges=self.tuning_ranges
-    #     )
-    #
-    #     # settings = ads.AttackHyperParameterSettings.from_optuna_active_trial(
-    #     #     trial=trial, tuning_ranges=self.tuning_ranges
-    #     # )
-    #     attack_driver = ad.AttackDriver(
-    #         device=self.device,
-    #         model_hyperparameters=self.model_hyperparameters,
-    #         # model=self.model,
-    #         checkpoint=self.checkpoint,
-    #         epochs_per_batch=self.epoch_per_batch,
-    #         attack_hyperparameters=settings,
-    #         max_num_samples=self.max_num_samples,
-    #         sample_selection_seed=self.sample_selection_seed,
-    #         output_dir=self.attack_results_dir,
-    #         result_file_prefix=f"_trial_{trial.number}",
-    #     )
-    #
-    #     return attack_driver
-
     def create_attack_trainer(
         self, trial: optuna.Trial
     ) -> ata.AdversarialAttackTrainer:
@@ -256,9 +227,6 @@ class AttackTuner:
 
         attack_trainer = self.create_attack_trainer(trial=trial)
         trainer_result = attack_trainer.train_attacker()
-
-        # attack_driver = self.build_attack_driver(trial=trial)
-        # trainer_result = attack_driver()
         success_summary = ards.TrainerSuccessSummary(
             trainer_result=trainer_result
         )
