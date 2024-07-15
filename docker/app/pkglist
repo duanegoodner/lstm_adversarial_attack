@@ -7,3 +7,5 @@ zsh
 acl
 nano
 net-tools
+openssh-server
+rsyslog
