@@ -77,6 +77,11 @@ def main(study_name: str) -> ards.TrainerSuccessSummary:
         checkpoint_interval=cfg_settings.ATTACK_CHECKPOINT_INTERVAL,
         tuning_result_dir=tuning_result_dir_path,
     )
+
+    # attack_driver = ad.AttackDriver(
+    #     device=cur_device,
+    # )
+
     trainer_result = attack_driver()
     success_summary = ards.TrainerSuccessSummary(trainer_result=trainer_result)
 
@@ -96,7 +101,4 @@ if __name__ == "__main__":
         ),
     )
     args_namespace = parser.parse_args()
-    # args_namespace.tuning_result_dir = str(
-    #     cfg_paths.ATTACK_HYPERPARAMETER_TUNING / "2023-07-01_11_03_13.591090"
-    # )
     cur_success_summary = main(**args_namespace.__dict__)
