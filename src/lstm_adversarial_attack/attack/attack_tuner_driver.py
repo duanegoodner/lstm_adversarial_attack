@@ -92,8 +92,6 @@ class AttackTunerDriver:
         self.hyperparameter_sampler = self.get_sampler(
             sampler_name=sampler_name
         )
-        # self.write_provenance()
-        # self.export(filename="attack_tuner_driver_dict.pickle")
         self.save_model_hyperparameters()
 
     def save_model_hyperparameters(self):

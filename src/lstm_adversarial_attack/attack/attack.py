@@ -12,6 +12,8 @@ import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.preprocess.encode_decode as edc
+import lstm_adversarial_attack.attack.attack_tuner_driver as atd
+import lstm_adversarial_attack.attack.attack_data_structs as ads
 
 
 
@@ -29,9 +31,10 @@ def main(study_name: str) -> ards.TrainerSuccessSummary:
     if study_name is None:
         study_name = tsd.ATTACK_TUNING_DB.get_latest_study().study_name
 
-    attack_hyperparameters = tsd.ATTACK_TUNING_DB.get_best_params(
+    attack_hyperparameters_dict = tsd.ATTACK_TUNING_DB.get_best_params(
         study_name=study_name
     )
+    attack_hyperparameters = ads.AttackHyperParameterSettings(**attack_hyperparameters_dict)
 
     tuning_result_dir_path = (
         cfg_paths.ATTACK_HYPERPARAMETER_TUNING / study_name
@@ -57,6 +60,18 @@ def main(study_name: str) -> ards.TrainerSuccessSummary:
         )
     )
 
+    partial_attack_tuner_driver_constructor_kwargs = {
+        key: val
+        for key, val in attack_tuner_driver_summary.to_dict().items()
+        if key not in ["is_continuation"]
+    }
+
+    partial_attack_tuner_driver_constructor_kwargs = {
+        **{"device": cur_device, **partial_attack_tuner_driver_constructor_kwargs}
+    }
+
+    attack_tuner_driver = atd.AttackTunerDriver(**partial_attack_tuner_driver_constructor_kwargs)
+
     # TODO resume work here on delay targetmodel instantiation after modify
     #  ModelRetriever to also provide checkpt Path. (& move call to
     #  get_representative_checkpoint back to tune_attack_new.py)
@@ -71,12 +86,20 @@ def main(study_name: str) -> ards.TrainerSuccessSummary:
     #     Path(tuning_result_dir) if tuning_result_dir is not None else None
     # )
 
-    attack_driver = ad.AttackDriver.from_attack_hyperparameter_tuning(
+    attack_driver = ad.AttackDriver(
+        attack_tuner_driver=attack_tuner_driver,
         device=cur_device,
-        sample_selection_seed=cfg_settings.ATTACK_SAMPLE_SELECTION_SEED,
-        checkpoint_interval=cfg_settings.ATTACK_CHECKPOINT_INTERVAL,
-        tuning_result_dir=tuning_result_dir_path,
+        attack_tuning_study_name=study_name,
+        model_hyperparameters=model_hyperparameters,
+        attack_hyperparameters=attack_hyperparameters,
     )
+
+    # attack_driver = ad.AttackDriver.from_attack_hyperparameter_tuning(
+    #     device=cur_device,
+    #     sample_selection_seed=cfg_settings.ATTACK_SAMPLE_SELECTION_SEED,
+    #     checkpoint_interval=cfg_settings.ATTACK_CHECKPOINT_INTERVAL,
+    #     tuning_result_dir=tuning_result_dir_path,
+    # )
 
     # attack_driver = ad.AttackDriver(
     #     device=cur_device,
