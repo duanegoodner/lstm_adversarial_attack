@@ -115,6 +115,20 @@ single_fold_eval_fraction = 0.2
 fold_class_name = "StratifiedKFold"
 collate_fn_name = "x19m_collate_fn"
 
+[attack.tuner_driver_settings]
+db_env_var_name = "ATTACK_TUNING_DB_NAME"
+epochs_per_batch = 1000
+max_num_samples = 520
+sample_selection_seed = 2023
+pruner_name = "MedianPruner"
+sampler_name = "TPESampler"
+
+[attack.tuner_driver_settings.objective_extra_kwargs]
+
+[attack.tuner_driver_settings.pruner_kwargs]
+
+[attack.tuner_driver_settings.sampler_kwargs]
+
 [attack.tune]
 num_trials = 75
 objective_name = "sparse_small_max"

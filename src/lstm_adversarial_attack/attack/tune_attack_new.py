@@ -62,6 +62,7 @@ def start_new_tuning(
 
     tuner_driver = atd.AttackTunerDriver(
         device=device,
+        settings=atd.AttackTunerDriverSettings.from_config(),
         hyperparameters_path=Path(hyperparameters_path),
         objective_name=objective_name,
         objective_extra_kwargs=objective_extra_kwargs,
