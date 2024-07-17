@@ -13,7 +13,6 @@ from lstm_adversarial_attack.config import ConfigReader
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_tuner as atn
-import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.preprocess.encode_decode as edc
@@ -26,6 +25,7 @@ import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
 @dataclass
 class AttackTunerDriverSettings:
     db_env_var_name: str
+    num_trials: int
     epochs_per_batch: int
     max_num_samples: int
     sample_selection_seed: int
@@ -44,7 +44,19 @@ class AttackTunerDriverSettings:
             settings_fields}
         return cls(**constructor_kwargs)
 
+@dataclass
+class AttackTunerDriverPaths:
+    output_dir: Path
 
+    @classmethod
+    def from_config(cls, config_path: Path = None):
+        config_reader = ConfigReader(config_path=config_path)
+        paths_fields = [field.name for field in fields(AttackTunerDriverPaths)]
+        constructor_kwargs = {
+            field_name: config_reader.read_path(
+                f"attack.tuner_driver.{field_name}")
+            for field_name in paths_fields}
+        return cls(**constructor_kwargs)
 
 
 class AttackTunerDriver:
@@ -56,20 +68,13 @@ class AttackTunerDriver:
         self,
         device: torch.device,
         settings: AttackTunerDriverSettings,
+        paths: AttackTunerDriverPaths,
         hyperparameters_path: Path | str,
         objective_name: str,
         objective_extra_kwargs: dict[str, Any] = None,
-        # db_env_var_name: str = "ATTACK_TUNING_DB_NAME",
         study_name: str = None,
         tuning_ranges: ads.AttackTuningRanges = None,
-        # epochs_per_batch: int = cfg_settings.ATTACK_TUNING_EPOCHS,
-        # max_num_samples: int = cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
-        # sample_selection_seed: int = cfg_settings.ATTACK_SAMPLE_SELECTION_SEED,
         training_result_dir: Path | str = None,
-        # pruner_name: str = "MedianPruner",
-        # pruner_kwargs: dict[str, Any] = None,
-        # sampler_name: str = "TPESampler",
-        # sampler_kwargs: dict[str, Any] = None,
     ):
         """
         :param device: the device to run on
@@ -81,33 +86,26 @@ class AttackTunerDriver:
         """
         self.device = device
         self.settings = settings
+        self.paths = paths
         self.hyperparameters_path = Path(hyperparameters_path)
         self.objective_name = objective_name
         self.objective_extra_kwargs = objective_extra_kwargs
-        # self.db_env_var_name = db_env_var_name
         if study_name is None:
             study_name = self.build_study_name()
         self.study_name = study_name
-        self.output_dir = cfg_paths.ATTACK_HYPERPARAMETER_TUNING / study_name
+        self.output_dir = Path(self.paths.output_dir) / study_name
         self.has_pre_existing_local_output = self.output_dir.exists()
         self.output_dir.mkdir(parents=True, exist_ok=True)
         if tuning_ranges is None:
             tuning_ranges = ads.AttackTuningRanges()
         self.tuning_ranges = tuning_ranges
-        # self.epochs_per_batch = epochs_per_batch
-        # self.max_num_samples = max_num_samples
-        # self.sample_selection_seed = sample_selection_seed
         self.training_result_dir = (
             Path(training_result_dir)
             if training_result_dir is not None
             else None
         )
-        # if pruner_kwargs is None:
-        #     pruner_kwargs = {}
         self.pruner_kwargs = self.settings.pruner_kwargs
         self.pruner = self.get_pruner(pruner_name=self.settings.pruner_name)
-        # if sampler_kwargs is None:
-        #     sampler_kwargs = {}
         self.sampler_kwargs = self.settings.sampler_kwargs
         self.hyperparameter_sampler = self.get_sampler(
             sampler_name=self.settings.sampler_name
@@ -130,9 +128,6 @@ class AttackTunerDriver:
         return eds.AttackTunerDriverSummary(
             hyperparameters_path=str(self.hyperparameters_path),
             objective_name=self.objective_name,
-            # target_checkpoint=self.target_model_checkpoint.to_storage(),
-            # target_checkpoint_path=str(self.target_checkpoint_path),
-            # target_fold=self.target_fold_index,
             objective_extra_kwargs=self.objective_extra_kwargs,
             db_env_var_name=self.settings.db_env_var_name,
             study_name=self.study_name,
@@ -187,7 +182,7 @@ class AttackTunerDriver:
     def get_sampler(self, sampler_name: str) -> optuna.samplers.BaseSampler:
         return getattr(optuna.samplers, sampler_name)(**self.sampler_kwargs)
 
-    def run(self, num_trials: int) -> optuna.Study:
+    def run(self) -> optuna.Study:
         """
         Instantiates and runs an AttackTuner
         :param num_trials:
@@ -202,8 +197,6 @@ class AttackTunerDriver:
                 self.output_dir
                 / f"attack_tuner_driver_summary_{timestamp}.json"
             )
-            # summary_output_path = Path(f"attack_tuner_driver_summary_{timestamp}")
-
             edc.AttackTunerDriverSummaryWriter().export(
                 obj=self.summary, path=summary_output_path
             )
@@ -236,8 +229,8 @@ class AttackTunerDriver:
             model_hyperparameters=hyperparameters,
             model=model,
             checkpoint=self.target_model_checkpoint,
-            epochs_per_batch=cfg_settings.ATTACK_TUNING_EPOCHS,
-            max_num_samples=cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
+            epochs_per_batch=self.settings.epochs_per_batch,
+            max_num_samples=self.settings.max_num_samples,
             tuning_ranges=self.tuning_ranges,
             output_dir=self.output_dir,
             objective_name=self.objective_name,
@@ -245,4 +238,4 @@ class AttackTunerDriver:
             study=study,
         )
 
-        return tuner.tune(num_trials=num_trials)
+        return tuner.tune(num_trials=self.settings.num_trials)

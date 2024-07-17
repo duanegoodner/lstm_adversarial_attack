@@ -13,7 +13,7 @@ import lstm_adversarial_attack.path_searches as ps
 
 
 def start_new_tuning(
-    num_trials: int,
+    # num_trials: int,
     objective_name: str,
     max_perts: int = None,
     training_result_dir: str = None,
@@ -48,28 +48,22 @@ def start_new_tuning(
         )
     if hyperparameters_path is None:
         hyperparameters_path = str(Path(training_result_dir) / "hyperparameters.json")
-    if num_trials is None:
-        num_trials = config_reader.get_config_value("attack.tune.num_trials")
+    # if num_trials is None:
+    #     num_trials = config_reader.get_config_value("attack.tune.num_trials")
     if objective_name is None:
         objective_name = config_reader.get_config_value("attack.tune.objective_name")
     if objective_name == "max_num_nonzero_perts":
         assert max_perts is not None
     objective_extra_kwargs = {"max_perts": max_perts} if max_perts is not None else {}
 
-    checkpoint_info = tmr.ModelRetriever(
-        training_output_dir=Path(training_result_dir)
-    ).get_representative_checkpoint()
-
     tuner_driver = atd.AttackTunerDriver(
         device=device,
         settings=atd.AttackTunerDriverSettings.from_config(),
+        paths=atd.AttackTunerDriverPaths.from_config(),
         hyperparameters_path=Path(hyperparameters_path),
         objective_name=objective_name,
         objective_extra_kwargs=objective_extra_kwargs,
         training_result_dir=Path(training_result_dir),
-        # target_checkpoint=checkpoint_info.checkpoint,
-        # target_checkpoint_path=checkpoint_info.save_path,
-        # target_fold=checkpoint_info.fold
     )
 
     print(
@@ -79,7 +73,7 @@ def start_new_tuning(
         f" will be saved in: {tuner_driver.output_dir}\n"
     )
 
-    return tuner_driver.run(num_trials=num_trials)
+    return tuner_driver.run()
 
 
 def main(
@@ -104,7 +98,7 @@ def main(
     :return: an optuna Study with results of trials
     """
     study = start_new_tuning(
-        num_trials=num_trials,
+        # num_trials=num_trials,
         objective_name=objective_name,
         max_perts=max_perts,
         training_result_dir=training_result_dir,

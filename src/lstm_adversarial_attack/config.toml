@@ -117,6 +117,7 @@ collate_fn_name = "x19m_collate_fn"
 
 [attack.tuner_driver_settings]
 db_env_var_name = "ATTACK_TUNING_DB_NAME"
+num_trials = 75
 epochs_per_batch = 1000
 max_num_samples = 520
 sample_selection_seed = 2023
@@ -202,4 +203,7 @@ output_dir = "output_data::model/tuning"
 output_dir = "output_data::model/cross_validation"
 
 [paths.attack.tune]
+output_dir = "output_data::attack/tuning"
+
+[paths.attack.tuner_driver]
 output_dir = "output_data::attack/tuning"
