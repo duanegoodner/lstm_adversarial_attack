@@ -78,15 +78,12 @@ class AttackTunerDriver:
         device: torch.device,
         settings: AttackTunerDriverSettings,
         paths: AttackTunerDriverPaths,
-        # hyperparameters_path: Path | str,
         study_name: str = None,
         tuning_ranges: ads.AttackTuningRanges = None,
-        training_result_dir: Path | str = None,
+        model_training_result_dir: Path | str = None,
     ):
         """
         :param device: the device to run on
-        :param objective_name: name of method in AttackTunerObjectives to user
-        for computation of Optuna tuner objective_fn return value
         :param tuning_ranges: hyperparamter tuning ranges (for use by Optuna)
         specified, default is timestamped dir under
         data/attack/attack_hyperparamter_tuning
@@ -109,9 +106,9 @@ class AttackTunerDriver:
         if tuning_ranges is None:
             tuning_ranges = ads.AttackTuningRanges()
         self.tuning_ranges = tuning_ranges
-        self.training_result_dir = (
-            Path(training_result_dir)
-            if training_result_dir is not None
+        self.model_training_result_dir = (
+            Path(model_training_result_dir)
+            if model_training_result_dir is not None
             else None
         )
         self.pruner_kwargs = self.settings.pruner_kwargs
@@ -124,7 +121,7 @@ class AttackTunerDriver:
 
     @property
     def hyperparameters_path(self) -> Path:
-        return self.training_result_dir / "hyperparameters.json"
+        return self.model_training_result_dir / "hyperparameters.json"
 
     def save_model_hyperparameters(self):
         model_hyperparameters = (
@@ -150,7 +147,7 @@ class AttackTunerDriver:
             epochs_per_batch=self.settings.epochs_per_batch,
             max_num_samples=self.settings.max_num_samples,
             sample_selection_seed=self.settings.sample_selection_seed,
-            training_result_dir=str(self.training_result_dir),
+            training_result_dir=str(self.model_training_result_dir),
             pruner_name=self.pruner.__class__.__name__,
             pruner_kwargs=self.pruner_kwargs,
             sampler_name=self.hyperparameter_sampler.__class__.__name__,
@@ -168,7 +165,7 @@ class AttackTunerDriver:
     @cached_property
     def target_checkpoint_info(self) -> cvs.CheckpointInfo:
         return tmr.ModelRetriever(
-            training_output_dir=self.training_result_dir
+            training_output_dir=self.model_training_result_dir
         ).get_representative_checkpoint()
 
     @property
@@ -199,7 +196,6 @@ class AttackTunerDriver:
     def run(self) -> optuna.Study:
         """
         Instantiates and runs an AttackTuner
-        :param num_trials:
         :return: an Optuna Study object (this also gets saved in .output_dir)
         """
 
