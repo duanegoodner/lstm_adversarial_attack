@@ -78,9 +78,7 @@ class AttackTunerDriver:
         device: torch.device,
         settings: AttackTunerDriverSettings,
         paths: AttackTunerDriverPaths,
-        hyperparameters_path: Path | str,
-        # objective_name: str,
-        # objective_extra_kwargs: dict[str, Any] = None,
+        # hyperparameters_path: Path | str,
         study_name: str = None,
         tuning_ranges: ads.AttackTuningRanges = None,
         training_result_dir: Path | str = None,
@@ -96,8 +94,7 @@ class AttackTunerDriver:
         self.device = device
         self.settings = settings
         self.paths = paths
-        self.hyperparameters_path = Path(hyperparameters_path)
-        # self.objective_name = objective_name
+        # self.hyperparameters_path = Path(hyperparameters_path)
         self.objective_extra_kwargs = (
             {"max_perts": settings.max_perts}
             if self.settings.objective_name == "max_num_nonzero_perts"
@@ -124,6 +121,10 @@ class AttackTunerDriver:
             sampler_name=self.settings.sampler_name
         )
         self.save_model_hyperparameters()
+
+    @property
+    def hyperparameters_path(self) -> Path:
+        return self.training_result_dir / "hyperparameters.json"
 
     def save_model_hyperparameters(self):
         model_hyperparameters = (

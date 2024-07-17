@@ -43,21 +43,14 @@ def start_new_tuning(
                 comparison_type=ps.StringComparisonType.SUFFIX,
             ).parent.parent.parent
         )
-    if hyperparameters_path is None:
-        hyperparameters_path = str(Path(training_result_dir) / "hyperparameters.json")
-    # if objective_name is None:
-    #     objective_name = config_reader.get_config_value("attack.tune.objective_name")
-    # if objective_name == "max_num_nonzero_perts":
-    #     assert max_perts is not None
-    # objective_extra_kwargs = {"max_perts": max_perts} if max_perts is not None else {}
+    # if hyperparameters_path is None:
+    #     hyperparameters_path = str(Path(training_result_dir) / "hyperparameters.json")
 
     tuner_driver = atd.AttackTunerDriver(
         device=device,
         settings=atd.AttackTunerDriverSettings.from_config(),
         paths=atd.AttackTunerDriverPaths.from_config(),
-        hyperparameters_path=Path(hyperparameters_path),
-        # objective_name=objective_name,
-        # objective_extra_kwargs=objective_extra_kwargs,
+        # hyperparameters_path=Path(hyperparameters_path),
         training_result_dir=Path(training_result_dir),
     )
 
