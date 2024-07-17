@@ -13,7 +13,6 @@ from lstm_adversarial_attack.config import ConfigReader
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_tuner as atn
-import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds

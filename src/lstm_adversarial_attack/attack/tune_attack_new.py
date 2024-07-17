@@ -18,7 +18,7 @@ def start_new_tuning(
     max_perts: int = None,
     training_result_dir: str = None,
     hyperparameters_path: str = None,
-    custom_config: Path = None,
+    # custom_config: Path = None,
 ) -> optuna.Study:
     """
     Creates a new AttackTunerDriver. Causes new Optuna Study to be created via
@@ -36,7 +36,7 @@ def start_new_tuning(
     :return: an Optuna study object (which also get saved as pickle)
     """
     device = gh.get_device()
-    config_reader = config.ConfigReader(config_path=custom_config)
+    config_reader = config.ConfigReader()
 
     if training_result_dir is None:
         training_result_dir = str(
@@ -48,8 +48,6 @@ def start_new_tuning(
         )
     if hyperparameters_path is None:
         hyperparameters_path = str(Path(training_result_dir) / "hyperparameters.json")
-    # if num_trials is None:
-    #     num_trials = config_reader.get_config_value("attack.tune.num_trials")
     if objective_name is None:
         objective_name = config_reader.get_config_value("attack.tune.objective_name")
     if objective_name == "max_num_nonzero_perts":
@@ -78,7 +76,6 @@ def start_new_tuning(
 
 def main(
     training_result_dir: str = None,
-    num_trials: int = None,
     objective_name: str = None,
     max_perts: int = None,
     custom_config: Path = None,
@@ -98,11 +95,10 @@ def main(
     :return: an optuna Study with results of trials
     """
     study = start_new_tuning(
-        # num_trials=num_trials,
         objective_name=objective_name,
         max_perts=max_perts,
         training_result_dir=training_result_dir,
-        custom_config=custom_config,
+        # custom_config=custom_config,
     )
 
     return study
@@ -125,17 +121,17 @@ if __name__ == "__main__":
             " to string)"
         ),
     )
-    parser.add_argument(
-        "-n",
-        "--num_trials",
-        type=int,
-        action="store",
-        nargs="?",
-        help=(
-            "Number of tuning trials to run. Default is value of"
-            " config_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS"
-        ),
-    )
+    # parser.add_argument(
+    #     "-n",
+    #     "--num_trials",
+    #     type=int,
+    #     action="store",
+    #     nargs="?",
+    #     help=(
+    #         "Number of tuning trials to run. Default is value of"
+    #         " config_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS"
+    #     ),
+    # )
     parser.add_argument(
         "-o",
         "--objective_name",
