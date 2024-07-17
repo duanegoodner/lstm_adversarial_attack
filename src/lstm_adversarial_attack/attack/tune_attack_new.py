@@ -8,17 +8,14 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_tuner_driver as atd
 import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.gpu_helpers as gh
-import lstm_adversarial_attack.model.model_retriever as tmr
 import lstm_adversarial_attack.path_searches as ps
 
 
 def start_new_tuning(
-    # num_trials: int,
     objective_name: str,
     max_perts: int = None,
     training_result_dir: str = None,
     hyperparameters_path: str = None,
-    # custom_config: Path = None,
 ) -> optuna.Study:
     """
     Creates a new AttackTunerDriver. Causes new Optuna Study to be created via
@@ -48,19 +45,19 @@ def start_new_tuning(
         )
     if hyperparameters_path is None:
         hyperparameters_path = str(Path(training_result_dir) / "hyperparameters.json")
-    if objective_name is None:
-        objective_name = config_reader.get_config_value("attack.tune.objective_name")
-    if objective_name == "max_num_nonzero_perts":
-        assert max_perts is not None
-    objective_extra_kwargs = {"max_perts": max_perts} if max_perts is not None else {}
+    # if objective_name is None:
+    #     objective_name = config_reader.get_config_value("attack.tune.objective_name")
+    # if objective_name == "max_num_nonzero_perts":
+    #     assert max_perts is not None
+    # objective_extra_kwargs = {"max_perts": max_perts} if max_perts is not None else {}
 
     tuner_driver = atd.AttackTunerDriver(
         device=device,
         settings=atd.AttackTunerDriverSettings.from_config(),
         paths=atd.AttackTunerDriverPaths.from_config(),
         hyperparameters_path=Path(hyperparameters_path),
-        objective_name=objective_name,
-        objective_extra_kwargs=objective_extra_kwargs,
+        # objective_name=objective_name,
+        # objective_extra_kwargs=objective_extra_kwargs,
         training_result_dir=Path(training_result_dir),
     )
 
@@ -78,7 +75,6 @@ def main(
     training_result_dir: str = None,
     objective_name: str = None,
     max_perts: int = None,
-    custom_config: Path = None,
 ) -> optuna.Study:
     """
     Takes arguments in format provided by command line interface and uses them
@@ -98,7 +94,6 @@ def main(
         objective_name=objective_name,
         max_perts=max_perts,
         training_result_dir=training_result_dir,
-        # custom_config=custom_config,
     )
 
     return study
@@ -121,17 +116,6 @@ if __name__ == "__main__":
             " to string)"
         ),
     )
-    # parser.add_argument(
-    #     "-n",
-    #     "--num_trials",
-    #     type=int,
-    #     action="store",
-    #     nargs="?",
-    #     help=(
-    #         "Number of tuning trials to run. Default is value of"
-    #         " config_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS"
-    #     ),
-    # )
     parser.add_argument(
         "-o",
         "--objective_name",

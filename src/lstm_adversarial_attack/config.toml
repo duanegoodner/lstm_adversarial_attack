@@ -123,6 +123,8 @@ max_num_samples = 520
 sample_selection_seed = 2023
 pruner_name = "MedianPruner"
 sampler_name = "TPESampler"
+objective_name = "sparse_small_max"
+max_perts = 2    # used when objective_name = "max_num_nonzero_perts"
 
 [attack.tuner_driver_settings.objective_extra_kwargs]
 
@@ -130,9 +132,9 @@ sampler_name = "TPESampler"
 
 [attack.tuner_driver_settings.sampler_kwargs]
 
-[attack.tune]
-num_trials = 75
-objective_name = "sparse_small_max"
+#[attack.tune]
+#num_trials = 75
+#objective_name = "sparse_small_max"
 
 
 [paths]

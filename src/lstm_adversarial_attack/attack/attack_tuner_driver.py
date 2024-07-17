@@ -21,6 +21,7 @@ import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
 
+
 @dataclass
 class AttackTunerDriverSettings:
     db_env_var_name: str
@@ -32,16 +33,23 @@ class AttackTunerDriverSettings:
     pruner_kwargs: dict[str, Any]
     sampler_name: str
     sampler_kwargs: dict[str, Any]
+    objective_name: str
+    max_perts: int  # used when objective_name = "max_num_nonzero_perts"
 
     @classmethod
     def from_config(cls, config_path: Path = None):
         config_reader = ConfigReader(config_path=config_path)
-        settings_fields = [field.name for field in
-                           fields(AttackTunerDriverSettings)]
-        constructor_kwargs = {field_name: config_reader.get_config_value(
-            f"attack.tuner_driver_settings.{field_name}") for field_name in
-            settings_fields}
+        settings_fields = [
+            field.name for field in fields(AttackTunerDriverSettings)
+        ]
+        constructor_kwargs = {
+            field_name: config_reader.get_config_value(
+                f"attack.tuner_driver_settings.{field_name}"
+            )
+            for field_name in settings_fields
+        }
         return cls(**constructor_kwargs)
+
 
 @dataclass
 class AttackTunerDriverPaths:
@@ -53,8 +61,10 @@ class AttackTunerDriverPaths:
         paths_fields = [field.name for field in fields(AttackTunerDriverPaths)]
         constructor_kwargs = {
             field_name: config_reader.read_path(
-                f"attack.tuner_driver.{field_name}")
-            for field_name in paths_fields}
+                f"attack.tuner_driver.{field_name}"
+            )
+            for field_name in paths_fields
+        }
         return cls(**constructor_kwargs)
 
 
@@ -69,8 +79,8 @@ class AttackTunerDriver:
         settings: AttackTunerDriverSettings,
         paths: AttackTunerDriverPaths,
         hyperparameters_path: Path | str,
-        objective_name: str,
-        objective_extra_kwargs: dict[str, Any] = None,
+        # objective_name: str,
+        # objective_extra_kwargs: dict[str, Any] = None,
         study_name: str = None,
         tuning_ranges: ads.AttackTuningRanges = None,
         training_result_dir: Path | str = None,
@@ -87,8 +97,12 @@ class AttackTunerDriver:
         self.settings = settings
         self.paths = paths
         self.hyperparameters_path = Path(hyperparameters_path)
-        self.objective_name = objective_name
-        self.objective_extra_kwargs = objective_extra_kwargs
+        # self.objective_name = objective_name
+        self.objective_extra_kwargs = (
+            {"max_perts": settings.max_perts}
+            if self.settings.objective_name == "max_num_nonzero_perts"
+            else {}
+        )
         if study_name is None:
             study_name = self.build_study_name()
         self.study_name = study_name
@@ -126,7 +140,7 @@ class AttackTunerDriver:
     def summary(self) -> eds.AttackTunerDriverSummary:
         return eds.AttackTunerDriverSummary(
             hyperparameters_path=str(self.hyperparameters_path),
-            objective_name=self.objective_name,
+            objective_name=self.settings.objective_name,
             objective_extra_kwargs=self.objective_extra_kwargs,
             db_env_var_name=self.settings.db_env_var_name,
             study_name=self.study_name,
@@ -232,7 +246,7 @@ class AttackTunerDriver:
             max_num_samples=self.settings.max_num_samples,
             tuning_ranges=self.tuning_ranges,
             output_dir=self.output_dir,
-            objective_name=self.objective_name,
+            objective_name=self.settings.objective_name,
             sample_selection_seed=self.settings.sample_selection_seed,
             study=study,
         )
