@@ -15,7 +15,7 @@ import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 
 def resume_tuning(
     study_name: str = None,
-    num_trials: int = None,
+    # num_trials: int = None,
 ) -> optuna.Study:
     """
     Resumes training using params of a previously used AttackTunerDriver and
@@ -31,12 +31,10 @@ def resume_tuning(
     if study_name is None:
         study_name = tsd.ATTACK_TUNING_DB.get_latest_study().study_name
 
-    study_dir = Path(config_reader.read_path("attack.tune.output_dir")) / study_name
+    study_dir = (
+        Path(config_reader.read_path("attack.tune.output_dir")) / study_name
+    )
     # study_dir = cfg_paths.ATTACK_HYPERPARAMETER_TUNING / study_name
-
-    if num_trials is None:
-        num_trials = config_reader.get_config_value("attack.tune.num_trials")
-        # num_trials = cfg_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS
 
     cur_device = gh.get_device()
 
@@ -64,12 +62,11 @@ def resume_tuning(
     }
 
     attack_tuner_driver = atd.AttackTunerDriver(**constructor_kwargs)
-    return attack_tuner_driver.run(num_trials=num_trials)
+    return attack_tuner_driver.run()
 
 
 def main(
     study_name: str = None,
-    num_trials: int = None,
 ) -> optuna.Study:
     """
     Tunes hyperparameters of an AdversarialAttackTrainer and its
@@ -78,14 +75,10 @@ def main(
     recent cross-validation training results to build target model.
 
     :param study_name: name of tuning study (in RDB)
-    :param num_trials: number of trials to run. defaults to
-    config_settings.ATTACK_TUNING_DEFAULT_NUM_TRIALS
     :return: an optuna.Study object with results of completed trials
     """
 
-    continued_study = resume_tuning(
-        num_trials=num_trials, study_name=study_name
-    )
+    continued_study = resume_tuning(study_name=study_name)
     return continued_study
 
 
@@ -100,23 +93,12 @@ if __name__ == "__main__":
         )
     )
     parser.add_argument(
-        "-n",
-        "--num_trials",
-        type=int,
-        action="store",
-        nargs="?",
-        help="Number of trials to run",
-    )
-
-    parser.add_argument(
         "-s",
         "--study_name",
         type=str,
         action="store",
         nargs="?",
-        help=(
-            "Name of tuning study in RDB"
-        ),
+        help="Name of tuning study in RDB",
     )
 
     args_namespace = parser.parse_args()

@@ -170,7 +170,7 @@ class ModelTunerDriver:
             # TODO should continuation check be for local, RDB, or both?
             is_continuation=self.has_pre_existing_local_output,
             device_name=str(self.device),
-            output_dir=str(self.output_dir),
+            # output_dir=str(self.output_dir),
             # tuning_ranges=self.tuning_ranges,
         )
 

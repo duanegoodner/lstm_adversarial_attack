@@ -60,7 +60,7 @@ class TunerDriverSummary(msgspec.Struct):
     study_name: str
     is_continuation: bool
     device_name: str
-    output_dir: str
+    # output_dir: str
 
     def to_dict(self):
         return {
