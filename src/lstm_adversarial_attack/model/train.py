@@ -31,16 +31,21 @@ def main(
 
     # build settings object for CrossValidatorDriver
     config_reader = config.ConfigReader()
-    config_settings = config_reader.get_config_value("model.cv_driver_settings")
-    cv_driver_settings = cvd.CrossValidatorDriverSettings(**config_settings)
+    # config_settings = config_reader.get_config_value("model.cv_driver_settings")
+    # cv_driver_settings = cvd.CrossValidatorDriverSettings(**config_settings)
+
+    cv_driver_settings = cvd.CrossValidatorDriverSettings.from_config()
+
     if num_folds is not None:
         cv_driver_settings.num_folds = num_folds
     if epochs_per_fold is not None:
         cv_driver_settings.epochs_per_fold = epochs_per_fold
 
     # build paths object for CrossValidatorDriver
-    config_paths = config_reader.read_path("model.cv_driver")
-    cv_driver_paths = cvd.CrossValidatorDriverPaths(**config_paths)
+    # config_paths = config_reader.read_path("model.cv_driver")
+    # cv_driver_paths = cvd.CrossValidatorDriverPaths(**config_paths)
+    
+    cv_driver_paths = cvd.CrossValidatorDriverPaths.from_config()
 
     cv_driver = cvd.CrossValidatorDriver(
         device=gh.get_device(),
