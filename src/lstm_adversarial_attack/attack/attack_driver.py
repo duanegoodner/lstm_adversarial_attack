@@ -8,12 +8,14 @@ import lstm_adversarial_attack.attack.adv_attack_trainer as aat
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.resource_io as rio
 from lstm_adversarial_attack.x19_mort_general_dataset import (
-    X19MGeneralDatasetWithIndex, x19m_with_index_collate_fn)
+    X19MGeneralDatasetWithIndex,
+    x19m_with_index_collate_fn,
+)
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
 class AttackDriver:
@@ -28,11 +30,21 @@ class AttackDriver:
         attack_tuning_study_name: str,
         model_hyperparameters: tuh.X19LSTMHyperParameterSettings,
         attack_hyperparameters: ads.AttackHyperParameterSettings,
-        epochs_per_batch: int = cfg_settings.ATTACK_TUNING_EPOCHS,
-        db_env_var_name: str = "ATTACK_TUNING_DB_NAME",
-        max_num_samples=cfg_settings.ATTACK_TUNING_MAX_NUM_SAMPLES,
-        sample_selection_seed=cfg_settings.ATTACK_SAMPLE_SELECTION_SEED,
-        attack_misclassified_samples: bool = False,
+        epochs_per_batch: int = CONFIG_READER.get_config_value(
+            "attack.tuner_driver_settings.epochs_per_batch"
+        ),
+        db_env_var_name: str = CONFIG_READER.get_config_value(
+            "attack.tuner_driver_settings.db_env_var_name"
+        ),
+        max_num_samples: int = CONFIG_READER.get_config_value(
+            "attack.tuner_driver_settings.max_num_samples"
+        ),
+        sample_selection_seed: int = CONFIG_READER.get_config_value(
+            "attack.tuner_driver_settings.sample_selection_seed"
+        ),
+        attack_misclassified_samples: bool = CONFIG_READER.get_config_value(
+            "attack.tuner_driver_settings.attack_misclassified_samples"
+        ),
         output_dir: Path = None,
         result_file_prefix: str = "",
         save_attack_driver: bool = False,

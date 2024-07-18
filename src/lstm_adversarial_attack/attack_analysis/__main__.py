@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack_analysis.all_results_plotter as arp
-import lstm_adversarial_attack.config_settings as cfg_settings
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
 def main(
@@ -46,7 +46,7 @@ def main(
     if attack_result_path is not None:
         attack_result_path = Path(attack_result_path)
     if seq_length is None:
-        seq_length = cfg_settings.ATTACK_ANALYSIS_DEFAULT_SEQ_LENGTH
+        seq_length = CONFIG_READER.get_config_value("attack.analysis.default_seq_length")
     if single_histograms is not None:
         single_histograms_info = [
             arp.SingleHistogramInfo(entry) for entry in single_histograms

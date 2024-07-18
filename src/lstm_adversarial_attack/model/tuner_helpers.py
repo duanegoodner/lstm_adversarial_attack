@@ -148,7 +148,6 @@ class X19LSTMBuilder:
         """
         return nn.Sequential(
             lms.BidirectionalX19LSTM(
-                input_size=19,
                 lstm_hidden_size=2**self.log_lstm_hidden_size,
             ),
             getattr(nn, self.lstm_act_name)(),

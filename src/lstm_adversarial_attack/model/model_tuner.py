@@ -15,11 +15,11 @@ from torch.utils.data import DataLoader, Dataset, Subset
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config_settings as cfs
+import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.data_structures as ds
-import lstm_adversarial_attack.simple_logger as slg
 import lstm_adversarial_attack.model.standard_model_trainer as smt
 import lstm_adversarial_attack.model.tuner_helpers as tuh
+import lstm_adversarial_attack.simple_logger as slg
 import lstm_adversarial_attack.weighted_dataloader_builder as wdb
 
 
@@ -252,9 +252,12 @@ class HyperParameterTuner:
         :param cv_means_log_writer: writes cv_means to generic log file
         :param trial: ongoing optuna trial that generated data
         """
+        config_reader = config.ConfigReader()
+        attr_display_labels = config_reader.get_config_value(config_key="model.attr_display_labels")
+
         for metric in self.cv_mean_metrics_of_interest:
             summary_writer.add_scalar(
-                f"{self.trial_prefix}{trial.number}/{cfs.ATTR_DISPLAY[metric]}_mean",
+                f"{self.trial_prefix}{trial.number}/{attr_display_labels[metric]}_mean",
                 getattr(log_entry.result, metric),
                 log_entry.epoch,
             )

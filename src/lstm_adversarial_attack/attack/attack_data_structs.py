@@ -1,21 +1,41 @@
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Callable, Any
 
 import optuna
 import torch
 
-import lstm_adversarial_attack.config_settings as cfg_set
-from lstm_adversarial_attack.config import ConfigReader
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
 @dataclass
 class AttackTuningRanges:
-    kappa: tuple[float, float] = cfg_set.ATTACK_TUNING_KAPPA
-    lambda_1: tuple[float, float] = cfg_set.ATTACK_TUNING_LAMBDA_1
-    optimizer_name: tuple[str, ...] = cfg_set.ATTACK_TUNING_OPTIMIZER_OPTIONS
-    learning_rate: tuple[float, float] = cfg_set.ATTACK_TUNING_LEARNING_RATE
-    log_batch_size: tuple[int, int] = cfg_set.ATTACK_TUNING_LOG_BATCH_SIZE
+    kappa: tuple[float, float] = field(
+        default_factory=lambda: CONFIG_READER.get_config_value(
+            "attack.tuning.kappa"
+        )
+    )
+    lambda_1: tuple[float, float] = field(
+        default_factory=lambda: CONFIG_READER.get_config_value(
+            "attack.tuning.lambda_1"
+        )
+    )
+    optimizer_name: tuple[str, ...] = field(
+        default_factory=lambda: CONFIG_READER.get_config_value(
+            "attack.tuning.optimizer_options"
+        )
+    )
+
+    learning_rate: tuple[float, float] = field(
+        default_factory=lambda: CONFIG_READER.get_config_value(
+            "attack.tuning.learning_rate"
+        )
+    )
+    log_batch_size: tuple[int, int] = field(
+        default_factory=lambda: CONFIG_READER.get_config_value(
+            "attack.tuning.log_batch_size"
+        )
+    )
 
 
 @dataclass
@@ -44,9 +64,7 @@ class AttackHyperParameterSettings:
 
     @property
     def optimizer_constructor(self) -> Callable:
-        return getattr(
-            torch.optim, self.optimizer_name
-        )
+        return getattr(torch.optim, self.optimizer_name)
 
 
 class BuildAttackHyperParameterSettings:
@@ -89,12 +107,12 @@ class AttackTunerDriverSettings:
 
     @classmethod
     def from_config(cls, config_path: Path = None):
-        config_reader = ConfigReader(config_path=config_path)
+        # config_reader = ConfigReader(config_path=config_path)
         settings_fields = [
             field.name for field in fields(AttackTunerDriverSettings)
         ]
         constructor_kwargs = {
-            field_name: config_reader.get_config_value(
+            field_name: CONFIG_READER.get_config_value(
                 f"attack.tuner_driver_settings.{field_name}"
             )
             for field_name in settings_fields
@@ -107,11 +125,10 @@ class AttackTunerDriverPaths:
     output_dir: Path
 
     @classmethod
-    def from_config(cls, config_path: Path = None):
-        config_reader = ConfigReader(config_path=config_path)
+    def from_config(cls):
         paths_fields = [field.name for field in fields(AttackTunerDriverPaths)]
         constructor_kwargs = {
-            field_name: config_reader.read_path(
+            field_name: CONFIG_READER.read_path(
                 f"attack.tuner_driver.{field_name}"
             )
             for field_name in paths_fields

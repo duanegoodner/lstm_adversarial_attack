@@ -1,37 +1,37 @@
 [preprocess]
-    min_age = 18
-    min_los_hospital = 1
-    min_los_icu = 1
-    bg_data_cols = [
-        "potassium", "calcium", "ph", "pco2", "lactate"
-    ]
-    lab_data_cols = [
-        "albumin",
-        "bun",
-        "creatinine",
-        "sodium",
-        "bicarbonate",
-        "platelet",
-        "glucose",
-        "magnesium"
-    ]
-    vital_data_cols = [
-        "heartrate",
-        "sysbp",
-        "diasbp",
-        "tempc",
-        "resprate",
-        "spo2"
-    ]
-    admission_data_json_delimiter = "END_TIME_SERIES_DF_METADATA"
-    winsorize_low = "5%"
-    winsorize_high = "95%"
-    resample_interpolation_method = "linear"
-    resample_limit_direction = "both"
-    min_observation_hours = 1
-    max_observation_hours = 48
-    require_exact_num_hours = false
-    observation_window_start = "intime"
+min_age = 18
+min_los_hospital = 1
+min_los_icu = 1
+bg_data_cols = [
+    "potassium", "calcium", "ph", "pco2", "lactate"
+]
+lab_data_cols = [
+    "albumin",
+    "bun",
+    "creatinine",
+    "sodium",
+    "bicarbonate",
+    "platelet",
+    "glucose",
+    "magnesium"
+]
+vital_data_cols = [
+    "heartrate",
+    "sysbp",
+    "diasbp",
+    "tempc",
+    "resprate",
+    "spo2"
+]
+admission_data_json_delimiter = "END_TIME_SERIES_DF_METADATA"
+winsorize_low = "5%"
+winsorize_high = "95%"
+resample_interpolation_method = "linear"
+resample_limit_direction = "both"
+min_observation_hours = 1
+max_observation_hours = 48
+require_exact_num_hours = false
+observation_window_start = "intime"
 
 [preprocess.output_dirs]
 root = "project_output_data::preprocess/checkpoints"
@@ -68,41 +68,62 @@ measurement_data_list = "data/preprocess/checkpoints/5_feature_finalizer/measure
 in_hospital_mortality_list = "data/preprocess/checkpoints/5_feature_finalizer/in_hospital_mortality_list.json"
 measurement_col_names = "data/preprocess/checkpoints/5_feature_finalizer/measurement_col_names.json"
 
+[model]
+trainer_eval_general_logging_metrics = [
+    "accuracy",
+    "auc",
+    "f1",
+    "precision",
+    "recall",
+    "validation_loss",
+]
+trainer_eval_tensorboard_metrics = [
+#    "accuracy",
+    "auc",
+    "f1",
+    "precision",
+    "recall",
+    "validation_loss",
+]
+
+[model.trainer]
+random_seed = 12345678
+
 [model.tuner_driver]
-    num_trials = 30
-    num_folds = 3
-    num_cv_epochs = 2
-    epochs_per_fold = 2
-    kfold_random_seed = 1234
-    cv_mean_tensorboard_metrics = [
-        "accuracy",
-        "auc",
-        "f1",
-        "precision",
-        "recall",
-        "validation_loss"]
-    performance_metric = "validation_loss"
-    optimization_direction_label = "minimize"
-    tuning_output_dir = "data/model/tuning"
-    pruner_name = "MedianPruner"
-    sampler_name = "TPESampler"
-    db_env_var_name = "MODEL_TUNING_DB_NAME"
-    fold_class_name = "StratifiedKFold"
-    collate_fn_name = "x19m_collate_fn"
+num_trials = 30
+num_folds = 3
+num_cv_epochs = 2
+epochs_per_fold = 2
+kfold_random_seed = 1234
+cv_mean_tensorboard_metrics = [
+    "accuracy",
+    "auc",
+    "f1",
+    "precision",
+    "recall",
+    "validation_loss"]
+performance_metric = "validation_loss"
+optimization_direction_label = "minimize"
+tuning_output_dir = "data/model/tuning"
+pruner_name = "MedianPruner"
+sampler_name = "TPESampler"
+db_env_var_name = "MODEL_TUNING_DB_NAME"
+fold_class_name = "StratifiedKFold"
+collate_fn_name = "x19m_collate_fn"
 
-        [model.tuner_driver.tuning_ranges]
-        log_lstm_hidden_size = [5, 7]
-        lstm_act_options = ["ReLU", "Tanh"]
-        dropout = [0.0, 0.5]
-        log_fc_hidden_size = [4, 8]
-        fc_act_options = ["ReLU", "Tanh"]
-        optimizer_options = ["Adam", "RMSprop", "SGD"]
-        learning_rate = [0.00001, 0.1]
-        log_batch_size = [5, 8]
+[model.tuner_driver.tuning_ranges]
+log_lstm_hidden_size = [5, 7]
+lstm_act_options = ["ReLU", "Tanh"]
+dropout = [0.0, 0.5]
+log_fc_hidden_size = [4, 8]
+fc_act_options = ["ReLU", "Tanh"]
+optimizer_options = ["Adam", "RMSprop", "SGD"]
+learning_rate = [0.00001, 0.1]
+log_batch_size = [5, 8]
 
-        [model.tuner_driver.pruner_kwargs]
-        n_startup_trials = 5
-        n_warmup_steps = 3
+[model.tuner_driver.pruner_kwargs]
+n_startup_trials = 5
+n_warmup_steps = 3
 
 [model.tuner_driver.sampler_kwargs]
 
@@ -115,6 +136,21 @@ single_fold_eval_fraction = 0.2
 fold_class_name = "StratifiedKFold"
 collate_fn_name = "x19m_collate_fn"
 
+[model.attr_display_labels]
+accuracy = "accuracy"
+auc = "AUC"
+f1 = "F1"
+precision = "precison"
+recall = "recall"
+validation_loss = "_validation_loss"
+
+[attack.tuning]
+kappa = [0.0, 2.0]
+lambda_1 = [1e-7, 1.0]
+optimizer_options = ["Adam", "RMSprop", "SGD"]
+learning_rate = [1e-5, 1.0]
+log_batch_size = [5, 7]
+
 [attack.tuner_driver_settings]
 db_env_var_name = "ATTACK_TUNING_DB_NAME"
 num_trials = 75
@@ -125,6 +161,7 @@ pruner_name = "MedianPruner"
 sampler_name = "TPESampler"
 objective_name = "sparse_small_max"
 max_perts = 2    # used when objective_name = "max_num_nonzero_perts"
+attack_misclassified_samples = false
 
 [attack.tuner_driver_settings.objective_extra_kwargs]
 
@@ -135,6 +172,9 @@ max_perts = 2    # used when objective_name = "max_num_nonzero_perts"
 #[attack.tune]
 #num_trials = 75
 #objective_name = "sparse_small_max"
+
+[attack.analysis]
+default_seq_length = 48
 
 
 [paths]

@@ -14,8 +14,6 @@ import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 
-# import lstm_adversarial_attack.config_paths as cfp
-
 
 # TODO Consider creating DataWriter base class with encoder abstractmethod and
 #  encode() & export() concrete methods

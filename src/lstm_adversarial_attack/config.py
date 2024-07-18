@@ -22,6 +22,10 @@ class ConfigReader:
         for sub_key in config_key.split("."):
             result = result[sub_key]
 
+        # We want arrays in config file to be retrieved as tuples (immutable), not lists
+        if type(result) is list:
+            result = tuple(result)
+
         return result
 
     def _to_absolute_path(self, path_rel_project_root: str | Path) -> str:
@@ -62,6 +66,9 @@ class ConfigReader:
             return self.read_path(
                 config_key=f"{path_components[0]}", extension=f"/{end_path}"
             )
+
+
+CONFIG_READER = ConfigReader()
 
 
 if __name__ == "__main__":

@@ -7,10 +7,10 @@ import lstm_adversarial_attack.attack_analysis.discovery_epoch_plotter as dep
 import lstm_adversarial_attack.attack_analysis.perts_histogram_plotter as php
 import lstm_adversarial_attack.attack_analysis.susceptibility_plotter as ssp
 import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.data_provenance as dpr
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.resource_io as rio
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
 class SingleHistogramInfo:
@@ -25,7 +25,7 @@ class AllResultsPlotter(dpr.HasDataProvenance):
     def __init__(
         self,
         attack_result_path: Path = None,
-        seq_length: int = cfg_settings.ATTACK_ANALYSIS_DEFAULT_SEQ_LENGTH,
+        seq_length: int = CONFIG_READER.get_config_value("attack.analysis.default_seq_length"),
         min_num_perts: int = None,
         max_num_perts: int = None,
         label: str = None,

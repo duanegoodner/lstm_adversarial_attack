@@ -9,7 +9,7 @@ import lstm_adversarial_attack.attack.adversarial_attacker as aat
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.attack.attacker_helpers as ath
-import lstm_adversarial_attack.config_settings as lcs
+import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.dataset_with_index as dsi
 import lstm_adversarial_attack.resource_io as rio
@@ -60,15 +60,18 @@ class AdversarialAttackTrainer:
         :param checkpoint_interval: number of attack batches per checkpoint
         :param output_dir: directory where checkpoint .pickles get saved
         """
+        config_reader = config.ConfigReader()
+
         self.device = device
         self.model = model
         self.attack_hyperparameters = attack_hyperparameters
         self.state_dict = state_dict
+        self.max_observation_hours = config_reader.get_config_value("preprocess.max_observation_hours")
         self.attacker = aat.AdversarialAttacker(
             full_model=model,
             state_dict=state_dict,
             input_size=19,
-            max_sequence_length=lcs.MAX_OBSERVATION_HOURS,
+            max_sequence_length=self.max_observation_hours,
             batch_size=2**self.attack_hyperparameters.log_batch_size,
         )
         self.epochs_per_batch = epochs_per_batch
@@ -226,7 +229,7 @@ class AdversarialAttackTrainer:
             full_model=self.model,
             state_dict=self.state_dict,
             input_size=19,
-            max_sequence_length=lcs.MAX_OBSERVATION_HOURS,
+            max_sequence_length=self.max_observation_hours,
             batch_size=batch_size,
         )
         self.optimizer = self.attack_hyperparameters.optimizer_constructor(
