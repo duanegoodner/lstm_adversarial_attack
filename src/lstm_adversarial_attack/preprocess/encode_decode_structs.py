@@ -60,7 +60,6 @@ class TunerDriverSummary(msgspec.Struct):
     study_name: str
     is_continuation: bool
     device_name: str
-    # output_dir: str
 
     def to_dict(self):
         return {
@@ -69,44 +68,25 @@ class TunerDriverSummary(msgspec.Struct):
             "study_name": self.study_name,
             "is_continuation": self.is_continuation,
             "device_name": self.device_name,
-            "output_dir": self.output_dir,
         }
 
 
 class AttackTunerDriverSummary(msgspec.Struct):
-    hyperparameters_path: str
-    objective_name: str
-    objective_extra_kwargs: dict[str, Any]
-    db_env_var_name: str
+    settings: ads.AttackTunerDriverSettings
+    paths: ads.AttackTunerDriverPaths
     study_name: str
     is_continuation: bool
     tuning_ranges: ads.AttackTuningRanges
-    epochs_per_batch: int
-    max_num_samples: int
-    sample_selection_seed: int
-    training_result_dir: str
-    pruner_name: str
-    pruner_kwargs: dict[str, Any]
-    sampler_name: str
-    sampler_kwargs: dict[str, Any]
+    model_training_result_dir: str
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "hyperparameters_path": self.hyperparameters_path,
-            "objective_name": self.objective_name,
-            "objective_extra_kwargs": self.objective_extra_kwargs,
-            "db_env_var_name": self.db_env_var_name,
+            "settings": self.settings,
+            "paths": self.paths,
             "study_name": self.study_name,
             "is_continuation": self.is_continuation,
             "tuning_ranges": self.tuning_ranges,
-            "epochs_per_batch": self.epochs_per_batch,
-            "max_num_samples": self.max_num_samples,
-            "sample_selection_seed": self.sample_selection_seed,
-            "training_result_dir": self.training_result_dir,
-            "pruner_name": self.pruner_name,
-            "pruner_kwargs": self.pruner_kwargs,
-            "sampler_name": self.sampler_name,
-            "sampler_kwargs": self.sampler_kwargs
+            "model_training_result_dir": self.model_training_result_dir,
         }
 
 

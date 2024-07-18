@@ -381,6 +381,8 @@ class AttackTunerDriverSummaryReader(StandardStructReader):
             return ds.TrainingCheckpointStorage(obj)
         if decode_type is ads.AttackTuningRanges:
             return ads.AttackTuningRanges(**obj)
+        if decode_type is Path:
+            return Path(obj)
 
 
 class TrainingCheckpointStorageReader(StandardStructReader):

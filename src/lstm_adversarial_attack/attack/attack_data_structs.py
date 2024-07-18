@@ -1,10 +1,12 @@
-from dataclasses import dataclass
-from typing import Callable
+from dataclasses import dataclass, fields
+from pathlib import Path
+from typing import Callable, Any
 
 import optuna
 import torch
 
 import lstm_adversarial_attack.config_settings as cfg_set
+from lstm_adversarial_attack.config import ConfigReader
 
 
 @dataclass
@@ -70,3 +72,48 @@ class BuildAttackHyperParameterSettings:
             ),
         )
 
+
+@dataclass
+class AttackTunerDriverSettings:
+    db_env_var_name: str
+    num_trials: int
+    epochs_per_batch: int
+    max_num_samples: int
+    sample_selection_seed: int
+    pruner_name: str
+    pruner_kwargs: dict[str, Any]
+    sampler_name: str
+    sampler_kwargs: dict[str, Any]
+    objective_name: str
+    max_perts: int  # used when objective_name = "max_num_nonzero_perts"
+
+    @classmethod
+    def from_config(cls, config_path: Path = None):
+        config_reader = ConfigReader(config_path=config_path)
+        settings_fields = [
+            field.name for field in fields(AttackTunerDriverSettings)
+        ]
+        constructor_kwargs = {
+            field_name: config_reader.get_config_value(
+                f"attack.tuner_driver_settings.{field_name}"
+            )
+            for field_name in settings_fields
+        }
+        return cls(**constructor_kwargs)
+
+
+@dataclass
+class AttackTunerDriverPaths:
+    output_dir: Path
+
+    @classmethod
+    def from_config(cls, config_path: Path = None):
+        config_reader = ConfigReader(config_path=config_path)
+        paths_fields = [field.name for field in fields(AttackTunerDriverPaths)]
+        constructor_kwargs = {
+            field_name: config_reader.read_path(
+                f"attack.tuner_driver.{field_name}"
+            )
+            for field_name in paths_fields
+        }
+        return cls(**constructor_kwargs)

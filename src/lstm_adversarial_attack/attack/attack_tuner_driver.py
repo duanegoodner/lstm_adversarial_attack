@@ -22,50 +22,50 @@ import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
 
 
-@dataclass
-class AttackTunerDriverSettings:
-    db_env_var_name: str
-    num_trials: int
-    epochs_per_batch: int
-    max_num_samples: int
-    sample_selection_seed: int
-    pruner_name: str
-    pruner_kwargs: dict[str, Any]
-    sampler_name: str
-    sampler_kwargs: dict[str, Any]
-    objective_name: str
-    max_perts: int  # used when objective_name = "max_num_nonzero_perts"
-
-    @classmethod
-    def from_config(cls, config_path: Path = None):
-        config_reader = ConfigReader(config_path=config_path)
-        settings_fields = [
-            field.name for field in fields(AttackTunerDriverSettings)
-        ]
-        constructor_kwargs = {
-            field_name: config_reader.get_config_value(
-                f"attack.tuner_driver_settings.{field_name}"
-            )
-            for field_name in settings_fields
-        }
-        return cls(**constructor_kwargs)
-
-
-@dataclass
-class AttackTunerDriverPaths:
-    output_dir: Path
-
-    @classmethod
-    def from_config(cls, config_path: Path = None):
-        config_reader = ConfigReader(config_path=config_path)
-        paths_fields = [field.name for field in fields(AttackTunerDriverPaths)]
-        constructor_kwargs = {
-            field_name: config_reader.read_path(
-                f"attack.tuner_driver.{field_name}"
-            )
-            for field_name in paths_fields
-        }
-        return cls(**constructor_kwargs)
+# @dataclass
+# class AttackTunerDriverSettings:
+#     db_env_var_name: str
+#     num_trials: int
+#     epochs_per_batch: int
+#     max_num_samples: int
+#     sample_selection_seed: int
+#     pruner_name: str
+#     pruner_kwargs: dict[str, Any]
+#     sampler_name: str
+#     sampler_kwargs: dict[str, Any]
+#     objective_name: str
+#     max_perts: int  # used when objective_name = "max_num_nonzero_perts"
+#
+#     @classmethod
+#     def from_config(cls, config_path: Path = None):
+#         config_reader = ConfigReader(config_path=config_path)
+#         settings_fields = [
+#             field.name for field in fields(AttackTunerDriverSettings)
+#         ]
+#         constructor_kwargs = {
+#             field_name: config_reader.get_config_value(
+#                 f"attack.tuner_driver_settings.{field_name}"
+#             )
+#             for field_name in settings_fields
+#         }
+#         return cls(**constructor_kwargs)
+#
+#
+# @dataclass
+# class AttackTunerDriverPaths:
+#     output_dir: Path
+#
+#     @classmethod
+#     def from_config(cls, config_path: Path = None):
+#         config_reader = ConfigReader(config_path=config_path)
+#         paths_fields = [field.name for field in fields(AttackTunerDriverPaths)]
+#         constructor_kwargs = {
+#             field_name: config_reader.read_path(
+#                 f"attack.tuner_driver.{field_name}"
+#             )
+#             for field_name in paths_fields
+#         }
+#         return cls(**constructor_kwargs)
 
 
 class AttackTunerDriver:
@@ -76,8 +76,8 @@ class AttackTunerDriver:
     def __init__(
         self,
         device: torch.device,
-        settings: AttackTunerDriverSettings,
-        paths: AttackTunerDriverPaths,
+        settings: ads.AttackTunerDriverSettings,
+        paths: ads.AttackTunerDriverPaths,
         study_name: str = None,
         tuning_ranges: ads.AttackTuningRanges = None,
         model_training_result_dir: Path | str = None,
@@ -137,21 +137,12 @@ class AttackTunerDriver:
     @property
     def summary(self) -> eds.AttackTunerDriverSummary:
         return eds.AttackTunerDriverSummary(
-            hyperparameters_path=str(self.hyperparameters_path),
-            objective_name=self.settings.objective_name,
-            objective_extra_kwargs=self.objective_extra_kwargs,
-            db_env_var_name=self.settings.db_env_var_name,
+            settings=self.settings.__dict__,
+            paths=self.paths.__dict__,
             study_name=self.study_name,
             is_continuation=self.has_pre_existing_local_output,
             tuning_ranges=self.tuning_ranges,
-            epochs_per_batch=self.settings.epochs_per_batch,
-            max_num_samples=self.settings.max_num_samples,
-            sample_selection_seed=self.settings.sample_selection_seed,
-            training_result_dir=str(self.model_training_result_dir),
-            pruner_name=self.pruner.__class__.__name__,
-            pruner_kwargs=self.pruner_kwargs,
-            sampler_name=self.hyperparameter_sampler.__class__.__name__,
-            sampler_kwargs=self.sampler_kwargs,
+            model_training_result_dir=str(self.model_training_result_dir),
         )
 
     @cached_property
