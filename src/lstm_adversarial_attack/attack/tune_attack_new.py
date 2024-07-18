@@ -9,6 +9,7 @@ import lstm_adversarial_attack.attack.attack_tuner_driver as atd
 import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.path_searches as ps
+import lstm_adversarial_attack.attack.attack_data_structs as ads
 
 
 def start_new_tuning(
@@ -35,8 +36,8 @@ def start_new_tuning(
 
     tuner_driver = atd.AttackTunerDriver(
         device=device,
-        settings=atd.AttackTunerDriverSettings.from_config(),
-        paths=atd.AttackTunerDriverPaths.from_config(),
+        settings=ads.AttackTunerDriverSettings.from_config(),
+        paths=ads.AttackTunerDriverPaths.from_config(),
         model_training_result_dir=Path(model_training_result_dir),
     )
 

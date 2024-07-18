@@ -15,14 +15,12 @@ import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 
 def resume_tuning(
     study_name: str = None,
-    # num_trials: int = None,
 ) -> optuna.Study:
     """
     Resumes training using params of a previously used AttackTunerDriver and
     its associated Optuna Study. Default behavior saves new results to
     same directory as results of previous runs.
     :param study_name: name of tuning study (as saved in RDB)
-    :param num_trials: max # of trials to run
     :return: an Optuna Study object (which also gets saved as .pickle)
     """
 
@@ -34,7 +32,6 @@ def resume_tuning(
     study_dir = (
         Path(config_reader.read_path("attack.tune.output_dir")) / study_name
     )
-    # study_dir = cfg_paths.ATTACK_HYPERPARAMETER_TUNING / study_name
 
     cur_device = gh.get_device()
 

@@ -32,7 +32,8 @@ class AttackDriver:
 
     def __init__(
         self,
-        attack_tuner_driver: atd.AttackTunerDriver,
+        # attack_tuner_driver: atd.AttackTunerDriver,
+        target_model_checkpoint_info: cvs.CheckpointInfo,
         device: torch.device,
         # model_hyperparameters_path: Path | str,
         attack_tuning_study_name: str,
@@ -72,7 +73,8 @@ class AttackDriver:
         :param save_attack_driver: whether to save AttackDriver .pickle
         :param checkpoint_interval: number of batches per checkpoint
         """
-        self.attack_tuner_driver = attack_tuner_driver
+        # self.attack_tuner_driver = attack_tuner_driver
+        self.target_model_checkpoint_info = target_model_checkpoint_info
         self.device = device
         self.attack_tuning_study_name = attack_tuning_study_name
         self.db_env_var_name = db_env_var_name
@@ -116,61 +118,6 @@ class AttackDriver:
             )
         return output_dir
 
-    # @classmethod
-    # def from_attack_hyperparameter_tuning(
-    #     cls,
-    #     device: torch.device,
-    #     tuning_result_dir: Path = None,
-    #     max_num_samples: int = None,
-    #     epochs_per_batch: int = None,
-    #     sample_selection_seed: int = None,
-    #     save_attack_driver: bool = True,
-    #     checkpoint_interval: int = None,
-    # ):
-    #     """
-    #     Creates AttackDriver using output from previous hyperparameter tuning
-    #     :param device: device to run on
-    #     :param tuning_result_dir: directory where tuning data is saved
-    #     :param max_num_samples: number of candidate samples for attack
-    #     :param epochs_per_batch: num attack iterations per batch
-    #     :param sample_selection_seed: random seed to use when selecting subset
-    #     of samples from original dataset
-    #     :param save_attack_driver: whether to save AttackDriver .pickle
-    #     :param checkpoint_interval: number of batches per checkpoint
-    #     :return:
-    #     """
-    #     if tuning_result_dir is None:
-    #         tuning_result_dir = ps.latest_modified_file_with_name_condition(
-    #             component_string="optuna_study.pickle",
-    #             root_dir=cfg_paths.ATTACK_HYPERPARAMETER_TUNING,
-    #         ).parent
-    #     optuna_study = rio.ResourceImporter().import_pickle_to_object(
-    #         path=tuning_result_dir / "optuna_study.pickle"
-    #     )
-    #     tuner_driver_dict = rio.ResourceImporter().import_pickle_to_object(
-    #         path=tuning_result_dir / "attack_tuner_driver_dict.pickle"
-    #     )
-    #     tuner_driver = atd.AttackTunerDriver(**tuner_driver_dict)
-    #
-    #     # attack can have different # epochs per batch than tuner if specified
-    #     if epochs_per_batch is None:
-    #         epochs_per_batch = tuner_driver.epochs_per_batch
-    #
-    #     return cls(
-    #         device=device,
-    #         # model_path=tuner_driver.target_model_path,
-    #         checkpoint=tuner_driver.target_model_checkpoint,
-    #         attack_hyperparameters=ads.AttackHyperParameterSettings(
-    #             **optuna_study.best_params
-    #         ),
-    #         epochs_per_batch=epochs_per_batch,
-    #         max_num_samples=max_num_samples,
-    #         sample_selection_seed=sample_selection_seed,
-    #         save_attack_driver=save_attack_driver,
-    #         checkpoint_interval=checkpoint_interval,
-    #         hyperparameter_tuning_result_dir=tuning_result_dir,
-    #     )
-
     def __call__(self) -> aat.AdversarialAttackTrainer | ards.TrainerResult:
         """
         Imports model to attack, then trains and runs attack driver
@@ -183,7 +130,7 @@ class AttackDriver:
         #     )
         # )
 
-        checkpoint = self.attack_tuner_driver.target_model_checkpoint
+        checkpoint = self.target_model_checkpoint_info.checkpoint
 
         model = tuh.X19LSTMBuilder(settings=self.model_hyperparameters).build()
         model.load_state_dict(state_dict=checkpoint.state_dict)

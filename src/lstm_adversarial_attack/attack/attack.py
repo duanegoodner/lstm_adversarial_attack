@@ -8,14 +8,12 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_driver as ad
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.config_settings as cfg_settings
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.attack.attack_tuner_driver as atd
 import lstm_adversarial_attack.attack.attack_data_structs as ads
-
-
+import lstm_adversarial_attack.model.model_retriever as tmr
 
 
 def main(study_name: str) -> ards.TrainerSuccessSummary:
@@ -34,7 +32,9 @@ def main(study_name: str) -> ards.TrainerSuccessSummary:
     attack_hyperparameters_dict = tsd.ATTACK_TUNING_DB.get_best_params(
         study_name=study_name
     )
-    attack_hyperparameters = ads.AttackHyperParameterSettings(**attack_hyperparameters_dict)
+    attack_hyperparameters = ads.AttackHyperParameterSettings(
+        **attack_hyperparameters_dict
+    )
 
     tuning_result_dir_path = (
         cfg_paths.ATTACK_HYPERPARAMETER_TUNING / study_name
@@ -60,6 +60,12 @@ def main(study_name: str) -> ards.TrainerSuccessSummary:
         )
     )
 
+    target_model_checkpoint_info = tmr.ModelRetriever(
+        training_output_dir=Path(
+            attack_tuner_driver_summary.model_training_result_dir
+        )
+    ).get_representative_checkpoint()
+
     partial_attack_tuner_driver_constructor_kwargs = {
         key: val
         for key, val in attack_tuner_driver_summary.to_dict().items()
@@ -67,10 +73,15 @@ def main(study_name: str) -> ards.TrainerSuccessSummary:
     }
 
     partial_attack_tuner_driver_constructor_kwargs = {
-        **{"device": cur_device, **partial_attack_tuner_driver_constructor_kwargs}
+        **{
+            "device": cur_device,
+            **partial_attack_tuner_driver_constructor_kwargs,
+        }
     }
 
-    attack_tuner_driver = atd.AttackTunerDriver(**partial_attack_tuner_driver_constructor_kwargs)
+    attack_tuner_driver = atd.AttackTunerDriver(
+        **partial_attack_tuner_driver_constructor_kwargs
+    )
 
     # TODO resume work here on delay targetmodel instantiation after modify
     #  ModelRetriever to also provide checkpt Path. (& move call to
@@ -87,7 +98,8 @@ def main(study_name: str) -> ards.TrainerSuccessSummary:
     # )
 
     attack_driver = ad.AttackDriver(
-        attack_tuner_driver=attack_tuner_driver,
+        target_model_checkpoint_info=target_model_checkpoint_info,
+        # attack_tuner_driver=attack_tuner_driver,
         device=cur_device,
         attack_tuning_study_name=study_name,
         model_hyperparameters=model_hyperparameters,

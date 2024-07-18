@@ -11,6 +11,7 @@ import torch
 from lstm_adversarial_attack.config import ConfigReader
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
+# AttackTunerDriverSettings and AttackTunerDriverPaths moved to attack_data_structs when fixing (de)serialization
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_tuner as atn
 import lstm_adversarial_attack.data_structures as ds
@@ -20,52 +21,6 @@ import lstm_adversarial_attack.model.model_retriever as tmr
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
-
-
-# @dataclass
-# class AttackTunerDriverSettings:
-#     db_env_var_name: str
-#     num_trials: int
-#     epochs_per_batch: int
-#     max_num_samples: int
-#     sample_selection_seed: int
-#     pruner_name: str
-#     pruner_kwargs: dict[str, Any]
-#     sampler_name: str
-#     sampler_kwargs: dict[str, Any]
-#     objective_name: str
-#     max_perts: int  # used when objective_name = "max_num_nonzero_perts"
-#
-#     @classmethod
-#     def from_config(cls, config_path: Path = None):
-#         config_reader = ConfigReader(config_path=config_path)
-#         settings_fields = [
-#             field.name for field in fields(AttackTunerDriverSettings)
-#         ]
-#         constructor_kwargs = {
-#             field_name: config_reader.get_config_value(
-#                 f"attack.tuner_driver_settings.{field_name}"
-#             )
-#             for field_name in settings_fields
-#         }
-#         return cls(**constructor_kwargs)
-#
-#
-# @dataclass
-# class AttackTunerDriverPaths:
-#     output_dir: Path
-#
-#     @classmethod
-#     def from_config(cls, config_path: Path = None):
-#         config_reader = ConfigReader(config_path=config_path)
-#         paths_fields = [field.name for field in fields(AttackTunerDriverPaths)]
-#         constructor_kwargs = {
-#             field_name: config_reader.read_path(
-#                 f"attack.tuner_driver.{field_name}"
-#             )
-#             for field_name in paths_fields
-#         }
-#         return cls(**constructor_kwargs)
 
 
 class AttackTunerDriver:
