@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum, auto
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Type
+from typing import Any
 
 import dill
 import msgspec

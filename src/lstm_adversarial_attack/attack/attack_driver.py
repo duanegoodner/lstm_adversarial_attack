@@ -1,5 +1,4 @@
 import sys
-from functools import cached_property
 from pathlib import Path
 
 import torch
@@ -8,21 +7,13 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.adv_attack_trainer as aat
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
-import lstm_adversarial_attack.attack.attack_tuner_driver as atd
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.config_settings as cfg_settings
-import lstm_adversarial_attack.path_searches as ps
-import lstm_adversarial_attack.preprocess.encode_decode as edc
-import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
+import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
+import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.resource_io as rio
 from lstm_adversarial_attack.x19_mort_general_dataset import (
-    X19MGeneralDatasetWithIndex,
-    x19m_with_index_collate_fn,
-)
-import lstm_adversarial_attack.data_structures as ds
-import lstm_adversarial_attack.model.tuner_helpers as tuh
-import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
-import lstm_adversarial_attack.model.model_retriever as tmr
+    X19MGeneralDatasetWithIndex, x19m_with_index_collate_fn)
 
 
 class AttackDriver:
@@ -32,10 +23,8 @@ class AttackDriver:
 
     def __init__(
         self,
-        # attack_tuner_driver: atd.AttackTunerDriver,
         target_model_checkpoint_info: cvs.CheckpointInfo,
         device: torch.device,
-        # model_hyperparameters_path: Path | str,
         attack_tuning_study_name: str,
         model_hyperparameters: tuh.X19LSTMHyperParameterSettings,
         attack_hyperparameters: ads.AttackHyperParameterSettings,
@@ -73,14 +62,11 @@ class AttackDriver:
         :param save_attack_driver: whether to save AttackDriver .pickle
         :param checkpoint_interval: number of batches per checkpoint
         """
-        # self.attack_tuner_driver = attack_tuner_driver
         self.target_model_checkpoint_info = target_model_checkpoint_info
         self.device = device
         self.attack_tuning_study_name = attack_tuning_study_name
         self.db_env_var_name = db_env_var_name
-        # self.model_hyperparameters_path = Path(model_hyperparameters_path)
         self.model_hyperparameters = model_hyperparameters
-        # self.checkpoint = checkpoint
         self.attack_hyperparameters = attack_hyperparameters
         self.epochs_per_batch = epochs_per_batch
         self.max_num_samples = max_num_samples
@@ -124,14 +110,7 @@ class AttackDriver:
         :return: TrainerResult (dataclass with attack results)
         """
 
-        # model_hyperparameters = (
-        #     edc.X19LSTMHyperParameterSettingsReader().import_struct(
-        #         path=self.model_hyperparameters_path
-        #     )
-        # )
-
         checkpoint = self.target_model_checkpoint_info.checkpoint
-
         model = tuh.X19LSTMBuilder(settings=self.model_hyperparameters).build()
         model.load_state_dict(state_dict=checkpoint.state_dict)
 

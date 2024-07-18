@@ -1,8 +1,6 @@
 from enum import Enum, auto
 from pathlib import Path
 
-# import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
 
 
@@ -16,12 +14,6 @@ class ModelAssessmentType(Enum):
     SINGLE_FOLD = auto()
 
 
-# @dataclass
-# class FoldCheckpointPair:
-#     fold: int
-#     checkpoint: ds.TrainingCheckpoint
-
-
 class ModelRetriever:
     """
     Retrieves model and best checkpoint info from CV assessment of model.
@@ -30,21 +22,14 @@ class ModelRetriever:
     def __init__(
         self,
         # training_output_dir: Path = None,
-        training_output_dir: Path
+        training_output_dir: Path,
     ):
         """
         :param training_output_dir: directory containing the assessment
         (training) results
         """
-        # if training_output_dir is None:
-        #     training_output_dir = ps.latest_modified_file_with_name_condition(
-        #         component_string=".tar",
-        #         root_dir=cfg_paths.CV_ASSESSMENT_OUTPUT_DIR,
-        #         comparison_type=ps.StringComparisonType.SUFFIX,
-        #     ).parent.parent.parent
         self.training_output_dir = training_output_dir
         self.checkpoints_dir = self.training_output_dir / "checkpoints"
-        # self.model_path = self.training_output_dir / "model.pickle"
 
     def get_representative_checkpoint(
         self,
@@ -87,10 +72,6 @@ class ModelRetriever:
             metric=eval_metric, optimize_direction=optimization_direction
         )
 
-        # return cvs.FoldCheckpointInfoPair(
-        #     fold=0, checkpoint_info=checkpoint_info
-        # )
-
     def get_cv_trained_model(
         self,
         metric: cvs.EvalMetric,
@@ -121,8 +102,10 @@ class ModelRetriever:
 
 if __name__ == "__main__":
     kfold_model_retriever = ModelRetriever()
-    kfold_model_checkpoint_info_pair = kfold_model_retriever.get_cv_trained_model(
-        metric=cvs.EvalMetric.VALIDATION_LOSS,
-        optimize_direction=cvs.OptimizeDirection.MIN,
-        rel_fold_result=cvs.RelativeFoldResult.MID_RANGE
+    kfold_model_checkpoint_info_pair = (
+        kfold_model_retriever.get_cv_trained_model(
+            metric=cvs.EvalMetric.VALIDATION_LOSS,
+            optimize_direction=cvs.OptimizeDirection.MIN,
+            rel_fold_result=cvs.RelativeFoldResult.MID_RANGE,
+        )
     )
