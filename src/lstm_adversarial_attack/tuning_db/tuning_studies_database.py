@@ -92,7 +92,7 @@ class OptunaDatabase:
 
     def get_all_studies(self) -> list[optuna.Study]:
         # reduce logging verbosity to avoid msg about creating study from db
-        # optuna.logging.set_verbosity(optuna.logging.WARNING)
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
         study_names = [item.study_name for item in self.study_summaries]
         return [
             optuna.create_study(
