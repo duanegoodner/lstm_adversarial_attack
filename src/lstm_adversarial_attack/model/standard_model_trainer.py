@@ -12,11 +12,11 @@ import torch.utils.data as ud
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path.append(str(Path(__file__).parent.parent))
-import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.simple_logger as slg
 import lstm_adversarial_attack.preprocess.encode_decode as edc
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
 class TrainingOutputDirs:
@@ -93,9 +93,8 @@ class StandardModelTrainer:
     def _activate_log_writers(self):
         self.train_log_writer.activate(data_col_names=("epoch", "loss"))
 
-        config_reader = config.ConfigReader()
         logging_metrics = tuple(
-            config_reader.get_config_value(
+            CONFIG_READER.get_config_value(
                 "model.trainer_eval_general_logging_metrics"
             )
         )
@@ -290,15 +289,14 @@ class StandardModelTrainer:
             f" data:\n{eval_results}\n"
         )
 
-        config_reader = config.ConfigReader()
         if self.summary_writer is not None:
 
-            attr_display_labels = config_reader.get_config_value(
+            attr_display_labels = CONFIG_READER.get_config_value(
                 config_key="model.attr_display_labels"
             )
 
             tensorboard_metrics = tuple(
-                config_reader.get_config_value(
+                CONFIG_READER.get_config_value(
                     config_key="model.trainer_eval_tensorboard_metrics"
                 )
             )
@@ -313,7 +311,7 @@ class StandardModelTrainer:
                     self.completed_epochs,
                 )
 
-        general_logging_metrics = config_reader.get_config_value(
+        general_logging_metrics = CONFIG_READER.get_config_value(
             "model.trainer_eval_general_logging_metrics"
         )
         eval_result_data = tuple(

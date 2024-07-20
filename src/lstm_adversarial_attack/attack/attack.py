@@ -8,11 +8,11 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_driver as ad
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
-import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.model.model_retriever as tmr
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
 def main(study_name: str) -> ards.TrainerSuccessSummary:
@@ -35,8 +35,7 @@ def main(study_name: str) -> ards.TrainerSuccessSummary:
         **attack_hyperparameters_dict
     )
 
-    config_reader = config.ConfigReader()
-    tuning_result_dir_path = Path(config_reader.read_path("attack.tune.output_dir")) / study_name
+    tuning_result_dir_path = Path(CONFIG_READER.read_path("attack.tune.output_dir")) / study_name
 
     model_hyperparameters = (
         edc.X19LSTMHyperParameterSettingsReader().import_struct(

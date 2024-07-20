@@ -15,12 +15,12 @@ from torch.utils.data import DataLoader, Dataset, Subset
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.model.standard_model_trainer as smt
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.simple_logger as slg
 import lstm_adversarial_attack.weighted_dataloader_builder as wdb
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
 class TuningOutputDirs:
@@ -60,25 +60,25 @@ class HyperParameterTuner:
     """
 
     def __init__(
-            self,
-            device: torch.device,
-            dataset: Dataset,
-            collate_fn: Callable,
-            tuning_ranges: tuh.X19MLSTMTuningRanges,
-            num_folds: int,
-            num_cv_epochs: int,
-            epochs_per_fold: int,
-            fold_class: Callable,
-            kfold_random_seed: int,
-            cv_mean_metrics_of_interest: list[str],
-            performance_metric: str,
-            optimization_direction: optuna.study.StudyDirection,
-            pruner: BasePruner,
-            hyperparameter_sampler: BaseSampler,
-            output_dir: Path,
-            study: optuna.Study,
-            trial_prefix: str = "trial_",
-            cv_means_log_writer: slg.SimpleLogWriter = None,
+        self,
+        device: torch.device,
+        dataset: Dataset,
+        collate_fn: Callable,
+        tuning_ranges: tuh.X19MLSTMTuningRanges,
+        num_folds: int,
+        num_cv_epochs: int,
+        epochs_per_fold: int,
+        fold_class: Callable,
+        kfold_random_seed: int,
+        cv_mean_metrics_of_interest: list[str],
+        performance_metric: str,
+        optimization_direction: optuna.study.StudyDirection,
+        pruner: BasePruner,
+        hyperparameter_sampler: BaseSampler,
+        output_dir: Path,
+        study: optuna.Study,
+        trial_prefix: str = "trial_",
+        cv_means_log_writer: slg.SimpleLogWriter = None,
     ):
         self.device = device
         self.dataset = dataset
@@ -128,7 +128,7 @@ class HyperParameterTuner:
         all_train_eval_pairs = []
 
         for fold_idx, (train_indices, validation_indices) in enumerate(
-                fold_generator
+            fold_generator
         ):
             train_dataset = Subset(dataset=self.dataset, indices=train_indices)
             validation_dataset = Subset(
@@ -158,11 +158,11 @@ class HyperParameterTuner:
                 nn.init.constant_(param, 0.0)
 
     def create_trainers(
-            self,
-            settings: tuh.X19LSTMHyperParameterSettings,
-            summary_writer: SummaryWriter,
-            trial_number: int,
-            remove_existing_log_tree: bool = True,
+        self,
+        settings: tuh.X19LSTMHyperParameterSettings,
+        summary_writer: SummaryWriter,
+        trial_number: int,
+        remove_existing_log_tree: bool = True,
     ) -> list[smt.StandardModelTrainer]:
         """
         Creates one StandardModelTrainer per fold.
@@ -175,10 +175,10 @@ class HyperParameterTuner:
         """
 
         if (
-                remove_existing_log_tree
-                and (
+            remove_existing_log_tree
+            and (
                 self.output_dir / "trainer_output" / f"trial_{trial_number}"
-        ).exists()
+            ).exists()
         ):
             shutil.rmtree(
                 self.output_dir / "trainer_output" / f"trial_{trial_number}"
@@ -189,7 +189,7 @@ class HyperParameterTuner:
             model = tuh.X19LSTMBuilder(settings=settings).build()
             train_loader = wdb.WeightedDataLoaderBuilder(
                 dataset=dataset_pair.train,
-                batch_size=2 ** settings.log_batch_size,
+                batch_size=2**settings.log_batch_size,
                 collate_fn=self.collate_fn,
             ).build()
             validation_loader = DataLoader(
@@ -201,8 +201,8 @@ class HyperParameterTuner:
 
             trainer_output_dirs = smt.TrainingOutputDirs(
                 root_dir=self.output_dir
-                         / "trainer_output"
-                         / f"trial_{trial_number}",
+                / "trainer_output"
+                / f"trial_{trial_number}",
                 # / "training_output",
                 fold_index=fold_idx,
             )
@@ -239,11 +239,11 @@ class HyperParameterTuner:
         return trainers
 
     def report_cv_means(
-            self,
-            log_entry: ds.EvalLogEntry,
-            summary_writer: SummaryWriter,
-            cv_means_log_writer: slg.SimpleLogWriter,
-            trial: optuna.Trial,
+        self,
+        log_entry: ds.EvalLogEntry,
+        summary_writer: SummaryWriter,
+        cv_means_log_writer: slg.SimpleLogWriter,
+        trial: optuna.Trial,
     ):
         """
         Writes cross-fold mean metric data to Tensorboard
@@ -252,8 +252,9 @@ class HyperParameterTuner:
         :param cv_means_log_writer: writes cv_means to generic log file
         :param trial: ongoing optuna trial that generated data
         """
-        config_reader = config.ConfigReader()
-        attr_display_labels = config_reader.get_config_value(config_key="model.attr_display_labels")
+        attr_display_labels = CONFIG_READER.get_config_value(
+            config_key="model.attr_display_labels"
+        )
 
         for metric in self.cv_mean_metrics_of_interest:
             summary_writer.add_scalar(
@@ -276,13 +277,13 @@ class HyperParameterTuner:
             trial=trial, tuning_ranges=self.tuning_ranges
         )
         summary_writer_path = (
-                self.tensorboard_output_dir / f"{self.trial_prefix}{trial.number}"
+            self.tensorboard_output_dir / f"{self.trial_prefix}{trial.number}"
         )
 
         cv_means_log_writer = slg.SimpleLogWriter(
             name=f"cv_means{uuid.uuid1().int >> 64}",
             log_file=self.output_dirs.cv_mean_logs_dir
-                     / f"{self.trial_prefix}{trial.number}.log",
+            / f"{self.trial_prefix}{trial.number}.log",
         )
 
         cv_means_log_writer.activate(
@@ -384,7 +385,7 @@ class HyperParameterTuner:
             print("    {}: {}".format(key, value))
 
     def tune(
-            self, num_trials: int, timeout: int | None = None
+        self, num_trials: int, timeout: int | None = None
     ) -> optuna.Study:
         """
         Initiate and run an optuna study.

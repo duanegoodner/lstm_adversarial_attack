@@ -9,12 +9,11 @@ import lstm_adversarial_attack.attack.adversarial_attacker as aat
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.attack.attacker_helpers as ath
-import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.dataset_with_index as dsi
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.weighted_dataloader_builder as wdb
-
+from lstm_adversarial_attack.config import CONFIG_READER
 
 class AdversarialAttackTrainer:
     """
@@ -60,13 +59,13 @@ class AdversarialAttackTrainer:
         :param checkpoint_interval: number of attack batches per checkpoint
         :param output_dir: directory where checkpoint .pickles get saved
         """
-        config_reader = config.ConfigReader()
+        # config_reader = config.ConfigReader()
 
         self.device = device
         self.model = model
         self.attack_hyperparameters = attack_hyperparameters
         self.state_dict = state_dict
-        self.max_observation_hours = config_reader.get_config_value("preprocess.max_observation_hours")
+        self.max_observation_hours = CONFIG_READER.get_config_value("preprocess.max_observation_hours")
         self.attacker = aat.AdversarialAttacker(
             full_model=model,
             state_dict=state_dict,

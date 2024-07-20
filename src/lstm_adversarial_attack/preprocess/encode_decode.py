@@ -9,16 +9,15 @@ import pandas as pd
 import torch
 
 import lstm_adversarial_attack.attack.attack_data_structs as ads
-import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
-
+from lstm_adversarial_attack.config import CONFIG_READER
 
 # TODO Consider creating DataWriter base class with encoder abstractmethod and
 #  encode() & export() concrete methods
 
-ADMISSION_DATA_JSON_DELIMITER = config.ConfigReader().get_config_value(
+ADMISSION_DATA_JSON_DELIMITER = CONFIG_READER.get_config_value(
     config_key="preprocess.admission_data_json_delimiter"
 )
 
@@ -35,7 +34,9 @@ class AdmissionDataWriter:
             return eds.DecomposedTimeSeries(
                 index=obj.index.tolist(),
                 time_vals=obj["charttime"].tolist(),
-                data=obj.loc[:, obj.columns != "charttime"].to_numpy().tolist(),
+                data=obj.loc[:, obj.columns != "charttime"]
+                .to_numpy()
+                .tolist(),
             )
         if isinstance(obj, np.datetime64):
             return pd.Timestamp(obj)
@@ -50,7 +51,9 @@ class AdmissionDataWriter:
     def encoder(self) -> msgspec.json.Encoder:
         return msgspec.json.Encoder(enc_hook=self.enc_hook)
 
-    def encode(self, full_admission_data_list: list[eds.FullAdmissionData]) -> bytes:
+    def encode(
+        self, full_admission_data_list: list[eds.FullAdmissionData]
+    ) -> bytes:
         example_df = full_admission_data_list[0].time_series
         timestamp_col_name = "charttime"
         timestamp_dtype = example_df[timestamp_col_name].dtype.name
@@ -97,7 +100,9 @@ class AdmissionDataListReader:
         self._delimiter = delimiter
 
     @classmethod
-    def from_file(cls, path: Path, delimiter: str = ADMISSION_DATA_JSON_DELIMITER):
+    def from_file(
+        cls, path: Path, delimiter: str = ADMISSION_DATA_JSON_DELIMITER
+    ):
         with path.open(mode="rb") as in_file:
             encoded_data = in_file.read()
         return cls(encoded_data=encoded_data, delimiter=delimiter)
@@ -132,12 +137,16 @@ class AdmissionDataListReader:
             return pd.Timestamp(obj)
         if type is pd.DataFrame:
             time_vals = np.array(obj["time_vals"], dtype="datetime64[ns]")
-            df = pd.DataFrame(np.array(obj["data"], dtype=self._header.data_cols_dtype))
+            df = pd.DataFrame(
+                np.array(obj["data"], dtype=self._header.data_cols_dtype)
+            )
             df.columns = self._header.data_cols_names
             df[self._header.timestamp_col_name] = time_vals
             return df
         else:
-            raise NotImplementedError(f"Objects of type {type} are not supported")
+            raise NotImplementedError(
+                f"Objects of type {type} are not supported"
+            )
 
     @cached_property
     def body_decoder(self) -> msgspec.json.Decoder:
@@ -326,7 +335,9 @@ class FeatureArraysReader(StandardStructReader):
         if decode_type is np.ndarray:
             return np.array(obj)
         else:
-            raise NotImplementedError(f"Objects of type {type} are not supported")
+            raise NotImplementedError(
+                f"Objects of type {type} are not supported"
+            )
 
 
 class ClassLabelsReader(StandardStructReader):
@@ -348,7 +359,9 @@ class MeasurementColumnNamesReader(StandardStructReader):
         if decode_type is tuple[str]:
             return tuple(obj)
         else:
-            raise NotImplementedError(f"Objects of type {type} are not supported")
+            raise NotImplementedError(
+                f"Objects of type {type} are not supported"
+            )
 
 
 class TunerDriverSummaryReader(StandardStructReader):
@@ -362,7 +375,9 @@ class TunerDriverSummaryReader(StandardStructReader):
         if decode_type is tuh.X19MLSTMTuningRanges:
             return tuh.X19MLSTMTuningRanges(**obj)
         else:
-            raise NotImplementedError(f"Objects of type {type} are not supported")
+            raise NotImplementedError(
+                f"Objects of type {type} are not supported"
+            )
 
 
 class AttackTunerDriverSummaryReader(StandardStructReader):
@@ -392,7 +407,9 @@ class TrainingCheckpointStorageReader(StandardStructReader):
         if decode_type is torch.Tensor:
             return torch.tensor(obj)
         else:
-            raise NotImplementedError(f"Objects of type {type} are not supported")
+            raise NotImplementedError(
+                f"Objects of type {type} are not supported"
+            )
 
 
 class X19LSTMHyperParameterSettingsReader(StandardStructReader):
@@ -407,7 +424,7 @@ class X19LSTMHyperParameterSettingsReader(StandardStructReader):
 
 if __name__ == "__main__":
     CV_ASSESSMENT_OUTPUT_DIR = Path(
-        config.ConfigReader().read_path(
+        CONFIG_READER.read_path(
             config_key="model.cv_driver_settings.cv_output_root_dir"
         )
     )
@@ -428,8 +445,8 @@ if __name__ == "__main__":
         / "training_checkpoint_20230901215535284037.json"
     )
 
-    checkpoint_storage_from_json = TrainingCheckpointStorageReader().import_struct(
-        path=json_output_path
+    checkpoint_storage_from_json = (
+        TrainingCheckpointStorageReader().import_struct(path=json_output_path)
     )
 
     checkpoint_from_json = ds.TrainingCheckpoint.from_storage(

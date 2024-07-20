@@ -6,10 +6,10 @@ import optuna
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_tuner_driver as atd
-import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.attack.attack_data_structs as ads
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
 def start_new_tuning(
@@ -23,13 +23,12 @@ def start_new_tuning(
     :return: an Optuna study object (which also get saved as pickle)
     """
     device = gh.get_device()
-    config_reader = config.ConfigReader()
 
     if model_training_result_dir is None:
         model_training_result_dir = str(
             ps.latest_modified_file_with_name_condition(
                 component_string=".json",
-                root_dir=Path(config_reader.read_path("model.cv_driver.output_dir")),
+                root_dir=Path(CONFIG_READER.read_path("model.cv_driver.output_dir")),
                 comparison_type=ps.StringComparisonType.SUFFIX,
             ).parent.parent.parent
         )

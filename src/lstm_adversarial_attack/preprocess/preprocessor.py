@@ -4,15 +4,14 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from dataclasses import Field, dataclass, fields
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
 @dataclass
@@ -20,13 +19,13 @@ class PreprocessModuleResources(ABC):
     module_name: str
 
     def __post_init__(self):
-        config_reader = config.ConfigReader()
+        # config_reader = config.ConfigReader()
         for object_field in fields(self):
             if (
                 object_field.name != "module_name"
                 and getattr(self, object_field.name) is None
             ):
-                value = config_reader.get_config_value(
+                value = CONFIG_READER.get_config_value(
                     f"preprocess.{self.module_name}.resources.{object_field.name}"
                 )
 
@@ -51,16 +50,16 @@ class PreprocessModuleSettings(ABC):
         )
 
     def __post_init__(self):
-        config_reader = config.ConfigReader()
-
         if self.output_dir is None:
-            self.output_dir = config_reader.read_path(
+            self.output_dir = CONFIG_READER.read_path(
                 f"preprocess.{self.module_name}.output_dir"
             )
 
         for object_field in self.module_specific_fields:
             if getattr(self, object_field.name) is None:
-                attr = config_reader.get_config_value(f"preprocess.{object_field.name}")
+                attr = CONFIG_READER.get_config_value(
+                    f"preprocess.{object_field.name}"
+                )
                 setattr(self, object_field.name, attr)
 
 
@@ -139,7 +138,7 @@ class ModuleInfo:
             resources=self.resources_constructor(
                 module_name=self.module_name,
                 default_data_source_type=self.default_data_source_type,
-                resource_pool=resource_pool
+                resource_pool=resource_pool,
             ),
             settings=self.settings_constructor(module_name=self.module_name),
             output_constructors=self.output_constructors,
@@ -175,7 +174,9 @@ class Preprocessor:
                 path=output_dir / f"{key}{outgoing_resource.file_ext}"
             )
 
-    def run_preprocess_module(self, module: PreprocessModule, save_output: bool):
+    def run_preprocess_module(
+        self, module: PreprocessModule, save_output: bool
+    ):
         process_start = time.time()
         module_output = module.process()
         process_end = time.time()
@@ -200,10 +201,13 @@ class Preprocessor:
         for module_info in self.modules_info:
             print(f"Running {module_info.module_constructor.__name__}")
             init_start = time.time()
-            module = module_info.build_module(resource_pool=self.available_resources)
+            module = module_info.build_module(
+                resource_pool=self.available_resources
+            )
             init_end = time.time()
             print(
-                f"{module.__class__.__name__} init time =" f" {init_end - init_start}"
+                f"{module.__class__.__name__} init time ="
+                f" {init_end - init_start}"
             )
             self.run_preprocess_module(
                 module=module,

@@ -9,11 +9,10 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
 
 sys.path.append(str(Path(__file__).parent.parent))
-import lstm_adversarial_attack.config as config
-# import lstm_adversarial_attack.config_paths as cfp
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 from lstm_adversarial_attack.data_structures import VariableLengthFeatures
 from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
 class X19MGeneralDataset(Dataset):
@@ -54,14 +53,14 @@ class X19MGeneralDataset(Dataset):
         max_num_samples: int = None,
         random_seed: int = None,
     ):
-        config_reader = config.ConfigReader()
+        # config_reader = config.ConfigReader()
         measurements_path = Path(
-            config_reader.read_path(
+            CONFIG_READER.read_path(
                 config_key="dataset.resources.measurement_data_list"
             )
         )
         in_hospital_mort_path = Path(
-            config_reader.read_path(
+            CONFIG_READER.read_path(
                 config_key="dataset.resources.in_hospital_mortality_list"
             )
         )

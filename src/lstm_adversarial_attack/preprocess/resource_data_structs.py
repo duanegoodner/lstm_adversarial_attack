@@ -6,10 +6,10 @@ from typing import Any, Callable, TypeVar
 
 import pandas as pd
 
-import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.resource_io as rio
+from lstm_adversarial_attack.config import CONFIG_READER
 
 _T = TypeVar("_T")
 
@@ -197,8 +197,6 @@ class PreprocessModuleResources(ABC):
         }
 
     def __post_init__(self):
-        config_reader = config.ConfigReader()
-
         for object_field in self.resource_fields:
             if getattr(self, object_field.name) is None:
                 if self.default_data_source_type == DataSourceType.POOL:
@@ -211,7 +209,7 @@ class PreprocessModuleResources(ABC):
                         ),
                     )
                 if self.default_data_source_type == DataSourceType.FILE:
-                    path_str = config_reader.read_path(
+                    path_str = CONFIG_READER.read_path(
                         f"preprocess.{self.module_name}.resources.{object_field.name}"
                     )
                     attr = object_field.type(resource_id=Path(path_str))

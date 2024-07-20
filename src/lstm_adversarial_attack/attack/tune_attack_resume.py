@@ -6,11 +6,11 @@ import optuna
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_tuner_driver as atd
-import lstm_adversarial_attack.config as config
 import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
 def resume_tuning(
@@ -24,13 +24,13 @@ def resume_tuning(
     :return: an Optuna Study object (which also gets saved as .pickle)
     """
 
-    config_reader = config.ConfigReader()
+    # config_reader = config.ConfigReader()
 
     if study_name is None:
         study_name = tsd.ATTACK_TUNING_DB.get_latest_study().study_name
 
     study_dir = (
-        Path(config_reader.read_path("attack.tune.output_dir")) / study_name
+        Path(CONFIG_READER.read_path("attack.tune.output_dir")) / study_name
     )
 
     cur_device = gh.get_device()
