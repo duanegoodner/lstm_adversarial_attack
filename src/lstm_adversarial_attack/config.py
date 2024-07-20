@@ -23,8 +23,8 @@ class ConfigReader:
             result = result[sub_key]
 
         # We want arrays in config file to be retrieved as tuples (immutable), not lists
-        if type(result) is list:
-            result = tuple(result)
+        # if type(result) is list:
+        #     result = tuple(result)
 
         return result
 

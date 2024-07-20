@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime
 from pathlib import Path
 import time
 
@@ -14,44 +15,51 @@ import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 
 
 def main():
+    run_id = "".join(char for char in str(datetime.now()) if char.isdigit())
+
     prefilter_info = ppr.ModuleInfo(
+        preprocess_run_id=run_id,
         module_name="prefilter",
         module_constructor=prf.Prefilter,
         resources_constructor=rds.PrefilterResources,
         settings_constructor=prf.PrefilterSettings,
-        default_data_source_type=rds.DataSourceType.FILE
+        default_data_source_type=rds.DataSourceType.FILE,
     )
 
     combiner_info = ppr.ModuleInfo(
+        preprocess_run_id=run_id,
         module_name="measurement_merger",
         module_constructor=imm.ICUStayMeasurementMerger,
         resources_constructor=rds.ICUStayMeasurementMergerResources,
         settings_constructor=imm.ICUStayMeasurementMergerSettings,
-        default_data_source_type=rds.DataSourceType.POOL
+        default_data_source_type=rds.DataSourceType.POOL,
     )
 
     list_builder_info = ppr.ModuleInfo(
+        preprocess_run_id=run_id,
         module_name="admission_list_builder",
         module_constructor=alb.AdmissionListBuilder,
         resources_constructor=rds.AdmissionListBuilderResources,
         settings_constructor=alb.AdmissionListBuilderSettings,
-        default_data_source_type=rds.DataSourceType.POOL
+        default_data_source_type=rds.DataSourceType.POOL,
     )
 
     feature_builder_info = ppr.ModuleInfo(
+        preprocess_run_id=run_id,
         module_name="feature_builder",
         module_constructor=fb.FeatureBuilder,
         resources_constructor=rds.FeatureBuilderResources,
         settings_constructor=fb.FeatureBuilderSettings,
-        default_data_source_type=rds.DataSourceType.POOL
+        default_data_source_type=rds.DataSourceType.POOL,
     )
 
     feature_finalizer_info = ppr.ModuleInfo(
+        preprocess_run_id=run_id,
         module_name="feature_finalizer",
         module_constructor=ff.FeatureFinalizer,
         resources_constructor=rds.FeatureFinalizerResources,
         settings_constructor=ff.FeatureFinalizerSettings,
-        default_data_source_type=rds.DataSourceType.POOL
+        default_data_source_type=rds.DataSourceType.POOL,
     )
     modules_info = [
         prefilter_info,
@@ -61,8 +69,9 @@ def main():
         feature_finalizer_info,
     ]
 
-    preprocessor = ppr.Preprocessor(modules_info=modules_info,
-                                    save_checkpoints=True)
+    preprocessor = ppr.Preprocessor(
+        run_id=run_id, modules_info=modules_info, save_checkpoints=True
+    )
     return preprocessor.run_all_modules()
 
 

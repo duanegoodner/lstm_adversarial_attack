@@ -4,6 +4,7 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from dataclasses import Field, dataclass, fields
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
@@ -120,6 +121,7 @@ class PreprocessModule(ABC):
 
 @dataclass
 class ModuleInfo:
+    preprocess_run_id: str
     module_name: str
     module_constructor: Callable[..., PreprocessModule]
     resources_constructor: Callable[..., dataclass]
@@ -147,11 +149,15 @@ class ModuleInfo:
 class Preprocessor:
     def __init__(
         self,
+        run_id: str,
         modules_info: list[ModuleInfo],
         save_checkpoints: bool = False,
         available_resources: dict[str, Any] = None,
     ):
+        self.run_id = run_id
         self.modules_info = modules_info
+        for module_info in self.modules_info:
+            assert module_info.preprocess_run_id == self.run_id
         if available_resources is None:
             available_resources = {}
         self.available_resources = available_resources
