@@ -33,41 +33,6 @@ max_observation_hours = 48
 require_exact_num_hours = false
 observation_window_start = "intime"
 
-[preprocess.output_dirs]
-root = "project_output_data::preprocess/checkpoints"
-prefilter = "preprocess.output_dirs.root::1_prefilter"
-measurement_merger = "preprocess.output_dirs.root::2_merged_stay_measurements"
-admission_list_builder = "preprocess.output_dirs.root::3_full_admission_list"
-feature_builder = "preprocess.output_dirs.root::4_feature_builder"
-feature_finalizer = "preprocess.output_dirs.root::5_feature_finalizer"
-
-[preprocess.prefilter.resources]
-icustay = "data/query_db/icustay_detail.csv"
-bg = "data/query_db/pivoted_bg.csv"
-lab = "data/query_db/pivoted_lab.csv"
-vital = "data/query_db/pivoted_vital.csv"
-
-[preprocess.measurement_merger.resources]
-prefiltered_icustay = "data/preprocess/checkpoints/1_prefilter/prefiltered_icustay.feather"
-prefiltered_bg = "data/preprocess/checkpoints/1_prefilter/prefiltered_bg.feather"
-prefiltered_lab = "data/preprocess/checkpoints/1_prefilter/prefiltered_lab.feather"
-prefiltered_vital = "data/preprocess/checkpoints/1_prefilter/prefiltered_vital.feather"
-
-[preprocess.admission_list_builder.resources]
-icustay_bg_lab_vital = "data/preprocess/checkpoints/2_merged_stay_measurements/icustay_bg_lab_vital.feather"
-
-[preprocess.feature_builder.resources]
-bg_lab_vital_summary_stats = "data/preprocess/checkpoints/2_merged_stay_measurements/bg_lab_vital_summary_stats.feather"
-full_admission_list = "data/preprocess/checkpoints/3_full_admission_list/full_admission_list.json"
-
-[preprocess.feature_finalizer.resources]
-processed_admission_list = "data/preprocess/checkpoints/4_feature_builder/processed_admission_list.json"
-
-[preprocess.feature_finalizer.output]
-measurement_data_list = "data/preprocess/checkpoints/5_feature_finalizer/measurement_data_list.json"
-in_hospital_mortality_list = "data/preprocess/checkpoints/5_feature_finalizer/in_hospital_mortality_list.json"
-measurement_col_names = "data/preprocess/checkpoints/5_feature_finalizer/measurement_col_names.json"
-
 [model]
 trainer_eval_general_logging_metrics = [
     "accuracy",
