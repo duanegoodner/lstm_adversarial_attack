@@ -136,6 +136,7 @@ class ModuleInfo:
     ) -> PreprocessModule:
         return self.module_constructor(
             resources=self.resources_constructor(
+                preprocess_run_id=self.preprocess_run_id,
                 module_name=self.module_name,
                 default_data_source_type=self.default_data_source_type,
                 resource_pool=resource_pool,

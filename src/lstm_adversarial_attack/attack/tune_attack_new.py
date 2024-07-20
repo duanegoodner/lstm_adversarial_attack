@@ -77,10 +77,8 @@ if __name__ == "__main__":
         action="store",
         nargs="?",
         help=(
-            "Directory containing training results of model to attack. Default"
-            " is value saved in"
-            " config_paths.ATTACK_DEFAULT_training_result_dir (cast from Path"
-            " to string)"
+            "Directory containing training results of model to attack. Defaults to most recently "
+            "generated training result."
         ),
     )
 

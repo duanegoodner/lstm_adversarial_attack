@@ -1,7 +1,9 @@
+import argparse
 import sys
 from datetime import datetime
 from pathlib import Path
 import time
+from typing import Any
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
@@ -12,10 +14,24 @@ import lstm_adversarial_attack.preprocess.icustay_measurement_merger as imm
 import lstm_adversarial_attack.preprocess.prefilter as prf
 import lstm_adversarial_attack.preprocess.preprocessor as ppr
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
-def main():
+def main(db_query_result_dir: str = None) -> dict | dict[str, Any]:
     run_id = "".join(char for char in str(datetime.now()) if char.isdigit())
+
+    if db_query_result_dir is None:
+        db_output_parent = CONFIG_READER.read_path("db.query_output_dir")
+        latest_query_dirname = str(
+            max(
+                [
+                    int(item.name)
+                    for item in list(Path(db_output_parent).iterdir())
+                    if item.is_dir()
+                ]
+            )
+        )
+        db_query_result_dir = Path(db_output_parent) / latest_query_dirname
 
     prefilter_info = ppr.ModuleInfo(
         preprocess_run_id=run_id,
@@ -77,7 +93,22 @@ def main():
 
 if __name__ == "__main__":
     start = time.time()
-    result = main()
+
+    parser = argparse.ArgumentParser(
+        description="Takes data output from database query, and runs through preprocess modules."
+    )
+    parser.add_argument(
+        "-d",
+        "--db_query_result_dir",
+        type=str,
+        action="store",
+        nargs="?",
+        help="Directory database query output data. Defaults to directory with data from most recent query.",
+    )
+
+    args_namespace = parser.parse_args()
+
+    result = main(**args_namespace.__dict__)
     end = time.time()
 
     print(f"total time = {end - start}")

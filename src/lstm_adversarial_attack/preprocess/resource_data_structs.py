@@ -170,9 +170,10 @@ class OutgoingMeasurementColumnNames(OutgoingPreprocessResource):
 
 @dataclass
 class PreprocessModuleResources(ABC):
+    preprocess_run_id: str
     module_name: str
     default_data_source_type: DataSourceType
-    config_file: Path = None
+    # config_file: Path = None
     resource_pool: dict[str, OutgoingPreprocessResource] = None
 
     @property
