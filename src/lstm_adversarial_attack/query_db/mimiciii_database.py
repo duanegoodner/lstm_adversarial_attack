@@ -2,6 +2,7 @@ import csv
 import os
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 import psycopg2
@@ -15,7 +16,7 @@ class MimiciiiDatabaseAccess:
     Connects to and runs queries on MIMIC-III Postgres database
     """
 
-    def __init__(self, dotenv_path: Path, output_dir: Path):
+    def __init__(self, dotenv_path: Path, output_parent: Path):
         """
         :param dotenv_path: path .env file w/ values needed for connection
         :param output_dir: directory where query results get stored
@@ -23,7 +24,10 @@ class MimiciiiDatabaseAccess:
         load_dotenv(dotenv_path=dotenv_path)
         self._connection = None
         self._dotenv_path = dotenv_path
-        self._output_dir = output_dir
+
+        timestamp = "".join(char for char in str(datetime.now()) if char.isdigit())
+        self._output_dir = output_parent / timestamp
+        self._output_dir.mkdir(parents=True)
 
     def connect(self):
         """

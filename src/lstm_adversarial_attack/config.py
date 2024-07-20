@@ -43,7 +43,8 @@ class ConfigReader:
         config_val = self.get_config_value(config_key=f"paths.{config_key}")
         if type(config_val) is str:
             return self.read_dotted_val_str(path_val=config_val, extension=extension)
-        if type(config_val) is list:
+        # prefer to use tuple instead of list for array-like items, but not guaranteed yet
+        if type(config_val) is tuple or type(config_val) is list:
             return [
                 self.read_dotted_val_str(path_val=entry, extension=extension)
                 for entry in config_val

@@ -15,9 +15,11 @@ def main() -> list[Path]:
 
     config_reader = cfr.ConfigReader()
 
+
+
     db_access = mdb.MimiciiiDatabaseAccess(
         dotenv_path=Path(config_reader.read_path(config_key="db.mimiciii_dotenv")),
-        output_dir=Path(config_reader.read_path(config_key="db.query_output_dir")),
+        output_parent=Path(config_reader.read_path(config_key="db.query_output_dir")),
     )
     db_access.connect()
     db_query_results = db_access.run_sql_queries(
