@@ -237,6 +237,15 @@ measurement_data_list = "preprocess.feature_finalizer.output_dir::measurement_da
 in_hospital_mortality_list = "preprocess.feature_finalizer.output_dir::in_hospital_mortality_list.json"
 measurement_col_names = "preprocess.feature_finalizer.output_dir::measurement_col_names.json"
 
+[dataset.resources.measurement_data_list]
+preprocess = "5_feature_finalizer/measurement_data_list.json"
+
+[dataset.resources.in_hospital_mortality_list]
+preprocess = "5_feature_finalizer/in_hospital_mortality_list.json"
+
+[dataset.resources.measurement_col_names]
+preprocess = "5_feature_finalizer/measurement_col_names.json"
+
 [paths.model.tuner_driver]
 output_dir = "output_data::model/tuning"
 

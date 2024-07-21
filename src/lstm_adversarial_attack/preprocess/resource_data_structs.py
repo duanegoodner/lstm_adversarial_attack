@@ -212,9 +212,6 @@ class PreprocessModuleResources(ABC):
                         ),
                     )
                 if self.default_data_source_type == DataSourceType.FILE:
-                    path_str = CONFIG_READER.read_path(
-                        f"preprocess.{self.module_name}.resources.{object_field.name}"
-                    )
                     resource_entry = CONFIG_READER.get_config_value(
                         f"preprocess.{self.module_name}.resources.{object_field.name}"
                     )
@@ -228,7 +225,6 @@ class PreprocessModuleResources(ABC):
                         / self.collection_ids[collection_type]
                         / resource_entry[collection_type]
                     )
-                    # attr = object_field.type(resource_id=Path(path_str))
                     attr = object_field.type(resource_id=resource_path)
                     setattr(self, object_field.name, attr)
 

@@ -22,6 +22,7 @@ class X19MGeneralDataset(Dataset):
         in_hosp_mort: list[torch.tensor],
         max_num_samples: int = None,
         random_seed: int = None,
+        preprocess_id: str = None,
     ):
         if max_num_samples is not None and max_num_samples < len(in_hosp_mort):
             if random_seed:
@@ -34,6 +35,7 @@ class X19MGeneralDataset(Dataset):
 
         self.measurements = measurements
         self.in_hosp_mort = in_hosp_mort
+        self.preprocess_id = preprocess_id
 
     def __len__(self):
         return len(self.in_hosp_mort)
@@ -42,38 +44,74 @@ class X19MGeneralDataset(Dataset):
         return self.measurements[idx], self.in_hosp_mort[idx]
 
     @classmethod
-    # TODO change this to import from json files instead of pickles (will use
-    #  preprocess.encode_decode.FeatureArraysReader & .ClassLabelsReader
     def from_feature_finalizer_output(
         cls,
-        # measurements_path: Path = cfp.PREPROCESS_OUTPUT_DIR
-        # / cfp.PREPROCESS_OUTPUT_FILES["measurement_data_list"],
-        # in_hospital_mort_path: Path = cfp.PREPROCESS_OUTPUT_DIR
-        # / cfp.PREPROCESS_OUTPUT_FILES["in_hospital_mortality_list"],
+        preprocess_id: str = None,
         max_num_samples: int = None,
         random_seed: int = None,
     ):
-        # config_reader = config.ConfigReader()
-        measurements_path = Path(
-            CONFIG_READER.read_path(
-                config_key="dataset.resources.measurement_data_list"
-            )
+
+        preprocess_data_root = Path(
+            CONFIG_READER.read_path("preprocess.output_root")
         )
-        in_hospital_mort_path = Path(
-            CONFIG_READER.read_path(
-                config_key="dataset.resources.in_hospital_mortality_list"
+
+        if preprocess_id is None:
+            preprocess_output_root = Path(
+                CONFIG_READER.read_path("preprocess.output_root")
             )
+            preprocess_id = str(
+                max(
+                    [
+                        int(item.name)
+                        for item in list(preprocess_output_root.iterdir())
+                        if (
+                            item.is_dir() and item.name != "checkpoints"
+                        )  # != checkpoints for dev / transition only
+                    ]
+                )
+            )
+
+        measurements_path = (
+            preprocess_data_root
+            / preprocess_id
+            / CONFIG_READER.get_config_value(
+                "dataset.resources.measurement_data_list"
+            )["preprocess"]
         )
+
+        in_hospital_mort_path = (
+            preprocess_data_root
+            / preprocess_id
+            / CONFIG_READER.get_config_value(
+                "dataset.resources.in_hospital_mortality_list"
+            )["preprocess"]
+        )
+
+        # measurements_path = Path(
+        #     CONFIG_READER.read_path(
+        #         config_key="dataset.resources.measurement_data_list"
+        #     )
+        # )
+        # in_hospital_mort_path = Path(
+        #     CONFIG_READER.read_path(
+        #         config_key="dataset.resources.in_hospital_mortality_list"
+        #     )
+        # )
         measurements_np_list = (
-            edc.FeatureArraysReader().import_struct(path=measurements_path).data
+            edc.FeatureArraysReader()
+            .import_struct(path=measurements_path)
+            .data
         )
         mort_int_list = (
-            edc.ClassLabelsReader().import_struct(path=in_hospital_mort_path).data
+            edc.ClassLabelsReader()
+            .import_struct(path=in_hospital_mort_path)
+            .data
         )
         assert len(measurements_np_list) == len(mort_int_list)
 
         features_tensor_list = [
-            torch.tensor(entry, dtype=torch.float32) for entry in measurements_np_list
+            torch.tensor(entry, dtype=torch.float32)
+            for entry in measurements_np_list
         ]
         labels_tensor_list = [
             torch.tensor(entry, dtype=torch.long) for entry in mort_int_list
@@ -83,13 +121,16 @@ class X19MGeneralDataset(Dataset):
             in_hosp_mort=labels_tensor_list,
             max_num_samples=max_num_samples,
             random_seed=random_seed,
+            preprocess_id=preprocess_id,
         )
 
 
 def x19m_collate_fn(batch):
     features, labels = zip(*batch)
     padded_features = pad_sequence(sequences=features, batch_first=True)
-    lengths = torch.tensor([item.shape[0] for item in features], dtype=torch.long)
+    lengths = torch.tensor(
+        [item.shape[0] for item in features], dtype=torch.long
+    )
     return VariableLengthFeatures(
         features=padded_features, lengths=lengths
     ), torch.tensor(labels, dtype=torch.long)
@@ -104,7 +145,9 @@ class X19MGeneralDatasetWithIndex(X19MGeneralDataset, DatasetWithIndex):
 def x19m_with_index_collate_fn(batch):
     indices, features, labels = zip(*batch)
     padded_features = pad_sequence(sequences=features, batch_first=True)
-    lengths = torch.tensor([item.shape[0] for item in features], dtype=torch.long)
+    lengths = torch.tensor(
+        [item.shape[0] for item in features], dtype=torch.long
+    )
     return (
         torch.tensor(indices, dtype=torch.long),
         VariableLengthFeatures(features=padded_features, lengths=lengths),
@@ -152,7 +195,9 @@ class DatasetInspector:
         )
 
         summary_df = pd.DataFrame(
-            data=np.stack((unique_sequence_lengths, sequence_length_counts), axis=1),
+            data=np.stack(
+                (unique_sequence_lengths, sequence_length_counts), axis=1
+            ),
             columns=["seq_length", "num_samples"],
         )
 
