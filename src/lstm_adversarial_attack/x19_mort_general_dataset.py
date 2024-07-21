@@ -64,9 +64,7 @@ class X19MGeneralDataset(Dataset):
                     [
                         int(item.name)
                         for item in list(preprocess_output_root.iterdir())
-                        if (
-                            item.is_dir() and item.name != "checkpoints"
-                        )  # != checkpoints for dev / transition only
+                        if (item.is_dir())
                     ]
                 )
             )
@@ -86,17 +84,6 @@ class X19MGeneralDataset(Dataset):
                 "dataset.resources.in_hospital_mortality_list"
             )["preprocess"]
         )
-
-        # measurements_path = Path(
-        #     CONFIG_READER.read_path(
-        #         config_key="dataset.resources.measurement_data_list"
-        #     )
-        # )
-        # in_hospital_mort_path = Path(
-        #     CONFIG_READER.read_path(
-        #         config_key="dataset.resources.in_hospital_mortality_list"
-        #     )
-        # )
         measurements_np_list = (
             edc.FeatureArraysReader()
             .import_struct(path=measurements_path)
