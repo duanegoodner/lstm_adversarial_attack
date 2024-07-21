@@ -32,8 +32,9 @@ class PreprocessModuleResources(ABC):
 
 @dataclass
 class PreprocessModuleSettings(ABC):
+    preprocess_run_id: str
     module_name: str
-    output_dir: str = None
+    output_dir: str | Path = None
 
     @property
     def standard_fields(self) -> tuple[Field, ...]:
@@ -51,8 +52,19 @@ class PreprocessModuleSettings(ABC):
 
     def __post_init__(self):
         if self.output_dir is None:
-            self.output_dir = CONFIG_READER.read_path(
-                f"preprocess.{self.module_name}.output_dir"
+            # self.output_dir = CONFIG_READER.read_path(
+            #     f"preprocess.{self.module_name}.output_dir"
+            # )
+            self.output_dir = (
+                Path(
+                    CONFIG_READER.read_path(
+                        config_key="preprocess.output_root"
+                    )
+                )
+                / self.preprocess_run_id
+                / CONFIG_READER.get_config_value(
+                    f"preprocess.output_dir_names.{self.module_name}"
+                )
             )
 
         for object_field in self.module_specific_fields:
@@ -74,6 +86,8 @@ class PreprocessModule(ABC):
         self._resources = resources
         self._settings = settings
         self._output_constructors = output_constructors
+
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
     @property
     def settings(self) -> dataclass:
@@ -120,7 +134,7 @@ class PreprocessModule(ABC):
 
 @dataclass
 class ModuleInfo:
-    preprocess_run_id: str
+    resource_collection_ids: dict[str, str]
     module_name: str
     module_constructor: Callable[..., PreprocessModule]
     resources_constructor: Callable[..., dataclass]
@@ -136,12 +150,15 @@ class ModuleInfo:
     ) -> PreprocessModule:
         return self.module_constructor(
             resources=self.resources_constructor(
-                preprocess_run_id=self.preprocess_run_id,
+                collection_ids=self.resource_collection_ids,
                 module_name=self.module_name,
                 default_data_source_type=self.default_data_source_type,
                 resource_pool=resource_pool,
             ),
-            settings=self.settings_constructor(module_name=self.module_name),
+            settings=self.settings_constructor(
+                module_name=self.module_name,
+                preprocess_run_id=self.resource_collection_ids["preprocess"],
+            ),
             output_constructors=self.output_constructors,
         )
 
@@ -154,10 +171,15 @@ class Preprocessor:
         save_checkpoints: bool = False,
         available_resources: dict[str, Any] = None,
     ):
+        # TODO Consider making run_output_root a data member
         self.run_id = run_id
+        run_output_root = (
+            Path(CONFIG_READER.read_path(config_key="preprocess.output_root"))
+            / run_id
+        )
+        run_output_root.mkdir(parents=True, exist_ok=True)
+
         self.modules_info = modules_info
-        for module_info in self.modules_info:
-            assert module_info.preprocess_run_id == self.run_id
         if available_resources is None:
             available_resources = {}
         self.available_resources = available_resources

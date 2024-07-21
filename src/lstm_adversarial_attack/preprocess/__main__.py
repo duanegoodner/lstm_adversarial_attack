@@ -17,12 +17,12 @@ import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
-def main(db_query_result_dir: str = None) -> dict | dict[str, Any]:
-    run_id = "".join(char for char in str(datetime.now()) if char.isdigit())
+def main(db_result_id: str = None) -> dict | dict[str, Any]:
+    preprocess_id = "".join(char for char in str(datetime.now()) if char.isdigit())
 
-    if db_query_result_dir is None:
-        db_output_parent = CONFIG_READER.read_path("db.query_output_dir")
-        latest_query_dirname = str(
+    if db_result_id is None:
+        db_output_parent = CONFIG_READER.read_path("db.output_root")
+        db_result_id = str(
             max(
                 [
                     int(item.name)
@@ -31,10 +31,10 @@ def main(db_query_result_dir: str = None) -> dict | dict[str, Any]:
                 ]
             )
         )
-        db_query_result_dir = Path(db_output_parent) / latest_query_dirname
+
 
     prefilter_info = ppr.ModuleInfo(
-        preprocess_run_id=run_id,
+        resource_collection_ids={"db": db_result_id, "preprocess": preprocess_id},
         module_name="prefilter",
         module_constructor=prf.Prefilter,
         resources_constructor=rds.PrefilterResources,
@@ -43,39 +43,39 @@ def main(db_query_result_dir: str = None) -> dict | dict[str, Any]:
     )
 
     combiner_info = ppr.ModuleInfo(
-        preprocess_run_id=run_id,
+        resource_collection_ids={"preprocess": preprocess_id},
         module_name="measurement_merger",
         module_constructor=imm.ICUStayMeasurementMerger,
         resources_constructor=rds.ICUStayMeasurementMergerResources,
         settings_constructor=imm.ICUStayMeasurementMergerSettings,
-        default_data_source_type=rds.DataSourceType.POOL,
+        default_data_source_type=rds.DataSourceType.FILE,
     )
 
     list_builder_info = ppr.ModuleInfo(
-        preprocess_run_id=run_id,
+        resource_collection_ids={"preprocess": preprocess_id},
         module_name="admission_list_builder",
         module_constructor=alb.AdmissionListBuilder,
         resources_constructor=rds.AdmissionListBuilderResources,
         settings_constructor=alb.AdmissionListBuilderSettings,
-        default_data_source_type=rds.DataSourceType.POOL,
+        default_data_source_type=rds.DataSourceType.FILE,
     )
 
     feature_builder_info = ppr.ModuleInfo(
-        preprocess_run_id=run_id,
+        resource_collection_ids={"preprocess": preprocess_id},
         module_name="feature_builder",
         module_constructor=fb.FeatureBuilder,
         resources_constructor=rds.FeatureBuilderResources,
         settings_constructor=fb.FeatureBuilderSettings,
-        default_data_source_type=rds.DataSourceType.POOL,
+        default_data_source_type=rds.DataSourceType.FILE,
     )
 
     feature_finalizer_info = ppr.ModuleInfo(
-        preprocess_run_id=run_id,
+        resource_collection_ids={"preprocess": preprocess_id},
         module_name="feature_finalizer",
         module_constructor=ff.FeatureFinalizer,
         resources_constructor=rds.FeatureFinalizerResources,
         settings_constructor=ff.FeatureFinalizerSettings,
-        default_data_source_type=rds.DataSourceType.POOL,
+        default_data_source_type=rds.DataSourceType.FILE,
     )
     modules_info = [
         prefilter_info,
@@ -86,7 +86,7 @@ def main(db_query_result_dir: str = None) -> dict | dict[str, Any]:
     ]
 
     preprocessor = ppr.Preprocessor(
-        run_id=run_id, modules_info=modules_info, save_checkpoints=True
+        run_id=preprocess_id, modules_info=modules_info, save_checkpoints=True
     )
     return preprocessor.run_all_modules()
 
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-d",
-        "--db_query_result_dir",
+        "--db_result_id",
         type=str,
         action="store",
         nargs="?",

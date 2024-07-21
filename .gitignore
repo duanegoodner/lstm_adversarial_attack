@@ -37,6 +37,9 @@ docker/app/tuner_password.txt
 data/preprocess/final_output/*
 !data/preprocess/final_output/.gitkeep
 
+data/preprocess/*
+!data/preprocess/.gitkeep
+
 data/preprocess/checkpoints/1_prefilter/*
 !data/preprocess/checkpoints/1_prefilter/.gitkeep
 data/preprocess/checkpoints/2_merged_stay_measurements/*

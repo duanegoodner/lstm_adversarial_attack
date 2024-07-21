@@ -33,6 +33,15 @@ max_observation_hours = 48
 require_exact_num_hours = false
 observation_window_start = "intime"
 
+
+
+[preprocess.output_dir_names]
+prefilter = "1_prefilter"
+measurement_merger = "2_merged_stay_measurements"
+admission_list_builder = "3_full_admission_list"
+feature_builder = "4_feature_builder"
+feature_finalizer = "5_feature_finalizer"
+
 [model]
 trainer_eval_general_logging_metrics = [
     "accuracy",
@@ -134,10 +143,6 @@ attack_misclassified_samples = false
 
 [attack.tuner_driver_settings.sampler_kwargs]
 
-#[attack.tune]
-#num_trials = 75
-#objective_name = "sparse_small_max"
-
 [attack.analysis]
 default_seq_length = 48
 
@@ -160,19 +165,28 @@ query_files = [
     "db.queries_dir::pivoted_lab.sql",
     "db.queries_dir::pivoted_vital.sql"
 ]
-query_output_dir = "output_data::query_db"
+output_root = "output_data::query_db"
 
 
 [paths.preprocess]
-output_root = "output_data::preprocess/checkpoints"
+output_root = "output_data::preprocess"
 
 [paths.preprocess.prefilter]
 output_dir = "preprocess.output_root::1_prefilter"
 [paths.preprocess.prefilter.resources]
-icustay = "db.query_output_dir::icustay_detail.csv"
-bg = "db.query_output_dir::pivoted_bg.csv"
-lab = "db.query_output_dir::pivoted_lab.csv"
-vital = "db.query_output_dir::pivoted_vital.csv"
+icustay = "db.output_root::icustay_detail.csv"
+bg = "db.output_root::pivoted_bg.csv"
+lab = "db.output_root::pivoted_lab.csv"
+vital = "db.output_root::pivoted_vital.csv"
+
+[preprocess.prefilter.resources.icustay]
+db = "icustay_detail.csv"
+[preprocess.prefilter.resources.bg]
+db = "pivoted_bg.csv"
+[preprocess.prefilter.resources.lab]
+db = "pivoted_lab.csv"
+[preprocess.prefilter.resources.vital]
+db = "pivoted_vital.csv"
 
 [paths.preprocess.measurement_merger]
 output_dir = "preprocess.output_root::2_merged_stay_measurements"
@@ -182,10 +196,22 @@ prefiltered_bg = "preprocess.prefilter.output_dir::prefiltered_bg.feather"
 prefiltered_lab = "preprocess.prefilter.output_dir::prefiltered_lab.feather"
 prefiltered_vital = "preprocess.prefilter.output_dir::prefiltered_vital.feather"
 
+[preprocess.measurement_merger.resources.prefiltered_icustay]
+preprocess = "1_prefilter/prefiltered_icustay.feather"
+[preprocess.measurement_merger.resources.prefiltered_bg]
+preprocess = "1_prefilter/prefiltered_bg.feather"
+[preprocess.measurement_merger.resources.prefiltered_lab]
+preprocess = "1_prefilter/prefiltered_lab.feather"
+[preprocess.measurement_merger.resources.prefiltered_vital]
+preprocess = "1_prefilter/prefiltered_vital.feather"
+
 [paths.preprocess.admission_list_builder]
 output_dir = "preprocess.output_root::3_full_admission_list"
 [paths.preprocess.admission_list_builder.resources]
 icustay_bg_lab_vital = "preprocess.measurement_merger.output_dir::icustay_bg_lab_vital.feather"
+
+[preprocess.admission_list_builder.resources.icustay_bg_lab_vital]
+preprocess = "2_merged_stay_measurements/icustay_bg_lab_vital.feather"
 
 [paths.preprocess.feature_builder]
 output_dir = "preprocess.output_root::4_feature_builder"
@@ -193,10 +219,18 @@ output_dir = "preprocess.output_root::4_feature_builder"
 bg_lab_vital_summary_stats = "preprocess.measurement_merger.output_dir::bg_lab_vital_summary_stats.feather"
 full_admission_list = "preprocess.admission_list_builder.output_dir::full_admission_list.json"
 
+[preprocess.feature_builder.resources.bg_lab_vital_summary_stats]
+preprocess = "2_merged_stay_measurements/bg_lab_vital_summary_stats.feather"
+[preprocess.feature_builder.resources.full_admission_list]
+preprocess = "3_full_admission_list/full_admission_list.json"
+
 [paths.preprocess.feature_finalizer]
 output_dir = "preprocess.output_root::5_feature_finalizer"
 [paths.preprocess.feature_finalizer.resources]
 processed_admission_list = "preprocess.feature_builder.output_dir::processed_admission_list.json"
+
+[preprocess.feature_finalizer.resources.processed_admission_list]
+preprocess = "4_feature_builder/processed_admission_list.json"
 
 [paths.dataset.resources]
 measurement_data_list = "preprocess.feature_finalizer.output_dir::measurement_data_list.json"

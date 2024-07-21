@@ -113,7 +113,9 @@ class OutgoingPreprocessPickle(OutgoingPreprocessResource):
 
 class OutgoingFullAdmissionData(OutgoingPreprocessResource):
     def export(self, path: Path):
-        edc.export_admission_data_list(admission_data_list=self._resource, path=path)
+        edc.export_admission_data_list(
+            admission_data_list=self._resource, path=path
+        )
 
     @property
     def file_ext(self) -> str:
@@ -170,10 +172,10 @@ class OutgoingMeasurementColumnNames(OutgoingPreprocessResource):
 
 @dataclass
 class PreprocessModuleResources(ABC):
-    preprocess_run_id: str
+    collection_ids: dict[str, str]
+    # preprocess_run_id: str
     module_name: str
     default_data_source_type: DataSourceType
-    # config_file: Path = None
     resource_pool: dict[str, OutgoingPreprocessResource] = None
 
     @property
@@ -213,7 +215,21 @@ class PreprocessModuleResources(ABC):
                     path_str = CONFIG_READER.read_path(
                         f"preprocess.{self.module_name}.resources.{object_field.name}"
                     )
-                    attr = object_field.type(resource_id=Path(path_str))
+                    resource_entry = CONFIG_READER.get_config_value(
+                        f"preprocess.{self.module_name}.resources.{object_field.name}"
+                    )
+                    collection_type = list(resource_entry.keys())[0]
+                    resource_path = (
+                        Path(
+                            CONFIG_READER.read_path(
+                                f"{collection_type}.output_root"
+                            )
+                        )
+                        / self.collection_ids[collection_type]
+                        / resource_entry[collection_type]
+                    )
+                    # attr = object_field.type(resource_id=Path(path_str))
+                    attr = object_field.type(resource_id=resource_path)
                     setattr(self, object_field.name, attr)
 
 
@@ -227,18 +243,18 @@ class PrefilterResources(PreprocessModuleResources):
 
 @dataclass
 class PrefilterOutputConstructors:
-    prefiltered_icustay: Callable[
-        ..., OutgoingPreprocessResource
-    ] = OutgoingPreprocessDataFrame
-    prefiltered_bg: Callable[
-        ..., OutgoingPreprocessResource
-    ] = OutgoingPreprocessDataFrame
-    prefiltered_lab: Callable[
-        ..., OutgoingPreprocessResource
-    ] = OutgoingPreprocessDataFrame
-    prefiltered_vital: Callable[
-        ..., OutgoingPreprocessResource
-    ] = OutgoingPreprocessDataFrame
+    prefiltered_icustay: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingPreprocessDataFrame
+    )
+    prefiltered_bg: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingPreprocessDataFrame
+    )
+    prefiltered_lab: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingPreprocessDataFrame
+    )
+    prefiltered_vital: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingPreprocessDataFrame
+    )
 
 
 @dataclass
@@ -251,12 +267,12 @@ class ICUStayMeasurementMergerResources(PreprocessModuleResources):
 
 @dataclass
 class ICUStayMeasurementMergerOutputConstructors:
-    icustay_bg_lab_vital: Callable[
-        ..., OutgoingPreprocessResource
-    ] = OutgoingPreprocessDataFrame
-    bg_lab_vital_summary_stats: Callable[
-        ..., OutgoingPreprocessResource
-    ] = OutgoingPreprocessDataFrame
+    icustay_bg_lab_vital: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingPreprocessDataFrame
+    )
+    bg_lab_vital_summary_stats: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingPreprocessDataFrame
+    )
 
 
 @dataclass
@@ -266,9 +282,9 @@ class AdmissionListBuilderResources(PreprocessModuleResources):
 
 @dataclass
 class AdmissionListBuilderOutputConstructors:
-    full_admission_list: Callable[
-        ..., OutgoingPreprocessResource
-    ] = OutgoingFullAdmissionData
+    full_admission_list: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingFullAdmissionData
+    )
 
 
 @dataclass
@@ -279,9 +295,9 @@ class FeatureBuilderResources(PreprocessModuleResources):
 
 @dataclass
 class FeatureBuilderOutputConstructors:
-    processed_admission_list: Callable[
-        ..., OutgoingPreprocessResource
-    ] = OutgoingFullAdmissionData
+    processed_admission_list: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingFullAdmissionData
+    )
 
 
 @dataclass
@@ -291,12 +307,12 @@ class FeatureFinalizerResources(PreprocessModuleResources):
 
 @dataclass
 class FeatureFinalizerOutputConstructors:
-    in_hospital_mortality_list: Callable[
-        ..., OutgoingPreprocessResource
-    ] = OutgoingClassLabels
-    measurement_col_names: Callable[
-        ..., OutgoingPreprocessResource
-    ] = OutgoingMeasurementColumnNames
-    measurement_data_list: Callable[
-        ..., OutgoingPreprocessResource
-    ] = OutgoingFeatureArrays
+    in_hospital_mortality_list: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingClassLabels
+    )
+    measurement_col_names: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingMeasurementColumnNames
+    )
+    measurement_data_list: Callable[..., OutgoingPreprocessResource] = (
+        OutgoingFeatureArrays
+    )
