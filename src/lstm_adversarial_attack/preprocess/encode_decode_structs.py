@@ -6,6 +6,7 @@ import pandas as pd
 
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.model.model_data_structs as mds
+import lstm_adversarial_attack.model.tuner_helpers as tuh
 
 
 class FullAdmissionData(msgspec.Struct):
@@ -77,6 +78,7 @@ class TunerDriverSummary(msgspec.Struct):
 class CrossValidatorDriverSummary(msgspec.Struct):
     preprocess_id: str
     tuning_study_name: str
+    model_hyperparameters: tuh.X19LSTMHyperParameterSettings
     settings: mds.CrossValidatorDriverSettings
     paths: mds.CrossValidatorDriverPaths
 
@@ -84,6 +86,7 @@ class CrossValidatorDriverSummary(msgspec.Struct):
         return {
             "preprocess_id": self.preprocess_id,
             "tuning_study_name": self.tuning_study_name,
+            "model_hyperparameters": self.model_hyperparameters,
             "settings": self.settings,
             "paths": self.paths,
         }

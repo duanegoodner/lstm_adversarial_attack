@@ -64,6 +64,7 @@ class CrossValidatorDriver:
         return eds.CrossValidatorDriverSummary(
             preprocess_id=self.preprocess_id,
             tuning_study_name=self.tuning_study_name,
+            model_hyperparameters=self.hyperparameters,
             settings=self.settings,
             paths=self.paths,
         )
@@ -77,11 +78,6 @@ class CrossValidatorDriver:
             char for char in str(datetime.now()) if char.isdigit()
         )
 
-        summary_output_path = rio.create_timestamped_filepath(
-            parent_path=self.output_dir,
-            file_extension="json",
-            prefix="cross_validator_driver_summary_",
-        )
         edc.CrossValidatorDriverSummaryWriter().export(
             obj=self.summary, path=self.output_dir / f"cross_validator_driver_summary_{timestamp}.json"
         )
@@ -99,6 +95,5 @@ class CrossValidatorDriver:
             collate_fn=self.collate_fn,
             single_fold_eval_fraction=self.settings.single_fold_eval_fraction,
             output_dir=self.output_dir,
-            # cv_output_root_dir=self.paths.output_dir
         )
         cross_validator.run_all_folds()
