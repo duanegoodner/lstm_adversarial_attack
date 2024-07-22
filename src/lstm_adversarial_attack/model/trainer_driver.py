@@ -38,13 +38,13 @@ class TrainerDriver:
         hyperparameter_settings: tuh.X19LSTMHyperParameterSettings,
         train_eval_dataset_pair: tuh.TrainEvalDatasetPair,
         model: nn.Module,
+        output_dir: Path,
         model_state_dict: dict = None,
         optimizer_state_dict: dict = None,
         collate_fn: Callable = xmd.x19m_collate_fn,
         loss_fn: nn.Module = nn.CrossEntropyLoss(),
         fold_idx: int = None,
         epoch_start_count: int = 0,
-        output_dir: Path = None,
         summary_writer_group: str = "",
         summary_writer_subgroup: str = "",
         summary_writer_add_graph: bool = False,
@@ -65,7 +65,6 @@ class TrainerDriver:
         if optimizer_state_dict is not None:
             self.optimizer.load_state_dict(state_dict=optimizer_state_dict)
         self.epoch_start_count = epoch_start_count
-        # self.output_dir = self.initialize_output_dir(output_dir=output_dir)
         self.output_dirs = smt.TrainingOutputDirs(
             root_dir=output_dir, fold_index=fold_idx
         )
@@ -81,8 +80,6 @@ class TrainerDriver:
         edc.X19LSTMHyperParameterSettingsWriter().export(
             obj=self.hyperparameter_settings, path=hyperparameters_json_path
         )
-        # with hyperparameters_json_path.open(mode="w") as out_file:
-        #     json.dump(self.hyperparameter_settings.__dict__, out_file)
 
     def build_data_loaders(self) -> tuh.TrainEvalDataLoaderPair:
         """
@@ -175,7 +172,6 @@ class TrainerDriver:
             summary_writer_subgroup=self.summary_writer_subgroup,
             train_log_writer=train_log_writer,
             eval_log_writer=eval_log_writer,
-            # eval_log_metrics=cfs.TRAINER_EVAL_GENERAL_LOGGING_METRICS,
         )
 
         print(

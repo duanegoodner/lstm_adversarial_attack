@@ -283,6 +283,22 @@ class X19LSTMHyperParameterSettingsWriter(StandardStructWriter):
         pass  # json ready
 
 
+class CrossValidatorDriverSummaryWriter(StandardStructWriter):
+    def __init__(self):
+        super().__init__(struct_type=eds.CrossValidatorDriverSummary)
+
+    @staticmethod
+    def enc_hook(obj: Any) -> Any:
+        if isinstance(obj, torch.Tensor):
+            return obj.tolist()
+        if isinstance(obj, np.float64):
+            return float(obj)
+        else:
+            raise NotImplementedError(
+                f"Encoder does not support objects of type {type(obj)}"
+            )
+
+
 class AttackTunerDriverSummaryWriter(StandardStructWriter):
     def __init__(self):
         super().__init__(struct_type=eds.AttackTunerDriverSummary)
@@ -378,6 +394,18 @@ class TunerDriverSummaryReader(StandardStructReader):
             raise NotImplementedError(
                 f"Objects of type {type} are not supported"
             )
+
+
+class CrossValidatorSummaryReader(StandardStructReader):
+    def __init__(self):
+        super().__init__(struct_type=eds.CrossValidatorDriverSummary)
+
+    @staticmethod
+    def dec_hook(decode_type: Type, obj: Any) -> Any:
+        if decode_type is tuple[str]:
+            return tuple(obj)
+        if decode_type is Path:
+            return Path(obj)
 
 
 class AttackTunerDriverSummaryReader(StandardStructReader):

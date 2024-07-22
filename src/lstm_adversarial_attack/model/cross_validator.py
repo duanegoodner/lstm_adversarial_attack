@@ -1,15 +1,16 @@
 import sys
 from datetime import datetime
-
-import torch
 from pathlib import Path
-import sklearn.model_selection
-from torch.utils.data import Dataset, Subset, random_split
 from typing import Callable
+
+import sklearn.model_selection
+import torch
+from torch.utils.data import Dataset, Subset, random_split
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.model.trainer_driver as td
 import lstm_adversarial_attack.model.tuner_helpers as tuh
+
 
 
 class CrossValidator:
@@ -29,7 +30,7 @@ class CrossValidator:
             fold_class: sklearn.model_selection.BaseCrossValidator,
             kfold_random_seed: int,
             single_fold_eval_fraction: float,
-            cv_output_root_dir: str,
+            output_dir: Path,
     ):
         self.device = device
         self.dataset = dataset
@@ -42,15 +43,7 @@ class CrossValidator:
         self.kfold_random_seed = kfold_random_seed
         self.cv_datasets = self.create_datasets()
         self.single_fold_eval_fraction = single_fold_eval_fraction
-        self.cv_output_root_dir = cv_output_root_dir
-        self.output_dir = self.create_output_dir()
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-
-    def create_output_dir(self):
-        timestamp = "".join(
-            char for char in str(datetime.now()) if char.isdigit()
-        )
-        return Path(self.cv_output_root_dir) / f"cv_training_{timestamp}"
+        self.output_dir = output_dir
 
     def create_single_fold_dataset(
             self

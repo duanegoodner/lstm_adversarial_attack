@@ -1,54 +1,19 @@
 import sys
-from dataclasses import dataclass, fields
+from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
 import sklearn.model_selection
 import torch
-from torch.utils.data import Dataset
-
-from lstm_adversarial_attack.config import ConfigReader
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.model.cross_validator as cv
+import lstm_adversarial_attack.model.model_data_structs as mds
+import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
+import lstm_adversarial_attack.preprocess.encode_decode as edc
+import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
-
-
-@dataclass
-class CrossValidatorDriverSettings:
-    epochs_per_fold: int
-    num_folds: int
-    eval_interval: int
-    kfold_random_seed: int
-    fold_class_name: str
-    collate_fn_name: str
-    single_fold_eval_fraction: float
-
-    @classmethod
-    def from_config(cls, config_path: Path = None):
-        config_reader = ConfigReader(config_path=config_path)
-        settings_fields = [field.name for field in
-                           fields(CrossValidatorDriverSettings)]
-        constructor_kwargs = {field_name: config_reader.get_config_value(
-            f"model.cv_driver_settings.{field_name}") for field_name in
-            settings_fields}
-        return cls(**constructor_kwargs)
-
-
-@dataclass
-class CrossValidatorDriverPaths:
-    output_dir: str
-
-    @classmethod
-    def from_config(cls, config_path: Path = None):
-        config_reader = ConfigReader(config_path=config_path)
-        paths_fields = [field.name for field in fields(CrossValidatorDriverPaths)]
-        constructor_kwargs = {
-            field_name: config_reader.read_path(
-                f"model.cv_driver.{field_name}")
-            for field_name in paths_fields}
-        return cls(**constructor_kwargs)
 
 
 class CrossValidatorDriver:
@@ -60,19 +25,31 @@ class CrossValidatorDriver:
 
     def __init__(
             self,
+            preprocess_id: str,
             device: torch.device,
-            dataset: Dataset,
+            # dataset: Dataset,
             hyperparameters: tuh.X19LSTMHyperParameterSettings,
-            settings: CrossValidatorDriverSettings,
-            paths: CrossValidatorDriverPaths,
+            settings: mds.CrossValidatorDriverSettings,
+            paths: mds.CrossValidatorDriverPaths,
             tuning_study_name: str = None
     ):
+
+        self.preprocess_id = preprocess_id
         self.device = device
-        self.dataset = dataset
+        self.dataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(preprocess_id=preprocess_id)
         self.hyperparameters = hyperparameters
         self.settings = settings
         self.paths = paths
+        self.output_dir = self.build_output_dir()
         self.tuning_study_name = tuning_study_name
+
+    def build_output_dir(self) -> Path:
+        timestamp = "".join(
+            char for char in str(datetime.now()) if char.isdigit()
+        )
+        output_dir = Path(self.paths.output_dir) / f"cv_training_{timestamp}"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        return output_dir
 
     @property
     def fold_class(self) -> sklearn.model_selection.BaseCrossValidator:
@@ -82,10 +59,34 @@ class CrossValidatorDriver:
     def collate_fn(self) -> Callable:
         return getattr(xmd, self.settings.collate_fn_name)
 
+    @property
+    def summary(self) -> eds.CrossValidatorDriverSummary:
+        return eds.CrossValidatorDriverSummary(
+            preprocess_id=self.preprocess_id,
+            tuning_study_name=self.tuning_study_name,
+            settings=self.settings,
+            paths=self.paths,
+        )
+
     def run(self):
         """
         Instantiates and runs CrossValidator
         """
+
+        timestamp = "".join(
+            char for char in str(datetime.now()) if char.isdigit()
+        )
+
+        summary_output_path = rio.create_timestamped_filepath(
+            parent_path=self.output_dir,
+            file_extension="json",
+            prefix="cross_validator_driver_summary_",
+        )
+        edc.CrossValidatorDriverSummaryWriter().export(
+            obj=self.summary, path=self.output_dir / f"cross_validator_driver_summary_{timestamp}.json"
+        )
+
+
         cross_validator = cv.CrossValidator(
             device=self.device,
             dataset=self.dataset,
@@ -97,6 +98,7 @@ class CrossValidatorDriver:
             fold_class=self.fold_class,
             collate_fn=self.collate_fn,
             single_fold_eval_fraction=self.settings.single_fold_eval_fraction,
-            cv_output_root_dir=self.paths.output_dir
+            output_dir=self.output_dir,
+            # cv_output_root_dir=self.paths.output_dir
         )
         cross_validator.run_all_folds()

@@ -11,6 +11,7 @@ import lstm_adversarial_attack.model.cross_validator_driver as cvd
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
+import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 from lstm_adversarial_attack.config import CONFIG_READER
 
@@ -45,14 +46,12 @@ def main(
         path=tuner_driver_summary_files[0]
     )
 
-    cv_driver_settings = cvd.CrossValidatorDriverSettings.from_config()
-    cv_driver_paths = cvd.CrossValidatorDriverPaths.from_config()
+    cv_driver_settings = mds.CrossValidatorDriverSettings.from_config()
+    cv_driver_paths = mds.CrossValidatorDriverPaths.from_config()
 
     cv_driver = cvd.CrossValidatorDriver(
+        preprocess_id=tuner_driver_summary.preprocess_id,
         device=gh.get_device(),
-        dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(
-            preprocess_id=tuner_driver_summary.preprocess_id
-        ),
         hyperparameters=hyperparameters,
         settings=cv_driver_settings,
         paths=cv_driver_paths,

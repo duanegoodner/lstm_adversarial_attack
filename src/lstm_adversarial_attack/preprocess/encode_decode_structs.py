@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 import lstm_adversarial_attack.attack.attack_data_structs as ads
+import lstm_adversarial_attack.model.model_data_structs as mds
 
 
 class FullAdmissionData(msgspec.Struct):
@@ -70,6 +71,21 @@ class TunerDriverSummary(msgspec.Struct):
             "study_name": self.study_name,
             "is_continuation": self.is_continuation,
             "device_name": self.device_name,
+        }
+
+
+class CrossValidatorDriverSummary(msgspec.Struct):
+    preprocess_id: str
+    tuning_study_name: str
+    settings: mds.CrossValidatorDriverSettings
+    paths: mds.CrossValidatorDriverPaths
+
+    def to_dict(self):
+        return {
+            "preprocess_id": self.preprocess_id,
+            "tuning_study_name": self.tuning_study_name,
+            "settings": self.settings,
+            "paths": self.paths,
         }
 
 
