@@ -2,6 +2,8 @@ import argparse
 import sys
 from pathlib import Path
 
+
+
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.gpu_helpers as gh
@@ -9,41 +11,52 @@ import lstm_adversarial_attack.model.cross_validator_driver as cvd
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.x19_mort_general_dataset as xmd
+import lstm_adversarial_attack.preprocess.encode_decode as edc
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
 def main(
-        study_name: str = None,
-        # num_folds: int = None,
-        # epochs_per_fold: int = None,
+    study_name: str = None,
 ) -> dict[int, ds.TrainEvalLogPair]:
 
     if study_name is None:
         study_name = tsd.MODEL_TUNING_DB.get_latest_study().study_name
 
+    tuning_output_dir = CONFIG_READER.read_path(
+        "model.tuner_driver.output_dir"
+    )
+    study_dir = Path(tuning_output_dir) / study_name
+
     # get hyperparameters from database
     hyperparams_dict = tsd.MODEL_TUNING_DB.get_best_params(
         study_name=study_name
     )
-    hyperparameters = tuh.X19LSTMHyperParameterSettings(
-        **hyperparams_dict
+    hyperparameters = tuh.X19LSTMHyperParameterSettings(**hyperparams_dict)
+
+    tuner_driver_summary_files = [
+        item
+        for item in list(study_dir.iterdir())
+        if item.name.startswith("tuner_driver_summary_")
+        and item.name.endswith(".json")
+    ]
+    assert len(tuner_driver_summary_files) == 1
+
+    tuner_driver_summary = edc.TunerDriverSummaryReader().import_struct(
+        path=tuner_driver_summary_files[0]
     )
 
     cv_driver_settings = cvd.CrossValidatorDriverSettings.from_config()
-
-    # if num_folds is not None:
-    #     cv_driver_settings.num_folds = num_folds
-    # if epochs_per_fold is not None:
-    #     cv_driver_settings.epochs_per_fold = epochs_per_fold
-
     cv_driver_paths = cvd.CrossValidatorDriverPaths.from_config()
 
     cv_driver = cvd.CrossValidatorDriver(
         device=gh.get_device(),
-        dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
+        dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(
+            preprocess_id=tuner_driver_summary.preprocess_id
+        ),
         hyperparameters=hyperparameters,
         settings=cv_driver_settings,
         paths=cv_driver_paths,
-        tuning_study_name=study_name
+        tuning_study_name=study_name,
     )
 
     return cv_driver.run()
@@ -61,29 +74,6 @@ if __name__ == "__main__":
             "Name of the optuna study in RDB to obtain hyperparameters from"
         ),
     )
-    # parser.add_argument(
-    #     "-f",
-    #     "--num_folds",
-    #     type=int,
-    #     action="store",
-    #     nargs="?",
-    #     help=(
-    #         "Number of cross-validation folds. Defaults to "
-    #         "config_settings.CV_DRIVER_NUM_FOLDS"
-    #     ),
-    # )
-    #
-    # parser.add_argument(
-    #     "-e",
-    #     "--epochs_per_fold",
-    #     type=int,
-    #     action="store",
-    #     nargs="?",
-    #     help=(
-    #         "Number of epochs per fold. Defaults to "
-    #         "config_settings.CV_DRIVER_EPOCHS_PER_FOLD"
-    #     ),
-    # )
 
     args_namespace = parser.parse_args()
 

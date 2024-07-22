@@ -92,11 +92,13 @@ class ModelTunerDriver:
             device: torch.device,
             settings: ModelTunerDriverSettings,
             paths: ModelTunerDriverPaths,
+            preprocess_id: str,
             study_name: str = None,
     ):
         self.device = device
         self.settings = settings
         self.paths = paths
+        self.preprocess_id = preprocess_id
         if study_name is None:
             study_name = self.build_study_name()
         self.study_name = study_name
@@ -164,6 +166,7 @@ class ModelTunerDriver:
     @property
     def summary(self) -> eds.TunerDriverSummary:
         return eds.TunerDriverSummary(
+            preprocess_id=self.preprocess_id,
             settings=self.settings.__dict__,
             paths=self.paths.__dict__,
             study_name=self.study_name,
@@ -199,7 +202,7 @@ class ModelTunerDriver:
 
         tuner = htu.HyperParameterTuner(
             device=self.device,
-            dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(),
+            dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(preprocess_id=self.preprocess_id),
             collate_fn=self.collate_fn,
             tuning_ranges=self.tuning_ranges,
             num_folds=self.settings.num_folds,

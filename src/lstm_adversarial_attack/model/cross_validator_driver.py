@@ -46,7 +46,7 @@ class CrossValidatorDriverPaths:
         paths_fields = [field.name for field in fields(CrossValidatorDriverPaths)]
         constructor_kwargs = {
             field_name: config_reader.read_path(
-                f"model.tuner_driver.{field_name}")
+                f"model.cv_driver.{field_name}")
             for field_name in paths_fields}
         return cls(**constructor_kwargs)
 

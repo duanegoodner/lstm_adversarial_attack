@@ -8,9 +8,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.model.model_tuner_driver as td
 from lstm_adversarial_attack.config import CONFIG_READER
 
-
-# TODO add ability to pass path to alternate .toml config file
-def main() -> optuna.Study:
+def main(preprocess_id: str = None) -> optuna.Study:
     """
     Runs a new optuna study consisting of multiple trials to find
     optimized hyperparameters for use when generating a model with a
@@ -29,10 +27,25 @@ def main() -> optuna.Study:
     else:
         cur_device = torch.device("cpu")
 
+    if preprocess_id is None:
+        preprocess_output_root = Path(
+            CONFIG_READER.read_path("preprocess.output_root")
+        )
+        preprocess_id = str(
+            max(
+                [
+                    int(item.name)
+                    for item in list(preprocess_output_root.iterdir())
+                    if (item.is_dir())
+                ]
+            )
+        )
+
     tuner_driver = td.ModelTunerDriver(
         device=cur_device,
         settings=td.ModelTunerDriverSettings.from_config(),
-        paths=td.ModelTunerDriverPaths.from_config()
+        paths=td.ModelTunerDriverPaths.from_config(),
+        preprocess_id=preprocess_id,
     )
 
     study = tuner_driver(num_trials=num_trials)

@@ -190,11 +190,6 @@ db = "pivoted_vital.csv"
 
 [paths.preprocess.measurement_merger]
 output_dir = "preprocess.output_root::2_merged_stay_measurements"
-[paths.preprocess.measurement_merger.resources]
-prefiltered_icustay = "preprocess.prefilter.output_dir::prefiltered_icustay.feather"
-prefiltered_bg = "preprocess.prefilter.output_dir::prefiltered_bg.feather"
-prefiltered_lab = "preprocess.prefilter.output_dir::prefiltered_lab.feather"
-prefiltered_vital = "preprocess.prefilter.output_dir::prefiltered_vital.feather"
 
 [preprocess.measurement_merger.resources.prefiltered_icustay]
 preprocess = "1_prefilter/prefiltered_icustay.feather"
@@ -207,17 +202,12 @@ preprocess = "1_prefilter/prefiltered_vital.feather"
 
 [paths.preprocess.admission_list_builder]
 output_dir = "preprocess.output_root::3_full_admission_list"
-[paths.preprocess.admission_list_builder.resources]
-icustay_bg_lab_vital = "preprocess.measurement_merger.output_dir::icustay_bg_lab_vital.feather"
 
 [preprocess.admission_list_builder.resources.icustay_bg_lab_vital]
 preprocess = "2_merged_stay_measurements/icustay_bg_lab_vital.feather"
 
 [paths.preprocess.feature_builder]
 output_dir = "preprocess.output_root::4_feature_builder"
-[paths.preprocess.feature_builder.resources]
-bg_lab_vital_summary_stats = "preprocess.measurement_merger.output_dir::bg_lab_vital_summary_stats.feather"
-full_admission_list = "preprocess.admission_list_builder.output_dir::full_admission_list.json"
 
 [preprocess.feature_builder.resources.bg_lab_vital_summary_stats]
 preprocess = "2_merged_stay_measurements/bg_lab_vital_summary_stats.feather"
@@ -226,16 +216,9 @@ preprocess = "3_full_admission_list/full_admission_list.json"
 
 [paths.preprocess.feature_finalizer]
 output_dir = "preprocess.output_root::5_feature_finalizer"
-[paths.preprocess.feature_finalizer.resources]
-processed_admission_list = "preprocess.feature_builder.output_dir::processed_admission_list.json"
 
 [preprocess.feature_finalizer.resources.processed_admission_list]
 preprocess = "4_feature_builder/processed_admission_list.json"
-
-[paths.dataset.resources]
-measurement_data_list = "preprocess.feature_finalizer.output_dir::measurement_data_list.json"
-in_hospital_mortality_list = "preprocess.feature_finalizer.output_dir::in_hospital_mortality_list.json"
-measurement_col_names = "preprocess.feature_finalizer.output_dir::measurement_col_names.json"
 
 [dataset.resources.measurement_data_list]
 preprocess = "5_feature_finalizer/measurement_data_list.json"

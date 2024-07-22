@@ -27,27 +27,33 @@ def main(study_name: str = None) -> optuna.Study:
         optuna.logging.set_verbosity(optuna.logging.INFO)
 
     tuning_output_dir = CONFIG_READER.read_path(
-        "model.tuner_driver.output_dir")
+        "model.tuner_driver.output_dir"
+    )
 
     study_dir = Path(tuning_output_dir) / study_name
     num_trials = CONFIG_READER.get_config_value(
-        "model.tuner_driver.num_trials")
+        "model.tuner_driver.num_trials"
+    )
     cur_device = gh.get_device()
 
-    tuner_driver_summary_path = ps.latest_modified_file_with_name_condition(
-        component_string="tuner_driver_summary_",
-        root_dir=study_dir,
-        comparison_type=ps.StringComparisonType.PREFIX,
-    )
+    tuner_driver_summary_files = [
+        item
+        for item in list(study_dir.iterdir())
+        if item.name.startswith("tuner_driver_summary_")
+        and item.name.endswith(".json")
+    ]
+    assert len(tuner_driver_summary_files) == 1
+
     tuner_driver_summary = edc.TunerDriverSummaryReader().import_struct(
-        path=tuner_driver_summary_path
+        path=tuner_driver_summary_files[0]
     )
 
     tuner_driver = td.ModelTunerDriver(
         device=cur_device,
         settings=td.ModelTunerDriverSettings(**tuner_driver_summary.settings),
         paths=td.ModelTunerDriverPaths(**tuner_driver_summary.paths),
-        study_name=study_name
+        preprocess_id=tuner_driver_summary.preprocess_id,
+        study_name=study_name,
     )
 
     study = tuner_driver(num_trials=num_trials)
