@@ -10,7 +10,6 @@ import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.model.cross_validator_driver as cvd
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
-import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 from lstm_adversarial_attack.config import CONFIG_READER
@@ -23,10 +22,10 @@ def main(
     if study_name is None:
         study_name = tsd.MODEL_TUNING_DB.get_latest_study().study_name
 
-    tuning_output_dir = CONFIG_READER.read_path(
+    model_tuning_output_root = CONFIG_READER.read_path(
         "model.tuner_driver.output_dir"
     )
-    study_dir = Path(tuning_output_dir) / study_name
+    model_tuning_output_dir = Path(model_tuning_output_root) / study_name
 
     # get hyperparameters from database
     hyperparams_dict = tsd.MODEL_TUNING_DB.get_best_params(
@@ -36,7 +35,7 @@ def main(
 
     tuner_driver_summary_files = [
         item
-        for item in list(study_dir.iterdir())
+        for item in list(model_tuning_output_dir.iterdir())
         if item.name.startswith("tuner_driver_summary_")
         and item.name.endswith(".json")
     ]

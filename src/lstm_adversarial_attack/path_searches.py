@@ -75,3 +75,8 @@ def latest_modified_file_with_name_condition(
 def get_latest_sequential_child_dir(root_dir: Path) -> Path:
     child_dir_paths = [path for path in root_dir.iterdir() if path.is_dir()]
     return max(child_dir_paths)
+
+def get_latest_sequential_child_dirname(root_dir: Path) -> str:
+    latest_dir = get_latest_sequential_child_dir(root_dir=root_dir)
+    return latest_dir.name
+

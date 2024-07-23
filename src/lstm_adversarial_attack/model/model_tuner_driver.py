@@ -39,6 +39,7 @@ def has_rdb_output(
 
 @dataclass
 class ModelTunerDriverSettings:
+    num_trials: int
     num_folds: int
     num_cv_epochs: int
     epochs_per_fold: int
