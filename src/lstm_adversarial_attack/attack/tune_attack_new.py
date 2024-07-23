@@ -7,9 +7,9 @@ import optuna
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_tuner_driver as atd
 import lstm_adversarial_attack.gpu_helpers as gh
-import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 from lstm_adversarial_attack.config import CONFIG_READER
+import lstm_adversarial_attack.preprocess.encode_decode as edc
 
 
 def start_new_tuning(
@@ -25,16 +25,29 @@ def start_new_tuning(
     device = gh.get_device()
 
     if model_training_result_dir is None:
-        model_training_result_dir = str(
-            ps.latest_modified_file_with_name_condition(
-                component_string=".json",
-                root_dir=Path(CONFIG_READER.read_path("model.cv_driver.output_dir")),
-                comparison_type=ps.StringComparisonType.SUFFIX,
-            ).parent.parent.parent
+        cv_output_parent = Path(
+            CONFIG_READER.read_path("model.cv_driver.output_dir")
         )
+        all_training_dirs = [
+            item
+            for item in list(cv_output_parent.iterdir())
+            if item.name.startswith("cv_training_")
+        ]
+        model_training_result_dir = str(max(all_training_dirs))
+
+    cv_driver_summary_paths = [
+        item
+        for item in list(Path(model_training_result_dir).iterdir())
+        if item.name.startswith("cross_validator_driver_summary_")
+    ]
+    assert len(cv_driver_summary_paths) == 1
+    cv_driver_summary = edc.CrossValidatorSummaryReader().import_struct(
+        path=cv_driver_summary_paths[0]
+    )
 
     tuner_driver = atd.AttackTunerDriver(
         device=device,
+        preprocess_id=cv_driver_summary.preprocess_id,
         settings=ads.AttackTunerDriverSettings.from_config(),
         paths=ads.AttackTunerDriverPaths.from_config(),
         model_training_result_dir=Path(model_training_result_dir),

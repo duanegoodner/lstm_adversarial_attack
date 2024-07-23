@@ -182,11 +182,16 @@ class ModelTunerDriver:
         :return: completed optuna study
         """
         if not self.summary.is_continuation:
-            summary_output_path = rio.create_timestamped_filepath(
-                parent_path=self.output_dir,
-                file_extension="json",
-                prefix="tuner_driver_summary_",
+            timestamp = "".join(
+                char for char in str(datetime.now()) if char.isdigit()
             )
+            summary_output_path = self.output_dir / f"tuner_driver_summary_{timestamp}.json"
+
+            # summary_output_path = rio.create_timestamped_filepath(
+            #     parent_path=self.output_dir,
+            #     file_extension="json",
+            #     prefix="tuner_driver_summary_",
+            # )
             edc.TunerDriverSummaryWriter().export(
                 obj=self.summary, path=summary_output_path
             )

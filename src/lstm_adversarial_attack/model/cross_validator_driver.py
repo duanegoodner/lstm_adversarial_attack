@@ -27,13 +27,15 @@ class CrossValidatorDriver:
             self,
             preprocess_id: str,
             device: torch.device,
-            # dataset: Dataset,
             hyperparameters: tuh.X19LSTMHyperParameterSettings,
             settings: mds.CrossValidatorDriverSettings,
             paths: mds.CrossValidatorDriverPaths,
             tuning_study_name: str = None
     ):
 
+        self.cv_driver_id = "".join(
+            char for char in str(datetime.now()) if char.isdigit()
+        )
         self.preprocess_id = preprocess_id
         self.device = device
         self.dataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(preprocess_id=preprocess_id)
@@ -44,10 +46,7 @@ class CrossValidatorDriver:
         self.tuning_study_name = tuning_study_name
 
     def build_output_dir(self) -> Path:
-        timestamp = "".join(
-            char for char in str(datetime.now()) if char.isdigit()
-        )
-        output_dir = Path(self.paths.output_dir) / f"cv_training_{timestamp}"
+        output_dir = Path(self.paths.output_dir) / f"cv_training_{self.cv_driver_id}"
         output_dir.mkdir(parents=True, exist_ok=True)
         return output_dir
 
@@ -64,6 +63,7 @@ class CrossValidatorDriver:
         return eds.CrossValidatorDriverSummary(
             preprocess_id=self.preprocess_id,
             tuning_study_name=self.tuning_study_name,
+            cv_driver_id=self.cv_driver_id,
             model_hyperparameters=self.hyperparameters,
             settings=self.settings,
             paths=self.paths,

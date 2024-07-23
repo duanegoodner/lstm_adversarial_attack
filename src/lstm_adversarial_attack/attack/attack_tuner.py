@@ -108,6 +108,7 @@ class AttackTuner:
         self,
         device: torch.device,
         model_hyperparameters: tuh.X19LSTMHyperParameterSettings,
+        dataset: X19MGeneralDatasetWithIndex,
         model: nn.Module,
         checkpoint: ds.TrainingCheckpoint,
         epochs_per_batch: int,
@@ -151,12 +152,13 @@ class AttackTuner:
             objective_extra_kwargs = {}
         self.objective_extra_kwargs = objective_extra_kwargs
         self.sample_selection_seed = sample_selection_seed
-        self.dataset = (
-            X19MGeneralDatasetWithIndex.from_feature_finalizer_output(
-                max_num_samples=max_num_samples,
-                random_seed=sample_selection_seed,
-            )
-        )
+        self.dataset = dataset
+        # self.dataset = (
+        #     X19MGeneralDatasetWithIndex.from_feature_finalizer_output(
+        #         max_num_samples=max_num_samples,
+        #         random_seed=sample_selection_seed,
+        #     )
+        # )
         self.study = study
         # self.pruner = pruner
         # self.hyperparameter_sampler = hyperparameter_sampler

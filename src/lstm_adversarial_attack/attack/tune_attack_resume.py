@@ -24,10 +24,9 @@ def resume_tuning(
     :return: an Optuna Study object (which also gets saved as .pickle)
     """
 
-    # config_reader = config.ConfigReader()
-
     if study_name is None:
         study_name = tsd.ATTACK_TUNING_DB.get_latest_study().study_name
+
 
     study_dir = (
         Path(CONFIG_READER.read_path("attack.tune.output_dir")) / study_name
@@ -59,6 +58,7 @@ def resume_tuning(
     }
 
     attack_tuner_driver = atd.AttackTunerDriver(**constructor_kwargs)
+    optuna.logging.set_verbosity(optuna.logging.INFO)
     return attack_tuner_driver.run()
 
 
