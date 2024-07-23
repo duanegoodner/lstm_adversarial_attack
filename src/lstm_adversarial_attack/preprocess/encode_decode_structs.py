@@ -78,7 +78,7 @@ class TunerDriverSummary(msgspec.Struct):
 class CrossValidatorDriverSummary(msgspec.Struct):
     preprocess_id: str
     tuning_study_name: str
-    cv_driver_id: str
+    cv_training_id: str
     model_hyperparameters: tuh.X19LSTMHyperParameterSettings
     settings: mds.CrossValidatorDriverSettings
     paths: mds.CrossValidatorDriverPaths
@@ -87,7 +87,7 @@ class CrossValidatorDriverSummary(msgspec.Struct):
         return {
             "preprocess_id": self.preprocess_id,
             "tuning_study_name": self.tuning_study_name,
-            "cv_driver_id": self.cv_driver_id,
+            "cv_driver_id": self.cv_training_id,
             "model_hyperparameters": self.model_hyperparameters,
             "settings": self.settings,
             "paths": self.paths,

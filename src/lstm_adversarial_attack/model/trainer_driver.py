@@ -68,18 +68,9 @@ class TrainerDriver:
         self.output_dirs = smt.TrainingOutputDirs(
             root_dir=output_dir, fold_index=fold_idx
         )
-        self.initialize_output_content()
         self.summary_writer_group = summary_writer_group
         self.summary_writer_subgroup = summary_writer_subgroup
         self.summary_writer_add_graph = summary_writer_add_graph
-
-    def initialize_output_content(self):
-        hyperparameters_json_path = (
-            self.output_dirs.root_dir / "hyperparameters.json"
-        )
-        edc.X19LSTMHyperParameterSettingsWriter().export(
-            obj=self.hyperparameter_settings, path=hyperparameters_json_path
-        )
 
     def build_data_loaders(self) -> tuh.TrainEvalDataLoaderPair:
         """
@@ -235,6 +226,3 @@ class BuildHyperparametersModelPair:
             path=pickle_path
         )
         return cls.from_optuna_study_obj(study=study)
-
-    # @classmethod
-    # def from_optuna_study(cls, study: optuna.Study):

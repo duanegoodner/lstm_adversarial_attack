@@ -26,6 +26,7 @@ class CrossValidatorDriver:
     def __init__(
             self,
             preprocess_id: str,
+            cv_training_id: str,
             device: torch.device,
             hyperparameters: tuh.X19LSTMHyperParameterSettings,
             settings: mds.CrossValidatorDriverSettings,
@@ -33,10 +34,11 @@ class CrossValidatorDriver:
             tuning_study_name: str = None
     ):
 
-        self.cv_driver_id = "".join(
-            char for char in str(datetime.now()) if char.isdigit()
-        )
+        # self.cv_driver_id = "".join(
+        #     char for char in str(datetime.now()) if char.isdigit()
+        # )
         self.preprocess_id = preprocess_id
+        self.cv_training_id = cv_training_id
         self.device = device
         self.dataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(preprocess_id=preprocess_id)
         self.hyperparameters = hyperparameters
@@ -46,7 +48,7 @@ class CrossValidatorDriver:
         self.tuning_study_name = tuning_study_name
 
     def build_output_dir(self) -> Path:
-        output_dir = Path(self.paths.output_dir) / f"cv_training_{self.cv_driver_id}"
+        output_dir = Path(self.paths.output_dir) / f"{self.cv_training_id}"
         output_dir.mkdir(parents=True, exist_ok=True)
         return output_dir
 
@@ -63,7 +65,7 @@ class CrossValidatorDriver:
         return eds.CrossValidatorDriverSummary(
             preprocess_id=self.preprocess_id,
             tuning_study_name=self.tuning_study_name,
-            cv_driver_id=self.cv_driver_id,
+            cv_training_id=self.cv_training_id,
             model_hyperparameters=self.hyperparameters,
             settings=self.settings,
             paths=self.paths,
@@ -74,12 +76,12 @@ class CrossValidatorDriver:
         Instantiates and runs CrossValidator
         """
 
-        timestamp = "".join(
-            char for char in str(datetime.now()) if char.isdigit()
-        )
+        # timestamp = "".join(
+        #     char for char in str(datetime.now()) if char.isdigit()
+        # )
 
         edc.CrossValidatorDriverSummaryWriter().export(
-            obj=self.summary, path=self.output_dir / f"cross_validator_driver_summary_{timestamp}.json"
+            obj=self.summary, path=self.output_dir / f"cross_validator_driver_summary_{self.cv_training_id}.json"
         )
 
 
