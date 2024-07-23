@@ -1,6 +1,5 @@
 import sys
 from dataclasses import dataclass, fields
-from datetime import datetime
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Callable
@@ -9,12 +8,11 @@ import optuna
 import sklearn.model_selection
 import torch
 
-from lstm_adversarial_attack.config import ConfigReader
+from lstm_adversarial_attack.config import CONFIG_READER
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
-import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.model.model_tuner as htu
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
@@ -59,10 +57,10 @@ class ModelTunerDriverSettings:
 
     @classmethod
     def from_config(cls, config_path: Path = None):
-        config_reader = ConfigReader(config_path=config_path)
+        # config_reader = ConfigReader(config_path=config_path)
         settings_fields = [field.name for field in
                            fields(ModelTunerDriverSettings)]
-        constructor_kwargs = {field_name: config_reader.get_config_value(
+        constructor_kwargs = {field_name: CONFIG_READER.get_config_value(
             f"model.tuner_driver.{field_name}") for field_name in
             settings_fields}
         return cls(**constructor_kwargs)
@@ -74,10 +72,10 @@ class ModelTunerDriverPaths:
 
     @classmethod
     def from_config(cls, config_path: Path = None):
-        config_reader = ConfigReader(config_path=config_path)
+        # config_reader = ConfigReader(config_path=config_path)
         paths_fields = [field.name for field in fields(ModelTunerDriverPaths)]
         constructor_kwargs = {
-            field_name: config_reader.read_path(
+            field_name: CONFIG_READER.read_path(
                 f"model.tuner_driver.{field_name}")
             for field_name in paths_fields}
         return cls(**constructor_kwargs)
@@ -93,35 +91,24 @@ class ModelTunerDriver:
             settings: ModelTunerDriverSettings,
             paths: ModelTunerDriverPaths,
             preprocess_id: str,
-            study_name: str = None,
+            model_tuning_id: str,
     ):
         self.device = device
         self.settings = settings
         self.paths = paths
         self.preprocess_id = preprocess_id
-        if study_name is None:
-            study_name = self.build_study_name()
-        self.study_name = study_name
+        self.model_tuning_id = model_tuning_id
+        self.study_name = f"model_tuning_{self.model_tuning_id}"
+        self.output_dir = Path(self.paths.output_dir) / self.model_tuning_id
         self.has_pre_existing_rdb_output = has_rdb_output(
             study_name=self.study_name, storage=self.db.storage
         )
         self.has_pre_existing_local_output = self.output_dir.exists()
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-    @staticmethod
-    def build_study_name() -> str:
-        timestamp = "".join(
-            char for char in str(datetime.now()) if char.isdigit()
-        )
-        return f"model_tuning_{timestamp}"
-
     @property
     def collate_fn(self) -> Callable:
         return getattr(xmd, self.settings.collate_fn_name)
-
-    @property
-    def output_dir(self) -> Path:
-        return Path(self.paths.output_dir) / self.study_name
 
     @property
     def tuning_ranges(self) -> tuh.X19MLSTMTuningRanges:
@@ -182,16 +169,8 @@ class ModelTunerDriver:
         :return: completed optuna study
         """
         if not self.summary.is_continuation:
-            timestamp = "".join(
-                char for char in str(datetime.now()) if char.isdigit()
-            )
-            summary_output_path = self.output_dir / f"tuner_driver_summary_{timestamp}.json"
+            summary_output_path = self.output_dir / f"tuner_driver_summary_{self.model_tuning_id}.json"
 
-            # summary_output_path = rio.create_timestamped_filepath(
-            #     parent_path=self.output_dir,
-            #     file_extension="json",
-            #     prefix="tuner_driver_summary_",
-            # )
             edc.TunerDriverSummaryWriter().export(
                 obj=self.summary, path=summary_output_path
             )

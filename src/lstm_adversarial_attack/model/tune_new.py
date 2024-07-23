@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import optuna
@@ -19,6 +20,8 @@ def main(preprocess_id: str = None) -> optuna.Study:
     :return: an optuna.Study object with results of completed trials.
     """
 
+    model_tuning_id = "".join(char for char in str(datetime.now()) if char.isdigit())
+
     num_trials = CONFIG_READER.get_config_value(
         "model.tuner_driver.num_trials")
 
@@ -31,21 +34,15 @@ def main(preprocess_id: str = None) -> optuna.Study:
         preprocess_output_root = Path(
             CONFIG_READER.read_path("preprocess.output_root")
         )
-        preprocess_id = str(
-            max(
-                [
-                    int(item.name)
-                    for item in list(preprocess_output_root.iterdir())
-                    if (item.is_dir())
-                ]
-            )
-        )
+        latest_preprocess_output_dir = max([path for path in preprocess_output_root.iterdir() if path.is_dir()])
+        preprocess_id = latest_preprocess_output_dir.name
 
     tuner_driver = td.ModelTunerDriver(
         device=cur_device,
         settings=td.ModelTunerDriverSettings.from_config(),
         paths=td.ModelTunerDriverPaths.from_config(),
         preprocess_id=preprocess_id,
+        model_tuning_id=model_tuning_id
     )
 
     study = tuner_driver(num_trials=num_trials)

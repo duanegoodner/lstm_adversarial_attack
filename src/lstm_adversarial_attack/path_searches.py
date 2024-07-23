@@ -70,3 +70,8 @@ def latest_modified_file_with_name_condition(
                     most_recent_file = file_path
 
     return Path(most_recent_file)
+
+
+def get_latest_sequential_child_dir(root_dir: Path) -> Path:
+    child_dir_paths = [path for path in root_dir.iterdir() if path.is_dir()]
+    return max(child_dir_paths)

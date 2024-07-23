@@ -79,6 +79,10 @@ class OptunaDatabase:
     def study_summaries(self) -> list[optuna.study.StudySummary]:
         return optuna.study.get_all_study_summaries(storage=self.storage)
 
+    def is_in_db(self, study_name: str) -> bool:
+        db_study_names = [item.study_name for item in self.study_summaries]
+        return study_name in db_study_names
+
     def get_study_summary(self, study_name: str) -> optuna.study.StudySummary:
         return [
             summary
