@@ -5,10 +5,6 @@ from pathlib import Path
 import optuna
 import torch
 
-from lstm_adversarial_attack.x19_mort_general_dataset import (
-    X19MGeneralDatasetWithIndex,
-)
-
 sys.path.append(str(Path(__file__).parent.parent.parent))
 # AttackTunerDriverSettings and AttackTunerDriverPaths moved to attack_data_structs when fixing (de)serialization
 import lstm_adversarial_attack.attack.attack_data_structs as ads
@@ -20,6 +16,10 @@ import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
+from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.x19_mort_general_dataset import (
+    X19MGeneralDatasetWithIndex,
+)
 
 
 class AttackTunerDriver:
@@ -31,6 +31,7 @@ class AttackTunerDriver:
         self,
         device: torch.device,
         preprocess_id: str,
+        cv_training_id: str,
         attack_tuning_id: str,
         model_hyperparameters: tuh.X19LSTMHyperParameterSettings,
         settings: ads.AttackTunerDriverSettings,
@@ -47,6 +48,7 @@ class AttackTunerDriver:
         """
         self.device = device
         self.preprocess_id = preprocess_id
+        self.cv_training_id = cv_training_id
         self.attack_tuning_id = attack_tuning_id
         self.model_hyperparameters = model_hyperparameters
         self.settings = settings
@@ -75,6 +77,29 @@ class AttackTunerDriver:
         self.sampler_kwargs = self.settings.sampler_kwargs
         self.hyperparameter_sampler = self.get_sampler(
             sampler_name=self.settings.sampler_name
+        )
+
+    @classmethod
+    def from_cv_training_id(cls, cv_training_id: str, attack_tuning_id: str, device: torch.device):
+        cv_output_root = Path(
+            CONFIG_READER.read_path("model.cv_driver.output_dir")
+        )
+        cv_driver_summary_path = (
+            cv_output_root
+            / cv_training_id
+            / f"cross_validator_driver_summary_{cv_training_id}.json"
+        )
+        cv_driver_summary = edc.CrossValidatorSummaryReader().import_struct(path=cv_driver_summary_path)
+
+        return cls(
+           device=device,
+           preprocess_id=cv_driver_summary.preprocess_id,
+           cv_training_id=cv_training_id,
+           attack_tuning_id=attack_tuning_id,
+           model_hyperparameters=cv_driver_summary.model_hyperparameters,
+           settings=ads.AttackTunerDriverSettings.from_config(),
+           paths=ads.AttackTunerDriverPaths.from_config(),
+           model_training_result_dir=cv_output_root / cv_training_id,
         )
 
     @property
@@ -131,6 +156,12 @@ class AttackTunerDriver:
         Instantiates and runs an AttackTuner
         :return: an Optuna Study object (this also gets saved in .output_dir)
         """
+
+        print(
+            "Starting new Attack Hyperparameter Tuning study using trained model from"
+            f" CV training session ID {self.cv_training_id} as the attack target. \n\nTuning results"
+            f" will be saved in: {self.output_dir}\n"
+        )
 
         if not self.summary.is_continuation:
             summary_output_path = (

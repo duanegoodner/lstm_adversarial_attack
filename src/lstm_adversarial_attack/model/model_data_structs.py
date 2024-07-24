@@ -72,8 +72,7 @@ class ModelTunerDriverSettings:
     tuning_ranges: dict[str, Any]
 
     @classmethod
-    def from_config(cls, config_path: Path = None):
-        # config_reader = ConfigReader(config_path=config_path)
+    def from_config(cls):
         settings_fields = [
             field.name for field in fields(ModelTunerDriverSettings)
         ]
@@ -91,8 +90,7 @@ class ModelTunerDriverPaths:
     output_dir: str
 
     @classmethod
-    def from_config(cls, config_path: Path = None):
-        # config_reader = ConfigReader(config_path=config_path)
+    def from_config(cls):
         paths_fields = [field.name for field in fields(ModelTunerDriverPaths)]
         constructor_kwargs = {
             field_name: CONFIG_READER.read_path(
