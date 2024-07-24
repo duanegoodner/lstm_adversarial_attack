@@ -1,5 +1,4 @@
 import sys
-from datetime import datetime
 from functools import cached_property
 from pathlib import Path
 
@@ -32,6 +31,8 @@ class AttackTunerDriver:
         self,
         device: torch.device,
         preprocess_id: str,
+        attack_tuning_id: str,
+        model_hyperparameters: tuh.X19LSTMHyperParameterSettings,
         settings: ads.AttackTunerDriverSettings,
         paths: ads.AttackTunerDriverPaths,
         study_name: str = None,
@@ -46,6 +47,8 @@ class AttackTunerDriver:
         """
         self.device = device
         self.preprocess_id = preprocess_id
+        self.attack_tuning_id = attack_tuning_id
+        self.model_hyperparameters = model_hyperparameters
         self.settings = settings
         self.paths = paths
         self.objective_extra_kwargs = (
@@ -56,7 +59,7 @@ class AttackTunerDriver:
         if study_name is None:
             study_name = self.build_study_name()
         self.study_name = study_name
-        self.output_dir = Path(self.paths.output_dir) / study_name
+        self.output_dir = Path(self.paths.output_dir) / self.attack_tuning_id
         self.has_pre_existing_local_output = self.output_dir.exists()
         self.output_dir.mkdir(parents=True, exist_ok=True)
         if tuning_ranges is None:
@@ -73,29 +76,15 @@ class AttackTunerDriver:
         self.hyperparameter_sampler = self.get_sampler(
             sampler_name=self.settings.sampler_name
         )
-        # self.save_model_hyperparameters()
-
-    @property
-    def hyperparameters_path(self) -> Path:
-        return self.model_training_result_dir / "hyperparameters.json"
-
-    # def save_model_hyperparameters(self):
-    #     model_hyperparameters = (
-    #         edc.X19LSTMHyperParameterSettingsReader().import_struct(
-    #             path=self.hyperparameters_path
-    #         )
-    #     )
-    #     edc.X19LSTMHyperParameterSettingsWriter().export(
-    #         obj=model_hyperparameters,
-    #         path=self.output_dir / "model_hyperparameters.json",
-    #     )
 
     @property
     def summary(self) -> eds.AttackTunerDriverSummary:
         return eds.AttackTunerDriverSummary(
+            preprocess_id=self.preprocess_id,
+            attack_tuning_id=self.attack_tuning_id,
+            model_hyperparameters=self.model_hyperparameters,
             settings=self.settings.__dict__,
             paths=self.paths.__dict__,
-            preprocess_id=self.preprocess_id,
             study_name=self.study_name,
             is_continuation=self.has_pre_existing_local_output,
             tuning_ranges=self.tuning_ranges,
@@ -128,12 +117,8 @@ class AttackTunerDriver:
     def target_model_checkpoint_path(self) -> Path:
         return self.target_checkpoint_info.save_path
 
-    @staticmethod
-    def build_study_name() -> str:
-        timestamp = "".join(
-            char for char in str(datetime.now()) if char.isdigit()
-        )
-        return f"attack_tuning_{timestamp}"
+    def build_study_name(self) -> str:
+        return f"attack_tuning_{self.attack_tuning_id}"
 
     def get_pruner(self, pruner_name: str) -> optuna.pruners.BasePruner:
         return getattr(optuna.pruners, pruner_name)(**self.pruner_kwargs)
@@ -148,24 +133,15 @@ class AttackTunerDriver:
         """
 
         if not self.summary.is_continuation:
-            timestamp = "".join(
-                char for char in str(datetime.now()) if char.isdigit()
-            )
             summary_output_path = (
                 self.output_dir
-                / f"attack_tuner_driver_summary_{timestamp}.json"
+                / f"attack_tuner_driver_summary_{self.attack_tuning_id}.json"
             )
             edc.AttackTunerDriverSummaryWriter().export(
                 obj=self.summary, path=summary_output_path
             )
 
-        hyperparameters = (
-            edc.X19LSTMHyperParameterSettingsReader().import_struct(
-                path=self.hyperparameters_path
-            )
-        )
-
-        model = tuh.X19LSTMBuilder(settings=hyperparameters).build()
+        model = tuh.X19LSTMBuilder(settings=self.model_hyperparameters).build()
         # TODO check really need to load state dict here (loading if not
         #  actually necessary unlikely to be a problem)
         model.load_state_dict(
@@ -184,7 +160,7 @@ class AttackTunerDriver:
 
         tuner = atn.AttackTuner(
             device=self.device,
-            model_hyperparameters=hyperparameters,
+            model_hyperparameters=self.model_hyperparameters,
             dataset=X19MGeneralDatasetWithIndex.from_feature_finalizer_output(
                 preprocess_id=self.preprocess_id,
                 max_num_samples=self.settings.max_num_samples,

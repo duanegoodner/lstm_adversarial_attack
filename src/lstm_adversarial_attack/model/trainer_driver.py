@@ -13,7 +13,6 @@ from torch.utils.tensorboard import SummaryWriter
 from lstm_adversarial_attack import config
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.simple_logger as slg
 import lstm_adversarial_attack.model.standard_model_trainer as smt

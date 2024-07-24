@@ -95,9 +95,11 @@ class CrossValidatorDriverSummary(msgspec.Struct):
 
 
 class AttackTunerDriverSummary(msgspec.Struct):
+    preprocess_id: str
+    attack_tuning_id: str
+    model_hyperparameters: tuh.X19LSTMHyperParameterSettings
     settings: ads.AttackTunerDriverSettings
     paths: ads.AttackTunerDriverPaths
-    preprocess_id: str
     study_name: str
     is_continuation: bool
     tuning_ranges: ads.AttackTuningRanges
@@ -105,9 +107,11 @@ class AttackTunerDriverSummary(msgspec.Struct):
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "preprocess_id": self.preprocess_id,
+            "attack_tuning_id": self.attack_tuning_id,
+            "model_hyperparameters": self.model_hyperparameters,
             "settings": self.settings,
             "paths": self.paths,
-            "preprocess_id": self.preprocess_id,
             "study_name": self.study_name,
             "is_continuation": self.is_continuation,
             "tuning_ranges": self.tuning_ranges,
