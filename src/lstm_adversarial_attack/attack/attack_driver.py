@@ -27,6 +27,7 @@ class AttackDriver:
         self,
         target_model_checkpoint_info: cvs.CheckpointInfo,
         device: torch.device,
+        preprocess_id: str,
         attack_tuning_study_name: str,
         model_hyperparameters: tuh.X19LSTMHyperParameterSettings,
         attack_hyperparameters: ads.AttackHyperParameterSettings,
@@ -76,6 +77,7 @@ class AttackDriver:
         """
         self.target_model_checkpoint_info = target_model_checkpoint_info
         self.device = device
+        self.preprocess_id = preprocess_id
         self.attack_tuning_study_name = attack_tuning_study_name
         self.db_env_var_name = db_env_var_name
         self.model_hyperparameters = model_hyperparameters
@@ -87,6 +89,7 @@ class AttackDriver:
             torch.manual_seed(self.sample_selection_seed)
         self.dataset = (
             X19MGeneralDatasetWithIndex.from_feature_finalizer_output(
+                preprocess_id=self.preprocess_id,
                 max_num_samples=max_num_samples,
                 random_seed=sample_selection_seed,
             )

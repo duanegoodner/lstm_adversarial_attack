@@ -15,7 +15,6 @@ from lstm_adversarial_attack.config import CONFIG_READER
 
 
 def start_new_tuning(
-    # model_training_result_dir: str = None,
     cv_training_id: str = None,
 ) -> optuna.Study:
     """
