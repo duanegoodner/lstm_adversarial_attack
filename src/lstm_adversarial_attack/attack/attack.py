@@ -3,14 +3,10 @@ import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_driver as ad
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.gpu_helpers as gh
-import lstm_adversarial_attack.model.model_retriever as tmr
 import lstm_adversarial_attack.path_searches as ps
-import lstm_adversarial_attack.preprocess.encode_decode as edc
-import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
@@ -29,36 +25,9 @@ def main(attack_tuning_id: str) -> ards.TrainerSuccessSummary:
             root_dir=attack_tuning_output_root
         )
 
-    attack_tuner_driver_summary = (
-        edc.AttackTunerDriverSummaryReader().import_struct(
-            path=attack_tuning_output_root
-            / attack_tuning_id
-            / f"attack_tuner_driver_summary_{attack_tuning_id}.json"
-        )
-    )
-
-    attack_tuning_study_name = f"attack_tuning_{attack_tuning_id}"
-
-    attack_hyperparameters_dict = tsd.ATTACK_TUNING_DB.get_best_params(
-        study_name=attack_tuning_study_name
-    )
-    attack_hyperparameters = ads.AttackHyperParameterSettings(
-        **attack_hyperparameters_dict
-    )
-
-    target_model_checkpoint_info = tmr.ModelRetriever(
-        training_output_dir=Path(
-            attack_tuner_driver_summary.model_training_result_dir
-        )
-    ).get_representative_checkpoint()
-
-    attack_driver = ad.AttackDriver(
-        target_model_checkpoint_info=target_model_checkpoint_info,
+    attack_driver = ad.AttackDriver.from_attack_tuning_id(
+        attack_tuning_id=attack_tuning_id,
         device=cur_device,
-        preprocess_id=attack_tuner_driver_summary.preprocess_id,
-        attack_tuning_study_name=attack_tuning_study_name,
-        model_hyperparameters=attack_tuner_driver_summary.model_hyperparameters,
-        attack_hyperparameters=attack_hyperparameters,
     )
 
     trainer_result = attack_driver()

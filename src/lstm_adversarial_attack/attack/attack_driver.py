@@ -9,13 +9,14 @@ import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
+import lstm_adversarial_attack.model.model_retriever as tmr
 import lstm_adversarial_attack.model.tuner_helpers as tuh
+import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.resource_io as rio
-from lstm_adversarial_attack.x19_mort_general_dataset import (
-    X19MGeneralDatasetWithIndex,
-    x19m_with_index_collate_fn,
-)
+import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.x19_mort_general_dataset import (
+    X19MGeneralDatasetWithIndex, x19m_with_index_collate_fn)
 
 
 class AttackDriver:
@@ -102,6 +103,39 @@ class AttackDriver:
         self.output_dir = self.initialize_output_dir(output_dir=output_dir)
         self.hyperparameter_tuning_results_dir = (
             hyperparameter_tuning_result_dir
+        )
+
+    @classmethod
+    def from_attack_tuning_id(cls, attack_tuning_id: str, device: torch.device):
+        attack_tuner_driver_summary = (
+            edc.AttackTunerDriverSummaryReader().import_struct(
+                path=Path(CONFIG_READER.read_path("attack.tune.output_dir"))
+                / attack_tuning_id
+                / f"attack_tuner_driver_summary_{attack_tuning_id}.json"
+            )
+        )
+
+        attack_tuning_study_name = f"attack_tuning_{attack_tuning_id}"
+
+        attack_hyperparameters_dict = tsd.ATTACK_TUNING_DB.get_best_params(
+            study_name=attack_tuning_study_name
+        )
+        attack_hyperparameters = ads.AttackHyperParameterSettings(
+            **attack_hyperparameters_dict
+        )
+        target_model_checkpoint_info = tmr.ModelRetriever(
+            training_output_dir=Path(
+                attack_tuner_driver_summary.model_training_result_dir
+            )
+        ).get_representative_checkpoint()
+
+        return cls(
+            target_model_checkpoint_info=target_model_checkpoint_info,
+            device=device,
+            preprocess_id=attack_tuner_driver_summary.preprocess_id,
+            attack_tuning_study_name=attack_tuning_study_name,
+            model_hyperparameters=attack_tuner_driver_summary.model_hyperparameters,
+            attack_hyperparameters=attack_hyperparameters
         )
 
     @staticmethod
