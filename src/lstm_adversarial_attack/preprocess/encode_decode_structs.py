@@ -58,8 +58,9 @@ class PreprocessModuleSummary(msgspec.Struct):
 
 class TunerDriverSummary(msgspec.Struct):
     preprocess_id: str
-    settings: dict[str, Any]
-    paths: dict[str, str]
+    model_tuning_id: str
+    settings: mds.ModelTunerDriverSettings
+    paths: mds.ModelTunerDriverPaths
     study_name: str
     is_continuation: bool
     device_name: str
@@ -67,6 +68,7 @@ class TunerDriverSummary(msgspec.Struct):
     def to_dict(self):
         return {
             "preprocess_id": self.preprocess_id,
+            "model_tuning_id": self.model_tuning_id,
             "settings": self.settings,
             "paths": self.paths,
             "study_name": self.study_name,

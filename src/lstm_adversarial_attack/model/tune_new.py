@@ -6,6 +6,7 @@ import optuna
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.gpu_helpers as gh
+import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.model_tuner_driver as td
 import lstm_adversarial_attack.path_searches as ps
 from lstm_adversarial_attack.config import CONFIG_READER
@@ -39,8 +40,8 @@ def main(preprocess_id: str = None) -> optuna.Study:
 
     tuner_driver = td.ModelTunerDriver(
         device=cur_device,
-        settings=td.ModelTunerDriverSettings.from_config(),
-        paths=td.ModelTunerDriverPaths.from_config(),
+        settings=mds.ModelTunerDriverSettings.from_config(),
+        paths=mds.ModelTunerDriverPaths.from_config(),
         preprocess_id=preprocess_id,
         model_tuning_id=model_tuning_id,
     )

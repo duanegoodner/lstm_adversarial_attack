@@ -13,6 +13,7 @@ from lstm_adversarial_attack.config import CONFIG_READER
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
+import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.model_tuner as htu
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
@@ -20,7 +21,7 @@ import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 
 
 def has_rdb_output(
-        study_name: str, storage: optuna.storages.RDBStorage
+    study_name: str, storage: optuna.storages.RDBStorage
 ) -> bool:
     """
     Determines if output exists for study named study_name in storage.
@@ -37,62 +38,63 @@ def has_rdb_output(
     return study_name in existing_study_names
 
 
-@dataclass
-class ModelTunerDriverSettings:
-    num_trials: int
-    num_folds: int
-    num_cv_epochs: int
-    epochs_per_fold: int
-    kfold_random_seed: int
-    cv_mean_tensorboard_metrics: list[str]
-    performance_metric: str
-    optimization_direction_label: str
-    pruner_name: str
-    pruner_kwargs: dict[str, Any]
-    sampler_name: str
-    sampler_kwargs: dict[str, Any]
-    db_env_var_name: str
-    fold_class_name: str
-    collate_fn_name: str
-    tuning_ranges: dict[str, Any]
-
-    @classmethod
-    def from_config(cls, config_path: Path = None):
-        # config_reader = ConfigReader(config_path=config_path)
-        settings_fields = [field.name for field in
-                           fields(ModelTunerDriverSettings)]
-        constructor_kwargs = {field_name: CONFIG_READER.get_config_value(
-            f"model.tuner_driver.{field_name}") for field_name in
-            settings_fields}
-        return cls(**constructor_kwargs)
-
-
-@dataclass
-class ModelTunerDriverPaths:
-    output_dir: str
-
-    @classmethod
-    def from_config(cls, config_path: Path = None):
-        # config_reader = ConfigReader(config_path=config_path)
-        paths_fields = [field.name for field in fields(ModelTunerDriverPaths)]
-        constructor_kwargs = {
-            field_name: CONFIG_READER.read_path(
-                f"model.tuner_driver.{field_name}")
-            for field_name in paths_fields}
-        return cls(**constructor_kwargs)
+# @dataclass
+# class ModelTunerDriverSettings:
+#     num_trials: int
+#     num_folds: int
+#     num_cv_epochs: int
+#     epochs_per_fold: int
+#     kfold_random_seed: int
+#     cv_mean_tensorboard_metrics: list[str]
+#     performance_metric: str
+#     optimization_direction_label: str
+#     pruner_name: str
+#     pruner_kwargs: dict[str, Any]
+#     sampler_name: str
+#     sampler_kwargs: dict[str, Any]
+#     db_env_var_name: str
+#     fold_class_name: str
+#     collate_fn_name: str
+#     tuning_ranges: dict[str, Any]
+#
+#     @classmethod
+#     def from_config(cls, config_path: Path = None):
+#         # config_reader = ConfigReader(config_path=config_path)
+#         settings_fields = [field.name for field in
+#                            fields(ModelTunerDriverSettings)]
+#         constructor_kwargs = {field_name: CONFIG_READER.get_config_value(
+#             f"model.tuner_driver.{field_name}") for field_name in
+#             settings_fields}
+#         return cls(**constructor_kwargs)
+#
+#
+# @dataclass
+# class ModelTunerDriverPaths:
+#     output_dir: str
+#
+#     @classmethod
+#     def from_config(cls, config_path: Path = None):
+#         # config_reader = ConfigReader(config_path=config_path)
+#         paths_fields = [field.name for field in fields(ModelTunerDriverPaths)]
+#         constructor_kwargs = {
+#             field_name: CONFIG_READER.read_path(
+#                 f"model.tuner_driver.{field_name}")
+#             for field_name in paths_fields}
+#         return cls(**constructor_kwargs)
 
 
 class ModelTunerDriver:
     """
     Instantiates and runs a HyperparameterTuner
     """
+
     def __init__(
-            self,
-            device: torch.device,
-            settings: ModelTunerDriverSettings,
-            paths: ModelTunerDriverPaths,
-            preprocess_id: str,
-            model_tuning_id: str,
+        self,
+        device: torch.device,
+        settings: mds.ModelTunerDriverSettings,
+        paths: mds.ModelTunerDriverPaths,
+        preprocess_id: str,
+        model_tuning_id: str,
     ):
         self.device = device
         self.settings = settings
@@ -106,6 +108,26 @@ class ModelTunerDriver:
         )
         self.has_pre_existing_local_output = self.output_dir.exists()
         self.output_dir.mkdir(parents=True, exist_ok=True)
+
+    @classmethod
+    def from_model_tuning_id(cls, model_tuning_id: str, device: torch.device):
+        tuning_output_root = Path(
+            CONFIG_READER.read_path("model.tuner_driver.output_dir")
+        )
+
+        tuner_driver_summary = edc.TunerDriverSummaryReader().import_struct(
+            path=tuning_output_root
+            / model_tuning_id
+            / f"tuner_driver_summary_{model_tuning_id}.json"
+        )
+
+        return cls(
+            device=device,
+            model_tuning_id=model_tuning_id,
+            settings=tuner_driver_summary.settings,
+            paths=tuner_driver_summary.paths,
+            preprocess_id=tuner_driver_summary.preprocess_id,
+        )
 
     @property
     def collate_fn(self) -> Callable:
@@ -121,8 +143,8 @@ class ModelTunerDriver:
 
     def validate_optimization_direction_label(self):
         assert (
-                self.settings.optimization_direction_label == "minimize"
-                or self.settings.optimization_direction_label == "maximize"
+            self.settings.optimization_direction_label == "minimize"
+            or self.settings.optimization_direction_label == "maximize"
         )
 
     @property
@@ -137,12 +159,14 @@ class ModelTunerDriver:
     @property
     def pruner(self) -> optuna.pruners.BasePruner:
         return getattr(optuna.pruners, self.settings.pruner_name)(
-            **self.settings.pruner_kwargs)
+            **self.settings.pruner_kwargs
+        )
 
     @property
     def hyperparameter_sampler(self) -> optuna.samplers.BaseSampler:
         return getattr(optuna.samplers, self.settings.sampler_name)(
-            **self.settings.sampler_kwargs)
+            **self.settings.sampler_kwargs
+        )
 
     @cached_property
     def db(self) -> tsd.OptunaDatabase:
@@ -155,8 +179,9 @@ class ModelTunerDriver:
     def summary(self) -> eds.TunerDriverSummary:
         return eds.TunerDriverSummary(
             preprocess_id=self.preprocess_id,
-            settings=self.settings.__dict__,
-            paths=self.paths.__dict__,
+            model_tuning_id=self.model_tuning_id,
+            settings=self.settings,
+            paths=self.paths,
             study_name=self.study_name,
             # TODO should continuation check be for local, RDB, or both?
             is_continuation=self.has_pre_existing_local_output,
@@ -170,7 +195,10 @@ class ModelTunerDriver:
         :return: completed optuna study
         """
         if not self.summary.is_continuation:
-            summary_output_path = self.output_dir / f"tuner_driver_summary_{self.model_tuning_id}.json"
+            summary_output_path = (
+                self.output_dir
+                / f"tuner_driver_summary_{self.model_tuning_id}.json"
+            )
 
             edc.TunerDriverSummaryWriter().export(
                 obj=self.summary, path=summary_output_path
@@ -187,7 +215,9 @@ class ModelTunerDriver:
 
         tuner = htu.HyperParameterTuner(
             device=self.device,
-            dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(preprocess_id=self.preprocess_id),
+            dataset=xmd.X19MGeneralDataset.from_feature_finalizer_output(
+                preprocess_id=self.preprocess_id
+            ),
             collate_fn=self.collate_fn,
             tuning_ranges=self.tuning_ranges,
             num_folds=self.settings.num_folds,
