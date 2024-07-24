@@ -80,7 +80,9 @@ class AttackTunerDriver:
         )
 
     @classmethod
-    def from_cv_training_id(cls, cv_training_id: str, attack_tuning_id: str, device: torch.device):
+    def from_cv_training_id(
+        cls, cv_training_id: str, attack_tuning_id: str, device: torch.device
+    ):
         cv_output_root = Path(
             CONFIG_READER.read_path("model.cv_driver.output_dir")
         )
@@ -89,17 +91,47 @@ class AttackTunerDriver:
             / cv_training_id
             / f"cross_validator_driver_summary_{cv_training_id}.json"
         )
-        cv_driver_summary = edc.CrossValidatorSummaryReader().import_struct(path=cv_driver_summary_path)
+        cv_driver_summary = edc.CrossValidatorSummaryReader().import_struct(
+            path=cv_driver_summary_path
+        )
 
         return cls(
-           device=device,
-           preprocess_id=cv_driver_summary.preprocess_id,
-           cv_training_id=cv_training_id,
-           attack_tuning_id=attack_tuning_id,
-           model_hyperparameters=cv_driver_summary.model_hyperparameters,
-           settings=ads.AttackTunerDriverSettings.from_config(),
-           paths=ads.AttackTunerDriverPaths.from_config(),
-           model_training_result_dir=cv_output_root / cv_training_id,
+            device=device,
+            preprocess_id=cv_driver_summary.preprocess_id,
+            cv_training_id=cv_training_id,
+            attack_tuning_id=attack_tuning_id,
+            model_hyperparameters=cv_driver_summary.model_hyperparameters,
+            settings=ads.AttackTunerDriverSettings.from_config(),
+            paths=ads.AttackTunerDriverPaths.from_config(),
+            model_training_result_dir=cv_output_root / cv_training_id,
+        )
+
+    @classmethod
+    def from_attack_tuning_id(
+        cls, attack_tuning_id: str, device: torch.device
+    ):
+        attack_tuning_output_root = Path(
+            CONFIG_READER.read_path("attack.tune.output_dir")
+        )
+        attack_tuner_driver_summary = (
+            edc.AttackTunerDriverSummaryReader().import_struct(
+                path=attack_tuning_output_root
+                / attack_tuning_id
+                / f"attack_tuner_driver_summary_{attack_tuning_id}.json"
+            )
+        )
+        return cls(
+            device=device,
+            preprocess_id=attack_tuner_driver_summary.preprocess_id,
+            cv_training_id=attack_tuner_driver_summary.cv_training_id,
+            attack_tuning_id=attack_tuner_driver_summary.attack_tuning_id,
+            model_hyperparameters=attack_tuner_driver_summary.model_hyperparameters,
+            settings=attack_tuner_driver_summary.settings,
+            paths=attack_tuner_driver_summary.paths,
+            model_training_result_dir=Path(
+                CONFIG_READER.read_path("model.cv_driver.output_dir")
+            )
+            / attack_tuner_driver_summary.cv_training_id,
         )
 
     @property
@@ -107,6 +139,7 @@ class AttackTunerDriver:
         return eds.AttackTunerDriverSummary(
             preprocess_id=self.preprocess_id,
             attack_tuning_id=self.attack_tuning_id,
+            cv_training_id=self.cv_training_id,
             model_hyperparameters=self.model_hyperparameters,
             settings=self.settings.__dict__,
             paths=self.paths.__dict__,

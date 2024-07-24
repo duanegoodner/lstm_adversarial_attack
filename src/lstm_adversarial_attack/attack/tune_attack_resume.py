@@ -8,7 +8,6 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_tuner_driver as atd
 import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.path_searches as ps
-import lstm_adversarial_attack.preprocess.encode_decode as edc
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
@@ -34,26 +33,9 @@ def main(
             root_dir=attack_tuning_output_root
         )
 
-    attack_tuner_driver_summary = (
-        edc.AttackTunerDriverSummaryReader().import_struct(
-            path=attack_tuning_output_root
-            / attack_tuning_id
-            / f"attack_tuner_driver_summary_{attack_tuning_id}.json"
-        )
-    )
-
-    cur_device = gh.get_device()
-
-    attack_tuner_driver = atd.AttackTunerDriver(
-        device=cur_device,
-        preprocess_id=attack_tuner_driver_summary.preprocess_id,
+    attack_tuner_driver = atd.AttackTunerDriver.from_attack_tuning_id(
         attack_tuning_id=attack_tuning_id,
-        model_hyperparameters=attack_tuner_driver_summary.model_hyperparameters,
-        settings=attack_tuner_driver_summary.settings,
-        paths=attack_tuner_driver_summary.paths,
-        study_name=f"attack_tuning_{attack_tuning_id}",
-        tuning_ranges=attack_tuner_driver_summary.tuning_ranges,
-        model_training_result_dir=Path(attack_tuner_driver_summary.model_training_result_dir),
+        device=gh.get_device(),
     )
 
     optuna.logging.set_verbosity(optuna.logging.INFO)
