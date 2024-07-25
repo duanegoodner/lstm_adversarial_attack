@@ -15,7 +15,8 @@ from torch.utils.data import DataLoader, Dataset, Subset
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.data_structures as ds
+# import lstm_adversarial_attack.data_structures as ds
+import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.standard_model_trainer as smt
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.simple_logger as slg
@@ -46,7 +47,7 @@ class ObjectiveFunctionTools:
 
     settings: tuh.X19LSTMHyperParameterSettings
     summary_writer: SummaryWriter
-    cv_means_log: ds.EvalLog
+    cv_means_log: mds.EvalLog
     cv_means_log_writer: slg.SimpleLogWriter
     trainers: list[smt.StandardModelTrainer]
 
@@ -240,7 +241,7 @@ class HyperParameterTuner:
 
     def report_cv_means(
         self,
-        log_entry: ds.EvalLogEntry,
+        log_entry: mds.EvalLogEntry,
         summary_writer: SummaryWriter,
         cv_means_log_writer: slg.SimpleLogWriter,
         trial: optuna.Trial,
@@ -293,7 +294,7 @@ class HyperParameterTuner:
         return ObjectiveFunctionTools(
             settings=settings,
             summary_writer=SummaryWriter(str(summary_writer_path)),
-            cv_means_log=ds.EvalLog(),
+            cv_means_log=mds.EvalLog(),
             cv_means_log_writer=cv_means_log_writer,
             trainers=self.create_trainers(
                 settings=settings,
@@ -329,7 +330,7 @@ class HyperParameterTuner:
                 [item.result for item in eval_epoch_results]
             ) / len(eval_epoch_results)
 
-            cv_means_log_entry = ds.EvalLogEntry(
+            cv_means_log_entry = mds.EvalLogEntry(
                 epoch=(cv_epoch + 1) * self.epochs_per_fold,
                 result=mean_validation_vals,
             )

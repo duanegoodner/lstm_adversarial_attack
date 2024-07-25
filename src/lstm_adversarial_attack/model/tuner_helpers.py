@@ -3,12 +3,15 @@ import msgspec
 import sys
 import torch.nn as nn
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from torch.utils.data import DataLoader, Dataset
-from typing import Iterable, TypeVar
+from typing import Iterable, TypeVar, Any, Type
+
+from lstm_adversarial_attack.config import CONFIG_READER
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.model.lstm_model_stc as lms
+import lstm_adversarial_attack.msgspec_io as mio
 
 
 @dataclass
@@ -211,3 +214,4 @@ class PerformanceSelector:
 
     def choose_best_val(self, values: Iterable[_T]) -> _T:
         return self._selection_dispatch[self._optimize_direction](values)
+

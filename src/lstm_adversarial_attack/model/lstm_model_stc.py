@@ -1,4 +1,6 @@
 import sys
+from dataclasses import dataclass
+
 import torch
 import torch.nn as nn
 from pathlib import Path
@@ -7,9 +9,14 @@ from torch.nn.utils.rnn import (
     pad_packed_sequence,
 )
 sys.path.append(str(Path(__file__).parent.parent))
-from lstm_adversarial_attack.data_structures import VariableLengthFeatures
+# from lstm_adversarial_attack.model.model_data_structs import VariableLengthFeatures
 from lstm_adversarial_attack.config import CONFIG_READER
 
+
+@dataclass
+class VariableLengthFeatures:
+    features: torch.tensor
+    lengths: torch.tensor
 
 class BidirectionalX19LSTM(nn.Module):
     """

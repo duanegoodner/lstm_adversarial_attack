@@ -24,20 +24,22 @@ class CrossValidatorDriver:
     """
 
     def __init__(
-            self,
-            preprocess_id: str,
-            cv_training_id: str,
-            device: torch.device,
-            hyperparameters: tuh.X19LSTMHyperParameterSettings,
-            settings: mds.CrossValidatorDriverSettings,
-            paths: mds.CrossValidatorDriverPaths,
-            tuning_study_name: str = None
+        self,
+        preprocess_id: str,
+        cv_training_id: str,
+        device: torch.device,
+        hyperparameters: tuh.X19LSTMHyperParameterSettings,
+        settings: mds.CrossValidatorDriverSettings,
+        paths: mds.CrossValidatorDriverPaths,
+        tuning_study_name: str = None,
     ):
 
         self.preprocess_id = preprocess_id
         self.cv_training_id = cv_training_id
         self.device = device
-        self.dataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(preprocess_id=preprocess_id)
+        self.dataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(
+            preprocess_id=preprocess_id
+        )
         self.hyperparameters = hyperparameters
         self.settings = settings
         self.paths = paths
@@ -50,7 +52,9 @@ class CrossValidatorDriver:
         return output_dir
 
     @classmethod
-    def from_model_tuning_id(cls, model_tuning_id: str, cv_training_id: str, device: torch.device):
+    def from_model_tuning_id(
+        cls, model_tuning_id: str, cv_training_id: str, device: torch.device
+    ):
         study_name = f"model_tuning_{model_tuning_id}"
         hyperparams_dict = tsd.MODEL_TUNING_DB.get_best_params(
             study_name=study_name
@@ -60,10 +64,18 @@ class CrossValidatorDriver:
         model_tuning_output_root = Path(
             CONFIG_READER.read_path("model.tuner_driver.output_dir")
         )
-        model_tuner_driver_summary = edc.TunerDriverSummaryReader().import_struct(
-            path=model_tuning_output_root
-                 / model_tuning_id
-                 / f"tuner_driver_summary_{model_tuning_id}.json"
+        # model_tuner_driver_summary = edc.TunerDriverSummaryReader().import_struct(
+        #     path=model_tuning_output_root
+        #          / model_tuning_id
+        #          / f"tuner_driver_summary_{model_tuning_id}.json"
+        # )
+
+        model_tuner_driver_summary = (
+            mds.TUNER_DRIVER_SUMMARY_IO.import_to_struct(
+                path=model_tuning_output_root
+                / model_tuning_id
+                / f"tuner_driver_summary_{model_tuning_id}.json"
+            )
         )
 
         return cls(
@@ -85,8 +97,8 @@ class CrossValidatorDriver:
         return getattr(xmd, self.settings.collate_fn_name)
 
     @property
-    def summary(self) -> eds.CrossValidatorDriverSummary:
-        return eds.CrossValidatorDriverSummary(
+    def summary(self) -> mds.CrossValidatorDriverSummary:
+        return mds.CrossValidatorDriverSummary(
             preprocess_id=self.preprocess_id,
             tuning_study_name=self.tuning_study_name,
             cv_training_id=self.cv_training_id,
@@ -100,10 +112,16 @@ class CrossValidatorDriver:
         Instantiates and runs CrossValidator
         """
 
-        edc.CrossValidatorDriverSummaryWriter().export(
-            obj=self.summary, path=self.output_dir / f"cross_validator_driver_summary_{self.cv_training_id}.json"
+        # edc.CrossValidatorDriverSummaryWriter().export(
+        #     obj=self.summary,
+        #     path=self.output_dir
+        #     / f"cross_validator_driver_summary_{self.cv_training_id}.json",
+        # )
+        mds.CROSS_VALIDATOR_DRIVER_SUMMARY_IO.export(
+            obj=self.summary,
+            path=self.output_dir
+            / f"cross_validator_driver_summary_{self.cv_training_id}.json",
         )
-
 
         cross_validator = cv.CrossValidator(
             device=self.device,

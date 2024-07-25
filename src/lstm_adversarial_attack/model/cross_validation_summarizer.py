@@ -7,7 +7,8 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 # import lstm_adversarial_attack.config_paths as lcp
-import lstm_adversarial_attack.data_structures as ds
+# import lstm_adversarial_attack.data_structures as ds
+import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 
 
@@ -50,7 +51,7 @@ class CheckpointInfo:
     is not from file data.
     """
 
-    checkpoint: ds.TrainingCheckpoint
+    checkpoint: mds.TrainingCheckpoint
     save_path: Path = None
     fold: int = None
 
@@ -106,7 +107,7 @@ class FoldSummarizer:
             for item in checkpoint_files
         ]
         fold_checkpoints = [
-            ds.TrainingCheckpoint.from_storage(
+            mds.TrainingCheckpoint.from_storage(
                 training_checkpoint_storage=item
             )
             for item in fold_checkpoints_storage
@@ -129,7 +130,7 @@ class FoldSummarizer:
         )
 
     @property
-    def fold_checkpoints(self) -> list[ds.TrainingCheckpoint]:
+    def fold_checkpoints(self) -> list[mds.TrainingCheckpoint]:
         return [item.checkpoint for item in self.fold_checkpoints_info]
 
     @property
@@ -190,7 +191,7 @@ class FoldSummarizer:
 
     def get_extreme_checkpoint(
         self, metric: EvalMetric, optimize_direction: OptimizeDirection
-    ) -> ds.TrainingCheckpoint:
+    ) -> mds.TrainingCheckpoint:
         """
         Gets the checkpoint dict corresponding to an extreme val of a metric
         :param metric: metric for criteria
@@ -222,7 +223,7 @@ class FoldSummarizer:
 @dataclass
 class FoldCheckpointPair:
     fold: int
-    checkpoint: ds.TrainingCheckpoint
+    checkpoint: mds.TrainingCheckpoint
 
 
 @dataclass
@@ -273,7 +274,7 @@ class CrossValidationSummarizer:
 
     def get_optimal_checkpoints(
         self, metric: EvalMetric, optimize_direction: OptimizeDirection
-    ) -> list[ds.TrainingCheckpoint]:
+    ) -> list[mds.TrainingCheckpoint]:
         return [
             fold.get_extreme_checkpoint(
                 metric=metric, optimize_direction=optimize_direction

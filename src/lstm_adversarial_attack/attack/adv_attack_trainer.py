@@ -9,10 +9,12 @@ import lstm_adversarial_attack.attack.adversarial_attacker as aat
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.attack.attacker_helpers as ath
-import lstm_adversarial_attack.data_structures as ds
+# import lstm_adversarial_attack.data_structures as ds
+# import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.dataset_with_index as dsi
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.weighted_dataloader_builder as wdb
+import lstm_adversarial_attack.model.lstm_model_stc as lms
 from lstm_adversarial_attack.config import CONFIG_READER
 
 class AdversarialAttackTrainer:
@@ -238,7 +240,7 @@ class AdversarialAttackTrainer:
         self.attacker.to(self.device)
 
     def apply_soft_bounded_threshold(
-        self, orig_inputs: ds.VariableLengthFeatures
+        self, orig_inputs: lms.VariableLengthFeatures
     ):
         """
         Applies thresholding perturbation for Iterative Soft Threshold
@@ -284,7 +286,7 @@ class AdversarialAttackTrainer:
     def attack_batch(
         self,
         indices: torch.tensor,
-        orig_features: ds.VariableLengthFeatures,
+        orig_features: lms.VariableLengthFeatures,
         orig_labels: torch.tensor,
     ) -> ards.BatchResult:
         """

@@ -14,7 +14,8 @@ import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.resource_io as rio
-import lstm_adversarial_attack.data_structures as ds
+# import lstm_adversarial_attack.data_structures as ds
+import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 from lstm_adversarial_attack.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex,
@@ -110,7 +111,7 @@ class AttackTuner:
         model_hyperparameters: tuh.X19LSTMHyperParameterSettings,
         dataset: X19MGeneralDatasetWithIndex,
         model: nn.Module,
-        checkpoint: ds.TrainingCheckpoint,
+        checkpoint: mds.TrainingCheckpoint,
         epochs_per_batch: int,
         max_num_samples: int,
         tuning_ranges: ads.AttackTuningRanges,

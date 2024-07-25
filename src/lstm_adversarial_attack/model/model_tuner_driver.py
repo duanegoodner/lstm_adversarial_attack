@@ -115,10 +115,16 @@ class ModelTunerDriver:
             CONFIG_READER.read_path("model.tuner_driver.output_dir")
         )
 
-        tuner_driver_summary = edc.TunerDriverSummaryReader().import_struct(
+        # tuner_driver_summary = edc.TunerDriverSummaryReader().import_struct(
+        #     path=tuning_output_root
+        #     / model_tuning_id
+        #     / f"tuner_driver_summary_{model_tuning_id}.json"
+        # )
+
+        tuner_driver_summary = mds.TUNER_DRIVER_SUMMARY_IO.import_to_struct(
             path=tuning_output_root
-            / model_tuning_id
-            / f"tuner_driver_summary_{model_tuning_id}.json"
+                 / model_tuning_id
+                 / f"tuner_driver_summary_{model_tuning_id}.json"
         )
 
         return cls(
@@ -176,8 +182,8 @@ class ModelTunerDriver:
         return tsd.OptunaDatabase(**db_dotenv_info)
 
     @property
-    def summary(self) -> eds.TunerDriverSummary:
-        return eds.TunerDriverSummary(
+    def summary(self) -> mds.TunerDriverSummary:
+        return mds.TunerDriverSummary(
             preprocess_id=self.preprocess_id,
             model_tuning_id=self.model_tuning_id,
             settings=self.settings,
@@ -200,9 +206,11 @@ class ModelTunerDriver:
                 / f"tuner_driver_summary_{self.model_tuning_id}.json"
             )
 
-            edc.TunerDriverSummaryWriter().export(
-                obj=self.summary, path=summary_output_path
-            )
+            # edc.TunerDriverSummaryWriter().export(
+            #     obj=self.summary, path=summary_output_path
+            # )
+
+            mds.TUNER_DRIVER_SUMMARY_IO.export(obj=self.summary, path=summary_output_path)
 
         study = optuna.create_study(
             study_name=self.study_name,

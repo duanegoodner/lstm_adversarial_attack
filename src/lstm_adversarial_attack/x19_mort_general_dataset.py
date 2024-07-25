@@ -10,7 +10,7 @@ from torch.utils.data import Dataset
 
 sys.path.append(str(Path(__file__).parent.parent))
 import lstm_adversarial_attack.preprocess.encode_decode as edc
-from lstm_adversarial_attack.data_structures import VariableLengthFeatures
+from lstm_adversarial_attack.model.lstm_model_stc import VariableLengthFeatures
 from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
 from lstm_adversarial_attack.config import CONFIG_READER
 

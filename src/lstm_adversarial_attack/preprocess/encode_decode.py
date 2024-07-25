@@ -8,8 +8,9 @@ import numpy as np
 import pandas as pd
 import torch
 
+import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.attack.attack_data_structs as ads
-import lstm_adversarial_attack.data_structures as ds
+# import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 from lstm_adversarial_attack.config import CONFIG_READER
@@ -248,23 +249,23 @@ class PreprocessModuleSummaryWriter(StandardStructWriter):
         pass  # PreprocessModuleSummary is json-ready
 
 
-class TunerDriverSummaryWriter(StandardStructWriter):
-    def __init__(self):
-        super().__init__(struct_type=eds.TunerDriverSummary)
-
-    @staticmethod
-    def enc_hook(obj: Any) -> Any:
-        if isinstance(obj, tuh.X19MLSTMTuningRanges):
-            return obj.__dict__
-        else:
-            raise NotImplementedError(
-                f"Encoder does not support objects of type {type(obj)}"
-            )
+# class TunerDriverSummaryWriter(StandardStructWriter):
+#     def __init__(self):
+#         super().__init__(struct_type=mds.TunerDriverSummary)
+#
+#     @staticmethod
+#     def enc_hook(obj: Any) -> Any:
+#         if isinstance(obj, tuh.X19MLSTMTuningRanges):
+#             return obj.__dict__
+#         else:
+#             raise NotImplementedError(
+#                 f"Encoder does not support objects of type {type(obj)}"
+#             )
 
 
 class TrainingCheckpointWriter(StandardStructWriter):
     def __init__(self):
-        super().__init__(struct_type=ds.TrainingCheckpoint)
+        super().__init__(struct_type=mds.TrainingCheckpoint)
 
     @staticmethod
     def enc_hook(obj: Any) -> Any:
@@ -283,20 +284,20 @@ class X19LSTMHyperParameterSettingsWriter(StandardStructWriter):
         pass  # json ready
 
 
-class CrossValidatorDriverSummaryWriter(StandardStructWriter):
-    def __init__(self):
-        super().__init__(struct_type=eds.CrossValidatorDriverSummary)
-
-    @staticmethod
-    def enc_hook(obj: Any) -> Any:
-        if isinstance(obj, torch.Tensor):
-            return obj.tolist()
-        if isinstance(obj, np.float64):
-            return float(obj)
-        else:
-            raise NotImplementedError(
-                f"Encoder does not support objects of type {type(obj)}"
-            )
+# class CrossValidatorDriverSummaryWriter(StandardStructWriter):
+#     def __init__(self):
+#         super().__init__(struct_type=mds.CrossValidatorDriverSummary)
+#
+#     @staticmethod
+#     def enc_hook(obj: Any) -> Any:
+#         if isinstance(obj, torch.Tensor):
+#             return obj.tolist()
+#         if isinstance(obj, np.float64):
+#             return float(obj)
+#         else:
+#             raise NotImplementedError(
+#                 f"Encoder does not support objects of type {type(obj)}"
+#             )
 
 
 class AttackTunerDriverSummaryWriter(StandardStructWriter):
@@ -309,7 +310,7 @@ class AttackTunerDriverSummaryWriter(StandardStructWriter):
             return obj.tolist()
         if isinstance(obj, np.float64):
             return float(obj)
-        if isinstance(obj, ds.TrainingCheckpoint):
+        if isinstance(obj, mds.TrainingCheckpoint):
             return obj.to_storage()
         else:
             raise NotImplementedError(
@@ -380,32 +381,32 @@ class MeasurementColumnNamesReader(StandardStructReader):
             )
 
 
-class TunerDriverSummaryReader(StandardStructReader):
-    def __init__(self):
-        super().__init__(struct_type=eds.TunerDriverSummary)
+# class TunerDriverSummaryReader(StandardStructReader):
+#     def __init__(self):
+#         super().__init__(struct_type=mds.TunerDriverSummary)
+#
+#     @staticmethod
+#     def dec_hook(decode_type: Type, obj: Any) -> Any:
+#         if decode_type is tuple[str]:
+#             return tuple(obj)
+#         if decode_type is tuh.X19MLSTMTuningRanges:
+#             return tuh.X19MLSTMTuningRanges(**obj)
+#         else:
+#             raise NotImplementedError(
+#                 f"Objects of type {type} are not supported"
+#             )
 
-    @staticmethod
-    def dec_hook(decode_type: Type, obj: Any) -> Any:
-        if decode_type is tuple[str]:
-            return tuple(obj)
-        if decode_type is tuh.X19MLSTMTuningRanges:
-            return tuh.X19MLSTMTuningRanges(**obj)
-        else:
-            raise NotImplementedError(
-                f"Objects of type {type} are not supported"
-            )
 
-
-class CrossValidatorSummaryReader(StandardStructReader):
-    def __init__(self):
-        super().__init__(struct_type=eds.CrossValidatorDriverSummary)
-
-    @staticmethod
-    def dec_hook(decode_type: Type, obj: Any) -> Any:
-        if decode_type is tuple[str]:
-            return tuple(obj)
-        if decode_type is Path:
-            return Path(obj)
+# class CrossValidatorSummaryReader(StandardStructReader):
+#     def __init__(self):
+#         super().__init__(struct_type=mds.CrossValidatorDriverSummary)
+#
+#     @staticmethod
+#     def dec_hook(decode_type: Type, obj: Any) -> Any:
+#         if decode_type is tuple[str]:
+#             return tuple(obj)
+#         if decode_type is Path:
+#             return Path(obj)
 
 
 class AttackTunerDriverSummaryReader(StandardStructReader):
@@ -418,8 +419,8 @@ class AttackTunerDriverSummaryReader(StandardStructReader):
             return tuple(obj)
         if decode_type is torch.Tensor:
             return torch.tensor(obj)
-        if decode_type is ds.TrainingCheckpoint:
-            return ds.TrainingCheckpointStorage(obj)
+        if decode_type is mds.TrainingCheckpoint:
+            return mds.TrainingCheckpointStorage(obj)
         if decode_type is ads.AttackTuningRanges:
             return ads.AttackTuningRanges(**obj)
         if decode_type is Path:
@@ -428,7 +429,7 @@ class AttackTunerDriverSummaryReader(StandardStructReader):
 
 class TrainingCheckpointStorageReader(StandardStructReader):
     def __init__(self):
-        super().__init__(struct_type=ds.TrainingCheckpointStorage)
+        super().__init__(struct_type=mds.TrainingCheckpointStorage)
 
     @staticmethod
     def dec_hook(decode_type: Type, obj: Any) -> Any:
@@ -477,7 +478,7 @@ if __name__ == "__main__":
         TrainingCheckpointStorageReader().import_struct(path=json_output_path)
     )
 
-    checkpoint_from_json = ds.TrainingCheckpoint.from_storage(
+    checkpoint_from_json = mds.TrainingCheckpoint.from_storage(
         training_checkpoint_storage=checkpoint_storage_from_json
     )
 

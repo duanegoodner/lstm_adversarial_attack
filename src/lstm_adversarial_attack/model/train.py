@@ -4,14 +4,15 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.data_structures as ds
+# import lstm_adversarial_attack.data_structures as ds
+import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.model.cross_validator_driver as cvd
 import lstm_adversarial_attack.path_searches as ps
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
-def main(model_tuning_id: str = None) -> dict[int, ds.TrainEvalLogPair]:
+def main(model_tuning_id: str = None) -> dict[int, mds.TrainEvalLogPair]:
     cv_training_id = "".join(
         char for char in str(datetime.now()) if char.isdigit()
     )

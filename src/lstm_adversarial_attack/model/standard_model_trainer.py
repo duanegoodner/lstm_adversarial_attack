@@ -12,7 +12,8 @@ import torch.utils.data as ud
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path.append(str(Path(__file__).parent.parent))
-import lstm_adversarial_attack.data_structures as ds
+# import lstm_adversarial_attack.data_structures as ds
+import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.simple_logger as slg
 import lstm_adversarial_attack.preprocess.encode_decode as edc
@@ -87,8 +88,8 @@ class StandardModelTrainer:
         self.summary_writer = summary_writer
         self.summary_writer_group = summary_writer_group
         self.summary_writer_subgroup = summary_writer_subgroup
-        self.train_log = ds.TrainLog()
-        self.eval_log = ds.EvalLog()
+        self.train_log = mds.TrainLog()
+        self.eval_log = mds.EvalLog()
 
     def _activate_log_writers(self):
         self.train_log_writer.activate(data_col_names=("epoch", "loss"))
@@ -106,7 +107,7 @@ class StandardModelTrainer:
     @staticmethod
     def calculate_performance_metrics(
         y_score: torch.tensor, y_pred: torch.tensor, y_true: torch.tensor
-    ) -> ds.ClassificationScores:
+    ) -> mds.ClassificationScores:
         """
         Calcs performance metrics using data returned by self.evaluate_model()
         :param y_score: float outputs of final layer
@@ -119,7 +120,7 @@ class StandardModelTrainer:
         y_pred_np = y_pred.detach().numpy()
         y_true_np = y_true.detach().numpy()
 
-        return ds.ClassificationScores(
+        return mds.ClassificationScores(
             accuracy=skm.accuracy_score(y_true=y_true_np, y_pred=y_pred_np),
             auc=skm.roc_auc_score(y_true=y_true_one_hot, y_score=y_score_np),
             precision=skm.precision_score(y_true=y_true_np, y_pred=y_pred_np),
@@ -138,8 +139,8 @@ class StandardModelTrainer:
         }
 
     @property
-    def _current_checkpoint_struct(self) -> ds.TrainingCheckpoint:
-        return ds.TrainingCheckpoint(
+    def _current_checkpoint_struct(self) -> mds.TrainingCheckpoint:
+        return mds.TrainingCheckpoint(
             epoch_num=deepcopy(self.completed_epochs),
             train_log_entry=deepcopy(self.train_log.latest_entry),
             eval_log_entry=deepcopy(self.eval_log.latest_entry),
@@ -205,9 +206,9 @@ class StandardModelTrainer:
 
             self.completed_epochs += 1
             self.train_log.update(
-                entry=ds.TrainLogEntry(
+                entry=mds.TrainLogEntry(
                     epoch=self.completed_epochs,
-                    result=ds.TrainEpochResult(loss=epoch_loss),
+                    result=mds.TrainEpochResult(loss=epoch_loss),
                 )
             )
             self.report_epoch_loss(epoch_loss=epoch_loss)
@@ -236,7 +237,7 @@ class StandardModelTrainer:
         )
 
     @torch.no_grad()
-    def evaluate_model(self) -> ds.EvalLogEntry:
+    def evaluate_model(self) -> mds.EvalLogEntry:
         """
         Evaluates model. Calculates and stores perfromance metrics.
         """
@@ -261,11 +262,11 @@ class StandardModelTrainer:
         classification_scores = self.calculate_performance_metrics(
             y_score=all_y_score, y_pred=all_y_pred, y_true=all_y_true
         )
-        eval_results = ds.EvalEpochResult(
+        eval_results = mds.EvalEpochResult(
             validation_loss=epoch_loss, **classification_scores.__dict__
         )
 
-        eval_log_entry = ds.EvalLogEntry(
+        eval_log_entry = mds.EvalLogEntry(
             epoch=self.completed_epochs, result=eval_results
         )
 
@@ -278,7 +279,7 @@ class StandardModelTrainer:
 
     def report_eval_results(
         self,
-        eval_results: ds.EvalEpochResult,
+        eval_results: mds.EvalEpochResult,
     ):
         """
         Writes eval results to Tensorboard via SummaryWriter

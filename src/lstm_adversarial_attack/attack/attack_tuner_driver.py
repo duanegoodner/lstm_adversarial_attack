@@ -9,8 +9,10 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 # AttackTunerDriverSettings and AttackTunerDriverPaths moved to attack_data_structs when fixing (de)serialization
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_tuner as atn
-import lstm_adversarial_attack.data_structures as ds
+# import lstm_adversarial_attack.data_structures as ds
+import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
+import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.model_retriever as tmr
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.preprocess.encode_decode as edc
@@ -91,7 +93,10 @@ class AttackTunerDriver:
             / cv_training_id
             / f"cross_validator_driver_summary_{cv_training_id}.json"
         )
-        cv_driver_summary = edc.CrossValidatorSummaryReader().import_struct(
+        # cv_driver_summary = edc.CrossValidatorSummaryReader().import_struct(
+        #     path=cv_driver_summary_path
+        # )
+        cv_driver_summary = mds.CROSS_VALIDATOR_DRIVER_SUMMARY_IO.import_to_struct(
             path=cv_driver_summary_path
         )
 
@@ -168,7 +173,7 @@ class AttackTunerDriver:
         return self.target_checkpoint_info.fold
 
     @property
-    def target_model_checkpoint(self) -> ds.TrainingCheckpoint:
+    def target_model_checkpoint(self) -> mds.TrainingCheckpoint:
         return self.target_checkpoint_info.checkpoint
 
     @property
@@ -201,7 +206,10 @@ class AttackTunerDriver:
                 self.output_dir
                 / f"attack_tuner_driver_summary_{self.attack_tuning_id}.json"
             )
-            edc.AttackTunerDriverSummaryWriter().export(
+            # edc.AttackTunerDriverSummaryWriter().export(
+            #     obj=self.summary, path=summary_output_path
+            # )
+            mds.TUNER_DRIVER_SUMMARY_IO.export(
                 obj=self.summary, path=summary_output_path
             )
 

@@ -5,7 +5,9 @@ import torch
 import torch.nn as nn
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.data_structures as ds
+# import lstm_adversarial_attack.data_structures as ds
+# import lstm_adversarial_attack.model.model_data_structs as mds
+import lstm_adversarial_attack.model.lstm_model_stc as lms
 
 
 class FeaturePerturber(nn.Module):
@@ -46,8 +48,8 @@ class FeaturePerturber(nn.Module):
         nn.init.zeros_(self.perturbation)
 
     def forward(
-        self, inputs: ds.VariableLengthFeatures
-    ) -> ds.VariableLengthFeatures:
+        self, inputs: lms.VariableLengthFeatures
+    ) -> lms.VariableLengthFeatures:
         """
         Adds perturbation tensor to features tensor of a VariableLengthFeatures
         object
@@ -55,7 +57,7 @@ class FeaturePerturber(nn.Module):
         :return: a new VariableLengthFeatures object (obtained by adding
         perturbation to the .features member of inputs)
         """
-        return ds.VariableLengthFeatures(
+        return lms.VariableLengthFeatures(
             features=inputs.features + self.perturbation,
             lengths=inputs.lengths,
         )

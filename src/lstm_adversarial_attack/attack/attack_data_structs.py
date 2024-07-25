@@ -2,10 +2,12 @@ from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Callable, Any
 
+import msgspec
 import optuna
 import torch
 
 from lstm_adversarial_attack.config import CONFIG_READER
+import lstm_adversarial_attack.model.tuner_helpers as tuh
 
 
 @dataclass
@@ -134,3 +136,16 @@ class AttackTunerDriverPaths:
             for field_name in paths_fields
         }
         return cls(**constructor_kwargs)
+
+
+class AttackTunerDriverSummary(msgspec.Struct):
+    preprocess_id: str
+    attack_tuning_id: str
+    cv_training_id: str
+    model_hyperparameters: tuh.X19LSTMHyperParameterSettings
+    settings: AttackTunerDriverSettings
+    paths: AttackTunerDriverPaths
+    study_name: str
+    is_continuation: bool
+    tuning_ranges: AttackTuningRanges
+    model_training_result_dir: str

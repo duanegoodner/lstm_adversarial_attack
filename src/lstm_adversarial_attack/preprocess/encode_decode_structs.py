@@ -56,44 +56,44 @@ class PreprocessModuleSummary(msgspec.Struct):
     settings: dict[str, Any]
 
 
-class TunerDriverSummary(msgspec.Struct):
-    preprocess_id: str
-    model_tuning_id: str
-    settings: mds.ModelTunerDriverSettings
-    paths: mds.ModelTunerDriverPaths
-    study_name: str
-    is_continuation: bool
-    device_name: str
-
-    def to_dict(self):
-        return {
-            "preprocess_id": self.preprocess_id,
-            "model_tuning_id": self.model_tuning_id,
-            "settings": self.settings,
-            "paths": self.paths,
-            "study_name": self.study_name,
-            "is_continuation": self.is_continuation,
-            "device_name": self.device_name,
-        }
-
-
-class CrossValidatorDriverSummary(msgspec.Struct):
-    preprocess_id: str
-    tuning_study_name: str
-    cv_training_id: str
-    model_hyperparameters: tuh.X19LSTMHyperParameterSettings
-    settings: mds.CrossValidatorDriverSettings
-    paths: mds.CrossValidatorDriverPaths
-
-    def to_dict(self):
-        return {
-            "preprocess_id": self.preprocess_id,
-            "tuning_study_name": self.tuning_study_name,
-            "cv_driver_id": self.cv_training_id,
-            "model_hyperparameters": self.model_hyperparameters,
-            "settings": self.settings,
-            "paths": self.paths,
-        }
+# class TunerDriverSummary(msgspec.Struct):
+#     preprocess_id: str
+#     model_tuning_id: str
+#     settings: mds.ModelTunerDriverSettings
+#     paths: mds.ModelTunerDriverPaths
+#     study_name: str
+#     is_continuation: bool
+#     device_name: str
+#
+#     def to_dict(self):
+#         return {
+#             "preprocess_id": self.preprocess_id,
+#             "model_tuning_id": self.model_tuning_id,
+#             "settings": self.settings,
+#             "paths": self.paths,
+#             "study_name": self.study_name,
+#             "is_continuation": self.is_continuation,
+#             "device_name": self.device_name,
+#         }
+#
+#
+# class CrossValidatorDriverSummary(msgspec.Struct):
+#     preprocess_id: str
+#     tuning_study_name: str
+#     cv_training_id: str
+#     model_hyperparameters: tuh.X19LSTMHyperParameterSettings
+#     settings: mds.CrossValidatorDriverSettings
+#     paths: mds.CrossValidatorDriverPaths
+#
+#     def to_dict(self):
+#         return {
+#             "preprocess_id": self.preprocess_id,
+#             "tuning_study_name": self.tuning_study_name,
+#             "cv_driver_id": self.cv_training_id,
+#             "model_hyperparameters": self.model_hyperparameters,
+#             "settings": self.settings,
+#             "paths": self.paths,
+#         }
 
 
 class AttackTunerDriverSummary(msgspec.Struct):

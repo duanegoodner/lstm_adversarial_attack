@@ -9,6 +9,7 @@ import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
+import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.model_retriever as tmr
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.preprocess.encode_decode as edc
