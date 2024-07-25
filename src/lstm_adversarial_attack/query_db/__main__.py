@@ -19,7 +19,7 @@ def main() -> list[Path]:
 
     db_access = mdb.MimiciiiDatabaseAccess(
         dotenv_path=Path(config_reader.read_path(config_key="db.mimiciii_dotenv")),
-        output_parent=Path(config_reader.read_path(config_key="db.query_output_dir")),
+        output_parent=Path(config_reader.read_path(config_key="db.output_root")),
     )
     db_access.connect()
     db_query_results = db_access.run_sql_queries(

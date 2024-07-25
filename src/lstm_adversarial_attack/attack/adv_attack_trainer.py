@@ -137,8 +137,8 @@ class AdversarialAttackTrainer:
 
     def set_attacker_train_mode(self):
         """
-        Sets attacker to train mode which sets module parameters requires
-        grad to true. Turns off grad in the predictive model portion of the
+        Sets attacker to train mode which sets module parameter 'requires
+        grad' to true. Turns off grad in the predictive model portion of the
         overall attacker + predictor model. Tried setting predictive model to
         eval() mode, but that prevented backprop of attacker params.
         """
@@ -149,7 +149,7 @@ class AdversarialAttackTrainer:
     def get_target_dataset(self) -> dsi.DatasetWithIndex | Subset:
         """
         Creates dataset of samples to be attacked. Typical params will
-        result in dataset with all of the correctly predicted samples from
+        result in dataset with all correctly predicted samples from
         orig_dataset.
         :return: either the full self.dataset or subset of it
         """

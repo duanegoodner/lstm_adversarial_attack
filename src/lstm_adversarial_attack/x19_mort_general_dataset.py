@@ -55,20 +55,6 @@ class X19MGeneralDataset(Dataset):
             CONFIG_READER.read_path("preprocess.output_root")
         )
 
-        # if preprocess_id is None:
-        #     preprocess_output_root = Path(
-        #         CONFIG_READER.read_path("preprocess.output_root")
-        #     )
-        #     preprocess_id = str(
-        #         max(
-        #             [
-        #                 int(item.name)
-        #                 for item in list(preprocess_output_root.iterdir())
-        #                 if (item.is_dir())
-        #             ]
-        #         )
-        #     )
-
         measurements_path = (
             preprocess_data_root
             / preprocess_id

@@ -180,7 +180,7 @@ class TrainerResult:
     """
     Compilation of RecordedTrainerExamples from each batch
     :param dataset: dataset being attacked
-    :param dataset_indices: dataset indices of samples beign attacked
+    :param dataset_indices: dataset indices of samples being attacked
     :param epochs_run: num epochs run on each batch (should all be same val)
     :param input_seq_lengths: input seq length of each sample
     :param first_examples: info from first found example for samples

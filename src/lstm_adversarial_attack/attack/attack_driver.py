@@ -16,7 +16,9 @@ import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 from lstm_adversarial_attack.config import CONFIG_READER
 from lstm_adversarial_attack.x19_mort_general_dataset import (
-    X19MGeneralDatasetWithIndex, x19m_with_index_collate_fn)
+    X19MGeneralDatasetWithIndex,
+    x19m_with_index_collate_fn,
+)
 
 
 class AttackDriver:
@@ -88,13 +90,6 @@ class AttackDriver:
         self.sample_selection_seed = sample_selection_seed
         if self.sample_selection_seed is not None:
             torch.manual_seed(self.sample_selection_seed)
-        self.dataset = (
-            X19MGeneralDatasetWithIndex.from_feature_finalizer_output(
-                preprocess_id=self.preprocess_id,
-                max_num_samples=max_num_samples,
-                random_seed=sample_selection_seed,
-            )
-        )
         self.collate_fn = x19m_with_index_collate_fn
         self.attack_misclassified_samples = attack_misclassified_samples
         self.result_file_prefix = result_file_prefix
@@ -106,7 +101,9 @@ class AttackDriver:
         )
 
     @classmethod
-    def from_attack_tuning_id(cls, attack_tuning_id: str, device: torch.device):
+    def from_attack_tuning_id(
+        cls, attack_tuning_id: str, device: torch.device
+    ):
         attack_tuner_driver_summary = (
             edc.AttackTunerDriverSummaryReader().import_struct(
                 path=Path(CONFIG_READER.read_path("attack.tune.output_dir"))
@@ -135,7 +132,7 @@ class AttackDriver:
             preprocess_id=attack_tuner_driver_summary.preprocess_id,
             attack_tuning_study_name=attack_tuning_study_name,
             model_hyperparameters=attack_tuner_driver_summary.model_hyperparameters,
-            attack_hyperparameters=attack_hyperparameters
+            attack_hyperparameters=attack_hyperparameters,
         )
 
     @staticmethod
@@ -169,7 +166,13 @@ class AttackDriver:
             state_dict=checkpoint.state_dict,
             attack_hyperparameters=self.attack_hyperparameters,
             epochs_per_batch=self.epochs_per_batch,
-            dataset=self.dataset,
+            dataset=(
+                X19MGeneralDatasetWithIndex.from_feature_finalizer_output(
+                    preprocess_id=self.preprocess_id,
+                    max_num_samples=self.max_num_samples,
+                    random_seed=self.sample_selection_seed,
+                )
+            ),
             collate_fn=self.collate_fn,
             attack_misclassified_samples=self.attack_misclassified_samples,
             output_dir=self.output_dir,
