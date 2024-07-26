@@ -238,6 +238,20 @@ class TrainingCheckpointStorage(msgspec.Struct):
         return self.state_dict_info.ordered_dict
 
 
+class TrainingCheckpointStorageReader(mio.StandardStructReader):
+    def __init__(self):
+        super().__init__(struct_type=TrainingCheckpointStorage)
+
+    @staticmethod
+    def dec_hook(decode_type: Type, obj: Any) -> Any:
+        if decode_type is torch.Tensor:
+            return torch.tensor(obj)
+        else:
+            raise NotImplementedError(
+                f"Objects of type {type} are not supported"
+            )
+
+
 class TrainingCheckpoint(msgspec.Struct):
     epoch_num: int
     train_log_entry: TrainLogEntry
@@ -267,6 +281,21 @@ class TrainingCheckpoint(msgspec.Struct):
             state_dict=training_checkpoint_storage.state_dict,
             optimizer_state_dict=training_checkpoint_storage.optimizer_state_dict,
         )
+
+
+class TrainingCheckpointWriter(mio.StandardStructWriter):
+    def __init__(self):
+        super().__init__(struct_type=TrainingCheckpoint)
+
+    @staticmethod
+    def enc_hook(obj: Any) -> Any:
+        if isinstance(obj, torch.Tensor):
+            return obj.tolist()
+        if isinstance(obj, np.float64):
+            return float(obj)
+
+
+
 
 
 @dataclass

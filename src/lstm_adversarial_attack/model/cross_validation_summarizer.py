@@ -98,7 +98,7 @@ class FoldSummarizer:
         """
         checkpoint_files = sorted(fold_checkpoint_dir.glob("*.json"))
         fold_checkpoints_storage = [
-            edc.TrainingCheckpointStorageReader().import_struct(path=item)
+            mds.TrainingCheckpointStorageReader().import_struct(path=item)
             for item in checkpoint_files
         ]
         fold_checkpoints = [

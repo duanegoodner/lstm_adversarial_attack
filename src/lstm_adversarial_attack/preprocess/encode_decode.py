@@ -9,6 +9,7 @@ import pandas as pd
 import torch
 
 import lstm_adversarial_attack.model.model_data_structs as mds
+import lstm_adversarial_attack.msgspec_io as mio
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 from lstm_adversarial_attack.config import CONFIG_READER
 
@@ -184,29 +185,7 @@ def export_json_ready_object(obj: Any, path: Path):
 EncodeType = TypeVar("EncodeType", bound=msgspec.Struct)
 
 
-class StandardStructWriter(ABC):
-    def __init__(self, struct_type: Callable[..., EncodeType]):
-        self._struct_type = struct_type
-
-    @staticmethod
-    @abstractmethod
-    def enc_hook(obj: Any) -> Any:
-        pass
-
-    @cached_property
-    def encoder(self) -> msgspec.json.Encoder:
-        return msgspec.json.Encoder(enc_hook=self.enc_hook)
-
-    def encode(self, obj: EncodeType) -> bytes:
-        return self.encoder.encode(obj)
-
-    def export(self, obj: EncodeType, path: Path):
-        encoded_data = self.encode(obj)
-        with path.open(mode="wb") as out_file:
-            out_file.write(encoded_data)
-
-
-class FeatureArraysWriter(StandardStructWriter):
+class FeatureArraysWriter(mio.StandardStructWriter):
     def __init__(self):
         super().__init__(struct_type=eds.FeatureArrays)
 
@@ -219,7 +198,7 @@ class FeatureArraysWriter(StandardStructWriter):
             )
 
 
-class ClassLabelsWriter(StandardStructWriter):
+class ClassLabelsWriter(mio.StandardStructWriter):
     def __init__(self):
         super().__init__(struct_type=eds.ClassLabels)
 
@@ -228,7 +207,7 @@ class ClassLabelsWriter(StandardStructWriter):
         pass  # ClassLabels object is json-ready
 
 
-class MeasurementColumnNamesWriter(StandardStructWriter):
+class MeasurementColumnNamesWriter(mio.StandardStructWriter):
     def __init__(self):
         super().__init__(struct_type=eds.MeasurementColumnNames)
 
@@ -237,7 +216,7 @@ class MeasurementColumnNamesWriter(StandardStructWriter):
         pass  # MeasurementColumnNames object is json-ready
 
 
-class PreprocessModuleSummaryWriter(StandardStructWriter):
+class PreprocessModuleSummaryWriter(mio.StandardStructWriter):
     def __init__(self):
         super().__init__(struct_type=eds.PreprocessModuleSummary)
 
@@ -246,44 +225,10 @@ class PreprocessModuleSummaryWriter(StandardStructWriter):
         pass  # PreprocessModuleSummary is json-ready
 
 
-class TrainingCheckpointWriter(StandardStructWriter):
-    def __init__(self):
-        super().__init__(struct_type=mds.TrainingCheckpoint)
-
-    @staticmethod
-    def enc_hook(obj: Any) -> Any:
-        if isinstance(obj, torch.Tensor):
-            return obj.tolist()
-        if isinstance(obj, np.float64):
-            return float(obj)
-
-
 DecodeType = TypeVar("DecodeType", bound=msgspec.Struct)
 
 
-class StandardStructReader(ABC):
-    def __init__(self, struct_type: Callable[..., DecodeType]):
-        self._struct_type = struct_type
-
-    @staticmethod
-    @abstractmethod
-    def dec_hook(decode_type: Type, obj: Any) -> Any:
-        pass
-
-    @cached_property
-    def decoder(self) -> msgspec.json.Decoder:
-        return msgspec.json.Decoder(self._struct_type, dec_hook=self.dec_hook)
-
-    def decode(self, obj: bytes) -> DecodeType:
-        return self.decoder.decode(obj)
-
-    def import_struct(self, path: Path) -> DecodeType:
-        with path.open(mode="rb") as in_file:
-            encoded_struct = in_file.read()
-        return self.decode(obj=encoded_struct)
-
-
-class FeatureArraysReader(StandardStructReader):
+class FeatureArraysReader(mio.StandardStructReader):
     def __init__(self):
         super().__init__(struct_type=eds.FeatureArrays)
 
@@ -297,7 +242,7 @@ class FeatureArraysReader(StandardStructReader):
             )
 
 
-class ClassLabelsReader(StandardStructReader):
+class ClassLabelsReader(mio.StandardStructReader):
     def __init__(self):
         super().__init__(struct_type=eds.ClassLabels)
 
@@ -307,7 +252,7 @@ class ClassLabelsReader(StandardStructReader):
         raise NotImplementedError(f"Objects of type {type} are not supported")
 
 
-class MeasurementColumnNamesReader(StandardStructReader):
+class MeasurementColumnNamesReader(mio.StandardStructReader):
     def __init__(self):
         super().__init__(struct_type=eds.MeasurementColumnNames)
 
@@ -315,20 +260,6 @@ class MeasurementColumnNamesReader(StandardStructReader):
     def dec_hook(decode_type: Type, obj: Any) -> Any:
         if decode_type is tuple[str]:
             return tuple(obj)
-        else:
-            raise NotImplementedError(
-                f"Objects of type {type} are not supported"
-            )
-
-
-class TrainingCheckpointStorageReader(StandardStructReader):
-    def __init__(self):
-        super().__init__(struct_type=mds.TrainingCheckpointStorage)
-
-    @staticmethod
-    def dec_hook(decode_type: Type, obj: Any) -> Any:
-        if decode_type is torch.Tensor:
-            return torch.tensor(obj)
         else:
             raise NotImplementedError(
                 f"Objects of type {type} are not supported"

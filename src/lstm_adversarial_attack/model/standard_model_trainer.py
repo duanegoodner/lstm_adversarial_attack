@@ -169,7 +169,7 @@ class StandardModelTrainer:
             / f"training_checkpoint_epoch_{self.completed_epochs}_{new_timestamp}.json"
         )
 
-        edc.TrainingCheckpointWriter().export(
+        mds.TrainingCheckpointWriter().export(
             obj=self._current_checkpoint_struct.to_storage(),
             path=new_checkpoint_path,
         )
