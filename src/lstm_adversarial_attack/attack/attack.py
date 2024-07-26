@@ -1,5 +1,6 @@
 import argparse
 import sys
+from datetime import datetime
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -15,6 +16,10 @@ def main(attack_tuning_id: str) -> ards.TrainerSuccessSummary:
     Runs attack on dataset
     :param attack_tuning_id: ID of attack tuning session to use for attack hyperparameter selection
     """
+    attack_id = "".join(
+        char for char in str(datetime.now()) if char.isdigit()
+    )
+
     cur_device = gh.get_device()
 
     attack_tuning_output_root = Path(
@@ -27,11 +32,13 @@ def main(attack_tuning_id: str) -> ards.TrainerSuccessSummary:
 
     attack_driver = ad.AttackDriver.from_attack_tuning_id(
         attack_tuning_id=attack_tuning_id,
+        attack_id=attack_id,
         device=cur_device,
     )
 
-    trainer_result = attack_driver()
-    success_summary = ards.TrainerSuccessSummary(trainer_result=trainer_result)
+    attack_trainer_result = attack_driver()
+
+    success_summary = ards.TrainerSuccessSummary(attack_trainer_result=attack_trainer_result)
 
     return success_summary
 

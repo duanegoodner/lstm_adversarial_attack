@@ -199,14 +199,14 @@ class FullAttackResults:
 
     def __init__(
         self,
-        trainer_result: ads.TrainerResult,
+        attack_trainer_result: ads.AttackTrainerResult,
         # success_summary: ads.TrainerSuccessSummary,
     ):
         """
         :param success_summary: a TrainerSuccessSummary produced by attack
         """
         success_summary = ads.TrainerSuccessSummary(
-            trainer_result=trainer_result
+            attack_trainer_result=attack_trainer_result
         )
         self._dataset = success_summary.dataset
         self.all_attacks_df = success_summary.all_attacks_df
@@ -217,30 +217,29 @@ class FullAttackResults:
         self.best_perts_summary = success_summary.perts_summary_best
 
     @classmethod
-    def from_trainer_result_path(cls, trainer_result_path):
-        trainer_result = rio.ResourceImporter().import_pickle_to_object(
-            path=trainer_result_path
-        )
-        return cls(trainer_result=trainer_result)
+    def from_attack_trainer_result_path(cls, attack_trainer_result_path):
+        # attack_trainer_result = rio.ResourceImporter().import_pickle_to_object(
+        #     path=attack_trainer_result_path
+        # )
+        attack_trainer_result_dto = ads.ATTACK_TRAINER_RESULT_IO.import_to_struct(path=attack_trainer_result_path)
+        attack_trainer_result = ads.AttackTrainerResult.from_dto(dto=attack_trainer_result_dto)
+        return cls(attack_trainer_result=attack_trainer_result)
 
     @classmethod
     def from_most_recent_attack(cls):
-        latest_attack_result_path = (
-            ps.latest_modified_file_with_name_condition(
-                component_string="attack_result.pickle",
-                root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK,
-                comparison_type=ps.StringComparisonType.SUFFIX,
-            )
-        )
-        #
-        # result_dir = ps.most_recently_modified_subdir(
-        #     root_path=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+        # latest_attack_result_path = (
+        #     ps.latest_modified_file_with_name_condition(
+        #         component_string="attack_result.pickle",
+        #         root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK,
+        #         comparison_type=ps.StringComparisonType.SUFFIX,
+        #     )
         # )
-        # final_results = list(result_dir.glob("*final_attack_result.pickle"))
-        # assert len(final_results) == 1
-        # trainer_result_path = final_results[0]
-        return cls.from_trainer_result_path(
-            trainer_result_path=latest_attack_result_path
+
+        attack_id = ps.get_latest_sequential_child_dirname(root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK)
+        latest_attack_result_path = cfg_paths / attack_id / f"final_attack_result_{attack_id}.json"
+
+        return cls.from_attack_trainer_result_path(
+            attack_trainer_result_path=latest_attack_result_path
         )
 
     @cached_property

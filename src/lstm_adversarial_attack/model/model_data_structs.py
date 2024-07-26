@@ -248,7 +248,7 @@ class TrainingCheckpointStorageReader(mio.StandardStructReader):
             return torch.tensor(obj)
         else:
             raise NotImplementedError(
-                f"Objects of type {type} are not supported"
+                f"Objects of type {decode_type} are not supported"
             )
 
 

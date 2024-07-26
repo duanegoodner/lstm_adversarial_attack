@@ -4,7 +4,6 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-# import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.model.cross_validator_driver as cvd

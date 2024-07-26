@@ -30,7 +30,7 @@ trial_results = [
 ]
 
 success_summaries = [
-    ads.TrainerSuccessSummary(trainer_result=item) for item in trial_results
+    ads.TrainerSuccessSummary(attack_trainer_result=item) for item in trial_results
 ]
 
 # perts_best_48_0 = [
