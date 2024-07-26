@@ -16,6 +16,7 @@ import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.resource_io as rio
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 from lstm_adversarial_attack.config import CONFIG_READER
+import lstm_adversarial_attack.x19_mort_general_dataset as xmd
 from lstm_adversarial_attack.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex,
     x19m_with_index_collate_fn,
@@ -31,6 +32,7 @@ class AttackDriver:
         self,
         target_model_checkpoint_info: cvs.CheckpointInfo,
         device: torch.device,
+        attack_id: str,
         preprocess_id: str,
         attack_tuning_study_name: str,
         model_hyperparameters: tuh.X19LSTMHyperParameterSettings,
@@ -81,6 +83,7 @@ class AttackDriver:
         """
         self.target_model_checkpoint_info = target_model_checkpoint_info
         self.device = device
+        self.attack_id = attack_id
         self.preprocess_id = preprocess_id
         self.attack_tuning_study_name = attack_tuning_study_name
         self.db_env_var_name = db_env_var_name
@@ -103,7 +106,7 @@ class AttackDriver:
 
     @classmethod
     def from_attack_tuning_id(
-        cls, attack_tuning_id: str, device: torch.device
+        cls, attack_tuning_id: str, attack_id: str, device: torch.device
     ):
         attack_tuner_driver_summary = (
             ads.ATTACK_TUNER_DRIVER_SUMMARY_IO.import_to_struct(
@@ -130,14 +133,14 @@ class AttackDriver:
         return cls(
             target_model_checkpoint_info=target_model_checkpoint_info,
             device=device,
+            attack_id=attack_id,
             preprocess_id=attack_tuner_driver_summary.preprocess_id,
             attack_tuning_study_name=attack_tuning_study_name,
             model_hyperparameters=attack_tuner_driver_summary.model_hyperparameters,
             attack_hyperparameters=attack_hyperparameters,
         )
 
-    @staticmethod
-    def initialize_output_dir(output_dir: Path | None):
+    def initialize_output_dir(self, output_dir: Path | None):
         """
         Initializes directory where results of attacked will be saved
         :param output_dir: Path of output directory. If None, a directory
@@ -146,9 +149,11 @@ class AttackDriver:
         path to newly create directory)
         """
         if output_dir is None:
-            output_dir = rio.create_timestamped_dir(
-                parent_path=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
-            )
+            output_dir = cfg_paths.FROZEN_HYPERPARAMETER_ATTACK / self.attack_id
+            output_dir.mkdir(exist_ok=True, parents=True)
+            # output_dir = rio.create_timestamped_dir(
+            #     parent_path=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+            # )
         return output_dir
 
     def __call__(self) -> aat.AdversarialAttackTrainer | ards.TrainerResult:
@@ -182,13 +187,20 @@ class AttackDriver:
 
         train_result = attack_trainer.train_attacker()
 
-        train_result_output_path = rio.create_timestamped_filepath(
-            parent_path=self.output_dir,
-            file_extension="pickle",
-            suffix=f"{self.result_file_prefix}_final_attack_result",
+        train_result_dto = ards.TrainerResultDTO(
+            dataset_info=xmd.X19MGeneralDatasetInfo(
+                preprocess_id=self.preprocess_id,
+                max_num_samples=self.max_num_samples,
+                random_seed=self.sample_selection_seed,
+            ),
+            dataset_indices=train_result.dataset_indices,
+            epochs_run=train_result.epochs_run,
+            input_seq_lengths=train_result.input_seq_lengths,
+            first_examples=train_result.first_examples,
+            best_examples=train_result.best_examples,
         )
 
-        rio.ResourceExporter().export(
-            resource=train_result, path=train_result_output_path
-        )
+        train_result_output_path = self.output_dir / f"final_attack_result_{self.attack_id}.json"
+        ards.TRAINER_RESULT_IO.export(obj=train_result_dto, path=train_result_output_path)
+
         return train_result

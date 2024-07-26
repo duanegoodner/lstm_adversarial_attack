@@ -1,4 +1,5 @@
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -13,6 +14,13 @@ import lstm_adversarial_attack.preprocess.encode_decode as edc
 from lstm_adversarial_attack.model.lstm_model_stc import VariableLengthFeatures
 from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
 from lstm_adversarial_attack.config import CONFIG_READER
+
+
+@dataclass
+class X19MGeneralDatasetInfo:
+    preprocess_id: str
+    max_num_samples: int
+    random_seed: int
 
 
 class X19MGeneralDataset(Dataset):
@@ -107,7 +115,6 @@ def x19m_collate_fn(batch):
     return VariableLengthFeatures(
         features=padded_features, lengths=lengths
     ), torch.tensor(labels, dtype=torch.long)
-    # return padded_features, torch.tensor(labels, dtype=torch.long), lengths
 
 
 class X19MGeneralDatasetWithIndex(X19MGeneralDataset, DatasetWithIndex):

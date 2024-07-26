@@ -2,13 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Callable
+from typing import Callable, Any, Type
 
+import msgspec
 import numpy as np
 import pandas as pd
 import torch
 
 import lstm_adversarial_attack.dataset_with_index as dsi
+import lstm_adversarial_attack.x19_mort_general_dataset as xmd
+import lstm_adversarial_attack.msgspec_io as mio
 
 
 @dataclass
@@ -175,6 +178,39 @@ class RecordedTrainerExamples:
         )
 
 
+class TrainerResultDTO(msgspec.Struct):
+    dataset_info: xmd.X19MGeneralDatasetInfo
+    dataset_indices: torch.Tensor
+    epochs_run: torch.Tensor
+    input_seq_lengths: torch.Tensor
+    first_examples: RecordedTrainerExamples
+    best_examples: RecordedTrainerExamples
+
+
+class TrainerResultIO(mio.MsgspecIO):
+    def __init__(self):
+        super().__init__(msgspec_struct_type=TrainerResultDTO)
+
+    @staticmethod
+    def enc_hook(obj: Any) -> Any:
+        if isinstance(obj, torch.Tensor):
+            return obj.tolist()
+        if isinstance(obj, np.float64):
+            return float(obj)
+
+    @staticmethod
+    def dec_hook(decode_type: Type, obj: Any) -> Any:
+        if decode_type is torch.Tensor:
+            return torch.tensor(obj)
+        else:
+            raise NotImplementedError(
+                f"Objects of type {decode_type} are not supported"
+            )
+
+
+TRAINER_RESULT_IO = TrainerResultIO()
+
+
 @dataclass
 class TrainerResult:
     """
@@ -187,9 +223,9 @@ class TrainerResult:
     :param best_examples: info for best (lowest loss) example_data
     """
     dataset: dsi.DatasetWithIndex
-    dataset_indices: torch.tensor = None
-    epochs_run: torch.tensor = None
-    input_seq_lengths: torch.tensor = None
+    dataset_indices: torch.Tensor = None
+    epochs_run: torch.Tensor = None
+    input_seq_lengths: torch.Tensor = None
     first_examples: RecordedTrainerExamples = None
     best_examples: RecordedTrainerExamples = None
 
@@ -243,6 +279,7 @@ class TrainerResult:
         )
         assert np.all(first_examples_success == best_examples_success)
         return first_examples_success
+
 
 
 class FeaturesMaskBuilder:
