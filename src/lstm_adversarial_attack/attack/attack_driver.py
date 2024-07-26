@@ -156,10 +156,10 @@ class AttackDriver:
             # )
         return output_dir
 
-    def __call__(self) -> aat.AdversarialAttackTrainer | ards.TrainerResult:
+    def __call__(self) -> aat.AdversarialAttackTrainer | ards.AttackTrainerResult:
         """
         Imports model to attack, then trains and runs attack driver
-        :return: TrainerResult (dataclass with attack results)
+        :return: AttackTrainerResult (dataclass with attack results)
         """
 
         checkpoint = self.target_model_checkpoint_info.checkpoint
@@ -185,22 +185,22 @@ class AttackDriver:
             checkpoint_interval=self.checkpoint_interval,
         )
 
-        trainer_result = attack_trainer.train_attacker()
+        attack_trainer_result = attack_trainer.train_attacker()
 
-        trainer_result_dto = ards.TrainerResultDTO(
+        attack_trainer_result_dto = ards.AttackTrainerResultDTO(
             dataset_info=xmd.X19MGeneralDatasetInfo(
                 preprocess_id=self.preprocess_id,
                 max_num_samples=self.max_num_samples,
                 random_seed=self.sample_selection_seed,
             ),
-            dataset_indices=trainer_result.dataset_indices,
-            epochs_run=trainer_result.epochs_run,
-            input_seq_lengths=trainer_result.input_seq_lengths,
-            first_examples=trainer_result.first_examples,
-            best_examples=trainer_result.best_examples,
+            dataset_indices=attack_trainer_result.dataset_indices,
+            epochs_run=attack_trainer_result.epochs_run,
+            input_seq_lengths=attack_trainer_result.input_seq_lengths,
+            first_examples=attack_trainer_result.first_examples,
+            best_examples=attack_trainer_result.best_examples,
         )
 
         train_result_output_path = self.output_dir / f"final_attack_result_{self.attack_id}.json"
-        ards.TRAINER_RESULT_IO.export(obj=trainer_result_dto, path=train_result_output_path)
+        ards.ATTACK_TRAINER_RESULT_IO.export(obj=attack_trainer_result_dto, path=train_result_output_path)
 
-        return trainer_result
+        return attack_trainer_result

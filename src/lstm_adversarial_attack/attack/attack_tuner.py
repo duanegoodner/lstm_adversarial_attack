@@ -229,9 +229,9 @@ class AttackTuner:
         """
 
         attack_trainer = self.create_attack_trainer(trial=trial)
-        trainer_result = attack_trainer.train_attacker()
+        attack_trainer_result = attack_trainer.train_attacker()
         success_summary = ards.TrainerSuccessSummary(
-            trainer_result=trainer_result
+            attack_trainer_result=attack_trainer_result
         )
 
         return self.objective(

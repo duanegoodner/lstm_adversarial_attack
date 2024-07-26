@@ -178,7 +178,7 @@ class RecordedTrainerExamples:
         )
 
 
-class TrainerResultDTO(msgspec.Struct):
+class AttackTrainerResultDTO(msgspec.Struct):
     dataset_info: xmd.X19MGeneralDatasetInfo
     dataset_indices: torch.Tensor
     epochs_run: torch.Tensor
@@ -187,9 +187,9 @@ class TrainerResultDTO(msgspec.Struct):
     best_examples: RecordedTrainerExamples
 
 
-class TrainerResultIO(mio.MsgspecIO):
+class AttackTrainerResultIO(mio.MsgspecIO):
     def __init__(self):
-        super().__init__(msgspec_struct_type=TrainerResultDTO)
+        super().__init__(msgspec_struct_type=AttackTrainerResultDTO)
 
     @staticmethod
     def enc_hook(obj: Any) -> Any:
@@ -208,11 +208,11 @@ class TrainerResultIO(mio.MsgspecIO):
             )
 
 
-TRAINER_RESULT_IO = TrainerResultIO()
+ATTACK_TRAINER_RESULT_IO = AttackTrainerResultIO()
 
 
 @dataclass
-class TrainerResult:
+class AttackTrainerResult:
     """
     Compilation of RecordedTrainerExamples from each batch
     :param dataset: dataset being attacked
@@ -573,19 +573,19 @@ class TrainerSuccessSummary:
     """
     Summarizes first and best example data from an attack
     """
-    def __init__(self, trainer_result: TrainerResult):
+    def __init__(self, attack_trainer_result: AttackTrainerResult):
         """
-        :param trainer_result: TrainerResult object from attack on dataset
+        :param attack_trainer_result: AttackTrainerResult object from attack on dataset
         """
-        self.dataset = trainer_result.dataset
+        self.dataset = attack_trainer_result.dataset
         self.indices_dataset_attacked = np.array(
-            trainer_result.dataset_indices
+            attack_trainer_result.dataset_indices
         )
-        self.seq_lengths_attacked = np.array(trainer_result.input_seq_lengths)
-        self.epochs_run = trainer_result.epochs_run
-        self.successful_attack = trainer_result.successful_attack
-        self.first_examples = trainer_result.first_examples
-        self.best_examples = trainer_result.best_examples
+        self.seq_lengths_attacked = np.array(attack_trainer_result.input_seq_lengths)
+        self.epochs_run = attack_trainer_result.epochs_run
+        self.successful_attack = attack_trainer_result.successful_attack
+        self.first_examples = attack_trainer_result.first_examples
+        self.best_examples = attack_trainer_result.best_examples
 
     def __len__(self) -> int:
         """

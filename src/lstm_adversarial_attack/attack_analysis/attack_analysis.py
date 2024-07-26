@@ -199,14 +199,14 @@ class FullAttackResults:
 
     def __init__(
         self,
-        trainer_result: ads.TrainerResult,
+        attack_trainer_result: ads.AttackTrainerResult,
         # success_summary: ads.TrainerSuccessSummary,
     ):
         """
         :param success_summary: a TrainerSuccessSummary produced by attack
         """
         success_summary = ads.TrainerSuccessSummary(
-            trainer_result=trainer_result
+            attack_trainer_result=attack_trainer_result
         )
         self._dataset = success_summary.dataset
         self.all_attacks_df = success_summary.all_attacks_df
@@ -217,11 +217,11 @@ class FullAttackResults:
         self.best_perts_summary = success_summary.perts_summary_best
 
     @classmethod
-    def from_trainer_result_path(cls, trainer_result_path):
-        trainer_result = rio.ResourceImporter().import_pickle_to_object(
-            path=trainer_result_path
+    def from_attack_trainer_result_path(cls, attack_trainer_result_path):
+        attack_trainer_result = rio.ResourceImporter().import_pickle_to_object(
+            path=attack_trainer_result_path
         )
-        return cls(trainer_result=trainer_result)
+        return cls(attack_trainer_result=attack_trainer_result)
 
     @classmethod
     def from_most_recent_attack(cls):
@@ -238,9 +238,9 @@ class FullAttackResults:
         # )
         # final_results = list(result_dir.glob("*final_attack_result.pickle"))
         # assert len(final_results) == 1
-        # trainer_result_path = final_results[0]
-        return cls.from_trainer_result_path(
-            trainer_result_path=latest_attack_result_path
+        # attack_trainer_result_path = final_results[0]
+        return cls.from_attack_trainer_result_path(
+            attack_trainer_result_path=latest_attack_result_path
         )
 
     @cached_property

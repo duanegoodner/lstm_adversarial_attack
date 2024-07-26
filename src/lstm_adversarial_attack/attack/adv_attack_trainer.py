@@ -381,13 +381,13 @@ class AdversarialAttackTrainer:
         )
 
     def save_checkpoint(
-        self, trainer_result: ards.TrainerResult, num_batches: int
+        self, attack_trainer_result: ards.AttackTrainerResult, num_batches: int
     ):
         """
-        Saves TrainerResult, which contains info from all BatchResults, to
-        .pickle file. (TrainerResult gets updated after at end of each
+        Saves AttackTrainerResult, which contains info from all BatchResults, to
+        .pickle file. (AttackTrainerResult gets updated after at end of each
         batch loop in .train_attacker().)
-        :param trainer_result:
+        :param attack_trainer_result:
         :param num_batches:
         :return:
         """
@@ -397,7 +397,7 @@ class AdversarialAttackTrainer:
             suffix=f"_{num_batches + 1}_batch_attack_result",
         )
         rio.ResourceExporter().export(
-            resource=trainer_result, path=checkpoint_path
+            resource=attack_trainer_result, path=checkpoint_path
         )
 
     def train_attacker(self):
@@ -407,14 +407,14 @@ class AdversarialAttackTrainer:
         function. Each sample that has adversarial example(s) found
         will have information for its first found example and its lowest loss
         (aka "best") example.
-        :return: TrainerResult containing info on first and best adversarial
-        example_data. See TrainerResult docstring for description of values stored
+        :return: AttackTrainerResult containing info on first and best adversarial
+        example_data. See AttackTrainerResult docstring for description of values stored
         for samples that have no example found.
         """
         data_loader = self.build_data_loader()
         self.attacker.to(self.device)
         self.set_attacker_train_mode()
-        trainer_result = ards.TrainerResult(dataset=self.dataset)
+        attack_trainer_result = ards.AttackTrainerResult(dataset=self.dataset)
 
         self.display_attack_info()
 
@@ -428,15 +428,15 @@ class AdversarialAttackTrainer:
                 orig_labels=orig_labels,
             )
 
-            trainer_result.update(batch_result=batch_result)
+            attack_trainer_result.update(batch_result=batch_result)
 
             if self.checkpoint_interval is not None and (
                 (num_batches + 1) % self.checkpoint_interval == 0
             ):
                 self.save_checkpoint(
-                    trainer_result=trainer_result, num_batches=num_batches
+                    attack_trainer_result=attack_trainer_result, num_batches=num_batches
                 )
 
-        self.latest_result = trainer_result
+        self.latest_result = attack_trainer_result
 
-        return trainer_result
+        return attack_trainer_result

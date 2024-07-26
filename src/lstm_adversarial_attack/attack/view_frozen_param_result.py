@@ -19,8 +19,8 @@ result_path = (
     / "2023-06-28_19_02_16.499026_final_attack_result.pickle"
 )
 
-trainer_result = rio.ResourceImporter().import_pickle_to_object(path=result_path)
-success_summary = ads.TrainerSuccessSummary(trainer_result=trainer_result)
+attack_trainer_result = rio.ResourceImporter().import_pickle_to_object(path=result_path)
+success_summary = ads.TrainerSuccessSummary(attack_trainer_result=attack_trainer_result)
 
 # best_48hr_orig0_maxperts1_summary = success_summary.filtered_examples_summary(
 #     recorded_example_type=ads.RecordedExampleType.BEST,

@@ -36,9 +36,9 @@ def main(attack_tuning_id: str) -> ards.TrainerSuccessSummary:
         device=cur_device,
     )
 
-    trainer_result = attack_driver()
+    attack_trainer_result = attack_driver()
 
-    success_summary = ards.TrainerSuccessSummary(trainer_result=trainer_result)
+    success_summary = ards.TrainerSuccessSummary(attack_trainer_result=attack_trainer_result)
 
     return success_summary
 

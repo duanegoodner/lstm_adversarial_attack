@@ -53,8 +53,8 @@ class AllResultsPlotter(dpr.HasDataProvenance):
         self.output_dir = output_dir
 
         self.full_attack_results = (
-            ata.FullAttackResults.from_trainer_result_path(
-                trainer_result_path=self.attack_result_path
+            ata.FullAttackResults.from_attack_trainer_result_path(
+                attack_trainer_result_path=self.attack_result_path
             )
         )
         self.attack_condition_summaries = (
