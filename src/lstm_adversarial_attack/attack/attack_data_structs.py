@@ -1,13 +1,16 @@
 from dataclasses import dataclass, field, fields
 from pathlib import Path
-from typing import Callable, Any
+from typing import Any, Callable, Type
 
 import msgspec
+import numpy as np
 import optuna
 import torch
 
-from lstm_adversarial_attack.config import CONFIG_READER
+import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
+import lstm_adversarial_attack.msgspec_io as mio
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
 @dataclass
@@ -149,3 +152,37 @@ class AttackTunerDriverSummary(msgspec.Struct):
     is_continuation: bool
     tuning_ranges: AttackTuningRanges
     model_training_result_dir: str
+
+
+class AttackTunerDriverSummaryIO(mio.MsgspecIO):
+    def __init__(self):
+        super().__init__(msgspec_struct_type=AttackTunerDriverSummary)
+
+    @staticmethod
+    def enc_hook(obj: Any) -> Any:
+        if isinstance(obj, torch.Tensor):
+            return obj.tolist()
+        if isinstance(obj, np.float64):
+            return float(obj)
+        if isinstance(obj, mds.TrainingCheckpoint):
+            return obj.to_storage()
+        else:
+            raise NotImplementedError(
+                f"Encoder does not support objects of type {type(obj)}"
+            )
+
+    @staticmethod
+    def dec_hook(decode_type: Type, obj: Any) -> Any:
+        if decode_type is tuple:
+            return tuple(obj)
+        if decode_type is torch.Tensor:
+            return torch.tensor(obj)
+        if decode_type is mds.TrainingCheckpoint:
+            return mds.TrainingCheckpointStorage(obj)
+        if decode_type is AttackTuningRanges:
+            return AttackTuningRanges(**obj)
+        if decode_type is Path:
+            return Path(obj)
+
+
+ATTACK_TUNER_DRIVER_SUMMARY_IO = AttackTunerDriverSummaryIO()

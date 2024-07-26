@@ -6,8 +6,6 @@ from enum import Enum, auto
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-# import lstm_adversarial_attack.config_paths as lcp
-# import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 
@@ -64,7 +62,6 @@ class FoldSummarizer:
     def __init__(
         self,
         fold_checkpoints_info: list[CheckpointInfo],
-        # fold_checkpoints: list[ds.TrainingCheckpoint],
         checkpoints_dirname: str = None,
         fold_checkpoints_paths: list[Path] = None,
         fold_num: int = None,
@@ -74,10 +71,8 @@ class FoldSummarizer:
         :param checkpoints_dirname: directory where checkpoints are stored
         :param fold_num: integer index of fold
         """
-        # fold_checkpoints.sort(key=lambda x: x.epoch_num)
         fold_checkpoints_info.sort(key=lambda x: x.checkpoint.epoch_num)
         self.fold_checkpoints_info = fold_checkpoints_info
-        # self.fold_checkpoints = fold_checkpoints
         self.checkpoints_dirname = checkpoints_dirname
         self.fold_checkpoints_paths = fold_checkpoints_paths
         self.fold_num = fold_num
@@ -121,10 +116,8 @@ class FoldSummarizer:
             )
             for i in range(len(fold_checkpoints))
         ]
-        # fold_checkpoints = [torch.load(item) for item in checkpoint_files]
         return cls(
             fold_checkpoints_info=fold_checkpoints_info,
-            # fold_checkpoints=fold_checkpoints,
             checkpoints_dirname=fold_checkpoint_dir.name,
             fold_num=fold_num,
         )
@@ -245,12 +238,6 @@ class CrossValidationSummarizer:
     @classmethod
     # def from_cv_checkpoints_dir(cls, cv_checkpoints_dir: Path = None):
     def from_cv_checkpoints_dir(cls, cv_checkpoints_dir: Path):
-        # if cv_checkpoints_dir is None:
-        #     cv_output_root = get_newest_sub_dir(
-        #         path=lcp.CV_ASSESSMENT_OUTPUT_DIR
-        #     )
-        #     cv_checkpoints_dir = cv_output_root / "checkpoints"
-
         fold_checkpoint_dirs = list(cv_checkpoints_dir.glob("fold*"))
         fold_checkpoint_dirs.sort(key=lambda x: x.stat().st_mtime)
         fold_summarizers = {
@@ -391,9 +378,6 @@ class CrossValidationSummarizer:
         )
 
         return checkpoint_info
-        # return FoldCheckpointInfoPair(
-        #     fold=fold_with_rel_result, checkpoint_info=checkpoint_info
-        # )
 
 
 def main():

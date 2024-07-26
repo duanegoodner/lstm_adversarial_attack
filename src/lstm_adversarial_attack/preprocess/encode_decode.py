@@ -9,9 +9,6 @@ import pandas as pd
 import torch
 
 import lstm_adversarial_attack.model.model_data_structs as mds
-import lstm_adversarial_attack.attack.attack_data_structs as ads
-# import lstm_adversarial_attack.data_structures as ds
-import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 from lstm_adversarial_attack.config import CONFIG_READER
 
@@ -249,20 +246,6 @@ class PreprocessModuleSummaryWriter(StandardStructWriter):
         pass  # PreprocessModuleSummary is json-ready
 
 
-# class TunerDriverSummaryWriter(StandardStructWriter):
-#     def __init__(self):
-#         super().__init__(struct_type=mds.TunerDriverSummary)
-#
-#     @staticmethod
-#     def enc_hook(obj: Any) -> Any:
-#         if isinstance(obj, tuh.X19MLSTMTuningRanges):
-#             return obj.__dict__
-#         else:
-#             raise NotImplementedError(
-#                 f"Encoder does not support objects of type {type(obj)}"
-#             )
-
-
 class TrainingCheckpointWriter(StandardStructWriter):
     def __init__(self):
         super().__init__(struct_type=mds.TrainingCheckpoint)
@@ -273,49 +256,6 @@ class TrainingCheckpointWriter(StandardStructWriter):
             return obj.tolist()
         if isinstance(obj, np.float64):
             return float(obj)
-
-
-class X19LSTMHyperParameterSettingsWriter(StandardStructWriter):
-    def __init__(self):
-        super().__init__(struct_type=tuh.X19LSTMHyperParameterSettings)
-
-    @staticmethod
-    def enc_hook(obj: Any) -> Any:
-        pass  # json ready
-
-
-# class CrossValidatorDriverSummaryWriter(StandardStructWriter):
-#     def __init__(self):
-#         super().__init__(struct_type=mds.CrossValidatorDriverSummary)
-#
-#     @staticmethod
-#     def enc_hook(obj: Any) -> Any:
-#         if isinstance(obj, torch.Tensor):
-#             return obj.tolist()
-#         if isinstance(obj, np.float64):
-#             return float(obj)
-#         else:
-#             raise NotImplementedError(
-#                 f"Encoder does not support objects of type {type(obj)}"
-#             )
-
-
-class AttackTunerDriverSummaryWriter(StandardStructWriter):
-    def __init__(self):
-        super().__init__(struct_type=eds.AttackTunerDriverSummary)
-
-    @staticmethod
-    def enc_hook(obj: Any) -> Any:
-        if isinstance(obj, torch.Tensor):
-            return obj.tolist()
-        if isinstance(obj, np.float64):
-            return float(obj)
-        if isinstance(obj, mds.TrainingCheckpoint):
-            return obj.to_storage()
-        else:
-            raise NotImplementedError(
-                f"Encoder does not support objects of type {type(obj)}"
-            )
 
 
 DecodeType = TypeVar("DecodeType", bound=msgspec.Struct)
@@ -381,52 +321,6 @@ class MeasurementColumnNamesReader(StandardStructReader):
             )
 
 
-# class TunerDriverSummaryReader(StandardStructReader):
-#     def __init__(self):
-#         super().__init__(struct_type=mds.TunerDriverSummary)
-#
-#     @staticmethod
-#     def dec_hook(decode_type: Type, obj: Any) -> Any:
-#         if decode_type is tuple[str]:
-#             return tuple(obj)
-#         if decode_type is tuh.X19MLSTMTuningRanges:
-#             return tuh.X19MLSTMTuningRanges(**obj)
-#         else:
-#             raise NotImplementedError(
-#                 f"Objects of type {type} are not supported"
-#             )
-
-
-# class CrossValidatorSummaryReader(StandardStructReader):
-#     def __init__(self):
-#         super().__init__(struct_type=mds.CrossValidatorDriverSummary)
-#
-#     @staticmethod
-#     def dec_hook(decode_type: Type, obj: Any) -> Any:
-#         if decode_type is tuple[str]:
-#             return tuple(obj)
-#         if decode_type is Path:
-#             return Path(obj)
-
-
-class AttackTunerDriverSummaryReader(StandardStructReader):
-    def __init__(self):
-        super().__init__(struct_type=eds.AttackTunerDriverSummary)
-
-    @staticmethod
-    def dec_hook(decode_type: Type, obj: Any) -> Any:
-        if decode_type is tuple:
-            return tuple(obj)
-        if decode_type is torch.Tensor:
-            return torch.tensor(obj)
-        if decode_type is mds.TrainingCheckpoint:
-            return mds.TrainingCheckpointStorage(obj)
-        if decode_type is ads.AttackTuningRanges:
-            return ads.AttackTuningRanges(**obj)
-        if decode_type is Path:
-            return Path(obj)
-
-
 class TrainingCheckpointStorageReader(StandardStructReader):
     def __init__(self):
         super().__init__(struct_type=mds.TrainingCheckpointStorage)
@@ -439,54 +333,3 @@ class TrainingCheckpointStorageReader(StandardStructReader):
             raise NotImplementedError(
                 f"Objects of type {type} are not supported"
             )
-
-
-class X19LSTMHyperParameterSettingsReader(StandardStructReader):
-    def __init__(self):
-        super().__init__(struct_type=tuh.X19LSTMHyperParameterSettings)
-
-    @staticmethod
-    def dec_hook(decode_type: Type, obj: Any) -> Any:
-        # all expected types are supported
-        raise NotImplementedError(f"Objects of type {type} are not supported")
-
-
-if __name__ == "__main__":
-    CV_ASSESSMENT_OUTPUT_DIR = Path(
-        CONFIG_READER.read_path(
-            config_key="model.cv_driver_settings.cv_output_root_dir"
-        )
-    )
-
-    checkpoint_from_pickle = torch.load(
-        CV_ASSESSMENT_OUTPUT_DIR
-        / "cv_training_20230901215330316505"
-        / "checkpoints"
-        / "fold_2"
-        / "2023-09-01_21_55_35.278089.tar"
-    )
-
-    json_output_path = (
-        CV_ASSESSMENT_OUTPUT_DIR
-        / "cv_training_20230901215330316505"
-        / "checkpoints"
-        / "fold_2"
-        / "training_checkpoint_20230901215535284037.json"
-    )
-
-    checkpoint_storage_from_json = (
-        TrainingCheckpointStorageReader().import_struct(path=json_output_path)
-    )
-
-    checkpoint_from_json = mds.TrainingCheckpoint.from_storage(
-        training_checkpoint_storage=checkpoint_storage_from_json
-    )
-
-    for key, val in checkpoint_from_json.state_dict.items():
-        checkpoint_from_json.state_dict[key] = val.to("cuda:0")
-        print(
-            torch.equal(
-                checkpoint_from_json.state_dict[key],
-                checkpoint_from_pickle["state_dict"][key],
-            )
-        )

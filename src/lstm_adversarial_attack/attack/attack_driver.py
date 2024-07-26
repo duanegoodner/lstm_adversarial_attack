@@ -106,7 +106,7 @@ class AttackDriver:
         cls, attack_tuning_id: str, device: torch.device
     ):
         attack_tuner_driver_summary = (
-            edc.AttackTunerDriverSummaryReader().import_struct(
+            ads.ATTACK_TUNER_DRIVER_SUMMARY_IO.import_to_struct(
                 path=Path(CONFIG_READER.read_path("attack.tune.output_dir"))
                 / attack_tuning_id
                 / f"attack_tuner_driver_summary_{attack_tuning_id}.json"

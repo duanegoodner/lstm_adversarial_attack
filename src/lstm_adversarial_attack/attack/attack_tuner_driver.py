@@ -9,14 +9,10 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 # AttackTunerDriverSettings and AttackTunerDriverPaths moved to attack_data_structs when fixing (de)serialization
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_tuner as atn
-# import lstm_adversarial_attack.data_structures as ds
-import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
 import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.model_retriever as tmr
 import lstm_adversarial_attack.model.tuner_helpers as tuh
-import lstm_adversarial_attack.preprocess.encode_decode as edc
-import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 from lstm_adversarial_attack.config import CONFIG_READER
 from lstm_adversarial_attack.x19_mort_general_dataset import (
@@ -93,9 +89,6 @@ class AttackTunerDriver:
             / cv_training_id
             / f"cross_validator_driver_summary_{cv_training_id}.json"
         )
-        # cv_driver_summary = edc.CrossValidatorSummaryReader().import_struct(
-        #     path=cv_driver_summary_path
-        # )
         cv_driver_summary = mds.CROSS_VALIDATOR_DRIVER_SUMMARY_IO.import_to_struct(
             path=cv_driver_summary_path
         )
@@ -119,7 +112,7 @@ class AttackTunerDriver:
             CONFIG_READER.read_path("attack.tune.output_dir")
         )
         attack_tuner_driver_summary = (
-            edc.AttackTunerDriverSummaryReader().import_struct(
+            ads.ATTACK_TUNER_DRIVER_SUMMARY_IO.import_to_struct(
                 path=attack_tuning_output_root
                 / attack_tuning_id
                 / f"attack_tuner_driver_summary_{attack_tuning_id}.json"
@@ -140,8 +133,8 @@ class AttackTunerDriver:
         )
 
     @property
-    def summary(self) -> eds.AttackTunerDriverSummary:
-        return eds.AttackTunerDriverSummary(
+    def summary(self) -> ads.AttackTunerDriverSummary:
+        return ads.AttackTunerDriverSummary(
             preprocess_id=self.preprocess_id,
             attack_tuning_id=self.attack_tuning_id,
             cv_training_id=self.cv_training_id,
@@ -206,9 +199,6 @@ class AttackTunerDriver:
                 self.output_dir
                 / f"attack_tuner_driver_summary_{self.attack_tuning_id}.json"
             )
-            # edc.AttackTunerDriverSummaryWriter().export(
-            #     obj=self.summary, path=summary_output_path
-            # )
             mds.TUNER_DRIVER_SUMMARY_IO.export(
                 obj=self.summary, path=summary_output_path
             )
