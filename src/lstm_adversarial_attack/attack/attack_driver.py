@@ -185,22 +185,22 @@ class AttackDriver:
             checkpoint_interval=self.checkpoint_interval,
         )
 
-        train_result = attack_trainer.train_attacker()
+        trainer_result = attack_trainer.train_attacker()
 
-        train_result_dto = ards.TrainerResultDTO(
+        trainer_result_dto = ards.TrainerResultDTO(
             dataset_info=xmd.X19MGeneralDatasetInfo(
                 preprocess_id=self.preprocess_id,
                 max_num_samples=self.max_num_samples,
                 random_seed=self.sample_selection_seed,
             ),
-            dataset_indices=train_result.dataset_indices,
-            epochs_run=train_result.epochs_run,
-            input_seq_lengths=train_result.input_seq_lengths,
-            first_examples=train_result.first_examples,
-            best_examples=train_result.best_examples,
+            dataset_indices=trainer_result.dataset_indices,
+            epochs_run=trainer_result.epochs_run,
+            input_seq_lengths=trainer_result.input_seq_lengths,
+            first_examples=trainer_result.first_examples,
+            best_examples=trainer_result.best_examples,
         )
 
         train_result_output_path = self.output_dir / f"final_attack_result_{self.attack_id}.json"
-        ards.TRAINER_RESULT_IO.export(obj=train_result_dto, path=train_result_output_path)
+        ards.TRAINER_RESULT_IO.export(obj=trainer_result_dto, path=train_result_output_path)
 
-        return train_result
+        return trainer_result

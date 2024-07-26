@@ -415,10 +415,6 @@ class PertsSummary:
         )
         return np.min(zeros_replaced_by_inf, axis=(1, 2))
 
-    # @cached_property
-    # def perts_mean_max_abs(self) -> float:
-    #     return np.mean(self.perts_max_abs).item()
-
     @cached_property
     def _perts_num_actual_elements(self) -> np.array:
         """
