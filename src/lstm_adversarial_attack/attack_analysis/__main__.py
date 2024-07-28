@@ -1,14 +1,17 @@
 import argparse
 import sys
+from datetime import datetime
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack_analysis.all_results_plotter as arp
+import lstm_adversarial_attack.path_searches as ps
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
 def main(
-    attack_result_path: str = None,
+    # attack_result_path: str = None,
+    attack_id: str,
     label: str = None,
     seq_length: int = None,
     min_num_perts: int = None,
@@ -44,8 +47,21 @@ def main(
     :return:
     """
 
-    if attack_result_path is not None:
-        attack_result_path = Path(attack_result_path)
+    attack_analysis_id = "".join(
+        char for char in str(datetime.now()) if char.isdigit()
+    )
+
+    attack_results_root = Path(
+        CONFIG_READER.read_path("attack.attack_driver.output_dir")
+    )
+
+    if attack_id is None:
+        attack_id = ps.get_latest_sequential_child_dirname(
+            root_dir=attack_results_root
+        )
+
+    # if attack_result_path is not None:
+    #     attack_result_path = Path(attack_result_path)
     if seq_length is None:
         seq_length = CONFIG_READER.get_config_value(
             "attack.analysis.default_seq_length"
@@ -58,7 +74,8 @@ def main(
         single_histograms_info = None
 
     plotter = arp.AllResultsPlotter(
-        attack_result_path=attack_result_path,
+        attack_id=attack_id,
+        # attack_result_path=attack_result_path,
         seq_length=seq_length,
         min_num_perts=min_num_perts,
         max_num_perts=max_num_perts,
@@ -74,14 +91,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-a",
-        "--attack_result_path",
+        "--attack_id",
         type=str,
         action="store",
         nargs="?",
         help=(
-            "Directory containing attack results. If not specified, defaults "
-            "to parent directory of latest result under directory specified "
-            "by config_paths.FROZEN_HYPERPARAMETER_ATTACK"
+            "ID of attack session to use for plot data. Defaults to most "
+            "recently created attack session"
         ),
     )
     parser.add_argument(

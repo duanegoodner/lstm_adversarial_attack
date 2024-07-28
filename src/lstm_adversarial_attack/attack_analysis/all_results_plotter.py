@@ -24,7 +24,8 @@ class SingleHistogramInfo:
 class AllResultsPlotter:
     def __init__(
         self,
-        attack_result_path: Path = None,
+        attack_id: str,
+        # attack_result_path: Path = None,
         seq_length: int = CONFIG_READER.get_config_value(
             "attack.analysis.default_seq_length"
         ),
@@ -35,16 +36,17 @@ class AllResultsPlotter:
         single_histograms_info: list[SingleHistogramInfo] = None,
         save_output: bool = True,
     ):
-        if attack_result_path is None:
-            attack_id = ps.get_latest_sequential_child_dirname(
-                root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
-            )
-            attack_result_path = (
-                cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
-                / attack_id
-                / f"final_attack_result_{attack_id}.json"
-            )
-        self.attack_result_path = attack_result_path
+        self.attack_id = attack_id
+        # if attack_result_path is None:
+        #     attack_id = ps.get_latest_sequential_child_dirname(
+        #         root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+        #     )
+        #     attack_result_path = (
+        #         cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+        #         / attack_id
+        #         / f"final_attack_result_{attack_id}.json"
+        #     )
+        # self.attack_result_path = attack_result_path
         self.seq_length = seq_length
         self.min_num_perts = min_num_perts
         self.max_num_perts = max_num_perts
@@ -97,6 +99,17 @@ class AllResultsPlotter:
             ),
             main_plot_title="Perturbation Sensitivity",
             colorbar_title="Perturbation Sensitivity",
+        )
+
+    @property
+    def attack_result_path(self) -> Path:
+        attack_results_root = Path(
+            CONFIG_READER.read_path("attack.attack_driver.output_dir")
+        )
+        return (
+            attack_results_root
+            / self.attack_id
+            / f"final_attack_result_{self.attack_id}.json"
         )
 
     def save_figure(self, fig: plt.Figure, label: str):
