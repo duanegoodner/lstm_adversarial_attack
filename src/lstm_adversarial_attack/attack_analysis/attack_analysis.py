@@ -9,7 +9,6 @@ import lstm_adversarial_attack.attack.attack_result_data_structs as ads
 import lstm_adversarial_attack.attack_analysis.attack_susceptibility_metrics as asm
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.path_searches as ps
-import lstm_adversarial_attack.resource_io as rio
 
 
 class RecordedExampleType(Enum):
@@ -221,22 +220,25 @@ class FullAttackResults:
         # attack_trainer_result = rio.ResourceImporter().import_pickle_to_object(
         #     path=attack_trainer_result_path
         # )
-        attack_trainer_result_dto = ads.ATTACK_TRAINER_RESULT_IO.import_to_struct(path=attack_trainer_result_path)
-        attack_trainer_result = ads.AttackTrainerResult.from_dto(dto=attack_trainer_result_dto)
+        attack_trainer_result_dto = (
+            ads.ATTACK_TRAINER_RESULT_IO.import_to_struct(
+                path=attack_trainer_result_path
+            )
+        )
+        attack_trainer_result = ads.AttackTrainerResult.from_dto(
+            dto=attack_trainer_result_dto
+        )
         return cls(attack_trainer_result=attack_trainer_result)
 
     @classmethod
     def from_most_recent_attack(cls):
-        # latest_attack_result_path = (
-        #     ps.latest_modified_file_with_name_condition(
-        #         component_string="attack_result.pickle",
-        #         root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK,
-        #         comparison_type=ps.StringComparisonType.SUFFIX,
-        #     )
-        # )
 
-        attack_id = ps.get_latest_sequential_child_dirname(root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK)
-        latest_attack_result_path = cfg_paths / attack_id / f"final_attack_result_{attack_id}.json"
+        attack_id = ps.get_latest_sequential_child_dirname(
+            root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+        )
+        latest_attack_result_path = (
+            cfg_paths / attack_id / f"final_attack_result_{attack_id}.json"
+        )
 
         return cls.from_attack_trainer_result_path(
             attack_trainer_result_path=latest_attack_result_path
@@ -487,10 +489,3 @@ class FullAttackResults:
                 & (self.all_attacks_df["orig_label"] == 1)
             ],
         )
-
-    # def get_data_for_susceptibility_plotter(self) -> SusceptibilityPlotterData:
-    #     return SusceptibilityPlotterData(
-    #         zero_to_one_first=asm.AttackSusceptibilityMetrics(
-    #
-    #         )
-    #     )

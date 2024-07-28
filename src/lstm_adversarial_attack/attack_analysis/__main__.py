@@ -44,11 +44,12 @@ def main(
     :return:
     """
 
-
     if attack_result_path is not None:
         attack_result_path = Path(attack_result_path)
     if seq_length is None:
-        seq_length = CONFIG_READER.get_config_value("attack.analysis.default_seq_length")
+        seq_length = CONFIG_READER.get_config_value(
+            "attack.analysis.default_seq_length"
+        )
     if single_histograms is not None:
         single_histograms_info = [
             arp.SingleHistogramInfo(entry) for entry in single_histograms
