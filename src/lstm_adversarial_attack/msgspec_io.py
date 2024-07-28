@@ -45,6 +45,7 @@ class MsgspecIO:
             out_file.write(encoded_data)
 
 
+
 class StandardStructWriter(ABC):
     def __init__(self, struct_type: Callable[..., MsgSpecStructType]):
         self._struct_type = struct_type

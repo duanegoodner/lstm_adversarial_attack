@@ -23,13 +23,14 @@ class EpochSuccesses:
     :param losses: loss vals of successful attacks
     :param perturbations: perturbation tensors resulting in successful attacks
     """
+
     epoch_num: int
-    batch_indices: torch.tensor
-    losses: torch.tensor
-    perturbations: torch.tensor
+    batch_indices: torch.Tensor
+    losses: torch.Tensor
+    perturbations: torch.Tensor
 
 
-def has_no_entry(loss_vals: torch.tensor, *args, **kwargs) -> torch.tensor:
+def has_no_entry(loss_vals: torch.Tensor, *args, **kwargs) -> torch.Tensor:
     """
     Helper function to determine which elements of RecordedBatchExample do
     not correspond to a found adversarial example
@@ -41,8 +42,8 @@ def has_no_entry(loss_vals: torch.tensor, *args, **kwargs) -> torch.tensor:
 
 
 def is_greater_than_new_val(
-    loss_vals: torch.tensor, new_loss_vals: torch.tensor
-) -> torch.tensor:
+    loss_vals: torch.Tensor, new_loss_vals: torch.Tensor
+) -> torch.Tensor:
     """
     Helper function for comparing tensors of values
     :param loss_vals: loss vals that were previously stored
@@ -58,12 +59,13 @@ class RecordedBatchExamples:
     RecordedBatchExamples object for first found example, and one for best (
     i.e. lowest loss) example.
     """
+
     def __init__(
         self,
         batch_size_actual: int,
         max_seq_length: int,
         input_size: int,
-        comparison_funct: Callable[..., torch.tensor],
+        comparison_funct: Callable[..., torch.Tensor],
     ):
         """
 
@@ -116,10 +118,11 @@ class BatchResult:
     Container for RecordedBatchExamples corresponding to first and best
     adversarial example_data of each sample in batch.
     """
+
     def __init__(
         self,
-        dataset_indices: torch.tensor,
-        input_seq_lengths: torch.tensor,
+        dataset_indices: torch.Tensor,
+        input_seq_lengths: torch.Tensor,
         max_seq_length: int,
         input_size: int,
     ):
@@ -158,9 +161,10 @@ class RecordedTrainerExamples:
     :param losses: tensor of loss vals from each example
     :param perturbations: 3d tensor of perturbations (batch dim = 0)
     """
-    epochs: torch.tensor = None
-    losses: torch.tensor = None
-    perturbations: torch.tensor = None
+
+    epochs: torch.Tensor = None
+    losses: torch.Tensor = None
+    perturbations: torch.Tensor = None
 
     def __post_init__(self):
         if self.epochs is None:
@@ -192,19 +196,37 @@ class AttackTrainerResultIO(mio.MsgspecIO):
         super().__init__(msgspec_struct_type=AttackTrainerResultDTO)
 
     @staticmethod
+    def replace_inf(nested_list):
+        if isinstance(nested_list, list):
+            return [AttackTrainerResultIO.replace_inf(item) for item in nested_list]
+        elif nested_list == "inf":
+            return float("inf")
+        else:
+            return nested_list
+
+    @staticmethod
     def enc_hook(obj: Any) -> Any:
         if isinstance(obj, torch.Tensor):
-            return obj.tolist()
-        if isinstance(obj, np.float64):
-            return float(obj)
+            if obj.dim() > 0:
+                return list(obj)
+            else:
+                if obj.item() == float("inf"):
+                    return "inf"
+                else:
+                    return obj.item()
+        else:
+            raise NotImplementedError(
+                f"Objects of type {type(obj)} not supported yet."
+            )
 
     @staticmethod
     def dec_hook(decode_type: Type, obj: Any) -> Any:
         if decode_type is torch.Tensor:
+            obj = AttackTrainerResultIO.replace_inf(obj)
             return torch.tensor(obj)
         else:
             raise NotImplementedError(
-                f"Objects of type {decode_type} are not supported"
+                f"Objects of type {decode_type} not supported yet."
             )
 
 
@@ -222,6 +244,7 @@ class AttackTrainerResult:
     :param first_examples: info from first found example for samples
     :param best_examples: info for best (lowest loss) example_data
     """
+
     dataset: dsi.DatasetWithIndex
     dataset_indices: torch.Tensor = None
     epochs_run: torch.Tensor = None
@@ -240,6 +263,24 @@ class AttackTrainerResult:
             self.first_examples = RecordedTrainerExamples()
         if self.best_examples is None:
             self.best_examples = RecordedTrainerExamples()
+
+    @classmethod
+    def from_dto(cls, dto: AttackTrainerResultDTO):
+        dataset = (
+            xmd.X19MGeneralDatasetWithIndex.from_feature_finalizer_output(
+                preprocess_id=dto.dataset_info.preprocess_id,
+                max_num_samples=dto.dataset_info.max_num_samples,
+                random_seed=dto.dataset_info.random_seed,
+            )
+        )
+        return cls(
+            dataset=dataset,
+            dataset_indices=dto.dataset_indices,
+            epochs_run=dto.epochs_run,
+            input_seq_lengths=dto.input_seq_lengths,
+            first_examples=dto.first_examples,
+            best_examples=dto.best_examples,
+        )
 
     def update(self, batch_result: BatchResult):
         """
@@ -265,7 +306,7 @@ class AttackTrainerResult:
         )
 
     @property
-    def successful_attack(self) -> torch.tensor:
+    def successful_attack(self) -> torch.Tensor:
         """
         Boolean tensor indicating whether sample had at least one successful
         attack
@@ -281,12 +322,12 @@ class AttackTrainerResult:
         return first_examples_success
 
 
-
 class FeaturesMaskBuilder:
     """
     Builds boolean mask to mask out rows in features array that do not
     correspond to input (for samples with seq length < max input length)
     """
+
     def __init__(self, padded_features_array: np.array, seq_lengths: np.array):
         """
         :param padded_features_array: padded 3d array of input features
@@ -317,6 +358,7 @@ class PertsSummary:
     Performs summary calculations using perturbations from first and best
     adversarial example_data found by attack on a datast.
     """
+
     def __init__(
         self,
         seq_lengths: np.array,
@@ -573,6 +615,7 @@ class TrainerSuccessSummary:
     """
     Summarizes first and best example data from an attack
     """
+
     def __init__(self, attack_trainer_result: AttackTrainerResult):
         """
         :param attack_trainer_result: AttackTrainerResult object from attack on dataset
@@ -581,7 +624,9 @@ class TrainerSuccessSummary:
         self.indices_dataset_attacked = np.array(
             attack_trainer_result.dataset_indices
         )
-        self.seq_lengths_attacked = np.array(attack_trainer_result.input_seq_lengths)
+        self.seq_lengths_attacked = np.array(
+            attack_trainer_result.input_seq_lengths
+        )
         self.epochs_run = attack_trainer_result.epochs_run
         self.successful_attack = attack_trainer_result.successful_attack
         self.first_examples = attack_trainer_result.first_examples
@@ -681,9 +726,9 @@ class TrainerSuccessSummary:
                 self.indices_dataset_success,
                 self.indices_trainer_success,
                 self.orig_labels_success,
-                self.seq_lengths_success
+                self.seq_lengths_success,
             ),
-            axis=-1
+            axis=-1,
         )
         return pd.DataFrame(
             data=data_array,
@@ -691,8 +736,8 @@ class TrainerSuccessSummary:
                 "dataset_index",
                 "attacked_samples_index",
                 "orig_label",
-                "seq_length"
-            ]
+                "seq_length",
+            ],
         )
 
     @cached_property

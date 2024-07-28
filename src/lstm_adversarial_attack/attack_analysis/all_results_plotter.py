@@ -21,11 +21,14 @@ class SingleHistogramInfo:
         self.x_max = float(command_info[4])
 
 
-class AllResultsPlotter(dpr.HasDataProvenance):
+# class AllResultsPlotter(dpr.HasDataProvenance):
+class AllResultsPlotter:
     def __init__(
         self,
         attack_result_path: Path = None,
-        seq_length: int = CONFIG_READER.get_config_value("attack.analysis.default_seq_length"),
+        seq_length: int = CONFIG_READER.get_config_value(
+            "attack.analysis.default_seq_length"
+        ),
         min_num_perts: int = None,
         max_num_perts: int = None,
         label: str = None,
@@ -34,11 +37,19 @@ class AllResultsPlotter(dpr.HasDataProvenance):
         save_output: bool = True,
     ):
         if attack_result_path is None:
-            attack_result_path = ps.latest_modified_file_with_name_condition(
-                component_string="attack_result.pickle",
-                root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK,
-                comparison_type=ps.StringComparisonType.SUFFIX,
+            attack_id = ps.get_latest_sequential_child_dirname(
+                root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
             )
+            attack_result_path = (
+                cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+                / attack_id
+                / f"final_attack_result_{attack_id}.json"
+            )
+            # attack_result_path = ps.latest_modified_file_with_name_condition(
+            #     component_string="attack_result.pickle",
+            #     root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK,
+            #     comparison_type=ps.StringComparisonType.SUFFIX,
+            # )
         self.attack_result_path = attack_result_path
         self.seq_length = seq_length
         self.min_num_perts = min_num_perts
@@ -94,29 +105,29 @@ class AllResultsPlotter(dpr.HasDataProvenance):
             colorbar_title="Perturbation Sensitivity",
         )
 
-        self.export(
-            filename="all_results_plotter_dict.pickle",
-            provenance_only=True,
-            provenance_text_file=True,
-        )
+        # self.export(
+        #     filename="all_results_plotter_dict.pickle",
+        #     provenance_only=True,
+        #     provenance_text_file=True,
+        # )
 
-    @property
-    def provenance_info(self) -> dpr.ProvenanceInfo:
-        return dpr.ProvenanceInfo(
-            previous_info=(
-                self.attack_result_path.parent / "provenance.pickle"
-                if self.attack_result_path is not None
-                else None
-            ),
-            category_name="result_plotter",
-            new_items={
-                "attack_result_path": self.attack_result_path,
-                "seq_length": self.seq_length,
-                "min_num_perts": self.min_num_perts,
-                "max_num_perts": self.max_num_perts,
-            },
-            output_dir=self.output_dir,
-        )
+    # @property
+    # def provenance_info(self) -> dpr.ProvenanceInfo:
+    #     return dpr.ProvenanceInfo(
+    #         previous_info=(
+    #             self.attack_result_path.parent / "provenance.pickle"
+    #             if self.attack_result_path is not None
+    #             else None
+    #         ),
+    #         category_name="result_plotter",
+    #         new_items={
+    #             "attack_result_path": self.attack_result_path,
+    #             "seq_length": self.seq_length,
+    #             "min_num_perts": self.min_num_perts,
+    #             "max_num_perts": self.max_num_perts,
+    #         },
+    #         output_dir=self.output_dir,
+    #     )
 
     def save_figure(self, fig: plt.Figure, label: str):
         if self.save_output:

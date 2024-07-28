@@ -1,9 +1,12 @@
 from functools import cached_property
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.resource_io as rio
+import lstm_adversarial_attack.msgspec_io as mio
+import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
+from lstm_adversarial_attack.config import CONFIG_READER
+import lstm_adversarial_attack.path_searches as ps
 
 
 class AttackSusceptibilityMetrics:
@@ -12,7 +15,13 @@ class AttackSusceptibilityMetrics:
     adversarial example_data. All perturbations must be from samples of same
     input sequence length.
     """
-    def __init__(self, perts: np.array, measurement_labels: tuple[str] = None):
+
+    def __init__(
+        self,
+        perts: np.array,
+        measurement_labels: tuple[str] = None,
+        preprocess_id: str = None,
+    ):
         """
         :param perts: perturbations that resulted in adversarial example_data.
         Changing value alog axis 0 corresponds to changing sample.
@@ -21,14 +30,28 @@ class AttackSusceptibilityMetrics:
         axis 2)
         """
         self.perts = perts
-        if measurement_labels is None:
-            measurement_labels = (
-                rio.ResourceImporter().import_pickle_to_object(
-                    path=cfg_paths.PREPROCESS_OUTPUT_DIR
-                    / "measurement_col_names.pickle"
-                )
+
+        # TODO clean up measurement labels retrieval
+        preprocess_output_root = Path(
+            CONFIG_READER.read_path("preprocess.output_root")
+        )
+        if preprocess_id is None:
+            preprocess_id = ps.get_latest_sequential_child_dirname(
+                root_dir=preprocess_output_root
             )
-        self.measurement_labels = measurement_labels
+
+        if measurement_labels is None:
+            measurement_labels_path = (
+                preprocess_output_root
+                / preprocess_id
+                / "5_feature_finalizer"
+                / "measurement_col_names.json"
+            )
+            measurement_labels_dto = mio.MsgspecIO(
+                msgspec_struct_type=eds.MeasurementColumnNames
+            ).import_to_struct(path=measurement_labels_path)
+
+        self.measurement_labels = measurement_labels_dto.data
 
     @cached_property
     def _abs_perts(self) -> np.array:
