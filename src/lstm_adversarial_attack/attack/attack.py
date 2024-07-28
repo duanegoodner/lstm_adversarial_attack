@@ -30,7 +30,7 @@ def main(attack_tuning_id: str) -> ards.TrainerSuccessSummary:
             root_dir=attack_tuning_output_root
         )
 
-    attack_driver = ad.AttackDriver.from_attack_tuning_id(
+    attack_driver = ad.AttackDriver(
         attack_tuning_id=attack_tuning_id,
         attack_id=attack_id,
         device=cur_device,

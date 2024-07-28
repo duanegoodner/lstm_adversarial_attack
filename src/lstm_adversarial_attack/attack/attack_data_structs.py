@@ -126,30 +126,6 @@ class AttackTunerDriverSettings:
 
 
 @dataclass
-class AttackDriverSettings:
-    db_env_var_name: str
-    epochs_per_batch: int
-    max_num_samples: int
-    sample_selection_seed: int
-    attack_misclassified_samples: bool
-
-    @classmethod
-    def from_config(cls):
-        settings_fields = [
-            item.name for item in fields(AttackTunerDriverSettings)
-        ]
-        constructor_kwargs = {
-            field_name: CONFIG_READER.get_config_value(
-                f"attack.driver_settings.{field_name}"
-            )
-            for field_name in settings_fields
-        }
-        return cls(**constructor_kwargs)
-
-
-
-
-@dataclass
 class AttackTunerDriverPaths:
     output_dir: Path
 
@@ -211,3 +187,76 @@ class AttackTunerDriverSummaryIO(mio.MsgspecIO):
 
 
 ATTACK_TUNER_DRIVER_SUMMARY_IO = AttackTunerDriverSummaryIO()
+
+
+@dataclass
+class AttackDriverSettings:
+    epochs_per_batch: int
+    max_num_samples: int
+    sample_selection_seed: int
+    attack_misclassified_samples: bool
+
+    @classmethod
+    def from_config(cls):
+        settings_fields = [
+            item.name for item in fields(AttackDriverSettings)
+        ]
+        constructor_kwargs = {
+            field_name: CONFIG_READER.get_config_value(
+                f"attack.driver_settings.{field_name}"
+            )
+            for field_name in settings_fields
+        }
+        return cls(**constructor_kwargs)
+
+
+@dataclass
+class AttackDriverPaths:
+    output_dir: Path
+
+    @classmethod
+    def from_config(cls):
+        paths_fields = [item.name for item in fields(AttackDriverPaths)]
+        constructor_kwargs = {
+            field_name: CONFIG_READER.read_path(
+                f"attack.attack_driver.{field_name}"
+            )
+            for field_name in paths_fields
+        }
+        return cls(**constructor_kwargs)
+
+
+class AttackDriverSummary(msgspec.Struct):
+    preprocess_id: str
+    model_tuning_id: str
+    cv_training_id: str
+    attack_tuning_id: str
+    attack_id: str
+    settings: AttackDriverSettings
+    paths: AttackDriverPaths
+    model_hyperparameters: tuh.X19LSTMHyperParameterSettings
+    attack_hyperparameters: AttackHyperParameterSettings
+
+
+class AttackDriverSummaryIO(mio.MsgspecIO):
+    def __init__(self):
+        super().__init__(msgspec_struct_type=AttackDriverSummary)
+
+    @staticmethod
+    def enc_hook(obj: Any) -> Any:
+        if isinstance(obj, torch.Tensor):
+            return obj.tolist()
+        else:
+            raise NotImplementedError(
+                f"Encoder does not support objects of type {type(obj)}"
+            )
+
+    @staticmethod
+    def dec_hook(decode_type: Type, obj: Any) -> Any:
+        if decode_type is torch.Tensor:
+            return torch.tensor(obj)
+        if decode_type is Path:
+            return Path(obj)
+
+
+ATTACK_DRIVER_SUMMARY_IO = AttackDriverSummaryIO()
