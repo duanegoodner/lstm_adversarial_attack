@@ -312,7 +312,7 @@ class CrossValidatorDriverSettings:
     def from_config(cls, config_path: Path = None):
         config_reader = ConfigReader(config_path=config_path)
         settings_fields = [
-            field.name for field in fields(CrossValidatorDriverSettings)
+            item.name for item in fields(CrossValidatorDriverSettings)
         ]
         constructor_kwargs = {
             field_name: config_reader.get_config_value(
@@ -331,7 +331,7 @@ class CrossValidatorDriverPaths:
     def from_config(cls, config_path: Path = None):
         config_reader = ConfigReader(config_path=config_path)
         paths_fields = [
-            field.name for field in fields(CrossValidatorDriverPaths)
+            item.name for item in fields(CrossValidatorDriverPaths)
         ]
         constructor_kwargs = {
             field_name: config_reader.read_path(
@@ -364,7 +364,7 @@ class ModelTunerDriverSettings:
     @classmethod
     def from_config(cls):
         settings_fields = [
-            field.name for field in fields(ModelTunerDriverSettings)
+            item.name for item in fields(ModelTunerDriverSettings)
         ]
         constructor_kwargs = {
             field_name: CONFIG_READER.get_config_value(
@@ -381,7 +381,7 @@ class ModelTunerDriverPaths:
 
     @classmethod
     def from_config(cls):
-        paths_fields = [field.name for field in fields(ModelTunerDriverPaths)]
+        paths_fields = [item.name for item in fields(ModelTunerDriverPaths)]
         constructor_kwargs = {
             field_name: CONFIG_READER.read_path(
                 f"model.tuner_driver.{field_name}"
@@ -431,7 +431,7 @@ TUNER_DRIVER_SUMMARY_IO = TunerDriverSummaryIO()
 
 class CrossValidatorDriverSummary(msgspec.Struct):
     preprocess_id: str
-    tuning_study_name: str
+    model_tuning_id: str
     cv_training_id: str
     model_hyperparameters: tuh.X19LSTMHyperParameterSettings
     settings: CrossValidatorDriverSettings

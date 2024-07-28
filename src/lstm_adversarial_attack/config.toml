@@ -143,6 +143,13 @@ attack_misclassified_samples = false
 
 [attack.tuner_driver_settings.sampler_kwargs]
 
+[attack.driver_settings] # As starting point, match values in attack.tuner_driver_settings
+db_env_var_name = "ATTACK_TUNING_DB_NAME"
+epochs_per_batch = 1000
+max_num_samples = 520
+sample_selection_seed = 2023
+attack_misclassified_samples = false
+
 [attack.analysis]
 default_seq_length = 48
 

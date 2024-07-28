@@ -85,6 +85,7 @@ class AttackDriver:
         self.device = device
         self.attack_id = attack_id
         self.preprocess_id = preprocess_id
+        # self.settings = ads.AttackDriverSettings.from_config()
         self.attack_tuning_study_name = attack_tuning_study_name
         self.db_env_var_name = db_env_var_name
         self.model_hyperparameters = model_hyperparameters

@@ -25,7 +25,7 @@ def main(model_tuning_id: str = None) -> dict[int, mds.TrainEvalLogPair]:
             root_dir=model_tuning_output_root
         )
 
-    cv_driver = cvd.CrossValidatorDriver.from_model_tuning_id(
+    cv_driver = cvd.CrossValidatorDriver(
         model_tuning_id=model_tuning_id,
         cv_training_id=cv_training_id,
         device=gh.get_device(),

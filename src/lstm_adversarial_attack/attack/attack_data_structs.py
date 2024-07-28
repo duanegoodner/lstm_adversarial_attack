@@ -111,10 +111,10 @@ class AttackTunerDriverSettings:
     max_perts: int  # used when objective_name = "max_num_nonzero_perts"
 
     @classmethod
-    def from_config(cls, config_path: Path = None):
+    def from_config(cls):
         # config_reader = ConfigReader(config_path=config_path)
         settings_fields = [
-            field.name for field in fields(AttackTunerDriverSettings)
+            item.name for item in fields(AttackTunerDriverSettings)
         ]
         constructor_kwargs = {
             field_name: CONFIG_READER.get_config_value(
@@ -126,12 +126,36 @@ class AttackTunerDriverSettings:
 
 
 @dataclass
+class AttackDriverSettings:
+    db_env_var_name: str
+    epochs_per_batch: int
+    max_num_samples: int
+    sample_selection_seed: int
+    attack_misclassified_samples: bool
+
+    @classmethod
+    def from_config(cls):
+        settings_fields = [
+            item.name for item in fields(AttackTunerDriverSettings)
+        ]
+        constructor_kwargs = {
+            field_name: CONFIG_READER.get_config_value(
+                f"attack.driver_settings.{field_name}"
+            )
+            for field_name in settings_fields
+        }
+        return cls(**constructor_kwargs)
+
+
+
+
+@dataclass
 class AttackTunerDriverPaths:
     output_dir: Path
 
     @classmethod
     def from_config(cls):
-        paths_fields = [field.name for field in fields(AttackTunerDriverPaths)]
+        paths_fields = [item.name for item in fields(AttackTunerDriverPaths)]
         constructor_kwargs = {
             field_name: CONFIG_READER.read_path(
                 f"attack.tuner_driver.{field_name}"
@@ -143,8 +167,9 @@ class AttackTunerDriverPaths:
 
 class AttackTunerDriverSummary(msgspec.Struct):
     preprocess_id: str
-    attack_tuning_id: str
+    model_tuning_id: str
     cv_training_id: str
+    attack_tuning_id: str
     model_hyperparameters: tuh.X19LSTMHyperParameterSettings
     settings: AttackTunerDriverSettings
     paths: AttackTunerDriverPaths

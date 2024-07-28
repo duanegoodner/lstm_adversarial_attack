@@ -28,15 +28,8 @@ class AttackTunerDriver:
     def __init__(
         self,
         device: torch.device,
-        preprocess_id: str,
         cv_training_id: str,
         attack_tuning_id: str,
-        model_hyperparameters: tuh.X19LSTMHyperParameterSettings,
-        settings: ads.AttackTunerDriverSettings,
-        paths: ads.AttackTunerDriverPaths,
-        study_name: str = None,
-        tuning_ranges: ads.AttackTuningRanges = None,
-        model_training_result_dir: Path | str = None,
     ):
         """
         :param device: the device to run on
@@ -45,31 +38,19 @@ class AttackTunerDriver:
         data/attack/attack_hyperparamter_tuning
         """
         self.device = device
-        self.preprocess_id = preprocess_id
         self.cv_training_id = cv_training_id
         self.attack_tuning_id = attack_tuning_id
-        self.model_hyperparameters = model_hyperparameters
-        self.settings = settings
-        self.paths = paths
+        self.settings = ads.AttackTunerDriverSettings.from_config()
+        self.paths = ads.AttackTunerDriverPaths.from_config()
         self.objective_extra_kwargs = (
-            {"max_perts": settings.max_perts}
+            {"max_perts": self.settings.max_perts}
             if self.settings.objective_name == "max_num_nonzero_perts"
             else {}
         )
-        if study_name is None:
-            study_name = self.build_study_name()
-        self.study_name = study_name
         self.output_dir = Path(self.paths.output_dir) / self.attack_tuning_id
         self.has_pre_existing_local_output = self.output_dir.exists()
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        if tuning_ranges is None:
-            tuning_ranges = ads.AttackTuningRanges()
-        self.tuning_ranges = tuning_ranges
-        self.model_training_result_dir = (
-            Path(model_training_result_dir)
-            if model_training_result_dir is not None
-            else None
-        )
+        self.tuning_ranges = ads.AttackTuningRanges()
         self.pruner_kwargs = self.settings.pruner_kwargs
         self.pruner = self.get_pruner(pruner_name=self.settings.pruner_name)
         self.sampler_kwargs = self.settings.sampler_kwargs
@@ -77,32 +58,37 @@ class AttackTunerDriver:
             sampler_name=self.settings.sampler_name
         )
 
-    @classmethod
-    def from_cv_training_id(
-        cls, cv_training_id: str, attack_tuning_id: str, device: torch.device
-    ):
+    @property
+    def model_training_result_dir(self) -> Path:
         cv_output_root = Path(
             CONFIG_READER.read_path("model.cv_driver.output_dir")
         )
+        return cv_output_root / self.cv_training_id
+
+    @property
+    def cross_validator_driver_summary(
+        self,
+    ) -> mds.CrossValidatorDriverSummary:
         cv_driver_summary_path = (
-            cv_output_root
-            / cv_training_id
-            / f"cross_validator_driver_summary_{cv_training_id}.json"
+            self.model_training_result_dir
+            / f"cross_validator_driver_summary_{self.cv_training_id}.json"
         )
-        cv_driver_summary = mds.CROSS_VALIDATOR_DRIVER_SUMMARY_IO.import_to_struct(
+
+        return mds.CROSS_VALIDATOR_DRIVER_SUMMARY_IO.import_to_struct(
             path=cv_driver_summary_path
         )
 
-        return cls(
-            device=device,
-            preprocess_id=cv_driver_summary.preprocess_id,
-            cv_training_id=cv_training_id,
-            attack_tuning_id=attack_tuning_id,
-            model_hyperparameters=cv_driver_summary.model_hyperparameters,
-            settings=ads.AttackTunerDriverSettings.from_config(),
-            paths=ads.AttackTunerDriverPaths.from_config(),
-            model_training_result_dir=cv_output_root / cv_training_id,
-        )
+    @property
+    def preprocess_id(self) -> str:
+        return self.cross_validator_driver_summary.preprocess_id
+
+    @property
+    def model_tuning_id(self) -> str:
+        return self.cross_validator_driver_summary.model_tuning_id
+
+    @property
+    def model_hyperparameters(self) -> tuh.X19LSTMHyperParameterSettings:
+        return self.cross_validator_driver_summary.model_hyperparameters
 
     @classmethod
     def from_attack_tuning_id(
@@ -120,24 +106,17 @@ class AttackTunerDriver:
         )
         return cls(
             device=device,
-            preprocess_id=attack_tuner_driver_summary.preprocess_id,
             cv_training_id=attack_tuner_driver_summary.cv_training_id,
             attack_tuning_id=attack_tuner_driver_summary.attack_tuning_id,
-            model_hyperparameters=attack_tuner_driver_summary.model_hyperparameters,
-            settings=attack_tuner_driver_summary.settings,
-            paths=attack_tuner_driver_summary.paths,
-            model_training_result_dir=Path(
-                CONFIG_READER.read_path("model.cv_driver.output_dir")
-            )
-            / attack_tuner_driver_summary.cv_training_id,
         )
 
     @property
     def summary(self) -> ads.AttackTunerDriverSummary:
         return ads.AttackTunerDriverSummary(
             preprocess_id=self.preprocess_id,
-            attack_tuning_id=self.attack_tuning_id,
+            model_tuning_id=self.model_tuning_id,
             cv_training_id=self.cv_training_id,
+            attack_tuning_id=self.attack_tuning_id,
             model_hyperparameters=self.model_hyperparameters,
             settings=self.settings.__dict__,
             paths=self.paths.__dict__,
@@ -173,7 +152,8 @@ class AttackTunerDriver:
     def target_model_checkpoint_path(self) -> Path:
         return self.target_checkpoint_info.save_path
 
-    def build_study_name(self) -> str:
+    @property
+    def study_name(self) -> str:
         return f"attack_tuning_{self.attack_tuning_id}"
 
     def get_pruner(self, pruner_name: str) -> optuna.pruners.BasePruner:
@@ -188,12 +168,6 @@ class AttackTunerDriver:
         :return: an Optuna Study object (this also gets saved in .output_dir)
         """
 
-        print(
-            "Starting new Attack Hyperparameter Tuning study using trained model from"
-            f" CV training session ID {self.cv_training_id} as the attack target. \n\nTuning results"
-            f" will be saved in: {self.output_dir}\n"
-        )
-
         if not self.summary.is_continuation:
             summary_output_path = (
                 self.output_dir
@@ -201,6 +175,17 @@ class AttackTunerDriver:
             )
             mds.TUNER_DRIVER_SUMMARY_IO.export(
                 obj=self.summary, path=summary_output_path
+            )
+            print(
+                f"Starting new Attack Hyperparameter Tuning session "
+                f"{self.attack_tuning_id} using trained model from CV training "
+                f"session ID {self.cv_training_id} as the attack target. "
+            )
+        if self.summary.is_continuation:
+            print(
+                f"Resuming Attack Hyperparameter Tuning session "
+                f"{self.attack_tuning_id} which uses CV Training session "
+                f"{self.cv_training_id} as the attack target."
             )
 
         model = tuh.X19LSTMBuilder(settings=self.model_hyperparameters).build()

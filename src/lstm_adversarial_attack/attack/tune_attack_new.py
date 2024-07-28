@@ -34,7 +34,7 @@ def main(
             root_dir=cv_output_root
         )
 
-    tuner_driver = atd.AttackTunerDriver.from_cv_training_id(
+    tuner_driver = atd.AttackTunerDriver(
         cv_training_id=cv_training_id,
         attack_tuning_id=attack_tuning_id,
         device=device,

@@ -38,51 +38,6 @@ def has_rdb_output(
     return study_name in existing_study_names
 
 
-# @dataclass
-# class ModelTunerDriverSettings:
-#     num_trials: int
-#     num_folds: int
-#     num_cv_epochs: int
-#     epochs_per_fold: int
-#     kfold_random_seed: int
-#     cv_mean_tensorboard_metrics: list[str]
-#     performance_metric: str
-#     optimization_direction_label: str
-#     pruner_name: str
-#     pruner_kwargs: dict[str, Any]
-#     sampler_name: str
-#     sampler_kwargs: dict[str, Any]
-#     db_env_var_name: str
-#     fold_class_name: str
-#     collate_fn_name: str
-#     tuning_ranges: dict[str, Any]
-#
-#     @classmethod
-#     def from_config(cls, config_path: Path = None):
-#         # config_reader = ConfigReader(config_path=config_path)
-#         settings_fields = [field.name for field in
-#                            fields(ModelTunerDriverSettings)]
-#         constructor_kwargs = {field_name: CONFIG_READER.get_config_value(
-#             f"model.tuner_driver.{field_name}") for field_name in
-#             settings_fields}
-#         return cls(**constructor_kwargs)
-#
-#
-# @dataclass
-# class ModelTunerDriverPaths:
-#     output_dir: str
-#
-#     @classmethod
-#     def from_config(cls, config_path: Path = None):
-#         # config_reader = ConfigReader(config_path=config_path)
-#         paths_fields = [field.name for field in fields(ModelTunerDriverPaths)]
-#         constructor_kwargs = {
-#             field_name: CONFIG_READER.read_path(
-#                 f"model.tuner_driver.{field_name}")
-#             for field_name in paths_fields}
-#         return cls(**constructor_kwargs)
-
-
 class ModelTunerDriver:
     """
     Instantiates and runs a HyperparameterTuner
@@ -114,12 +69,6 @@ class ModelTunerDriver:
         tuning_output_root = Path(
             CONFIG_READER.read_path("model.tuner_driver.output_dir")
         )
-
-        # tuner_driver_summary = edc.TunerDriverSummaryReader().import_struct(
-        #     path=tuning_output_root
-        #     / model_tuning_id
-        #     / f"tuner_driver_summary_{model_tuning_id}.json"
-        # )
 
         tuner_driver_summary = mds.TUNER_DRIVER_SUMMARY_IO.import_to_struct(
             path=tuning_output_root
@@ -206,10 +155,6 @@ class ModelTunerDriver:
                 / f"tuner_driver_summary_{self.model_tuning_id}.json"
             )
 
-            # edc.TunerDriverSummaryWriter().export(
-            #     obj=self.summary, path=summary_output_path
-            # )
-
             mds.TUNER_DRIVER_SUMMARY_IO.export(obj=self.summary, path=summary_output_path)
 
         study = optuna.create_study(
@@ -241,7 +186,6 @@ class ModelTunerDriver:
             hyperparameter_sampler=self.hyperparameter_sampler,
             study=study,
         )
-        # completed_study = self.tuner.tune(num_trials=num_trials)
         completed_study = tuner.tune(num_trials=num_trials)
         return completed_study
 
