@@ -249,3 +249,6 @@ output_dir = "output_data::attack/tuning"
 
 [paths.attack.attack_driver]
 output_dir = "output_data::attack/frozen_hyperparameter_attack"
+
+[paths.attack_analysis]
+output_dir = "output_data::attack_analysis"

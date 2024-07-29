@@ -14,10 +14,10 @@ def main(
     # attack_result_path: str = None,
     attack_id: str,
     label: str = None,
-    seq_length: int = None,
+    # seq_length: int = None,
     min_num_perts: int = None,
     max_num_perts: int = None,
-    output_dir: str = None,
+    # output_dir: str = None,
     single_histograms: list[list] = None,
 ):
     """
@@ -58,12 +58,6 @@ def main(
             root_dir=attack_results_root
         )
 
-    # if attack_result_path is not None:
-    #     attack_result_path = Path(attack_result_path)
-    if seq_length is None:
-        seq_length = CONFIG_READER.get_config_value(
-            "attack.analysis.default_seq_length"
-        )
     if single_histograms is not None:
         single_histograms_info = [
             arp.SingleHistogramInfo(entry) for entry in single_histograms
@@ -74,12 +68,9 @@ def main(
     plotter = arp.AllResultsPlotter(
         attack_id=attack_id,
         attack_analysis_id=attack_analysis_id,
-        # attack_result_path=attack_result_path,
-        seq_length=seq_length,
         min_num_perts=min_num_perts,
         max_num_perts=max_num_perts,
         label=label,
-        output_dir=output_dir,
         single_histograms_info=single_histograms_info,
     )
 
@@ -127,31 +118,6 @@ if __name__ == "__main__":
         help=(
             "min number of nonzero perturbation elements required of example_data"
             " to summarize"
-        ),
-    )
-    parser.add_argument(
-        "-q",
-        "--seq_length",
-        type=int,
-        action="store",
-        nargs="?",
-        help=(
-            "Input sequence length of results to analyze. Defaults to "
-            "config_settings.ATTACK_ANALYSIS_DEFAULT_SEQ_LENGTH which is "
-            "typically the same as max observation window used during data "
-            "preprocessing."
-        ),
-    )
-    parser.add_argument(
-        "-o",
-        "--output_dir",
-        type=str,
-        action="store",
-        nargs="?",
-        help=(
-            "Directory where plot figures will be saved. If not specified, a "
-            "new directory with timestamp in name will be created under "
-            "data/attack_analysis"
         ),
     )
     parser.add_argument(

@@ -7,7 +7,6 @@ import lstm_adversarial_attack.attack_analysis.discovery_epoch_plotter as dep
 import lstm_adversarial_attack.attack_analysis.perts_histogram_plotter as php
 import lstm_adversarial_attack.attack_analysis.susceptibility_plotter as ssp
 import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.path_searches as ps
 import lstm_adversarial_attack.resource_io as rio
 from lstm_adversarial_attack.config import CONFIG_READER
 
@@ -26,31 +25,21 @@ class AllResultsPlotter:
         self,
         attack_id: str,
         attack_analysis_id: str,
-        # attack_result_path: Path = None,
-        seq_length: int = CONFIG_READER.get_config_value(
-            "attack.analysis.default_seq_length"
-        ),
         min_num_perts: int = None,
         max_num_perts: int = None,
         label: str = None,
-        output_dir: Path = None,
         single_histograms_info: list[SingleHistogramInfo] = None,
-        save_output: bool = True,
     ):
         self.attack_id = attack_id
         self.attack_analysis_id = attack_analysis_id
-        self.seq_length = seq_length
         self.min_num_perts = min_num_perts
         self.max_num_perts = max_num_perts
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.seq_length = CONFIG_READER.get_config_value(
+            "attack.analysis.default_seq_length"
+        )
         self.label = label
         self.single_histograms_info = single_histograms_info
-        self.save_output = save_output
-        if self.save_output and output_dir is None:
-            output_dir = rio.create_timestamped_dir(
-                parent_path=cfg_paths.ATTACK_ANALYSIS_DIR
-            )
-        self.output_dir = output_dir
-
         self.full_attack_results = (
             ata.FullAttackResults.from_attack_trainer_result_path(
                 attack_trainer_result_path=self.attack_result_path
@@ -104,14 +93,16 @@ class AllResultsPlotter:
             / f"final_attack_result_{self.attack_id}.json"
         )
 
+    @property
+    def output_dir(self) -> Path:
+        analysis_results_root = Path(CONFIG_READER.read_path("attack_analysis.output_dir"))
+        return analysis_results_root / f"{self.attack_analysis_id}"
+
+
     def save_figure(self, fig: plt.Figure, label: str):
-        if self.save_output:
-            output_path = rio.create_timestamped_filepath(
-                parent_path=self.output_dir,
-                file_extension="png",
-                suffix=f"_{label}",
-            )
-            fig.savefig(fname=str(output_path))
+        # if self.save_output:
+        output_path = self.output_dir / f"{self.attack_analysis_id}_{label}.png"
+        fig.savefig(fname=str(output_path))
 
     def plot_all_histograms(self, fig_title: str = None):
         hist_grid_fig = self.histogram_plotter.plot_all_histograms(
