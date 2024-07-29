@@ -14,11 +14,12 @@ import lstm_adversarial_attack.preprocess.icustay_measurement_merger as imm
 import lstm_adversarial_attack.preprocess.prefilter as prf
 import lstm_adversarial_attack.preprocess.preprocessor as ppr
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
+import lstm_adversarial_attack.session_id_generator as sig
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
 def main(db_result_id: str = None) -> dict | dict[str, Any]:
-    preprocess_id = "".join(char for char in str(datetime.now()) if char.isdigit())
+    preprocess_id = sig.generate_session_id()
 
     if db_result_id is None:
         db_output_parent = CONFIG_READER.read_path("db.output_root")
@@ -86,7 +87,7 @@ def main(db_result_id: str = None) -> dict | dict[str, Any]:
     ]
 
     preprocessor = ppr.Preprocessor(
-        run_id=preprocess_id, modules_info=modules_info, save_checkpoints=True
+        preprocess_id=preprocess_id, modules_info=modules_info, save_checkpoints=True
     )
     return preprocessor.run_all_modules()
 

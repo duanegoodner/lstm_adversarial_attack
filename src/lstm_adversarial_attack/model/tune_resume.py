@@ -31,6 +31,10 @@ def main(model_tuning_id: str = None) -> optuna.Study:
             root_dir=tuning_output_root
         )
 
+    print(
+        f"Continuing existing model hyperparameter tuning session {model_tuning_id}"
+    )
+
     tuner_driver = td.ModelTunerDriver.from_model_tuning_id(
         device=cur_device,
         model_tuning_id=model_tuning_id,

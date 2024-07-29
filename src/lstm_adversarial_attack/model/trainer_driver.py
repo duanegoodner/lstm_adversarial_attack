@@ -105,13 +105,13 @@ class TrainerDriver:
         :param summary_writer: SummaryWriter object
         """
         config_reader = config.ConfigReader()
-        max_observation_hours = config_reader.get_config_value("preprocess.max_observation_hours")
+        observation_window_hours = config_reader.get_config_value("preprocess.observation_window_hours")
 
         tensorboard_model = tuh.X19LSTMBuilder(
             settings=self.hyperparameter_settings
         ).build_for_model_graph()
         dummy_input = torch.randn(
-            self.batch_size, max_observation_hours, 19
+            self.batch_size, observation_window_hours, 19
         )
 
         summary_writer.add_graph(tensorboard_model, dummy_input)

@@ -65,12 +65,12 @@ class AdversarialAttackTrainer:
         self.model = model
         self.attack_hyperparameters = attack_hyperparameters
         self.state_dict = state_dict
-        self.max_observation_hours = CONFIG_READER.get_config_value("preprocess.max_observation_hours")
+        self.observation_window_hours = CONFIG_READER.get_config_value("preprocess.observation_window_hours")
         self.attacker = aat.AdversarialAttacker(
             full_model=model,
             state_dict=state_dict,
             input_size=19,
-            max_sequence_length=self.max_observation_hours,
+            max_sequence_length=self.observation_window_hours,
             batch_size=2**self.attack_hyperparameters.log_batch_size,
         )
         self.epochs_per_batch = epochs_per_batch
@@ -228,7 +228,7 @@ class AdversarialAttackTrainer:
             full_model=self.model,
             state_dict=self.state_dict,
             input_size=19,
-            max_sequence_length=self.max_observation_hours,
+            max_sequence_length=self.observation_window_hours,
             batch_size=batch_size,
         )
         self.optimizer = self.attack_hyperparameters.optimizer_constructor(

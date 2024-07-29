@@ -6,6 +6,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack_analysis.all_results_plotter as arp
 import lstm_adversarial_attack.path_searches as ps
+import lstm_adversarial_attack.session_id_generator as sig
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
@@ -46,9 +47,7 @@ def main(
     :return:
     """
 
-    attack_analysis_id = "".join(
-        char for char in str(datetime.now()) if char.isdigit()
-    )
+    attack_analysis_id = sig.generate_session_id()
 
     attack_results_root = Path(
         CONFIG_READER.read_path("attack.attack_driver.output_dir")

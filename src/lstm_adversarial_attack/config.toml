@@ -28,8 +28,8 @@ winsorize_low = "5%"
 winsorize_high = "95%"
 resample_interpolation_method = "linear"
 resample_limit_direction = "both"
-min_observation_hours = 1
-max_observation_hours = 48
+min_observation_hours = 48
+observation_window_hours = 48
 require_exact_num_hours = false
 observation_window_start = "intime"
 

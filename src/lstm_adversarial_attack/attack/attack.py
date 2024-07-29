@@ -8,6 +8,7 @@ import lstm_adversarial_attack.attack.attack_driver as ad
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.path_searches as ps
+import lstm_adversarial_attack.session_id_generator as sig
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
@@ -16,9 +17,7 @@ def main(attack_tuning_id: str) -> ards.TrainerSuccessSummary:
     Runs attack on dataset
     :param attack_tuning_id: ID of attack tuning session to use for attack hyperparameter selection
     """
-    attack_id = "".join(
-        char for char in str(datetime.now()) if char.isdigit()
-    )
+    attack_id = sig.generate_session_id()
 
     cur_device = gh.get_device()
 
@@ -36,9 +35,18 @@ def main(attack_tuning_id: str) -> ards.TrainerSuccessSummary:
         device=cur_device,
     )
 
+    print(
+        f"Starting new model attack session {attack_id}.\n"
+        f"Using attack hyperparameters from model attack tuning session "
+        f"{attack_driver.attack_tuning_id}\n"
+        f"Using model from model training session {attack_driver.summary.cv_training_id}"
+    )
+
     attack_trainer_result = attack_driver()
 
-    success_summary = ards.TrainerSuccessSummary(attack_trainer_result=attack_trainer_result)
+    success_summary = ards.TrainerSuccessSummary(
+        attack_trainer_result=attack_trainer_result
+    )
 
     return success_summary
 

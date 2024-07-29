@@ -9,6 +9,7 @@ import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.model_tuner_driver as td
 import lstm_adversarial_attack.path_searches as ps
+import lstm_adversarial_attack.session_id_generator as sig
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
@@ -25,8 +26,10 @@ def main(preprocess_id: str = None) -> optuna.Study:
     cur_device = gh.get_device()
 
     # We are running new tuning, so need new model_tuning_id
-    model_tuning_id = "".join(
-        char for char in str(datetime.now()) if char.isdigit()
+    model_tuning_id = sig.generate_session_id()
+
+    print(
+        f"Starting new model hyperparameter tuning session {model_tuning_id}"
     )
 
     # If no preprocess_id provided, use ID of latest preprocess run

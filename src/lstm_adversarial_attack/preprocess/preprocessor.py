@@ -32,7 +32,7 @@ class PreprocessModuleResources(ABC):
 
 @dataclass
 class PreprocessModuleSettings(ABC):
-    preprocess_run_id: str
+    preprocess_id: str
     module_name: str
     output_dir: str | Path = None
 
@@ -61,7 +61,7 @@ class PreprocessModuleSettings(ABC):
                         config_key="preprocess.output_root"
                     )
                 )
-                / self.preprocess_run_id
+                / self.preprocess_id
                 / CONFIG_READER.get_config_value(
                     f"preprocess.output_dir_names.{self.module_name}"
                 )
@@ -157,7 +157,7 @@ class ModuleInfo:
             ),
             settings=self.settings_constructor(
                 module_name=self.module_name,
-                preprocess_run_id=self.resource_collection_ids["preprocess"],
+                preprocess_id=self.resource_collection_ids["preprocess"],
             ),
             output_constructors=self.output_constructors,
         )
@@ -166,16 +166,16 @@ class ModuleInfo:
 class Preprocessor:
     def __init__(
         self,
-        run_id: str,
+        preprocess_id: str,
         modules_info: list[ModuleInfo],
         save_checkpoints: bool = False,
         available_resources: dict[str, Any] = None,
     ):
         # TODO Consider making run_output_root a data member
-        self.run_id = run_id
+        self.preprocess_id = preprocess_id
         run_output_root = (
             Path(CONFIG_READER.read_path(config_key="preprocess.output_root"))
-            / run_id
+            / preprocess_id
         )
         run_output_root.mkdir(parents=True, exist_ok=True)
 

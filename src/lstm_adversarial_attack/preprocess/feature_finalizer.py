@@ -17,7 +17,7 @@ class FeatureFinalizerSettings(pre.PreprocessModuleSettings):
     Container for FeatureFinalizer config settings
     """
 
-    max_observation_hours: int = None
+    observation_window_hours: int = None
     min_observation_hours: int = None
     require_exact_num_hours: bool = None
     observation_window_start: str = None
@@ -46,7 +46,9 @@ class FeatureFinalizer(pre.PreprocessModule):
             item.time_series.columns for item in self.processed_admission_list
         ]
         first_item_names = list(all_data_col_names[0])
-        assert all([(names == first_item_names).all() for names in all_data_col_names])
+        assert all(
+            [(names == first_item_names).all() for names in all_data_col_names]
+        )
         first_item_names.remove("charttime")
         return tuple(first_item_names)
 
@@ -70,19 +72,24 @@ class FeatureFinalizer(pre.PreprocessModule):
         if end_time is None:
             end_time = np.datetime64(datetime.max)
         return time_series[
-            (time_series[time_col] > start_time) & (time_series[time_col] < end_time)
+            (time_series[time_col] > start_time)
+            & (time_series[time_col] < end_time)
         ]
 
-    def _get_feature_array(self, sample: eds.FullAdmissionData) -> np.ndarray | None:
+    def _get_feature_array(
+        self, sample: eds.FullAdmissionData
+    ) -> np.ndarray | None:
         """
         Filters time series df to window of interest & converts to array
         :param sample: FullAdmissionData object (has time series df attribute)
         :return: filtered numpy array of time series data
         """
-        observation_start_time = getattr(sample, self.settings.observation_window_start)
-        if self.settings.max_observation_hours is not None:
+        observation_start_time = getattr(
+            sample, self.settings.observation_window_start
+        )
+        if self.settings.observation_window_hours is not None:
             observation_end_time = observation_start_time + pd.Timedelta(
-                hours=self.settings.max_observation_hours
+                hours=self.settings.observation_window_hours
             )
         else:
             observation_end_time = None
@@ -106,11 +113,15 @@ class FeatureFinalizer(pre.PreprocessModule):
         measurement_data_list = []
         in_hospital_mortality_list = []
 
+        print(f"Received {len(self.processed_admission_list)} samples.")
+
         for entry in self.processed_admission_list:
             feature_array = self._get_feature_array(sample=entry)
             if feature_array is not None:
                 measurement_data_list.append(feature_array)
                 in_hospital_mortality_list.append(entry.hospital_expire_flag)
+
+        print(f"Sending {len(measurement_data_list)} samples to final output.")
 
         return {
             "in_hospital_mortality_list": (
@@ -132,10 +143,14 @@ if __name__ == "__main__":
     feature_finalizer_resources = rds.FeatureFinalizerResources(
         module_name="feature_finalizer",
         default_data_source_type=rds.DataSourceType.FILE,
+        collection_ids={"preprocess": "20240724182256502970"},
     )
     feature_finalizer = FeatureFinalizer(
         resources=feature_finalizer_resources,
-        settings=FeatureFinalizerSettings(module_name="feature_finalizer"),
+        settings=FeatureFinalizerSettings(
+            module_name="feature_finalizer",
+            preprocess_id="20240724182256502970",
+        ),
     )
     init_end = time.time()
     print(f"feature finalizer init time = {init_end - init_start}")
@@ -148,7 +163,8 @@ if __name__ == "__main__":
     export_start = time.time()
     for key, outgoing_resource in result.items():
         outgoing_resource.export(
-            path=feature_finalizer.output_dir / f"{key}{outgoing_resource.file_ext}"
+            path=feature_finalizer.output_dir
+            / f"{key}{outgoing_resource.file_ext}"
         )
     export_end = time.time()
     print(f"export time = {export_end - export_start}")

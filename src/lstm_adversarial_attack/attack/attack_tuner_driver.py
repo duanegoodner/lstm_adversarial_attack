@@ -178,14 +178,14 @@ class AttackTunerDriver:
             )
             print(
                 f"Starting new Attack Hyperparameter Tuning session "
-                f"{self.attack_tuning_id} using trained model from CV training "
+                f"{self.attack_tuning_id}.\nUsing trained model from CV training "
                 f"session ID {self.cv_training_id} as the attack target. "
             )
         if self.summary.is_continuation:
             print(
                 f"Resuming Attack Hyperparameter Tuning session "
-                f"{self.attack_tuning_id} which uses CV Training session "
-                f"{self.cv_training_id} as the attack target."
+                f"{self.attack_tuning_id}.\n Using model from CV Training "
+                f"session {self.cv_training_id} as the attack target."
             )
 
         model = tuh.X19LSTMBuilder(settings=self.model_hyperparameters).build()

@@ -9,7 +9,9 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_tuner_driver as atd
 import lstm_adversarial_attack.gpu_helpers as gh
 import lstm_adversarial_attack.path_searches as ps
+import lstm_adversarial_attack.session_id_generator as sig
 from lstm_adversarial_attack.config import CONFIG_READER
+
 
 
 def main(
@@ -21,9 +23,7 @@ def main(
     :param cv_training_id: ID of cross-validation training session to use as source of model to attack
     """
     device = gh.get_device()
-    attack_tuning_id = "".join(
-        char for char in str(datetime.now()) if char.isdigit()
-    )
+    attack_tuning_id = sig.generate_session_id()
 
     cv_output_root = Path(
         CONFIG_READER.read_path("model.cv_driver.output_dir")

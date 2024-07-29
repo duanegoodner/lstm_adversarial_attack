@@ -395,8 +395,7 @@ class HyperParameterTuner:
         :param timeout: max time for study (default is no limit)
         """
         print(
-            "Starting hyperparameter tuning.\n\n"
-            "Data for Tensorboard will be written to:\n"
+            f"Data for Tensorboard will be written to:\n"
             f"{self.tensorboard_output_dir}\n\n"
             "CV mean logs will be written to: \n"
             f"{self.output_dirs.cv_mean_logs_dir}\n\n"
