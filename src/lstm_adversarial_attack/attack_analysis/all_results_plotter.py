@@ -25,6 +25,7 @@ class AllResultsPlotter:
     def __init__(
         self,
         attack_id: str,
+        attack_analysis_id: str,
         # attack_result_path: Path = None,
         seq_length: int = CONFIG_READER.get_config_value(
             "attack.analysis.default_seq_length"
@@ -37,16 +38,7 @@ class AllResultsPlotter:
         save_output: bool = True,
     ):
         self.attack_id = attack_id
-        # if attack_result_path is None:
-        #     attack_id = ps.get_latest_sequential_child_dirname(
-        #         root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
-        #     )
-        #     attack_result_path = (
-        #         cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
-        #         / attack_id
-        #         / f"final_attack_result_{attack_id}.json"
-        #     )
-        # self.attack_result_path = attack_result_path
+        self.attack_analysis_id = attack_analysis_id
         self.seq_length = seq_length
         self.min_num_perts = min_num_perts
         self.max_num_perts = max_num_perts

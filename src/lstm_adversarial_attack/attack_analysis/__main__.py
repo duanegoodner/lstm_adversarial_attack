@@ -24,9 +24,8 @@ def main(
     generates provenance.pickle and provenance.txt files with details of
     files and settings used to during attack hyperparamter tuning the final
     attack (using fixed set of hyperparameters).
-    :param attack_result_path: Directory containing attack results. If not
-    specified, defaults to parent directory of latest result under directory
-    specified by config_paths.FROZEN_HYPERPARAMETER_ATTACK"
+    :param attack_id: ID of attack session to use as source of data for plots.
+    Defaults to most recently created session.
     # TODO currently not using label. Either start using it, or remove it.
     :param label: String to be included as part of plot titles
     :param seq_length: "Input sequence length of results to analyze. Defaults
@@ -75,6 +74,7 @@ def main(
 
     plotter = arp.AllResultsPlotter(
         attack_id=attack_id,
+        attack_analysis_id=attack_analysis_id,
         # attack_result_path=attack_result_path,
         seq_length=seq_length,
         min_num_perts=min_num_perts,
