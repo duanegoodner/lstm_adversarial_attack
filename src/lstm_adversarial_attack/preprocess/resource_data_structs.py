@@ -241,6 +241,8 @@ class PreprocessModuleResources(ABC):
                         / self.collection_ids[collection_type]
                         / resource_entry[collection_type]
                     )
+
+                    # IncomingPreprocessResource gets instantiated here. object_field.type is the constructor.
                     attr = object_field.type(resource_id=resource_path)
                     setattr(self, object_field.name, attr)
 
