@@ -179,10 +179,16 @@ class PreprocessModuleResources(ABC):
 
     @property
     def build_info(self) -> tuple[Field, ...]:
+        """
+        The object fields defined by parent class PreprocessModuleResources.
+        """
         return fields(PreprocessModuleResources)
 
     @property
     def resource_fields(self) -> tuple[Field, ...]:
+        """
+        The object fields defined by the subclass.
+        """
         return tuple(
             [
                 object_field
@@ -200,20 +206,22 @@ class PreprocessModuleResources(ABC):
 
     def __post_init__(self):
 
-        # if self.default_data_source_type == DataSourceType.FILE:
-        #
-        #     db_resources = CONFIG_READER.get_config_value(
-        #         f"preprocess.{self.module_name}.resources.from_db"
-        #     )
-        #     if db_resources is None:
-        #         db_resources = dict()
-        #     other_preprocess_module_resources = CONFIG_READER.get_config_value(
-        #         f"preprocess.{self.module_name}.resources.from_other_preprocess_modules"
-        #     )
-        #     if other_preprocess_module_resources is None:
-        #         other_preprocess_module_resources = dict()
+        if self.default_data_source_type == DataSourceType.FILE:
 
+            db_resources = CONFIG_READER.get_config_value(
+                f"preprocess.{self.module_name}.resources.from_db"
+            )
+            if db_resources is None:
+                db_resources = dict()
+            other_preprocess_module_resources = CONFIG_READER.get_config_value(
+                f"preprocess.{self.module_name}.resources.from_other_preprocess_modules"
+            )
+            if other_preprocess_module_resources is None:
+                other_preprocess_module_resources = dict()
+
+        # iterate over each field that is defined by the subclass
         for object_field in self.resource_fields:
+            # if attribute/field does not reference an object, instantiate object (of type defined by type-hint) and assign to field
             if getattr(self, object_field.name) is None:
                 if self.default_data_source_type == DataSourceType.POOL:
                     setattr(
@@ -226,21 +234,47 @@ class PreprocessModuleResources(ABC):
                     )
                 if self.default_data_source_type == DataSourceType.FILE:
 
-                    # assert object_field.name in db_resources.keys() or object_field.name in other_preprocess_module_resources.keys()
+                    assert (
+                        object_field.name in db_resources.keys()
+                        or object_field.name
+                        in other_preprocess_module_resources.keys()
+                    )
+                    if object_field.name in db_resources.keys():
+                        resource_path = (
+                            Path(CONFIG_READER.read_path("db.output_root"))
+                            / self.collection_ids["db"]
+                            / db_resources[object_field.name]
+                        )
 
                     resource_entry = CONFIG_READER.get_config_value(
                         f"preprocess.{self.module_name}.resources.{object_field.name}"
                     )
-                    collection_type = list(resource_entry.keys())[0]
-                    resource_path = (
-                        Path(
-                            CONFIG_READER.read_path(
-                                f"{collection_type}.output_root"
+
+                    if (
+                        object_field.name
+                        in other_preprocess_module_resources.keys()
+                    ):
+                        resource_path = (
+                            Path(
+                                CONFIG_READER.read_path(
+                                    "preprocess.output_root"
+                                )
                             )
+                            / self.collection_ids["preprocess"]
+                            / other_preprocess_module_resources[
+                                object_field.name
+                            ]
                         )
-                        / self.collection_ids[collection_type]
-                        / resource_entry[collection_type]
-                    )
+                    # collection_type = list(resource_entry.keys())[0]
+                    # resource_path = (
+                    #     Path(
+                    #         CONFIG_READER.read_path(
+                    #             f"{collection_type}.output_root"
+                    #         )
+                    #     )
+                    #     / self.collection_ids[collection_type]
+                    #     / resource_entry[collection_type]
+                    # )
 
                     # IncomingPreprocessResource gets instantiated here. object_field.type is the constructor.
                     attr = object_field.type(resource_id=resource_path)
