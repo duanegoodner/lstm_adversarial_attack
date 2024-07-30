@@ -199,6 +199,20 @@ class PreprocessModuleResources(ABC):
         }
 
     def __post_init__(self):
+
+        # if self.default_data_source_type == DataSourceType.FILE:
+        #
+        #     db_resources = CONFIG_READER.get_config_value(
+        #         f"preprocess.{self.module_name}.resources.from_db"
+        #     )
+        #     if db_resources is None:
+        #         db_resources = dict()
+        #     other_preprocess_module_resources = CONFIG_READER.get_config_value(
+        #         f"preprocess.{self.module_name}.resources.from_other_preprocess_modules"
+        #     )
+        #     if other_preprocess_module_resources is None:
+        #         other_preprocess_module_resources = dict()
+
         for object_field in self.resource_fields:
             if getattr(self, object_field.name) is None:
                 if self.default_data_source_type == DataSourceType.POOL:
@@ -211,6 +225,9 @@ class PreprocessModuleResources(ABC):
                         ),
                     )
                 if self.default_data_source_type == DataSourceType.FILE:
+
+                    # assert object_field.name in db_resources.keys() or object_field.name in other_preprocess_module_resources.keys()
+
                     resource_entry = CONFIG_READER.get_config_value(
                         f"preprocess.{self.module_name}.resources.{object_field.name}"
                     )

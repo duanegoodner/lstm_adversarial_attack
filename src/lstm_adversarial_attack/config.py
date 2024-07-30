@@ -20,10 +20,10 @@ class ConfigReader:
 
         result = project_config.copy()
         for sub_key in config_key.split("."):
-            if result[sub_key] == "None":
-                result = None
+            if result.get(sub_key) is None:
+                return None
             else:
-                result = result[sub_key]
+                result = result.get(sub_key)
 
         # We want arrays in config file to be retrieved as tuples (immutable), not lists
         # if type(result) is list:

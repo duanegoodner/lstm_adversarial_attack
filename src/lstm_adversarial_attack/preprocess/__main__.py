@@ -49,7 +49,7 @@ def main(db_result_id: str = None) -> dict | dict[str, Any]:
         module_constructor=imm.ICUStayMeasurementMerger,
         resources_constructor=rds.ICUStayMeasurementMergerResources,
         settings_constructor=imm.ICUStayMeasurementMergerSettings,
-        default_data_source_type=rds.DataSourceType.POOL,
+        default_data_source_type=rds.DataSourceType.FILE,
     )
 
     list_builder_info = ppr.ModuleInfo(
@@ -58,7 +58,7 @@ def main(db_result_id: str = None) -> dict | dict[str, Any]:
         module_constructor=alb.AdmissionListBuilder,
         resources_constructor=rds.AdmissionListBuilderResources,
         settings_constructor=alb.AdmissionListBuilderSettings,
-        default_data_source_type=rds.DataSourceType.POOL,
+        default_data_source_type=rds.DataSourceType.FILE,
     )
 
     feature_builder_info = ppr.ModuleInfo(
@@ -67,7 +67,7 @@ def main(db_result_id: str = None) -> dict | dict[str, Any]:
         module_constructor=fb.FeatureBuilder,
         resources_constructor=rds.FeatureBuilderResources,
         settings_constructor=fb.FeatureBuilderSettings,
-        default_data_source_type=rds.DataSourceType.POOL,
+        default_data_source_type=rds.DataSourceType.FILE,
     )
 
     feature_finalizer_info = ppr.ModuleInfo(
@@ -76,7 +76,7 @@ def main(db_result_id: str = None) -> dict | dict[str, Any]:
         module_constructor=ff.FeatureFinalizer,
         resources_constructor=rds.FeatureFinalizerResources,
         settings_constructor=ff.FeatureFinalizerSettings,
-        default_data_source_type=rds.DataSourceType.POOL,
+        default_data_source_type=rds.DataSourceType.FILE,
     )
     modules_info = [
         prefilter_info,
