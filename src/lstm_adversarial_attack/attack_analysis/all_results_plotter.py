@@ -1,25 +1,46 @@
+from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import msgspec
 
+import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack_analysis.attack_analysis as ata
 import lstm_adversarial_attack.attack_analysis.discovery_epoch_plotter as dep
 import lstm_adversarial_attack.attack_analysis.perts_histogram_plotter as php
 import lstm_adversarial_attack.attack_analysis.susceptibility_plotter as ssp
-import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.resource_io as rio
+import lstm_adversarial_attack.msgspec_io as mio
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
+@dataclass
 class SingleHistogramInfo:
-    def __init__(self, command_info: list):
-        self.plot_indices = (int(command_info[0]), int(command_info[1]))
-        self.num_bins = int(command_info[2])
-        self.x_min = float(command_info[3])
-        self.x_max = float(command_info[4])
+    plot_indices: tuple[int, int]
+    num_bins: int
+    x_min: float
+    x_max: float
+    filename: str
+
+class AllResultsPlotterSummary(msgspec.Struct):
+    preprocess_id: str
+    model_tuning_id: str
+    cv_training_id: str
+    attack_tuning_id: str
+    attack_id: str
+    attack_analysis_id: str
+    min_num_perts: int
+    max_num_perts: int
+    single_histograms_info: list[SingleHistogramInfo]
 
 
-# class AllResultsPlotter(dpr.HasDataProvenance):
+class AllResultsPlotterSummaryIO(mio.MsgspecIO):
+    def __init__(self):
+        super().__init__(msgspec_struct_type=AllResultsPlotterSummary)
+
+
+ALL_RESULTS_PLOTTER_SUMMARY_IO = AllResultsPlotterSummaryIO()
+
+
 class AllResultsPlotter:
     def __init__(
         self,
@@ -94,14 +115,43 @@ class AllResultsPlotter:
         )
 
     @property
+    def attack_driver_summary(self) -> ads.AttackDriverSummary:
+        attack_results_root = Path(
+            CONFIG_READER.read_path("attack.attack_driver.output_dir")
+        )
+
+        return ads.ATTACK_DRIVER_SUMMARY_IO.import_to_struct(
+            path=attack_results_root
+            / self.attack_id
+            / f"attack_driver_summary_{self.attack_id}.json"
+        )
+
+    @property
     def output_dir(self) -> Path:
-        analysis_results_root = Path(CONFIG_READER.read_path("attack_analysis.output_dir"))
+        analysis_results_root = Path(
+            CONFIG_READER.read_path("attack_analysis.output_dir")
+        )
         return analysis_results_root / f"{self.attack_analysis_id}"
 
+    @property
+    def summary(self) -> AllResultsPlotterSummary:
+        return AllResultsPlotterSummary(
+            preprocess_id=self.attack_driver_summary.preprocess_id,
+            model_tuning_id=self.attack_driver_summary.model_tuning_id,
+            cv_training_id=self.attack_driver_summary.cv_training_id,
+            attack_tuning_id=self.attack_driver_summary.attack_tuning_id,
+            attack_id=self.attack_id,
+            attack_analysis_id=self.attack_analysis_id,
+            min_num_perts=self.min_num_perts,
+            max_num_perts=self.max_num_perts,
+            single_histograms_info=self.single_histograms_info
+        )
 
     def save_figure(self, fig: plt.Figure, label: str):
         # if self.save_output:
-        output_path = self.output_dir / f"{self.attack_analysis_id}_{label}.png"
+        output_path = (
+            self.output_dir / f"{self.attack_analysis_id}_{label}.png"
+        )
         fig.savefig(fname=str(output_path))
 
     def plot_all_histograms(self, fig_title: str = None):
@@ -117,7 +167,7 @@ class AllResultsPlotter:
         x_min: float | int,
         x_max: float | int,
         fig_title: str = None,
-        label: str = "single_histogram",
+        filename: str = "single_histogram",
     ):
         single_hist_fig = self.histogram_plotter.plot_single_histogram(
             plot_indices=plot_indices,
@@ -126,7 +176,7 @@ class AllResultsPlotter:
             x_max=x_max,
             fig_title=fig_title,
         )
-        self.save_figure(fig=single_hist_fig, label=label)
+        self.save_figure(fig=single_hist_fig, label=filename)
 
     def plot_discovery_epoch_cdfs(self, fig_title: str = None):
         discovery_epoch_fig = self.discovery_epoch_plotter.plot_all_cdfs()
@@ -147,6 +197,12 @@ class AllResultsPlotter:
         self.save_figure(fig=sensitivity_ij_fig, label="sensitivity_ij")
 
     def plot_all(self):
+        ALL_RESULTS_PLOTTER_SUMMARY_IO.export(
+            obj=self.summary,
+            path=self.output_dir
+            / f"{self.attack_analysis_id}_all_results_plotter_summary.json",
+        )
+
         self.plot_all_histograms()
         if self.single_histograms_info:
             for entry in self.single_histograms_info:

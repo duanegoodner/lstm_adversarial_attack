@@ -2,6 +2,8 @@ import argparse
 import sys
 from datetime import datetime
 from pathlib import Path
+import ast
+import re
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack_analysis.all_results_plotter as arp
@@ -11,14 +13,11 @@ from lstm_adversarial_attack.config import CONFIG_READER
 
 
 def main(
-    # attack_result_path: str = None,
     attack_id: str,
     label: str = None,
-    # seq_length: int = None,
     min_num_perts: int = None,
     max_num_perts: int = None,
-    # output_dir: str = None,
-    single_histograms: list[list] = None,
+    single_histograms: list[dict] = None,
 ):
     """
     Generates set of plots using attack data. Plots are saved as .png. Also
@@ -27,23 +26,12 @@ def main(
     attack (using fixed set of hyperparameters).
     :param attack_id: ID of attack session to use as source of data for plots.
     Defaults to most recently created session.
-    # TODO currently not using label. Either start using it, or remove it.
     :param label: String to be included as part of plot titles
-    :param seq_length: "Input sequence length of results to analyze. Defaults
-    to config_settings.ATTACK_ANALYSIS_DEFAULT_SEQ_LENGTH which is typically
-    the same as max observation window used during data preprocessing."
     :param min_num_perts: min number of nonzero perturbation elements required
-    of example_data to summarize"
+    of example_data to summarize
     :param max_num_perts: max number of nonzero perturbation elements required
     of example_data to summarize
-    :param output_dir: Directory where plot figures will be saved. If not
-    specified, a new directory with timestamp in name will be created under
-    data/attack_analysis"
-    :param single_histograms: "Information for histograms to be plotted separately from grid of histograms.Must be of form:\n
-    grid_index[0] grid_index[1] num_bins x_min x_max.
-    grid_index are the coordinates of the plot within the grid that contains
-    the data to be replotted. num_bins is the number of bins to use in the
-    histogram. x_min & x_max specify the range of bin values"
+    :param single_histograms: List of dictionaries for histograms to be plotted separately from grid of histograms.
     :return:
     """
 
@@ -60,7 +48,17 @@ def main(
 
     if single_histograms is not None:
         single_histograms_info = [
-            arp.SingleHistogramInfo(entry) for entry in single_histograms
+            arp.SingleHistogramInfo(
+                plot_indices=(
+                    entry["grid_indices"][0],
+                    entry["grid_indices"][1],
+                ),
+                num_bins=entry["num_bins"],
+                x_min=entry["x_min"],
+                x_max=entry["x_max"],
+                filename=entry.get("filename"),
+            )
+            for entry in single_histograms
         ]
     else:
         single_histograms_info = None
@@ -78,6 +76,22 @@ def main(
 
 
 if __name__ == "__main__":
+
+    def preprocess_single_histogram_string(s):
+        # Add quotes around keys
+        s = re.sub(r"(\w+):", r'"\1":', s)
+        return s
+
+    def parse_single_histogram(arg):
+        try:
+            preprocessed_arg = preprocess_single_histogram_string(arg)
+            # Safely evaluate the string as a Python literal (a dict in this case)
+            return ast.literal_eval(preprocessed_arg)
+        except (SyntaxError, ValueError) as e:
+            raise argparse.ArgumentTypeError(
+                f"Invalid format for single_histogram: {arg}"
+            ) from e
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-a",
@@ -123,15 +137,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "-s",
         "--single_histograms",
+        type=parse_single_histogram,
         action="append",
-        nargs="+",
         help=(
             "Information for histograms to be plotted separately from "
             "grid of histograms. Useful when want to re-plot a histogram "
             "using different axis or bin settings than those used for it in "
             "the grid. Must be of form:\n"
-            "grid_index[0] grid_index[1] num_bins x_min x_max\n"
-            "grid_index are the coordinates of the plot within the grid that "
+            "{grid_indices: (0, 1), num_bins: 25, x_min: 0.0, x_max: 0.25}\n"
+            "grid_indices are the coordinates of the plot within the grid that "
             "contains the data to be replotted. num_bins is the number of "
             "bins to use in the histogram. x_min & x_max specify the range "
             "of bin values"

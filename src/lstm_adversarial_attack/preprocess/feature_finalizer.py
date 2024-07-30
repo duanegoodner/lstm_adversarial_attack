@@ -1,11 +1,14 @@
+import sys
 import time
 from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.preprocess.preprocessor as pre
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
@@ -19,7 +22,6 @@ class FeatureFinalizerSettings(pre.PreprocessModuleSettings):
 
     observation_window_hours: int = None
     min_observation_hours: int = None
-    require_exact_num_hours: bool = None
     observation_window_start: str = None
 
 

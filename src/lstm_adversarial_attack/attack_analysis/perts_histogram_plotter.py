@@ -83,9 +83,9 @@ class HistogramPlotterFixedSettings:
         "pert_max_abs",
     )
     plot_titles: tuple[str, ...] = (
-        "Non-zero Perturbation\nElements",
-        "Mean Non-zero Perturbation\nElement Magnitude",
-        "Max Perturbation\nElement Magnitudes",
+        "Number of Non-zero\nPerturbation Elements",
+        "Mean Magnitude of Non-zero\nPerturbation Elements",
+        "Max Magnitude of Perturbation\nElements",
     )
     subplot_left_adjust: float = 0.1
     subplot_right_adjust: float = 0.9
