@@ -52,9 +52,6 @@ class PreprocessModuleSettings(ABC):
 
     def __post_init__(self):
         if self.output_dir is None:
-            # self.output_dir = CONFIG_READER.read_path(
-            #     f"preprocess.{self.module_name}.output_dir"
-            # )
             self.output_dir = (
                 Path(
                     CONFIG_READER.read_path(
