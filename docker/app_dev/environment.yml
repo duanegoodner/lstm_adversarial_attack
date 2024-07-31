@@ -12,7 +12,7 @@ dependencies:
   - jupyterlab
   - matplotlib
   - msgspec
-  - numpy
+  - numpy==1.26.4
   - pandas
   - pip
   - psycopg2

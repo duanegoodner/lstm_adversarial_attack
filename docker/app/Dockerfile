@@ -27,7 +27,7 @@ ARG BUILD_DIR=${PRIMARY_USER_HOME}/docker_build
 WORKDIR ${BUILD_DIR}
 
 COPY ${COMPONENTS}/install_apt_pkgs ${BUILD_DIR}/install_apt_pkgs
-COPY ./app_dev/pkglist ${BUILD_DIR}/pkglist
+COPY ./app/pkglist ${BUILD_DIR}/pkglist
 RUN ${BUILD_DIR}/install_apt_pkgs/main.sh ${BUILD_DIR}/pkglist \
     && sudo rm -rf ${BUILD_DIR}/*
 
@@ -55,7 +55,7 @@ RUN ${BUILD_DIR}/install_miniconda/main.sh \
     ${PRIMARY_USER} \
     && sudo rm -rf ${BUILD_DIR}/install_miniconda
 
-COPY ./app_dev/environment.yml ${BUILD_DIR}/environment.yml
+COPY ./app/environment.yml ${BUILD_DIR}/environment.yml
 COPY ${COMPONENTS}/create_conda_env ${BUILD_DIR}/create_conda_env
 RUN ${BUILD_DIR}/create_conda_env/main.sh \
     ${BUILD_DIR}/environment.yml \
