@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 from functools import cached_property
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -9,6 +10,7 @@ import lstm_adversarial_attack.attack.attack_result_data_structs as ads
 import lstm_adversarial_attack.attack_analysis.attack_susceptibility_metrics as asm
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.path_searches as ps
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
 class RecordedExampleType(Enum):
@@ -233,8 +235,11 @@ class FullAttackResults:
     @classmethod
     def from_most_recent_attack(cls):
 
+        attack_output_root = Path(
+            CONFIG_READER.read_path("attack.attack_driver.output_dir")
+        )
         attack_id = ps.get_latest_sequential_child_dirname(
-            root_dir=cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+            root_dir=attack_output_root
         )
         latest_attack_result_path = (
             cfg_paths / attack_id / f"final_attack_result_{attack_id}.json"

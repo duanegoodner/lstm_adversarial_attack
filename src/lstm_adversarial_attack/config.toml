@@ -31,14 +31,6 @@ min_observation_hours = 48
 observation_window_hours = 48
 observation_window_start = "intime"
 
-[preprocess.output_dir_names]
-prefilter = "1_prefilter"
-measurement_merger = "2_merged_stay_measurements"
-admission_list_builder = "3_full_admission_list"
-feature_builder = "4_feature_builder"
-feature_finalizer = "5_feature_finalizer"
-
-
 [model]
 trainer_eval_general_logging_metrics = [
     "accuracy",
@@ -174,6 +166,13 @@ output_root = "output_data::query_db"
 
 [paths.preprocess]
 output_root = "output_data::preprocess"
+
+[preprocess.output_dir_names]
+prefilter = "1_prefilter"
+measurement_merger = "2_merged_stay_measurements"
+admission_list_builder = "3_full_admission_list"
+feature_builder = "4_feature_builder"
+feature_finalizer = "5_feature_finalizer"
 
 [preprocess.prefilter.resources.from_db]
 icustay = "icustay_detail.csv"

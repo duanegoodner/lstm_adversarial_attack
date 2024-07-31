@@ -150,17 +150,11 @@ class StandardModelTrainer:
 
     def _save_checkpoint(
         self,
-    ) -> dict[str, Any]:
+    ):
         """
         Saves checkpoint w/ model/optimizer params & latest train/eval results
         :return: path of file where checkpoint is saved
         """
-        output_path = rio.create_timestamped_filepath(
-            parent_path=self.checkpoint_dir, file_extension="tar"
-        )
-
-        torch.save(obj=self._current_checkpoint_info, f=output_path)
-
         new_timestamp = "".join(
             char for char in str(datetime.now()) if char.isdigit()
         )
@@ -173,8 +167,6 @@ class StandardModelTrainer:
             obj=self._current_checkpoint_struct.to_storage(),
             path=new_checkpoint_path,
         )
-
-        return output_path
 
     def train_model(
         self,

@@ -142,7 +142,6 @@ class AttackTuner:
         self.device = device
         self.model_hyperparameters = model_hyperparameters
         self.model = model
-        # self.model_path = model_path
         self.checkpoint = checkpoint
         self.epoch_per_batch = epochs_per_batch
         self.max_num_samples = max_num_samples
@@ -154,15 +153,7 @@ class AttackTuner:
         self.objective_extra_kwargs = objective_extra_kwargs
         self.sample_selection_seed = sample_selection_seed
         self.dataset = dataset
-        # self.dataset = (
-        #     X19MGeneralDatasetWithIndex.from_feature_finalizer_output(
-        #         max_num_samples=max_num_samples,
-        #         random_seed=sample_selection_seed,
-        #     )
-        # )
         self.study = study
-        # self.pruner = pruner
-        # self.hyperparameter_sampler = hyperparameter_sampler
         self.output_dir, self.attack_results_dir = self.initialize_output_dir(
             output_dir=output_dir
         )
@@ -212,9 +203,6 @@ class AttackTuner:
             dataset=self.dataset,
             collate_fn=x19m_with_index_collate_fn,
             attack_misclassified_samples=self.attack_misclassified_samples,
-            # inference_batch_size=,
-            # use_weighted_data_loader=,
-            # checkpoint_interval=,
             output_dir=self.output_dir,
         )
 

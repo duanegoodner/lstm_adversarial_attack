@@ -15,6 +15,7 @@ import lstm_adversarial_attack.weighted_dataloader_builder as wdb
 import lstm_adversarial_attack.model.lstm_model_stc as lms
 from lstm_adversarial_attack.config import CONFIG_READER
 
+
 class AdversarialAttackTrainer:
     """
     Finds adversarial example_data for a classification model
@@ -65,7 +66,9 @@ class AdversarialAttackTrainer:
         self.model = model
         self.attack_hyperparameters = attack_hyperparameters
         self.state_dict = state_dict
-        self.observation_window_hours = CONFIG_READER.get_config_value("preprocess.observation_window_hours")
+        self.observation_window_hours = CONFIG_READER.get_config_value(
+            "preprocess.observation_window_hours"
+        )
         self.attacker = aat.AdversarialAttacker(
             full_model=model,
             state_dict=state_dict,
@@ -82,7 +85,8 @@ class AdversarialAttackTrainer:
             "lr": self.attack_hyperparameters.learning_rate
         }
         self.optimizer = self.attack_hyperparameters.optimizer_constructor(
-            params=self.attacker.parameters(), **self.optimizer_constructor_kwargs
+            params=self.attacker.parameters(),
+            **self.optimizer_constructor_kwargs,
         )
         self.dataset = dataset
         self.collate_fn = collate_fn
@@ -432,7 +436,8 @@ class AdversarialAttackTrainer:
                 (num_batches + 1) % self.checkpoint_interval == 0
             ):
                 self.save_checkpoint(
-                    attack_trainer_result=attack_trainer_result, num_batches=num_batches
+                    attack_trainer_result=attack_trainer_result,
+                    num_batches=num_batches,
                 )
 
         self.latest_result = attack_trainer_result

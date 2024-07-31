@@ -20,7 +20,7 @@ DOCKER_DIR = PROJECT_ROOT / "docker"
 #     DB_DEFAULT_QUERY_DIR / "pivoted_lab.sql",
 #     DB_DEFAULT_QUERY_DIR / "pivoted_vital.sql",
 # ]
-TUNING_STUDY_DB_SUBPACKAGE = LSTM_ADVERSARIAL_ATTACK_PACKAGE / "tuning_db"
+# TUNING_STUDY_DB_SUBPACKAGE = LSTM_ADVERSARIAL_ATTACK_PACKAGE / "tuning_db"
 TUNING_DBS_DOTENV_PATH = DOCKER_DIR / "tuning_dbs.env"
 
 
@@ -94,19 +94,19 @@ ONGOING_TUNING_STUDY_PICKLE = (
 )
 
 # ##### Cross Validation Assessment Output #####
-CV_ASSESSMENT_OUTPUT_DIR = TUNE_TRAIN_OUTPUT_DIR / "cross_validation"
+# CV_ASSESSMENT_OUTPUT_DIR = TUNE_TRAIN_OUTPUT_DIR / "cross_validation"
 
 
 # DEFAULT_ATTACK_TARGET_DIR = SINGLE_FOLD_OUTPUT_DIR / "default_attack_target"
-ATTACK_DEFAULT_TARGET_MODEL_DIR = (
-    EXAMPLE_DATA_DIR / "cv_training_2023-06-17_23_57_23.366142"
-)
+# ATTACK_DEFAULT_TARGET_MODEL_DIR = (
+#     EXAMPLE_DATA_DIR / "cv_training_2023-06-17_23_57_23.366142"
+# )
 ATTACK_OUTPUT_DIR = DATA_DIR / "attack"
 ATTACK_HYPERPARAMETER_TUNING = (
     ATTACK_OUTPUT_DIR / "tuning"
 )
-FROZEN_HYPERPARAMETER_ATTACK = (
-    ATTACK_OUTPUT_DIR / "frozen_hyperparameter_attack"
-)
+# FROZEN_HYPERPARAMETER_ATTACK = (
+#     ATTACK_OUTPUT_DIR / "frozen_hyperparameter_attack"
+# )
 
-ATTACK_ANALYSIS_DIR = DATA_DIR / "attack_analysis"
+# ATTACK_ANALYSIS_DIR = DATA_DIR / "attack_analysis"

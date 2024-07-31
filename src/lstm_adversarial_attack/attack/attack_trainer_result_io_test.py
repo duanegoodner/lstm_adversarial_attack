@@ -1,12 +1,17 @@
-import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 from pathlib import Path
+
+import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.config_paths as cfg_paths
 
+from lstm_adversarial_attack.config import CONFIG_READER
 
 if __name__ == "__main__":
 
-    attack_result_path = (
-        cfg_paths.FROZEN_HYPERPARAMETER_ATTACK
+    attack_results_root = CONFIG_READER.read_path(
+        "attack.attack_driver.output_dir"
+    )
+    attack_results_path = (
+        Path(attack_results_root)
         / "20240727113324944266"
         / "final_attack_result_20240727113324944266.json"
     )
