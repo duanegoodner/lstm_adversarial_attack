@@ -17,28 +17,28 @@ from lstm_adversarial_attack.config import CONFIG_READER
 class AttackTuningRanges:
     kappa: tuple[float, float] = field(
         default_factory=lambda: tuple(
-            CONFIG_READER.get_config_value("attack.tuning.kappa")
+            CONFIG_READER.get_config_value("attack.tuning.ranges.kappa")
         )
     )
     lambda_1: tuple[float, float] = field(
         default_factory=lambda: tuple(
-            CONFIG_READER.get_config_value("attack.tuning.lambda_1")
+            CONFIG_READER.get_config_value("attack.tuning.ranges.lambda_1")
         )
     )
     optimizer_name: tuple[str, ...] = field(
         default_factory=lambda: tuple(
-            CONFIG_READER.get_config_value("attack.tuning.optimizer_options")
+            CONFIG_READER.get_config_value("attack.tuning.ranges.optimizer_options")
         )
     )
 
     learning_rate: tuple[float, float] = field(
         default_factory=lambda: tuple(
-            CONFIG_READER.get_config_value("attack.tuning.learning_rate")
+            CONFIG_READER.get_config_value("attack.tuning.ranges.learning_rate")
         )
     )
     log_batch_size: tuple[int, int] = field(
         default_factory=lambda: tuple(
-            CONFIG_READER.get_config_value("attack.tuning.log_batch_size")
+            CONFIG_READER.get_config_value("attack.tuning.ranges.log_batch_size")
         )
     )
 
