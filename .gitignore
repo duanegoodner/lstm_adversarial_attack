@@ -51,6 +51,9 @@ data/preprocess/checkpoints/4_feature_builder/*
 data/preprocess/checkpoints/5_feature_finalizer/*
 !data/preprocess/checkpoints/5_feature_finalizer/.gitkeep
 
+logs/*
+!logs/.gitkeep
+
 
 
 
