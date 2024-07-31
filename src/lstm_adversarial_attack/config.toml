@@ -23,7 +23,6 @@ vital_data_cols = [
     "resprate",
     "spo2"
 ]
-admission_data_json_delimiter = "END_TIME_SERIES_DF_METADATA"
 winsorize_low = "5%"
 winsorize_high = "95%"
 resample_interpolation_method = "linear"

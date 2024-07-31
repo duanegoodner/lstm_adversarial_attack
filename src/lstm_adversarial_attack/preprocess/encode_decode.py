@@ -8,14 +8,8 @@ import pandas as pd
 
 import lstm_adversarial_attack.msgspec_io as mio
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
-from lstm_adversarial_attack.config import CONFIG_READER
 
-# TODO Consider creating DataWriter base class with encoder abstractmethod and
-#  encode() & export() concrete methods
-
-ADMISSION_DATA_JSON_DELIMITER = CONFIG_READER.get_config_value(
-    config_key="preprocess.admission_data_json_delimiter"
-)
+ADMISSION_DATA_JSON_DELIMITER = "END_TIME_SERIES_DF_METADATA"
 
 
 class AdmissionDataWriter:
