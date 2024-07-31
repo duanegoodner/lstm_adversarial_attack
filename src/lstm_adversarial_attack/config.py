@@ -9,16 +9,15 @@ class ConfigReader:
         if config_path is None:
             config_path = Path(__file__).parent / "config.toml"
         self._config_path = config_path
+        with self._config_path.open(mode="r") as config_file:
+            self._config = toml.load(config_file)
 
     @property
     def project_root(self) -> Path:
         return Path(__file__).parent.parent.parent
 
     def get_config_value(self, config_key: str) -> Any:
-        with self._config_path.open(mode="r") as config_file:
-            project_config = toml.load(config_file)
-
-        result = project_config.copy()
+        result = self._config.copy()
         for sub_key in config_key.split("."):
             if result.get(sub_key) is None:
                 return None
