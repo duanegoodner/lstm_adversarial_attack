@@ -3,12 +3,13 @@ import sys
 import pandas as pd
 from functools import cached_property
 from pathlib import Path
-from typing import List, Callable, Any
+from typing import List
 
 import numpy as np
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.preprocess.encode_decode as edc
+import lstm_adversarial_attack.utils.path_searches as ps
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
@@ -73,7 +74,9 @@ class FeatureFinalizerOutputInspector:
         print(summary_df.T)
 
     @staticmethod
-    def display_distribution(distribution_property: tuple, parameter_name: str, title: str):
+    def display_distribution(
+        distribution_property: tuple, parameter_name: str, title: str
+    ):
         unique_values, counts = distribution_property
         summary_df = pd.DataFrame(
             data=np.stack([unique_values, counts], axis=1),
@@ -86,14 +89,21 @@ class FeatureFinalizerOutputInspector:
         print()
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("preprocess_id", type=str)
-    args = parser.parse_args()
+def main(preprocess_id: str = None):
+
+    if preprocess_id is None:
+        preprocess_output_root = Path(
+            CONFIG_READER.read_path("preprocess.output_root")
+        )
+        preprocess_id = ps.get_latest_sequential_child_dirname(
+            root_dir=preprocess_output_root
+        )
 
     output_inspector = FeatureFinalizerOutputInspector(
-        preprocess_id=args.preprocess_id
+        preprocess_id=preprocess_id
     )
+
+    print(f"Summary of output from preprocess session {preprocess_id}\n")
 
     print(f"Number of samples = {output_inspector.num_samples}\n")
 
@@ -109,8 +119,12 @@ def main():
         title="Measurement Column Counts Distribution",
     )
 
-    print(f"Min value of any element in any feature matrix = {np.min(output_inspector.features)}")
-    print(f"Max value of any element in any feature matrix = {np.max(output_inspector.features)}\n")
+    print(
+        f"Min value of any element in any feature matrix = {np.min(output_inspector.features)}"
+    )
+    print(
+        f"Max value of any element in any feature matrix = {np.max(output_inspector.features)}\n"
+    )
 
     output_inspector.display_distribution(
         distribution_property=output_inspector.class_labels_distribution,
@@ -119,6 +133,15 @@ def main():
     )
 
 
-
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-p",
+        "--preprocess_id",
+        type=str,
+        action="store",
+        nargs="?",
+        help="ID of preprocess session to use as data source. Defaults to latest session",
+    )
+    args_namespace = parser.parse_args()
+    main(preprocess_id=args_namespace.preprocess_id)

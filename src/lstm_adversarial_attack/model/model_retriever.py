@@ -26,7 +26,7 @@ class ModelRetriever:
     ):
         """
         :param training_output_dir: directory containing the assessment
-        (training) results
+        (tuning) results
         """
         self.training_output_dir = training_output_dir
         self.checkpoints_dir = self.training_output_dir / "checkpoints"

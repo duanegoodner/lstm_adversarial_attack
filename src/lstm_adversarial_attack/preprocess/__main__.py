@@ -103,7 +103,7 @@ if __name__ == "__main__":
         type=str,
         action="store",
         nargs="?",
-        help="Directory database query output data. Defaults to directory with data from most recent query.",
+        help="ID of database query session to take output from. Defaults to latest query.",
     )
 
     args_namespace = parser.parse_args()

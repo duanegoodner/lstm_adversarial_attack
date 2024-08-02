@@ -173,7 +173,7 @@ class StandardModelTrainer:
         Trains model for num_epochs. Stores results in self.train_log.
 
         Optionally writes to Tensorboard SummaryWriter.
-        :param num_epochs: number of epochs to run training
+        :param num_epochs: number of epochs to run tuning
         """
         self.model.to(self.device)
         self.model.train()

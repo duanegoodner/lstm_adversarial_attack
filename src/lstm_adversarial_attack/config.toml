@@ -54,17 +54,10 @@ random_seed = 12345678
 
 [model.tuner_driver]
 num_trials = 60
-num_folds = 3
-num_cv_epochs = 2
-epochs_per_fold = 3
+num_folds = 5
+num_cv_epochs = 10
+epochs_per_fold = 5
 kfold_random_seed = 1234
-cv_mean_tensorboard_metrics = [
-    "accuracy",
-    "auc",
-    "f1",
-    "precision",
-    "recall",
-    "validation_loss"]
 performance_metric = "validation_loss"
 optimization_direction_label = "minimize"
 tuning_output_dir = "data/model/tuning"
@@ -73,16 +66,23 @@ sampler_name = "TPESampler"
 db_env_var_name = "MODEL_TUNING_DB_NAME"
 fold_class_name = "StratifiedKFold"
 collate_fn_name = "x19m_collate_fn"
+cv_mean_tensorboard_metrics = [
+    "accuracy",
+    "auc",
+    "f1",
+    "precision",
+    "recall",
+    "validation_loss"]
 
 [model.tuner_driver.tuning_ranges]
-log_lstm_hidden_size = [5, 7]
-lstm_act_options = ["ReLU", "Tanh"]
-dropout = [0.0, 0.5]
-log_fc_hidden_size = [4, 8]
-fc_act_options = ["ReLU", "Tanh"]
-optimizer_options = ["Adam", "RMSprop", "SGD"]
-learning_rate = [0.00001, 0.1]
-log_batch_size = [5, 8]
+    log_lstm_hidden_size = [5, 7]
+    lstm_act_options = ["ReLU", "Tanh"]
+    dropout = [0.0, 0.5]
+    log_fc_hidden_size = [4, 8]
+    fc_act_options = ["ReLU", "Tanh"]
+    optimizer_options = ["Adam", "RMSprop", "SGD"]
+    learning_rate = [0.00001, 0.1]
+    log_batch_size = [5, 8]
 
 [model.tuner_driver.pruner_kwargs]
 n_startup_trials = 5
@@ -147,6 +147,8 @@ default_seq_length = 48
 root_pkg = "src/lstm_adversarial_attack"
 output_data = "data"
 docker = "docker"
+logs = "logs"
+
 
 [paths.sub_packages]
 db = "root_pkg::query_db"
@@ -222,3 +224,10 @@ output_dir = "output_data::attack/frozen_hyperparameter_attack"
 
 [paths.attack_analysis]
 output_dir = "output_data::attack_analysis"
+
+[paths.redirected_output]
+model_training = "logs::model/tuning"
+
+
+
+
