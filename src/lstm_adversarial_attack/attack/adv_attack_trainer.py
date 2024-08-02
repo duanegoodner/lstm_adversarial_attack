@@ -42,7 +42,7 @@ class AdversarialAttackTrainer:
 
         :param device: device to run on
         :param model: original classification model to attack
-        :param state_dict: state dict obtained from previous training of model
+        :param state_dict: state dict obtained from previous tuning of model
         :param epochs_per_batch: number of attack iterations to run per batch
         (https://arxiv.org/abs/1802.04822). Defines a margin by which alternate
         class logit value needs to exceed original class logit value in order
@@ -168,7 +168,7 @@ class AdversarialAttackTrainer:
 
     def build_data_loader(self) -> DataLoader:
         """
-        Creates a dataloader to be used during training.
+        Creates a dataloader to be used during tuning.
         :return: a DataLoader (either "regular" or "weighted")
         """
         target_dataset = self.get_target_dataset()
@@ -195,9 +195,9 @@ class AdversarialAttackTrainer:
         """
         Gets info for samples within batch that are successfully attacked
         during an attack epoch.
-        :param epoch_num: epoch number within training session
+        :param epoch_num: epoch number within tuning session
         :param logits: Model outputs of each sample in batch. When
-        training/using predictive model for normal use, these logits are the
+        tuning/using predictive model for normal use, these logits are the
         values fed into final activation function. But when running attack,
         we don't use the final activation.
         :param orig_labels: class predicted by original model (for each sample

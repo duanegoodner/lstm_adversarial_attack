@@ -58,7 +58,7 @@ class CustomDataset(Dataset):
 data = torch.randn(100, 5)  # 100 samples with 5 features each
 targets = torch.randn(100, 5)  # Corresponding targets
 
-# Create a DataLoader for training
+# Create a DataLoader for tuning
 batch_size = 16
 train_dataset = CustomDataset(data, targets)
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)

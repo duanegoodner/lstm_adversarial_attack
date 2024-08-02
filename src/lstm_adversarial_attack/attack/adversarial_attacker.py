@@ -20,7 +20,7 @@ class AdversarialAttacker(nn.Module):
     ):
         """
         :param full_model: original classification mode
-        :param state_dict: state dict obtained by previous training of model
+        :param state_dict: state dict obtained by previous tuning of model
         :param input_size: number of columns in perturber (matches input
         size of model being attacked)
         :param max_sequence_length: number of rows in perturber (longest

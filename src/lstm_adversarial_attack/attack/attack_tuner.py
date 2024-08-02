@@ -123,7 +123,7 @@ class AttackTuner:
     ):
         """
         :param device: device to run on
-        :param checkpoint: params (from prev training) to load into model
+        :param checkpoint: params (from prev tuning) to load into model
         :param epochs_per_batch: number of times to run attack algo (run by
         AdversarialAttackTrainer / Adversarial Attacker) runs on each batch
         :param max_num_samples: Number candidate samples to take from a dataset

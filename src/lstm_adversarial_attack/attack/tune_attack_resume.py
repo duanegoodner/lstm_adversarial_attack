@@ -18,7 +18,7 @@ def main(
     Tunes hyperparameters of an AdversarialAttackTrainer and its
     AdversarialAttacker. Can accept target_model_dir OR existing_study_dir or
     neither, but not both. If no args provided, starts new study using most
-    recent cross-validation training results to build target model.
+    recent cross-validation tuning results to build target model.
 
     :param attack_tuning_id: ID of attack tuning session to resume
     :return: an optuna.Study object with results of completed trials

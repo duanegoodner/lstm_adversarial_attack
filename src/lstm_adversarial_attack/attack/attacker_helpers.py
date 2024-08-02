@@ -16,7 +16,7 @@ class TargetModel:
     :param full_model: Binary classification model with activation of its
     final output layer. May contain dropout layers.
     :param full_model_state_dict: state dict of parameters obtained from
-    training full_model
+    tuning full_model
     :param :logit_out_no_dropout: model created by starting with full_model,
     then removing its final activation function and setting dropout prob of
     any/all dropout layers to 0.
@@ -34,7 +34,7 @@ class LogitNoDropoutModelBuilder:
         """
         :param full_model: Classification model with a final activation layer
         and possibly with dropout layer(s)
-        :param state_dict: state dict obtained from previous training of
+        :param state_dict: state dict obtained from previous tuning of
         full_model
         """
         self.full_model = full_model

@@ -19,7 +19,7 @@ def main(
     """
     Takes arguments in format provided by command line interface and uses them
     to call start_new_tuning().
-    :param cv_training_id: ID of cross-validation training session to use as source of model to attack
+    :param cv_training_id: ID of cross-validation tuning session to use as source of model to attack
     """
     device = gh.get_device()
     attack_tuning_id = sig.generate_session_id()
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         action="store",
         nargs="?",
         help=(
-            "ID of cross validation training session providing trained model for attack."
+            "ID of cross validation tuning session providing trained model for attack."
         ),
     )
 
