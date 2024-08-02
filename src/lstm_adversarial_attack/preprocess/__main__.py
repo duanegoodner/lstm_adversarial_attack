@@ -1,6 +1,5 @@
 import argparse
 import sys
-from datetime import datetime
 from pathlib import Path
 import time
 from typing import Any
@@ -14,7 +13,7 @@ import lstm_adversarial_attack.preprocess.icustay_measurement_merger as imm
 import lstm_adversarial_attack.preprocess.prefilter as prf
 import lstm_adversarial_attack.preprocess.preprocessor as ppr
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
-import lstm_adversarial_attack.session_id_generator as sig
+import lstm_adversarial_attack.utils.session_id_generator as sig
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
@@ -112,4 +111,4 @@ if __name__ == "__main__":
     result = main(**args_namespace.__dict__)
     end = time.time()
 
-    print(f"total time = {end - start}")
+    print(f"Total preprocess time = {end - start}")

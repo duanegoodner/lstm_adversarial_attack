@@ -71,6 +71,10 @@ class OptunaDatabase:
             f"{self._host}/{self._db_name}"
         )
 
+    @property
+    def db_name(self) -> str:
+        return self._db_name
+
     @cached_property
     def storage(self) -> RDBStorage:
         return RDBStorage(url=self._db_url)

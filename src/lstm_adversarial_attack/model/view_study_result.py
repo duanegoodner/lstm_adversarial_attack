@@ -6,7 +6,7 @@ from pathlib import Path
 from torchview import draw_graph
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.resource_io as rio
+import lstm_adversarial_attack.utils.resource_io as rio
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 

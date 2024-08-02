@@ -13,12 +13,12 @@ from torch.utils.tensorboard import SummaryWriter
 from lstm_adversarial_attack import config
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.resource_io as rio
-import lstm_adversarial_attack.simple_logger as slg
+import lstm_adversarial_attack.utils.resource_io as rio
+import lstm_adversarial_attack.utils.simple_logger as slg
 import lstm_adversarial_attack.model.standard_model_trainer as smt
 import lstm_adversarial_attack.model.tuner_helpers as tuh
-import lstm_adversarial_attack.weighted_dataloader_builder as wdl
-import lstm_adversarial_attack.x19_mort_general_dataset as xmd
+import lstm_adversarial_attack.dataset.weighted_dataloader_builder as wdl
+import lstm_adversarial_attack.dataset.x19_mort_general_dataset as xmd
 
 
 class TrainerDriver:

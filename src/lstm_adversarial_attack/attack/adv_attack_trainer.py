@@ -9,9 +9,9 @@ import lstm_adversarial_attack.attack.adversarial_attacker as aat
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.attack.attacker_helpers as ath
-import lstm_adversarial_attack.dataset_with_index as dsi
-import lstm_adversarial_attack.resource_io as rio
-import lstm_adversarial_attack.weighted_dataloader_builder as wdb
+import lstm_adversarial_attack.dataset.dataset_with_index as dsi
+import lstm_adversarial_attack.utils.resource_io as rio
+import lstm_adversarial_attack.dataset.weighted_dataloader_builder as wdb
 import lstm_adversarial_attack.model.lstm_model_stc as lms
 from lstm_adversarial_attack.config import CONFIG_READER
 

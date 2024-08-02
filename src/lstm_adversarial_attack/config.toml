@@ -54,9 +54,9 @@ random_seed = 12345678
 
 [model.tuner_driver]
 num_trials = 60
-num_folds = 5
-num_cv_epochs = 10
-epochs_per_fold = 5
+num_folds = 3
+num_cv_epochs = 2
+epochs_per_fold = 3
 kfold_random_seed = 1234
 cv_mean_tensorboard_metrics = [
     "accuracy",

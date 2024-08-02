@@ -19,8 +19,8 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.standard_model_trainer as smt
 import lstm_adversarial_attack.model.tuner_helpers as tuh
-import lstm_adversarial_attack.simple_logger as slg
-import lstm_adversarial_attack.weighted_dataloader_builder as wdb
+import lstm_adversarial_attack.utils.simple_logger as slg
+import lstm_adversarial_attack.dataset.weighted_dataloader_builder as wdb
 from lstm_adversarial_attack.config import CONFIG_READER
 
 

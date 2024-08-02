@@ -1,23 +1,21 @@
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 import optuna
 import torch
 import torch.nn as nn
-from optuna.pruners import BasePruner, MedianPruner
-from optuna.samplers import BaseSampler, TPESampler
 
 import lstm_adversarial_attack.attack.adv_attack_trainer as ata
 # import lstm_adversarial_attack.attack.attack_driver as ad
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.config_paths as cfg_paths
-import lstm_adversarial_attack.resource_io as rio
+import lstm_adversarial_attack.utils.resource_io as rio
 # import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
-from lstm_adversarial_attack.x19_mort_general_dataset import (
+from lstm_adversarial_attack.dataset.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex,
     x19m_with_index_collate_fn,
 )

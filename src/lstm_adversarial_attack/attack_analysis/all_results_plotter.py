@@ -9,7 +9,7 @@ import lstm_adversarial_attack.attack_analysis.attack_analysis as ata
 import lstm_adversarial_attack.attack_analysis.discovery_epoch_plotter as dep
 import lstm_adversarial_attack.attack_analysis.perts_histogram_plotter as php
 import lstm_adversarial_attack.attack_analysis.susceptibility_plotter as ssp
-import lstm_adversarial_attack.msgspec_io as mio
+import lstm_adversarial_attack.utils.msgspec_io as mio
 from lstm_adversarial_attack.config import CONFIG_READER
 
 

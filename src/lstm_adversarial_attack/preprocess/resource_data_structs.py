@@ -8,7 +8,7 @@ import pandas as pd
 
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
-import lstm_adversarial_attack.resource_io as rio
+import lstm_adversarial_attack.utils.resource_io as rio
 from lstm_adversarial_attack.config import CONFIG_READER
 
 _T = TypeVar("_T")

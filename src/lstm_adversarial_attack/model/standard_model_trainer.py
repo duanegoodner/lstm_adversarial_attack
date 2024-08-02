@@ -1,4 +1,3 @@
-import shutil
 import sys
 from copy import deepcopy
 from datetime import datetime
@@ -14,9 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 sys.path.append(str(Path(__file__).parent.parent))
 # import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.model.model_data_structs as mds
-import lstm_adversarial_attack.resource_io as rio
-import lstm_adversarial_attack.simple_logger as slg
-import lstm_adversarial_attack.preprocess.encode_decode as edc
+import lstm_adversarial_attack.utils.simple_logger as slg
 from lstm_adversarial_attack.config import CONFIG_READER
 
 

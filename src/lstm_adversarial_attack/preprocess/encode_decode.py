@@ -6,7 +6,7 @@ import msgspec
 import numpy as np
 import pandas as pd
 
-import lstm_adversarial_attack.msgspec_io as mio
+import lstm_adversarial_attack.utils.msgspec_io as mio
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 
 ADMISSION_DATA_JSON_DELIMITER = "END_TIME_SERIES_DF_METADATA"

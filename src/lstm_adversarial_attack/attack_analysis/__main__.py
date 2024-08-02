@@ -1,14 +1,13 @@
 import argparse
 import sys
-from datetime import datetime
 from pathlib import Path
 import ast
 import re
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack_analysis.all_results_plotter as arp
-import lstm_adversarial_attack.path_searches as ps
-import lstm_adversarial_attack.session_id_generator as sig
+import lstm_adversarial_attack.utils.path_searches as ps
+import lstm_adversarial_attack.utils.session_id_generator as sig
 from lstm_adversarial_attack.config import CONFIG_READER
 
 

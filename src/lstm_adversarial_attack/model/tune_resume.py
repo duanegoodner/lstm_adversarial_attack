@@ -5,9 +5,9 @@ from pathlib import Path
 import optuna
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.gpu_helpers as gh
+import lstm_adversarial_attack.utils.gpu_helpers as gh
 import lstm_adversarial_attack.model.model_tuner_driver as td
-import lstm_adversarial_attack.path_searches as ps
+import lstm_adversarial_attack.utils.path_searches as ps
 from lstm_adversarial_attack.config import CONFIG_READER
 
 

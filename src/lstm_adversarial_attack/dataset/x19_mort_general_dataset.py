@@ -12,7 +12,7 @@ from torch.utils.data import Dataset
 sys.path.append(str(Path(__file__).parent.parent))
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 from lstm_adversarial_attack.model.lstm_model_stc import VariableLengthFeatures
-from lstm_adversarial_attack.dataset_with_index import DatasetWithIndex
+from lstm_adversarial_attack.dataset.dataset_with_index import DatasetWithIndex
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
@@ -146,27 +146,20 @@ class DatasetInspector:
 
     def view_basic_info(self):
         dataset_size = len(self.dataset)
-        dataset_entry_type = type(self.dataset[0]).__name__
-        dataset_entry_length = len(self.dataset[0])
-        input_feature_data_struct = type(self.dataset[0][0]).__name__
-        input_feature_dims = self.dataset[0][0].dim()
-        input_size = self.dataset[0][0].shape[1]
-        input_feature_dtype = self.dataset[0][0].dtype
-        label_data_struct = type(self.dataset[0][1]).__name__
-        label_dims = self.dataset[0][1].dim()
-        label_dtype = self.dataset[0][1].dtype
+        min__number_feature_rows = min([item[0].shape[0] for item in self.dataset])
+        max_number_feature_rows = max([item[0].shape[0] for item in self.dataset])
+        min__number_feature_cols = min([item[0].shape[1] for item in self.dataset])
+        max_number_feature_cols = max([item[0].shape[1] for item in self.dataset])
+        unique_class_label_vals = np.unique([item[1] for item in self.dataset])
 
-        summary = (
-            f"There are {dataset_size} samples in the Dataset.\nCalling"
-            f" `__getitem__` on the Dataset returns a {dataset_entry_type} of"
-            f" length {dataset_entry_length}.\nThe first element of this tuple"
-            f" is a {input_feature_dims}-D {input_feature_data_struct} with"
-            f" {input_size} columns and data type {input_feature_dtype}.\nThe"
-            f" second element is a {label_dims}-D {label_data_struct} with"
-            f" data type {label_dtype}"
-        )
+        print(f"Number of samples = {dataset_size}\n")
+        print("Size ranges of input feature tensors:")
+        print(f"Min # rows = {min__number_feature_rows}")
+        print(f"Max # rows = {max_number_feature_rows}")
+        print(f"Min # columns = {min__number_feature_cols}")
+        print(f"Max # columns = {max_number_feature_cols}\n")
+        print(f"Unique class label vals = {unique_class_label_vals}\n")
 
-        print(summary)
 
     def view_seq_length_summary(self):
         unique_sequence_lengths, sequence_length_counts = np.unique(
@@ -182,7 +175,8 @@ class DatasetInspector:
         )
 
         summary_df.set_index("seq_length", inplace=True)
-        display(HTML(summary_df.T.to_html()))
+        print("Sequence Length Distribution")
+        print(summary_df.T)
 
     def view_label_summary(self):
         unique_labels, label_counts = np.unique(
@@ -190,11 +184,12 @@ class DatasetInspector:
         )
         summary_df = pd.DataFrame(
             data=np.stack((unique_labels, label_counts), axis=1),
-            columns=["class_label", "nunm_samples"],
+            columns=["class_label", "num_samples"],
         )
 
         summary_df.set_index("class_label", inplace=True)
-        display(HTML(summary_df.T.to_html()))
+        print("Class Label Distribution")
+        print(summary_df.T)
 
 
 if __name__ == "__main__":

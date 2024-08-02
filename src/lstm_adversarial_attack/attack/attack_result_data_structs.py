@@ -9,9 +9,9 @@ import numpy as np
 import pandas as pd
 import torch
 
-import lstm_adversarial_attack.dataset_with_index as dsi
-import lstm_adversarial_attack.x19_mort_general_dataset as xmd
-import lstm_adversarial_attack.msgspec_io as mio
+import lstm_adversarial_attack.dataset.dataset_with_index as dsi
+import lstm_adversarial_attack.dataset.x19_mort_general_dataset as xmd
+import lstm_adversarial_attack.utils.msgspec_io as mio
 
 
 @dataclass

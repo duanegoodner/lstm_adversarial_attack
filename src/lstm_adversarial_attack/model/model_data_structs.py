@@ -12,7 +12,7 @@ import torch
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.model.tuner_helpers as tuh
-import lstm_adversarial_attack.msgspec_io as mio
+import lstm_adversarial_attack.utils.msgspec_io as mio
 from lstm_adversarial_attack.config import CONFIG_READER, ConfigReader
 
 

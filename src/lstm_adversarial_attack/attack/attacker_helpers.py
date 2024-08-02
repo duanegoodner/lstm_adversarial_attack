@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.utils.data import Subset
 
 import lstm_adversarial_attack.attack.inferrer as infr
-import lstm_adversarial_attack.x19_mort_general_dataset as xmd
+import lstm_adversarial_attack.dataset.x19_mort_general_dataset as xmd
 
 
 @dataclass

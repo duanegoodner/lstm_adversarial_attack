@@ -9,7 +9,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.model.cross_validator as cv
 import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
-import lstm_adversarial_attack.x19_mort_general_dataset as xmd
+import lstm_adversarial_attack.dataset.x19_mort_general_dataset as xmd
 from lstm_adversarial_attack.config import CONFIG_READER
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 

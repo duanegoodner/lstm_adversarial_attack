@@ -108,6 +108,7 @@ class MimiciiiDatabaseAccess:
         :param sql_query_paths: list of .sql query filepaths
         :return: list of paths to .csv query output files
         """
+
         result_paths = []
         for query_idx in range(len(sql_query_paths)):
             # for query_path in sql_query_paths:

@@ -13,13 +13,13 @@ def test_mimiciii_db_connection():
 
     try:
         db_access.connect()
-        print("Connected to MIMIC-III database")
+        print("Successfully connected to MIMIC-III database.")
     except Exception as e:
         print(e)
 
     try:
         db_access.close_connection()
-        print("Connection to MIMIC-III database closed")
+        print("Connection to MIMIC-III database successfully closed.")
     except Exception as e:
         print(e)
 

@@ -213,11 +213,14 @@ class Preprocessor:
             export_end = time.time()
             print(
                 f"{module.__class__.__name__} export time ="
-                f" {export_end - export_start}\n"
+                f" {export_end - export_start}"
             )
+            print(f"Output saved in {str(module.output_dir)}\n")
         self.available_resources.update(module_output)
 
     def run_all_modules(self):
+        print(f"Starting preprocess session {self.preprocess_id}\n")
+
         for module_info in self.modules_info:
             print(f"Running {module_info.module_constructor.__name__}")
             init_start = time.time()
@@ -233,5 +236,6 @@ class Preprocessor:
                 module=module,
                 save_output=self.save_checkpoints or module_info.save_output,
             )
+
 
         return self.available_resources

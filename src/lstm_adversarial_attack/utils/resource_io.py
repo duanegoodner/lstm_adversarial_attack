@@ -10,7 +10,7 @@ import dill
 import msgspec
 import pandas as pd
 
-import lstm_adversarial_attack.custom_unpickler as cu
+import lstm_adversarial_attack.utils.custom_unpickler as cu
 
 
 def create_timestamped_dir(parent_path: Path) -> Path:

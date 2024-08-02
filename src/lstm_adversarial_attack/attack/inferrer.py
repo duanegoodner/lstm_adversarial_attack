@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.utils.data as ud
 from sklearn.metrics import confusion_matrix
 
-import lstm_adversarial_attack.dataset_with_index as dsi
+import lstm_adversarial_attack.dataset.dataset_with_index as dsi
 
 
 @dataclass
