@@ -5,12 +5,11 @@ from pathlib import Path
 import optuna
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-import lstm_adversarial_attack.utils.gpu_helpers as gh
 import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.model_tuner_driver as td
+import lstm_adversarial_attack.utils.gpu_helpers as gh
 import lstm_adversarial_attack.utils.path_searches as ps
 import lstm_adversarial_attack.utils.session_id_generator as sig
-import lstm_adversarial_attack.utils.redirect_output as rdo
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
@@ -24,10 +23,17 @@ def main(redirect: bool, preprocess_id: str = None) -> optuna.Study:
     data from completed trials is still saved.
     :return: an optuna.Study object with results of completed trials.
     """
-    cur_device = gh.get_device()
-
     # We are running new tuning, so need new model_tuning_id
     model_tuning_id = sig.generate_session_id()
+    cur_device = gh.get_device()
+
+    print(
+        f"Starting new model hyperparameter tuning session {model_tuning_id}\n\n"
+        f"To monitor tuning in tensorboard, run the following command in another terminal:\n"
+        f"tensorboard --logdir=/home/devspace/project/data/model/tuning/"
+        f"{model_tuning_id}/tensorboard --host=0.0.0.0\n"
+        f"Then go to http://localhost:6006/ in your browser.\n"
+    )
 
     # If no preprocess_id provided, use ID of latest preprocess run
     if preprocess_id is None:
@@ -44,37 +50,30 @@ def main(redirect: bool, preprocess_id: str = None) -> optuna.Study:
         paths=mds.ModelTunerDriverPaths.from_config(),
         preprocess_id=preprocess_id,
         model_tuning_id=model_tuning_id,
+        redirect_terminal_output=redirect,
     )
 
-    if redirect:
-        log_file = (
-            Path(CONFIG_READER.read_path("redirected_output.model_training"))
-            / f"{model_tuning_id}.log"
+    study = tuner_driver(
+        num_trials=CONFIG_READER.get_config_value(
+            "model.tuner_driver.num_trials"
         )
+    )
 
-        rdo.redirect_output(
-            log_file=log_file,
-            redirect_flags=["-r", "--redirect"],
-        )
-    else:
-        study = tuner_driver(
-            num_trials=CONFIG_READER.get_config_value(
-                "model.tuner_driver.num_trials"
-            )
-        )
-
-        return study
+    return study
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Creates and runs a new model hyperparameter tuning study."
+    )
     parser.add_argument(
         "-p",
         "--preprocess_id",
         type=str,
         action="store",
         nargs="?",
-        help="ID of preprocess session to use as data source. Defaults to latest session",
+        help="ID of preprocess session to use as data source. "
+        "Defaults to most recently created preprocess session.",
     )
     parser.add_argument(
         "-r",

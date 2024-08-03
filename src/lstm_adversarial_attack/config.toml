@@ -226,7 +226,7 @@ output_dir = "output_data::attack/frozen_hyperparameter_attack"
 output_dir = "output_data::attack_analysis"
 
 [paths.redirected_output]
-model_training = "logs::model/tuning"
+model_tuning = "logs::model/tuning"
 
 
 

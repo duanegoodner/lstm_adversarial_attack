@@ -1,34 +1,42 @@
-import inspect
-import subprocess
 import sys
 from pathlib import Path
-from typing import List
+import logging
+from typing import TextIO
 
 
-def redirect_output(log_file: Path, redirect_flags: List[str]):
-    """
-    Redirects the stdout and stderr of the calling script to the specified log file.
+def open_log_file(log_file_path: Path) -> TextIO:
+    log_file_fid = log_file_path.open(mode="a", buffering=1)
+    return log_file_fid
 
-    :param log_file: The path to the log file where output should be redirected.
-    :param redirect_flags: A list of command-line flags that trigger redirection.
-    These flags will be removed from the arguments passed to the subprocess.
-    :return: None
-    """
-    # Determine the calling script's file path
-    caller_frame = inspect.stack()[1]
-    script_name = caller_frame.filename
 
-    print(f"Redirecting stdout and stderr to {str(log_file)}")
+def redirect_output_to_fid(log_file_fid: TextIO) -> None:
+    sys.stdout = log_file_fid
+    sys.stderr = log_file_fid
 
-    log_file.parent.mkdir(exist_ok=True, parents=True)
-    with log_file.open(mode="a") as output_file:
-        # Filter out the redirection arg from original script command
-        new_argv = [arg for arg in sys.argv if (arg not in redirect_flags )]
 
-        # Call original script without its redirection flag
-        result = subprocess.run(
-            [sys.executable, "-u", script_name] + new_argv[1:],
-            stdout=output_file,
-            stderr=subprocess.STDOUT
-        )
-        sys.exit(result.returncode)
+def configure_optuna_logging(log_file_fid: TextIO):
+    logger = logging.getLogger("optuna")
+    logger.setLevel(logging.INFO)
+    handler = logging.StreamHandler(log_file_fid)  # Line buffering
+    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s:%(message)s'))
+
+    # Clear existing handlers
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    logger.addHandler(handler)
+
+
+def set_redirection(log_file_path: Path, include_optuna: bool = False) -> TextIO:
+    print(f"stdout and stderr will be redirected to {str(log_file_path)}")
+    print(f"Output can be viewed in real time by running the following command in another terminal:\n"
+          f"tail -f {str(log_file_path)}")
+    log_file_fid = open_log_file(log_file_path=log_file_path)
+    redirect_output_to_fid(log_file_fid=log_file_fid)
+    if include_optuna:
+        configure_optuna_logging(log_file_fid=log_file_fid)
+    return log_file_fid
+
+
+# def flushed_print(*args, **kwargs):
+#     __builtins__.print(*args, **kwargs, flush=True)
