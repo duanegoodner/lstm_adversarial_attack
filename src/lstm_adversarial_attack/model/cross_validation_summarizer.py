@@ -7,7 +7,9 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.model.model_data_structs as mds
+from lstm_adversarial_attack.config import CONFIG_READER
 import lstm_adversarial_attack.preprocess.encode_decode as edc
+import lstm_adversarial_attack.utils.path_searches as ps
 
 
 def get_newest_sub_dir(path: Path) -> Path | None:
@@ -236,7 +238,6 @@ class CrossValidationSummarizer:
         self.fold_summarizers = fold_summarizers
 
     @classmethod
-    # def from_cv_checkpoints_dir(cls, cv_checkpoints_dir: Path = None):
     def from_cv_checkpoints_dir(cls, cv_checkpoints_dir: Path):
         fold_checkpoint_dirs = list(cv_checkpoints_dir.glob("fold*"))
         fold_checkpoint_dirs.sort(key=lambda x: x.stat().st_mtime)
@@ -380,7 +381,7 @@ class CrossValidationSummarizer:
         return checkpoint_info
 
 
-def main():
+def main(cv_checkpoints_dir: Path = None):
     """
     Creates CrossValidationSummarizer from latest data in path defined by:
     config_paths.
@@ -389,13 +390,25 @@ def main():
     :return: df with 1 row per fold (has each folds best epoch's data)
     """
 
-    cv_summarizer = CrossValidationSummarizer.from_cv_checkpoints_dir()
+    if cv_checkpoints_dir is None:
+        cv_root_dir = Path(
+            CONFIG_READER.read_path("model.cv_driver.output_dir")
+        )
+        cv_checkpoints_dir = (
+            ps.get_latest_sequential_child_dir(root_dir=cv_root_dir)
+            / "checkpoints"
+        )
+
+    cv_summarizer = CrossValidationSummarizer.from_cv_checkpoints_dir(
+        cv_checkpoints_dir=cv_checkpoints_dir
+    )
     optimal_results_df = cv_summarizer.get_optimal_results_df(
         metric=EvalMetric.VALIDATION_LOSS,
         optimize_direction=OptimizeDirection.MIN,
     )
 
-    return optimal_results_df
+    print(optimal_results_df.T)
+    # return optimal_results_df
 
 
 if __name__ == "__main__":

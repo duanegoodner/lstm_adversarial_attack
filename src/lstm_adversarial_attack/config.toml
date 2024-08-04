@@ -92,9 +92,9 @@ n_warmup_steps = 3
 
 [model.cv_driver_settings]
 kfold_random_seed = 86420
-epochs_per_fold = 20
+epochs_per_fold = 1000
 num_folds = 5
-eval_interval = 10
+eval_interval = 25
 single_fold_eval_fraction = 0.2
 fold_class_name = "StratifiedKFold"
 collate_fn_name = "x19m_collate_fn"
@@ -227,6 +227,7 @@ output_dir = "output_data::attack_analysis"
 
 [paths.redirected_output]
 model_tuning = "logs::model/tuning"
+model_training = "logs::model/training"
 
 
 

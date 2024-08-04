@@ -33,7 +33,7 @@ def main(redirect: bool, model_tuning_id: str = None) -> optuna.Study:
     print(
         f"Continuing existing model hyperparameter tuning session {model_tuning_id}\n"
         f"To monitor tuning in tensorboard, run the following command in another terminal:\n"
-        f"tensorboard --logdir=/home/devspace/project/data/model/tuning/"
+        f"tensorboard --logdir=/home/devspace/project/data/model/cross_validation/"
         f"{model_tuning_id}/tensorboard --host=0.0.0.0' in a different "
         f"terminal\n"
         f"Then go to http://localhost:6006/ in your browser.\n"

@@ -6,12 +6,13 @@ import sklearn.model_selection
 import torch
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
+import lstm_adversarial_attack.dataset.x19_mort_general_dataset as xmd
 import lstm_adversarial_attack.model.cross_validator as cv
 import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
-import lstm_adversarial_attack.dataset.x19_mort_general_dataset as xmd
-from lstm_adversarial_attack.config import CONFIG_READER
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
+import lstm_adversarial_attack.utils.redirect_output as rdo
+from lstm_adversarial_attack.config import CONFIG_READER
 
 
 class CrossValidatorDriver:
@@ -26,11 +27,13 @@ class CrossValidatorDriver:
         model_tuning_id: str,
         cv_training_id: str,
         device: torch.device,
+        redirect_terminal_output: bool,
     ):
 
         self.model_tuning_id = model_tuning_id
         self.cv_training_id = cv_training_id
         self.device = device
+        self.redirect_terminal_output = redirect_terminal_output
         self.dataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(
             preprocess_id=self.preprocess_id
         )
@@ -43,18 +46,15 @@ class CrossValidatorDriver:
         model_tuning_output_root = Path(
             CONFIG_READER.read_path("model.tuner_driver.output_dir")
         )
-        return  (
-            mds.TUNER_DRIVER_SUMMARY_IO.import_to_struct(
-                path=model_tuning_output_root
-                     / self.model_tuning_id
-                     / f"tuner_driver_summary_{self.model_tuning_id}.json"
-            )
+        return mds.TUNER_DRIVER_SUMMARY_IO.import_to_struct(
+            path=model_tuning_output_root
+            / self.model_tuning_id
+            / f"tuner_driver_summary_{self.model_tuning_id}.json"
         )
 
     @property
     def preprocess_id(self) -> str:
         return self.model_tuner_driver_summary.preprocess_id
-
 
     def build_output_dir(self) -> Path:
         output_dir = Path(self.paths.output_dir) / f"{self.cv_training_id}"
@@ -115,4 +115,21 @@ class CrossValidatorDriver:
             single_fold_eval_fraction=self.settings.single_fold_eval_fraction,
             output_dir=self.output_dir,
         )
+
+        log_file_fid = None
+        if self.redirect_terminal_output:
+            log_file_path = (
+                Path(
+                    CONFIG_READER.read_path("redirected_output.model_training")
+                )
+                / f"{self.cv_training_id}.log"
+            )
+            log_file_fid = rdo.set_redirection(
+                log_file_path=log_file_path, include_optuna=False
+            )
+
         cross_validator.run_all_folds()
+
+        if self.redirect_terminal_output:
+            log_file_fid.close()
+
