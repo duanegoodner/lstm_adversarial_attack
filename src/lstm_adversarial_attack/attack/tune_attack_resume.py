@@ -11,9 +11,7 @@ import lstm_adversarial_attack.utils.path_searches as ps
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
-def main(
-    attack_tuning_id: str = None,
-) -> optuna.Study:
+def main(redirect: bool, attack_tuning_id: str = None) -> optuna.Study:
     """
     Tunes hyperparameters of an AdversarialAttackTrainer and its
     AdversarialAttacker. Can accept target_model_dir OR existing_study_dir or
@@ -36,6 +34,7 @@ def main(
     attack_tuner_driver = atd.AttackTunerDriver.from_attack_tuning_id(
         attack_tuning_id=attack_tuning_id,
         device=gh.get_device(),
+        redirect_terminal_output=redirect,
     )
 
     optuna.logging.set_verbosity(optuna.logging.INFO)
@@ -46,11 +45,7 @@ def main(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=(
-            "Runs hyperparameter tuning on the attack algorithm. "
-            "If no args passed, will start a new Optuna study "
-            "using the model data from the most recent data saved in "
-            "data/model/cross_validation (uses fold with "
-            "median or near median best performance)"
+            "Resumes an existing attack hyperparameter tuning session."
         )
     )
     parser.add_argument(
@@ -59,7 +54,14 @@ if __name__ == "__main__":
         type=str,
         action="store",
         nargs="?",
-        help="ID of attack tuning session to resume",
+        help="ID of attack tuning session to resume. Defaults to most recently "
+             "created session.",
+    )
+    parser.add_argument(
+        "-r",
+        "--redirect",
+        action="store_true",
+        help="Redirect terminal output to log file",
     )
 
     args_namespace = parser.parse_args()

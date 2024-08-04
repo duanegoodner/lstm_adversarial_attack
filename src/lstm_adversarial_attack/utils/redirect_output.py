@@ -5,6 +5,7 @@ from typing import TextIO
 
 
 def open_log_file(log_file_path: Path) -> TextIO:
+    log_file_path.parent.mkdir(exist_ok=True, parents=True)
     log_file_fid = log_file_path.open(mode="a", buffering=1)
     return log_file_fid
 
@@ -28,7 +29,7 @@ def configure_optuna_logging(log_file_fid: TextIO):
 
 
 def set_redirection(log_file_path: Path, include_optuna: bool = False) -> TextIO:
-    print(f"stdout and stderr will be redirected to {str(log_file_path)}")
+    print(f"\nstdout and stderr will be redirected to {str(log_file_path)}")
     print(f"Output can be viewed in real time by running the following command in another terminal:\n"
           f"tail -f {str(log_file_path)}")
     log_file_fid = open_log_file(log_file_path=log_file_path)

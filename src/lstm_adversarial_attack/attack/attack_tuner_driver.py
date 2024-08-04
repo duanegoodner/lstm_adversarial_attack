@@ -1,3 +1,4 @@
+import pprint
 import sys
 from functools import cached_property
 from pathlib import Path
@@ -14,6 +15,7 @@ import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.model_retriever as tmr
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
+import lstm_adversarial_attack.utils.redirect_output as rdo
 from lstm_adversarial_attack.config import CONFIG_READER
 from lstm_adversarial_attack.dataset.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex,
@@ -30,6 +32,7 @@ class AttackTunerDriver:
         device: torch.device,
         cv_training_id: str,
         attack_tuning_id: str,
+        redirect_terminal_output: bool,
     ):
         """
         :param device: the device to run on
@@ -40,6 +43,7 @@ class AttackTunerDriver:
         self.device = device
         self.cv_training_id = cv_training_id
         self.attack_tuning_id = attack_tuning_id
+        self.redirect_terminal_output = redirect_terminal_output
         self.settings = ads.AttackTunerDriverSettings.from_config()
         self.paths = ads.AttackTunerDriverPaths.from_config()
         self.objective_extra_kwargs = (
@@ -92,7 +96,7 @@ class AttackTunerDriver:
 
     @classmethod
     def from_attack_tuning_id(
-        cls, attack_tuning_id: str, device: torch.device
+        cls, attack_tuning_id: str, device: torch.device, redirect_terminal_output: bool
     ):
         attack_tuning_output_root = Path(
             CONFIG_READER.read_path("attack.tune.output_dir")
@@ -108,6 +112,7 @@ class AttackTunerDriver:
             device=device,
             cv_training_id=attack_tuner_driver_summary.cv_training_id,
             attack_tuning_id=attack_tuner_driver_summary.attack_tuning_id,
+            redirect_terminal_output=redirect_terminal_output,
         )
 
     @property
@@ -179,7 +184,7 @@ class AttackTunerDriver:
             print(
                 f"Starting new Attack Hyperparameter Tuning session "
                 f"{self.attack_tuning_id}.\nUsing trained model from CV training "
-                f"session ID {self.cv_training_id} as the attack target. "
+                f"session ID {self.cv_training_id} as the attack target.\n"
             )
         if self.summary.is_continuation:
             print(
@@ -187,6 +192,10 @@ class AttackTunerDriver:
                 f"{self.attack_tuning_id}.\n Using model from CV Training "
                 f"session {self.cv_training_id} as the attack target."
             )
+
+        print("Attack tuner driver settings:")
+        pprint.pprint(self.settings.__dict__)
+        print()
 
         model = tuh.X19LSTMBuilder(settings=self.model_hyperparameters).build()
         # TODO check really need to load state dict here (loading if not
@@ -223,4 +232,25 @@ class AttackTunerDriver:
             study=study,
         )
 
-        return tuner.tune(num_trials=self.settings.num_trials)
+        log_file_fid = None
+        if self.redirect_terminal_output:
+            log_file_path = (
+                Path(
+                    CONFIG_READER.read_path("redirected_output.attack_tuning")
+                )
+                / f"{self.attack_tuning_id}.log"
+            )
+            log_file_fid = rdo.set_redirection(
+                log_file_path=log_file_path, include_optuna=True
+            )
+        completed_study = tuner.tune(num_trials=self.settings.num_trials)
+        if self.redirect_terminal_output:
+            log_file_fid.close()
+
+        return completed_study
+
+    def __call__(self) -> optuna.Study:
+
+        completed_study = self.run()
+
+        return completed_study

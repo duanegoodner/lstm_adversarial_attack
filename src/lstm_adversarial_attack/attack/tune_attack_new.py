@@ -12,14 +12,12 @@ import lstm_adversarial_attack.utils.session_id_generator as sig
 from lstm_adversarial_attack.config import CONFIG_READER
 
 
-
-def main(
-    cv_training_id: str = None,
-) -> optuna.Study:
+def main(redirect: bool, cv_training_id: str = None) -> optuna.Study:
     """
     Takes arguments in format provided by command line interface and uses them
     to call start_new_tuning().
     :param cv_training_id: ID of cross-validation tuning session to use as source of model to attack
+    :param redirect: Boolean flag to indicate whether to redirect tuning session to stdout
     """
     device = gh.get_device()
     attack_tuning_id = sig.generate_session_id()
@@ -37,9 +35,10 @@ def main(
         cv_training_id=cv_training_id,
         attack_tuning_id=attack_tuning_id,
         device=device,
+        redirect_terminal_output=redirect
     )
 
-    return tuner_driver.run()
+    return tuner_driver()
 
 
 if __name__ == "__main__":
@@ -55,6 +54,12 @@ if __name__ == "__main__":
         help=(
             "ID of cross validation tuning session providing trained model for attack."
         ),
+    )
+    parser.add_argument(
+        "-r",
+        "--redirect",
+        action="store_true",
+        help="Redirect terminal output to log file",
     )
 
     args_namespace = parser.parse_args()
