@@ -25,7 +25,7 @@ class FeatureFinalizerOutputInspector:
         features_path = (
             self.preprocess_data_root
             / self.preprocess_id
-            / CONFIG_READER.get_config_value(
+            / PATH_CONFIG_READER.get_config_value(
                 "dataset.resources.measurement_data_list"
             )["preprocess"]
         )
@@ -36,7 +36,7 @@ class FeatureFinalizerOutputInspector:
         class_labels_path = (
             self.preprocess_data_root
             / self.preprocess_id
-            / CONFIG_READER.get_config_value(
+            / PATH_CONFIG_READER.get_config_value(
                 "dataset.resources.in_hospital_mortality_list"
             )["preprocess"]
         )

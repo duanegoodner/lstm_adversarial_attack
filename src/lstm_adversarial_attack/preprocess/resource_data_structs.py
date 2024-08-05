@@ -206,7 +206,7 @@ class PreprocessModuleResources(ABC):
 
     @property
     def file_resource_names_dict(self) -> dict[str, dict[str, str]]:
-        return CONFIG_READER.get_config_value(
+        return PATH_CONFIG_READER.get_config_value(
             f"preprocess.{self.module_name}.resources"
         )
 

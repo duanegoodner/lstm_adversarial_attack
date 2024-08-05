@@ -25,7 +25,7 @@ class PreprocessModuleResources(ABC):
                 object_field.name != "module_name"
                 and getattr(self, object_field.name) is None
             ):
-                value = CONFIG_READER.get_config_value(
+                value = PATH_CONFIG_READER.get_config_value(
                     f"preprocess.{self.module_name}.resources.{object_field.name}"
                 )
 
@@ -59,7 +59,7 @@ class PreprocessModuleSettings(ABC):
                     )
                 )
                 / self.preprocess_id
-                / CONFIG_READER.get_config_value(
+                / PATH_CONFIG_READER.get_config_value(
                     f"preprocess.output_dir_names.{self.module_name}"
                 )
             )

@@ -12,10 +12,6 @@ class ConfigReader:
         with self._config_path.open(mode="r") as config_file:
             self._config = toml.load(config_file)
 
-    @property
-    def project_root(self) -> Path:
-        return Path(__file__).parent.parent.parent
-
     def get_config_value(self, config_key: str) -> Any:
         result = self._config.copy()
         for sub_key in config_key.split("."):
@@ -25,6 +21,17 @@ class ConfigReader:
                 result = result.get(sub_key)
 
         return result
+
+
+class PathConfigReader(ConfigReader):
+    def __init__(self, config_path: Path = None):
+        if config_path is None:
+            config_path = Path(__file__).parent / "config_paths.toml"
+        super().__init__(config_path=config_path)
+
+    @property
+    def project_root(self) -> Path:
+        return Path(__file__).parent.parent.parent
 
     def _to_absolute_path(self, path_rel_project_root: str | Path) -> str:
         relative_path = Path(path_rel_project_root)
@@ -40,7 +47,9 @@ class ConfigReader:
     ) -> str | list[str] | dict[str, str]:
         config_val = self.get_config_value(config_key=f"paths.{config_key}")
         if type(config_val) is str:
-            return self.read_dotted_val_str(path_val=config_val, extension=extension)
+            return self.read_dotted_val_str(
+                path_val=config_val, extension=extension
+            )
         # prefer to use tuple instead of list for array-like items, but not guaranteed yet
         if type(config_val) is tuple or type(config_val) is list:
             return [
@@ -49,14 +58,15 @@ class ConfigReader:
             ]
         if type(config_val) is dict:
             return {
-                key: self.read_dotted_val_str(path_val=val, extension=extension)
+                key: self.read_dotted_val_str(
+                    path_val=val, extension=extension
+                )
                 for key, val in config_val.items()
             }
 
     def read_dotted_val_str(
         self, path_val: str, extension: str = ""
     ) -> str | list[str] | dict[str, str]:
-        # path_val = self.get_config_value(config_key=config_key)
         path_components = path_val.split("::")
         end_path = f"{path_components[-1]}{extension}"
         if len(path_components) == 1:
@@ -67,10 +77,27 @@ class ConfigReader:
             )
 
 
-class PathConfigReader(ConfigReader):
+class ConfigModifier:
     def __init__(self, config_path: Path = None):
-        super().__init__(config_path=config_path)
+        if config_path is None:
+            config_path = Path(__file__).parent / "config.toml"
+        self._config_path = config_path
 
+    def set(self, dotted_key: str, value: Any):
+        with self._config_path.open(mode="r") as config_file:
+            config = toml.load(config_file)
+
+        keys = dotted_key.split(".")
+        current_level = config
+        for key in keys[:-1]:
+            if key not in current_level:
+                current_level[key] = {}
+            current_level = current_level[key]
+
+        current_level[keys[-1]] = value
+
+        with self._config_path.open(mode="w") as config_file:
+            toml.dump(config, config_file)
 
 CONFIG_READER = ConfigReader()
 
@@ -78,56 +105,12 @@ CONFIG_READER = ConfigReader()
 PATH_CONFIG_READER = PathConfigReader()
 
 
+CONFIG_MODIFIER = ConfigModifier()
+
+
 if __name__ == "__main__":
     config_reader = ConfigReader()
-    config_value = config_reader.get_config_value(config_key="preprocess.bg_data_cols")
+    config_value = config_reader.get_config_value(
+        config_key="preprocess.bg_data_cols"
+    )
     pprint.pprint(config_value)
-
-# class ModuleSettingsBuilder:
-#     def __init__(self, sub_package_name: str, param_names: list[str],
-#                  settings_constructor: Callable[..., dataclass],
-#                  custom_config_path: Path = None
-#                  ):
-#         self._sub_package_name = sub_package_name
-#         self._param_names = param_names
-#         self._settings_constructor = settings_constructor
-#         self._custom_config_path = custom_config_path
-#
-#     def build(self) -> dataclass:
-#         config_reader = ConfigReader(config_path=self._custom_config_path)
-#         module_config = config_reader.read_module_config(
-#             sub_package_name=self._sub_package_name,
-#             param_names=self._param_names
-#         )
-#         return self._settings_constructor(**module_config)
-#
-#
-# @dataclass
-# class NewPrefilterSettings:
-#     """
-#     Container for objects imported by Prefilter
-#     """
-#
-#     min_age: int
-#     min_los_hospital: int
-#     min_los_icu: int
-#     bg_data_cols: list[str]
-#     lab_data_cols: list[str]
-#     vital_data_cols: list[str]
-#
-#
-# @dataclass
-# class ModuleASettings:
-#     param_a1: int
-#     param_a2: int
-
-
-# if __name__ == "__main__":
-# settings_builder = ModuleSettingsBuilder(
-#     sub_package_name="preprocess",
-#     param_names=["min_age", "min_los_hospital", "min_los_icu",
-#                  "bg_data_cols", "lab_data_cols", "vital_data_cols"],
-#     settings_constructor=NewPrefilterSettings
-# )
-# settings = settings_builder.build()
-# print(settings)

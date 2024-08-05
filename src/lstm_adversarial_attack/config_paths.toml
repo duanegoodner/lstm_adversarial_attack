@@ -1,0 +1,85 @@
+[paths]
+root_pkg = "src/lstm_adversarial_attack"
+output_data = "data"
+docker = "docker"
+logs = "logs"
+
+
+[paths.sub_packages]
+db = "root_pkg::query_db"
+preprocess = "root_pkg::preprocess"
+
+[paths.db]
+mimiciii_dotenv = "sub_packages.db::mimiciii_database.env"
+queries_dir = "sub_packages.db::mimiciii_queries"
+query_files = [
+    "db.queries_dir::icustay_detail.sql",
+    "db.queries_dir::pivoted_bg.sql",
+    "db.queries_dir::pivoted_lab.sql",
+    "db.queries_dir::pivoted_vital.sql"
+]
+output_root = "output_data::query_db"
+
+[paths.preprocess]
+output_root = "output_data::preprocess"
+
+[preprocess.output_dir_names]
+prefilter = "1_prefilter"
+measurement_merger = "2_merged_stay_measurements"
+admission_list_builder = "3_full_admission_list"
+feature_builder = "4_feature_builder"
+feature_finalizer = "5_feature_finalizer"
+
+[preprocess.prefilter.resources.from_db]
+icustay = "icustay_detail.csv"
+bg = "pivoted_bg.csv"
+lab = "pivoted_lab.csv"
+vital = "pivoted_vital.csv"
+
+[preprocess.measurement_merger.resources.from_other_preprocess_modules]
+prefiltered_icustay = "1_prefilter/prefiltered_icustay.feather"
+prefiltered_bg = "1_prefilter/prefiltered_bg.feather"
+prefiltered_lab = "1_prefilter/prefiltered_lab.feather"
+prefiltered_vital = "1_prefilter/prefiltered_vital.feather"
+
+[preprocess.admission_list_builder.resources.from_other_preprocess_modules]
+icustay_bg_lab_vital = "2_merged_stay_measurements/icustay_bg_lab_vital.feather"
+
+[preprocess.feature_builder.resources.from_other_preprocess_modules]
+bg_lab_vital_summary_stats = "2_merged_stay_measurements/bg_lab_vital_summary_stats.feather"
+full_admission_list = "3_full_admission_list/full_admission_list.json"
+
+[preprocess.feature_finalizer.resources.from_other_preprocess_modules]
+processed_admission_list = "4_feature_builder/processed_admission_list.json"
+
+[dataset.resources.measurement_data_list]
+preprocess = "5_feature_finalizer/measurement_data_list.json"
+
+[dataset.resources.in_hospital_mortality_list]
+preprocess = "5_feature_finalizer/in_hospital_mortality_list.json"
+
+[dataset.resources.measurement_col_names]
+preprocess = "5_feature_finalizer/measurement_col_names.json"
+
+[paths.model.tuner_driver]
+output_dir = "output_data::model/tuning"
+
+[paths.model.cv_driver]
+output_dir = "output_data::model/cross_validation"
+
+[paths.attack.tune]
+output_dir = "output_data::attack/tuning"
+
+[paths.attack.tuner_driver]
+output_dir = "output_data::attack/tuning"
+
+[paths.attack.attack_driver]
+output_dir = "output_data::attack/frozen_hyperparameter_attack"
+
+[paths.attack_analysis]
+output_dir = "output_data::attack_analysis"
+
+[paths.redirected_output]
+model_tuning = "logs::model/tuning"
+model_training = "logs::model/training"
+attack_tuning = "logs::attack/tuning"

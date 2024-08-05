@@ -65,7 +65,7 @@ class X19MGeneralDataset(Dataset):
         measurements_path = (
             preprocess_data_root
             / preprocess_id
-            / CONFIG_READER.get_config_value(
+            / PATH_CONFIG_READER.get_config_value(
                 "dataset.resources.measurement_data_list"
             )["preprocess"]
         )
@@ -73,7 +73,7 @@ class X19MGeneralDataset(Dataset):
         in_hospital_mort_path = (
             preprocess_data_root
             / preprocess_id
-            / CONFIG_READER.get_config_value(
+            / PATH_CONFIG_READER.get_config_value(
                 "dataset.resources.in_hospital_mortality_list"
             )["preprocess"]
         )
