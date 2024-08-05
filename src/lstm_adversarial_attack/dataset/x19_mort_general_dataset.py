@@ -5,7 +5,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-from IPython.display import HTML, display
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
 
@@ -13,7 +12,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 from lstm_adversarial_attack.model.lstm_model_stc import VariableLengthFeatures
 from lstm_adversarial_attack.dataset.dataset_with_index import DatasetWithIndex
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import CONFIG_READER, PATH_CONFIG_READER
 
 
 @dataclass
@@ -60,7 +59,7 @@ class X19MGeneralDataset(Dataset):
     ):
 
         preprocess_data_root = Path(
-            CONFIG_READER.read_path("preprocess.output_root")
+            PATH_CONFIG_READER.read_path("preprocess.output_root")
         )
 
         measurements_path = (

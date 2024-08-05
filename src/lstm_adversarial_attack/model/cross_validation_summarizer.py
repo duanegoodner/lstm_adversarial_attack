@@ -7,8 +7,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.model.model_data_structs as mds
-from lstm_adversarial_attack.config import CONFIG_READER
-import lstm_adversarial_attack.preprocess.encode_decode as edc
+from lstm_adversarial_attack.config import PATH_CONFIG_READER
 import lstm_adversarial_attack.utils.path_searches as ps
 
 
@@ -392,7 +391,7 @@ def main(cv_checkpoints_dir: Path = None):
 
     if cv_checkpoints_dir is None:
         cv_root_dir = Path(
-            CONFIG_READER.read_path("model.cv_driver.output_dir")
+            PATH_CONFIG_READER.read_path("model.cv_driver.output_dir")
         )
         cv_checkpoints_dir = (
             ps.get_latest_sequential_child_dir(root_dir=cv_root_dir)

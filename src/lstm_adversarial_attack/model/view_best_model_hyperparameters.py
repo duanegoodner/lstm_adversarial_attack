@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.utils.path_searches as ps
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import PATH_CONFIG_READER
 from lstm_adversarial_attack.tuning_db.tuning_studies_database import (
     MODEL_TUNING_DB,
 )
@@ -13,7 +13,7 @@ from lstm_adversarial_attack.tuning_db.tuning_studies_database import (
 
 def main(model_tuning_id: str = None):
     if model_tuning_id is None:
-        model_tuning_output_root = CONFIG_READER.read_path(
+        model_tuning_output_root = PATH_CONFIG_READER.read_path(
             config_key="model.tuner_driver.output_dir"
         )
         model_tuning_id = ps.get_latest_sequential_child_dirname(

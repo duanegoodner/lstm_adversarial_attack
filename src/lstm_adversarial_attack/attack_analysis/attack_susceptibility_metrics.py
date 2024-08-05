@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import lstm_adversarial_attack.utils.msgspec_io as mio
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import PATH_CONFIG_READER
 import lstm_adversarial_attack.utils.path_searches as ps
 
 
@@ -33,7 +33,7 @@ class AttackSusceptibilityMetrics:
 
         # TODO clean up measurement labels retrieval
         preprocess_output_root = Path(
-            CONFIG_READER.read_path("preprocess.output_root")
+            PATH_CONFIG_READER.read_path("preprocess.output_root")
         )
         if preprocess_id is None:
             preprocess_id = ps.get_latest_sequential_child_dirname(

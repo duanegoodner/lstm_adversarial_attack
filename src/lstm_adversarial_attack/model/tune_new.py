@@ -10,7 +10,7 @@ import lstm_adversarial_attack.model.model_tuner_driver as td
 import lstm_adversarial_attack.utils.gpu_helpers as gh
 import lstm_adversarial_attack.utils.path_searches as ps
 import lstm_adversarial_attack.utils.session_id_generator as sig
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import CONFIG_READER, PATH_CONFIG_READER
 
 
 def main(redirect: bool, preprocess_id: str = None) -> optuna.Study:
@@ -38,7 +38,7 @@ def main(redirect: bool, preprocess_id: str = None) -> optuna.Study:
     # If no preprocess_id provided, use ID of latest preprocess run
     if preprocess_id is None:
         preprocess_output_root = Path(
-            CONFIG_READER.read_path("preprocess.output_root")
+            PATH_CONFIG_READER.read_path("preprocess.output_root")
         )
         preprocess_id = ps.get_latest_sequential_child_dirname(
             root_dir=preprocess_output_root

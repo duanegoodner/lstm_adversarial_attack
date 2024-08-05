@@ -9,7 +9,7 @@ import lstm_adversarial_attack.model.model_tuner_driver as td
 import lstm_adversarial_attack.utils.gpu_helpers as gh
 import lstm_adversarial_attack.utils.path_searches as ps
 import lstm_adversarial_attack.utils.redirect_output as rdo
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import CONFIG_READER, PATH_CONFIG_READER
 
 
 def main(redirect: bool, model_tuning_id: str = None) -> optuna.Study:
@@ -21,7 +21,7 @@ def main(redirect: bool, model_tuning_id: str = None) -> optuna.Study:
     :return: the updated optuna Study.
     """
     tuning_output_root = Path(
-        CONFIG_READER.read_path("model.tuner_driver.output_dir")
+        PATH_CONFIG_READER.read_path("model.tuner_driver.output_dir")
     )
     # If no model_tuning_id provided, use id of latest model tuning
     if model_tuning_id is None:

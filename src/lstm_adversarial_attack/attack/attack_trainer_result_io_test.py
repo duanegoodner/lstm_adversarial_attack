@@ -1,13 +1,11 @@
 from pathlib import Path
 
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
-import lstm_adversarial_attack.config_paths as cfg_paths
-
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import PATH_CONFIG_READER
 
 if __name__ == "__main__":
 
-    attack_results_root = CONFIG_READER.read_path(
+    attack_results_root = PATH_CONFIG_READER.read_path(
         "attack.attack_driver.output_dir"
     )
     attack_results_path = (
@@ -17,7 +15,7 @@ if __name__ == "__main__":
     )
 
     imported_results = ards.ATTACK_TRAINER_RESULT_IO.import_to_struct(
-        path=attack_result_path
+        path=attack_results_path
     )
 
     pass

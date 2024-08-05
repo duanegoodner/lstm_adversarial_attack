@@ -10,7 +10,7 @@ import torch
 import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.utils.msgspec_io as mio
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import CONFIG_READER, PATH_CONFIG_READER
 
 
 @dataclass
@@ -133,7 +133,7 @@ class AttackTunerDriverPaths:
     def from_config(cls):
         paths_fields = [item.name for item in fields(AttackTunerDriverPaths)]
         constructor_kwargs = {
-            field_name: CONFIG_READER.read_path(
+            field_name: PATH_CONFIG_READER.read_path(
                 f"attack.tuner_driver.{field_name}"
             )
             for field_name in paths_fields
@@ -218,7 +218,7 @@ class AttackDriverPaths:
     def from_config(cls):
         paths_fields = [item.name for item in fields(AttackDriverPaths)]
         constructor_kwargs = {
-            field_name: CONFIG_READER.read_path(
+            field_name: PATH_CONFIG_READER.read_path(
                 f"attack.attack_driver.{field_name}"
             )
             for field_name in paths_fields

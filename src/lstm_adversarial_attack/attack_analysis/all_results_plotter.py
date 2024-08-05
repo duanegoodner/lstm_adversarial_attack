@@ -10,7 +10,7 @@ import lstm_adversarial_attack.attack_analysis.discovery_epoch_plotter as dep
 import lstm_adversarial_attack.attack_analysis.perts_histogram_plotter as php
 import lstm_adversarial_attack.attack_analysis.susceptibility_plotter as ssp
 import lstm_adversarial_attack.utils.msgspec_io as mio
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import CONFIG_READER, PATH_CONFIG_READER
 
 
 @dataclass
@@ -106,7 +106,7 @@ class AllResultsPlotter:
     @property
     def attack_result_path(self) -> Path:
         attack_results_root = Path(
-            CONFIG_READER.read_path("attack.attack_driver.output_dir")
+            PATH_CONFIG_READER.read_path("attack.attack_driver.output_dir")
         )
         return (
             attack_results_root
@@ -117,7 +117,7 @@ class AllResultsPlotter:
     @property
     def attack_driver_summary(self) -> ads.AttackDriverSummary:
         attack_results_root = Path(
-            CONFIG_READER.read_path("attack.attack_driver.output_dir")
+            PATH_CONFIG_READER.read_path("attack.attack_driver.output_dir")
         )
 
         return ads.ATTACK_DRIVER_SUMMARY_IO.import_to_struct(
@@ -129,7 +129,7 @@ class AllResultsPlotter:
     @property
     def output_dir(self) -> Path:
         analysis_results_root = Path(
-            CONFIG_READER.read_path("attack_analysis.output_dir")
+            PATH_CONFIG_READER.read_path("attack_analysis.output_dir")
         )
         return analysis_results_root / f"{self.attack_analysis_id}"
 

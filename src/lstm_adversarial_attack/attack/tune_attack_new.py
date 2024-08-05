@@ -9,7 +9,7 @@ import lstm_adversarial_attack.attack.attack_tuner_driver as atd
 import lstm_adversarial_attack.utils.gpu_helpers as gh
 import lstm_adversarial_attack.utils.path_searches as ps
 import lstm_adversarial_attack.utils.session_id_generator as sig
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import PATH_CONFIG_READER
 
 
 def main(redirect: bool, cv_training_id: str = None) -> optuna.Study:
@@ -23,7 +23,7 @@ def main(redirect: bool, cv_training_id: str = None) -> optuna.Study:
     attack_tuning_id = sig.generate_session_id()
 
     cv_output_root = Path(
-        CONFIG_READER.read_path("model.cv_driver.output_dir")
+        PATH_CONFIG_READER.read_path("model.cv_driver.output_dir")
     )
 
     if cv_training_id is None:

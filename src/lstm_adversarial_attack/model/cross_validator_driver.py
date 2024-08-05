@@ -12,7 +12,7 @@ import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.utils.redirect_output as rdo
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import PATH_CONFIG_READER
 
 
 class CrossValidatorDriver:
@@ -44,7 +44,7 @@ class CrossValidatorDriver:
     @property
     def model_tuner_driver_summary(self) -> mds.CrossValidatorDriverSummary:
         model_tuning_output_root = Path(
-            CONFIG_READER.read_path("model.tuner_driver.output_dir")
+            PATH_CONFIG_READER.read_path("model.tuner_driver.output_dir")
         )
         return mds.TUNER_DRIVER_SUMMARY_IO.import_to_struct(
             path=model_tuning_output_root
@@ -120,7 +120,7 @@ class CrossValidatorDriver:
         if self.redirect_terminal_output:
             log_file_path = (
                 Path(
-                    CONFIG_READER.read_path("redirected_output.model_training")
+                    PATH_CONFIG_READER.read_path("redirected_output.model_training")
                 )
                 / f"{self.cv_training_id}.log"
             )

@@ -8,7 +8,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack_analysis.all_results_plotter as arp
 import lstm_adversarial_attack.utils.path_searches as ps
 import lstm_adversarial_attack.utils.session_id_generator as sig
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import PATH_CONFIG_READER
 
 
 def main(
@@ -37,7 +37,7 @@ def main(
     attack_analysis_id = sig.generate_session_id()
 
     attack_results_root = Path(
-        CONFIG_READER.read_path("attack.attack_driver.output_dir")
+        PATH_CONFIG_READER.read_path("attack.attack_driver.output_dir")
     )
 
     if attack_id is None:

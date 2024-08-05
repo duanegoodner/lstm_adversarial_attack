@@ -2,13 +2,13 @@ import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import PATH_CONFIG_READER
 import lstm_adversarial_attack.query_db.mimiciii_database as mdb
 
 def test_mimiciii_db_connection():
     db_access = mdb.MimiciiiDatabaseAccess(
-        dotenv_path=Path(CONFIG_READER.read_path(config_key="db.mimiciii_dotenv")),
-        output_parent=Path(CONFIG_READER.read_path(config_key="db.output_root")),
+        dotenv_path=Path(PATH_CONFIG_READER.read_path(config_key="db.mimiciii_dotenv")),
+        output_parent=Path(PATH_CONFIG_READER.read_path(config_key="db.output_root")),
     )
 
     try:

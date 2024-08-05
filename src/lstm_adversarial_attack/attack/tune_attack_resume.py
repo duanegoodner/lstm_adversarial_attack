@@ -8,7 +8,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.attack_tuner_driver as atd
 import lstm_adversarial_attack.utils.gpu_helpers as gh
 import lstm_adversarial_attack.utils.path_searches as ps
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import PATH_CONFIG_READER
 
 
 def main(redirect: bool, attack_tuning_id: str = None) -> optuna.Study:
@@ -23,7 +23,7 @@ def main(redirect: bool, attack_tuning_id: str = None) -> optuna.Study:
     """
 
     attack_tuning_output_root = Path(
-        CONFIG_READER.read_path("attack.tune.output_dir")
+        PATH_CONFIG_READER.read_path("attack.tune.output_dir")
     )
 
     if attack_tuning_id is None:

@@ -8,7 +8,7 @@ import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.utils.gpu_helpers as gh
 import lstm_adversarial_attack.utils.path_searches as ps
 import lstm_adversarial_attack.utils.session_id_generator as sig
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import PATH_CONFIG_READER
 
 
 def main(attack_tuning_id: str) -> ards.TrainerSuccessSummary:
@@ -21,7 +21,7 @@ def main(attack_tuning_id: str) -> ards.TrainerSuccessSummary:
     cur_device = gh.get_device()
 
     attack_tuning_output_root = Path(
-        CONFIG_READER.read_path("attack.tune.output_dir")
+        PATH_CONFIG_READER.read_path("attack.tune.output_dir")
     )
     if attack_tuning_id is None:
         attack_tuning_id = ps.get_latest_sequential_child_dirname(

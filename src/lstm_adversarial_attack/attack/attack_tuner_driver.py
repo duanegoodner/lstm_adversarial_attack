@@ -16,7 +16,7 @@ import lstm_adversarial_attack.model.model_retriever as tmr
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.utils.redirect_output as rdo
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import PATH_CONFIG_READER
 from lstm_adversarial_attack.dataset.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex,
 )
@@ -65,7 +65,7 @@ class AttackTunerDriver:
     @property
     def model_training_result_dir(self) -> Path:
         cv_output_root = Path(
-            CONFIG_READER.read_path("model.cv_driver.output_dir")
+            PATH_CONFIG_READER.read_path("model.cv_driver.output_dir")
         )
         return cv_output_root / self.cv_training_id
 
@@ -99,7 +99,7 @@ class AttackTunerDriver:
         cls, attack_tuning_id: str, device: torch.device, redirect_terminal_output: bool
     ):
         attack_tuning_output_root = Path(
-            CONFIG_READER.read_path("attack.tune.output_dir")
+            PATH_CONFIG_READER.read_path("attack.tune.output_dir")
         )
         attack_tuner_driver_summary = (
             ads.ATTACK_TUNER_DRIVER_SUMMARY_IO.import_to_struct(
@@ -236,7 +236,7 @@ class AttackTunerDriver:
         if self.redirect_terminal_output:
             log_file_path = (
                 Path(
-                    CONFIG_READER.read_path("redirected_output.attack_tuning")
+                    PATH_CONFIG_READER.read_path("redirected_output.attack_tuning")
                 )
                 / f"{self.attack_tuning_id}.log"
             )

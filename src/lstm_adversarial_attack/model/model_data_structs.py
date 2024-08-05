@@ -13,7 +13,7 @@ import torch
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.utils.msgspec_io as mio
-from lstm_adversarial_attack.config import CONFIG_READER, ConfigReader
+from lstm_adversarial_attack.config import CONFIG_READER, PATH_CONFIG_READER
 
 
 class MsgSpecStructWithDict(msgspec.Struct):
@@ -310,12 +310,11 @@ class CrossValidatorDriverSettings:
 
     @classmethod
     def from_config(cls, config_path: Path = None):
-        config_reader = ConfigReader(config_path=config_path)
         settings_fields = [
             item.name for item in fields(CrossValidatorDriverSettings)
         ]
         constructor_kwargs = {
-            field_name: config_reader.get_config_value(
+            field_name: CONFIG_READER.get_config_value(
                 f"model.cv_driver_settings.{field_name}"
             )
             for field_name in settings_fields
@@ -329,12 +328,11 @@ class CrossValidatorDriverPaths:
 
     @classmethod
     def from_config(cls, config_path: Path = None):
-        config_reader = ConfigReader(config_path=config_path)
         paths_fields = [
             item.name for item in fields(CrossValidatorDriverPaths)
         ]
         constructor_kwargs = {
-            field_name: config_reader.read_path(
+            field_name: PATH_CONFIG_READER.read_path(
                 f"model.cv_driver.{field_name}"
             )
             for field_name in paths_fields
@@ -383,7 +381,7 @@ class ModelTunerDriverPaths:
     def from_config(cls):
         paths_fields = [item.name for item in fields(ModelTunerDriverPaths)]
         constructor_kwargs = {
-            field_name: CONFIG_READER.read_path(
+            field_name: PATH_CONFIG_READER.read_path(
                 f"model.tuner_driver.{field_name}"
             )
             for field_name in paths_fields

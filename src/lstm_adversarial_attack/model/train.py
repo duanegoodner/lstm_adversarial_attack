@@ -8,7 +8,7 @@ import lstm_adversarial_attack.utils.gpu_helpers as gh
 import lstm_adversarial_attack.model.cross_validator_driver as cvd
 import lstm_adversarial_attack.utils.path_searches as ps
 import lstm_adversarial_attack.utils.session_id_generator as sig
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import PATH_CONFIG_READER
 
 
 def main(
@@ -17,7 +17,7 @@ def main(
     cv_training_id = sig.generate_session_id()
 
     model_tuning_output_root = Path(
-        CONFIG_READER.read_path("model.tuner_driver.output_dir")
+        PATH_CONFIG_READER.read_path("model.tuner_driver.output_dir")
     )
 
     if model_tuning_id is None:

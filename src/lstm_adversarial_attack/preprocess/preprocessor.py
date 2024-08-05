@@ -11,7 +11,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import CONFIG_READER, PATH_CONFIG_READER
 
 
 @dataclass
@@ -54,7 +54,7 @@ class PreprocessModuleSettings(ABC):
         if self.output_dir is None:
             self.output_dir = (
                 Path(
-                    CONFIG_READER.read_path(
+                    PATH_CONFIG_READER.read_path(
                         config_key="preprocess.output_root"
                     )
                 )
@@ -171,7 +171,7 @@ class Preprocessor:
         # TODO Consider making run_output_root a data member
         self.preprocess_id = preprocess_id
         run_output_root = (
-            Path(CONFIG_READER.read_path(config_key="preprocess.output_root"))
+            Path(PATH_CONFIG_READER.read_path(config_key="preprocess.output_root"))
             / preprocess_id
         )
         run_output_root.mkdir(parents=True, exist_ok=True)

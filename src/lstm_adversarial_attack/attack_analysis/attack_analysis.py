@@ -10,7 +10,7 @@ import lstm_adversarial_attack.attack.attack_result_data_structs as ads
 import lstm_adversarial_attack.attack_analysis.attack_susceptibility_metrics as asm
 import lstm_adversarial_attack.config_paths as cfg_paths
 import lstm_adversarial_attack.utils.path_searches as ps
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config import PATH_CONFIG_READER
 
 
 class RecordedExampleType(Enum):
@@ -236,7 +236,7 @@ class FullAttackResults:
     def from_most_recent_attack(cls):
 
         attack_output_root = Path(
-            CONFIG_READER.read_path("attack.attack_driver.output_dir")
+            PATH_CONFIG_READER.read_path("attack.attack_driver.output_dir")
         )
         attack_id = ps.get_latest_sequential_child_dirname(
             root_dir=attack_output_root
