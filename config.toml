@@ -36,30 +36,14 @@ fold_class_name = "StratifiedKFold"
 collate_fn_name = "x19m_collate_fn"
 cv_mean_tensorboard_metrics = [ "accuracy", "auc", "f1", "precision", "recall", "validation_loss",]
 
-[model.tuner_driver.tuning_ranges]
-log_lstm_hidden_size = [ 5, 7,]
-lstm_act_options = [ "ReLU", "Tanh",]
-dropout = [ 0.0, 0.5,]
-log_fc_hidden_size = [ 4, 8,]
-fc_act_options = [ "ReLU", "Tanh",]
-optimizer_options = [ "Adam", "RMSprop", "SGD",]
-learning_rate = [ 1e-5, 0.1,]
-log_batch_size = [ 5, 8,]
-
-[model.tuner_driver.pruner_kwargs]
-n_startup_trials = 5
-n_warmup_steps = 3
-
-[model.tuner_driver.sampler_kwargs]
-
 [model.cv_driver_settings]
-kfold_random_seed = 86420
-epochs_per_fold = 1000
-num_folds = 5
-eval_interval = 25
-single_fold_eval_fraction = 0.2
-fold_class_name = "StratifiedKFold"
 collate_fn_name = "x19m_collate_fn"
+epochs_per_fold = 1000
+eval_interval = 25
+fold_class_name = "StratifiedKFold"
+kfold_random_seed = 86420
+num_folds = 5
+single_fold_eval_fraction = 0.2
 
 [model.attr_display_labels]
 accuracy = "accuracy"
@@ -90,6 +74,22 @@ attack_misclassified_samples = false
 [attack.analysis]
 default_seq_length = 48
 
+[model.tuner_driver.tuning_ranges]
+log_lstm_hidden_size = [ 5, 7,]
+lstm_act_options = [ "ReLU", "Tanh",]
+dropout = [ 0.0, 0.5,]
+log_fc_hidden_size = [ 4, 8,]
+fc_act_options = [ "ReLU", "Tanh",]
+optimizer_options = [ "Adam", "RMSprop", "SGD",]
+learning_rate = [ 1e-5, 0.1,]
+log_batch_size = [ 5, 8,]
+
+[model.tuner_driver.pruner_kwargs]
+n_startup_trials = 5
+n_warmup_steps = 3
+
+[model.tuner_driver.sampler_kwargs]
+
 [attack.tuner_driver_settings.objective_extra_kwargs]
 
 [attack.tuner_driver_settings.pruner_kwargs]
@@ -99,6 +99,6 @@ default_seq_length = 48
 [attack.tuning.ranges]
 kappa = [ 0.0, 2.0,]
 lambda_1 = [ 1e-7, 1.0,]
-optimizer_options = [ "Adam", "RMSprop", "SGD",]
 learning_rate = [ 1e-5, 1.0,]
 log_batch_size = [ 5, 7,]
+optimizer_options = [ "Adam", "RMSprop", "SGD",]

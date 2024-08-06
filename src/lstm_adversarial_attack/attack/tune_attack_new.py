@@ -5,6 +5,7 @@ from pathlib import Path
 import optuna
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
+import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_tuner_driver as atd
 import lstm_adversarial_attack.utils.gpu_helpers as gh
 import lstm_adversarial_attack.utils.path_searches as ps
@@ -34,6 +35,8 @@ def main(redirect: bool, cv_training_id: str = None) -> optuna.Study:
     tuner_driver = atd.AttackTunerDriver(
         cv_training_id=cv_training_id,
         attack_tuning_id=attack_tuning_id,
+        settings=ads.AttackTunerDriverSettings.from_config(),
+        paths=ads.AttackDriverPaths.from_config(),
         device=device,
         redirect_terminal_output=redirect
     )

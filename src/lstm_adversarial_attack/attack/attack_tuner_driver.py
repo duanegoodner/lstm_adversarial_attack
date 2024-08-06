@@ -31,6 +31,8 @@ class AttackTunerDriver:
         self,
         device: torch.device,
         cv_training_id: str,
+        settings: ads.AttackTunerDriverSettings,
+        paths: ads.AttackTunerDriverPaths,
         attack_tuning_id: str,
         redirect_terminal_output: bool,
     ):
@@ -44,8 +46,8 @@ class AttackTunerDriver:
         self.cv_training_id = cv_training_id
         self.attack_tuning_id = attack_tuning_id
         self.redirect_terminal_output = redirect_terminal_output
-        self.settings = ads.AttackTunerDriverSettings.from_config()
-        self.paths = ads.AttackTunerDriverPaths.from_config()
+        self.settings = settings
+        self.paths = paths
         self.objective_extra_kwargs = (
             {"max_perts": self.settings.max_perts}
             if self.settings.objective_name == "max_num_nonzero_perts"
@@ -112,6 +114,8 @@ class AttackTunerDriver:
             device=device,
             cv_training_id=attack_tuner_driver_summary.cv_training_id,
             attack_tuning_id=attack_tuner_driver_summary.attack_tuning_id,
+            settings=attack_tuner_driver_summary.settings,
+            paths=attack_tuner_driver_summary.paths,
             redirect_terminal_output=redirect_terminal_output,
         )
 
