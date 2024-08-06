@@ -53,7 +53,7 @@ def main(attack_tuning_id: str) -> ards.TrainerSuccessSummary:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-s",
+        "-t",
         "--attack_tuning_id",
         action="store",
         nargs="?",

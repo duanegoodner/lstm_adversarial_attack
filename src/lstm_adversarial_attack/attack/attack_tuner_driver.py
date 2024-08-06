@@ -31,19 +31,15 @@ class AttackTunerDriver:
         self,
         device: torch.device,
         cv_training_id: str,
+        attack_tuning_ranges: ads.AttackTuningRanges,
         settings: ads.AttackTunerDriverSettings,
         paths: ads.AttackTunerDriverPaths,
         attack_tuning_id: str,
         redirect_terminal_output: bool,
     ):
-        """
-        :param device: the device to run on
-        :param tuning_ranges: hyperparamter tuning ranges (for use by Optuna)
-        specified, default is timestamped dir under
-        data/attack/attack_hyperparamter_tuning
-        """
         self.device = device
         self.cv_training_id = cv_training_id
+        self.attack_tuning_ranges = attack_tuning_ranges
         self.attack_tuning_id = attack_tuning_id
         self.redirect_terminal_output = redirect_terminal_output
         self.settings = settings
@@ -56,7 +52,6 @@ class AttackTunerDriver:
         self.output_dir = Path(self.paths.output_dir) / self.attack_tuning_id
         self.has_pre_existing_local_output = self.output_dir.exists()
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        self.tuning_ranges = ads.AttackTuningRanges()
         self.pruner_kwargs = self.settings.pruner_kwargs
         self.pruner = self.get_pruner(pruner_name=self.settings.pruner_name)
         self.sampler_kwargs = self.settings.sampler_kwargs
@@ -114,6 +109,7 @@ class AttackTunerDriver:
             device=device,
             cv_training_id=attack_tuner_driver_summary.cv_training_id,
             attack_tuning_id=attack_tuner_driver_summary.attack_tuning_id,
+            attack_tuning_ranges=attack_tuner_driver_summary.attack_tuning_ranges,
             settings=attack_tuner_driver_summary.settings,
             paths=attack_tuner_driver_summary.paths,
             redirect_terminal_output=redirect_terminal_output,
@@ -126,12 +122,12 @@ class AttackTunerDriver:
             model_tuning_id=self.model_tuning_id,
             cv_training_id=self.cv_training_id,
             attack_tuning_id=self.attack_tuning_id,
+            attack_tuning_ranges=self.attack_tuning_ranges,
             model_hyperparameters=self.model_hyperparameters,
-            settings=self.settings.__dict__,
-            paths=self.paths.__dict__,
+            settings=self.settings,
+            paths=self.paths,
             study_name=self.study_name,
             is_continuation=self.has_pre_existing_local_output,
-            tuning_ranges=self.tuning_ranges,
             model_training_result_dir=str(self.model_training_result_dir),
         )
 
@@ -229,7 +225,7 @@ class AttackTunerDriver:
             checkpoint=self.target_model_checkpoint,
             epochs_per_batch=self.settings.epochs_per_batch,
             max_num_samples=self.settings.max_num_samples,
-            tuning_ranges=self.tuning_ranges,
+            tuning_ranges=self.attack_tuning_ranges,
             output_dir=self.output_dir,
             objective_name=self.settings.objective_name,
             sample_selection_seed=self.settings.sample_selection_seed,

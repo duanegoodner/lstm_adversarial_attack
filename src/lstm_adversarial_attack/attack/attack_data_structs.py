@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field, fields, is_dataclass
 from pathlib import Path
 from typing import Any, Callable, Type
 
@@ -72,6 +72,8 @@ class AttackHyperParameterSettings:
         return getattr(torch.optim, self.optimizer_name)
 
 
+# TODO make .from_optuna_trial an AttackHyperParameterSettings classmethod
+#  and remove BuildAttackHyperParameterSettings class
 class BuildAttackHyperParameterSettings:
     @staticmethod
     def from_optuna_trial(
@@ -98,6 +100,7 @@ class BuildAttackHyperParameterSettings:
 
 @dataclass
 class AttackTunerDriverSettings:
+    # tuning_ranges: AttackTuningRanges
     db_env_var_name: str
     num_trials: int
     epochs_per_batch: int
@@ -112,16 +115,20 @@ class AttackTunerDriverSettings:
 
     @classmethod
     def from_config(cls):
-        # config_reader = ConfigReader(config_path=config_path)
-        settings_fields = [
-            item.name for item in fields(AttackTunerDriverSettings)
-        ]
-        constructor_kwargs = {
-            field_name: CONFIG_READER.get_value(
-                f"attack.tuner_driver_settings.{field_name}"
+        constructor_kwargs = {}
+
+        for item in fields(AttackTunerDriverSettings):
+            if not is_dataclass(item.type):
+                constructor_kwargs[item.name] = CONFIG_READER.get_value(
+                f"attack.tuner_driver_settings.{item.name}"
             )
-            for field_name in settings_fields
-        }
+            # else:
+            #     # handle case where attribute is another dataclass (with all
+            #     # primitive attributes) instead of a dataclass of primitives
+            #     # itself.
+            #     attr_kwargs = CONFIG_READER.get_value(f"attack.tuner_driver_settings.{item.name}")
+            #     constructor_kwargs[item.name] = item.type(**attr_kwargs)
+
         return cls(**constructor_kwargs)
 
 
@@ -147,11 +154,11 @@ class AttackTunerDriverSummary(msgspec.Struct):
     cv_training_id: str
     attack_tuning_id: str
     model_hyperparameters: tuh.X19LSTMHyperParameterSettings
+    attack_tuning_ranges: AttackTuningRanges
     settings: AttackTunerDriverSettings
     paths: AttackTunerDriverPaths
     study_name: str
     is_continuation: bool
-    tuning_ranges: AttackTuningRanges
     model_training_result_dir: str
 
 

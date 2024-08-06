@@ -11,7 +11,7 @@ import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
 import lstm_adversarial_attack.model.model_retriever as tmr
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
-from lstm_adversarial_attack.config.read_write import CONFIG_READER
+from lstm_adversarial_attack.config.read_write import CONFIG_READER, PATH_CONFIG_READER
 import lstm_adversarial_attack.dataset.x19_mort_general_dataset as xmd
 from lstm_adversarial_attack.dataset.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex,
@@ -49,7 +49,7 @@ class AttackDriver:
     @property
     def attack_tuner_driver_summary(self) -> ads.AttackTunerDriverSummary:
         return ads.ATTACK_TUNER_DRIVER_SUMMARY_IO.import_to_struct(
-            path=Path(CONFIG_READER.read_path("attack.tune.output_dir"))
+            path=Path(PATH_CONFIG_READER.read_path("attack.tune.output_dir"))
             / self.attack_tuning_id
             / f"attack_tuner_driver_summary_{self.attack_tuning_id}.json"
         )

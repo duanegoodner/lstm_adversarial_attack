@@ -57,7 +57,7 @@ validation_loss = "_validation_loss"
 db_env_var_name = "ATTACK_TUNING_DB_NAME"
 num_trials = 75
 epochs_per_batch = 1000
-max_num_samples = 520
+max_num_samples = 1028
 sample_selection_seed = 2023
 pruner_name = "MedianPruner"
 sampler_name = "TPESampler"
@@ -67,7 +67,7 @@ attack_misclassified_samples = false
 
 [attack.driver_settings]
 epochs_per_batch = 1000
-max_num_samples = 520
+max_num_samples = 10000
 sample_selection_seed = 2023
 attack_misclassified_samples = false
 

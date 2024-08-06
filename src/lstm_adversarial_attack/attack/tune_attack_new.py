@@ -35,8 +35,9 @@ def main(redirect: bool, cv_training_id: str = None) -> optuna.Study:
     tuner_driver = atd.AttackTunerDriver(
         cv_training_id=cv_training_id,
         attack_tuning_id=attack_tuning_id,
+        attack_tuning_ranges=ads.AttackTuningRanges(),
         settings=ads.AttackTunerDriverSettings.from_config(),
-        paths=ads.AttackDriverPaths.from_config(),
+        paths=ads.AttackTunerDriverPaths.from_config(),
         device=device,
         redirect_terminal_output=redirect
     )
