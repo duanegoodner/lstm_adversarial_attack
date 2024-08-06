@@ -14,7 +14,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 # import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.utils.simple_logger as slg
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config.read_write import CONFIG_READER
 
 
 class TrainingOutputDirs:
@@ -92,7 +92,7 @@ class StandardModelTrainer:
         self.train_log_writer.activate(data_col_names=("epoch", "loss"))
 
         logging_metrics = tuple(
-            CONFIG_READER.get_config_value(
+            CONFIG_READER.get_value(
                 "model.trainer_eval_general_logging_metrics"
             )
         )
@@ -281,12 +281,12 @@ class StandardModelTrainer:
 
         if self.summary_writer is not None:
 
-            attr_display_labels = CONFIG_READER.get_config_value(
+            attr_display_labels = CONFIG_READER.get_value(
                 config_key="model.attr_display_labels"
             )
 
             tensorboard_metrics = tuple(
-                CONFIG_READER.get_config_value(
+                CONFIG_READER.get_value(
                     config_key="model.trainer_eval_tensorboard_metrics"
                 )
             )
@@ -301,7 +301,7 @@ class StandardModelTrainer:
                     self.completed_epochs,
                 )
 
-        general_logging_metrics = CONFIG_READER.get_config_value(
+        general_logging_metrics = CONFIG_READER.get_value(
             "model.trainer_eval_general_logging_metrics"
         )
         eval_result_data = tuple(

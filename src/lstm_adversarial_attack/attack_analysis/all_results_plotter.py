@@ -10,7 +10,7 @@ import lstm_adversarial_attack.attack_analysis.discovery_epoch_plotter as dep
 import lstm_adversarial_attack.attack_analysis.perts_histogram_plotter as php
 import lstm_adversarial_attack.attack_analysis.susceptibility_plotter as ssp
 import lstm_adversarial_attack.utils.msgspec_io as mio
-from lstm_adversarial_attack.config import CONFIG_READER, PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import CONFIG_READER, PATH_CONFIG_READER
 
 
 @dataclass
@@ -56,7 +56,7 @@ class AllResultsPlotter:
         self.min_num_perts = min_num_perts
         self.max_num_perts = max_num_perts
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        self.seq_length = CONFIG_READER.get_config_value(
+        self.seq_length = CONFIG_READER.get_value(
             "attack.analysis.default_seq_length"
         )
         self.label = label

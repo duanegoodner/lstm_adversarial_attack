@@ -5,11 +5,11 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
 import lstm_adversarial_attack.utils.path_searches as ps
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
 
 
 def main(cv_training_id: str = None):
-    cv_root_dir = Path(CONFIG_READER.read_path("model.cv_driver.output_dir"))
+    cv_root_dir = Path(PATH_CONFIG_READER.read_path("model.cv_driver.output_dir"))
 
     if cv_training_id is None:
         cv_training_id = ps.get_latest_sequential_child_dirname(
@@ -31,6 +31,8 @@ def main(cv_training_id: str = None):
         (optimal_results_df.columns != "epoch")
         & (optimal_results_df.columns != "fold"),
     ]
+
+    print(f"Summary of Cross Validation Training Session {cv_training_id}\n")
 
     print("Best Performing Checkpoints by Fold")
     print(optimal_results_df.T)

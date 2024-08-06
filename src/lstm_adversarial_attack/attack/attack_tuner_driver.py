@@ -16,7 +16,7 @@ import lstm_adversarial_attack.model.model_retriever as tmr
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.utils.redirect_output as rdo
-from lstm_adversarial_attack.config import PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
 from lstm_adversarial_attack.dataset.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex,
 )

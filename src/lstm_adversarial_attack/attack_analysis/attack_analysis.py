@@ -8,9 +8,9 @@ import pandas as pd
 from torch.nn.utils.rnn import pad_sequence
 import lstm_adversarial_attack.attack.attack_result_data_structs as ads
 import lstm_adversarial_attack.attack_analysis.attack_susceptibility_metrics as asm
-import lstm_adversarial_attack.config_paths as cfg_paths
+import lstm_adversarial_attack.config.config_paths as cfg_paths
 import lstm_adversarial_attack.utils.path_searches as ps
-from lstm_adversarial_attack.config import PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
 
 
 class RecordedExampleType(Enum):

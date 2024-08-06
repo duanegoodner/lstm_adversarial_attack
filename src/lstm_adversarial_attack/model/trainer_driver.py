@@ -105,7 +105,7 @@ class TrainerDriver:
         :param summary_writer: SummaryWriter object
         """
         config_reader = config.ConfigReader()
-        observation_window_hours = config_reader.get_config_value("preprocess.observation_window_hours")
+        observation_window_hours = config_reader.get_value("preprocess.observation_window_hours")
 
         tensorboard_model = tuh.X19LSTMBuilder(
             settings=self.hyperparameter_settings
@@ -129,7 +129,7 @@ class TrainerDriver:
         :param save_checkpoints: Whether to save checkpoints
         """
         config_reader = config.ConfigReader()
-        seed = config_reader.get_config_value("model.trainer.random_seed")
+        seed = config_reader.get_value("model.trainer.random_seed")
 
         torch.manual_seed(seed=seed)
         data_loaders = self.build_data_loaders()

@@ -13,7 +13,7 @@ import lstm_adversarial_attack.dataset.dataset_with_index as dsi
 import lstm_adversarial_attack.utils.resource_io as rio
 import lstm_adversarial_attack.dataset.weighted_dataloader_builder as wdb
 import lstm_adversarial_attack.model.lstm_model_stc as lms
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config.read_write import CONFIG_READER
 
 
 class AdversarialAttackTrainer:
@@ -66,7 +66,7 @@ class AdversarialAttackTrainer:
         self.model = model
         self.attack_hyperparameters = attack_hyperparameters
         self.state_dict = state_dict
-        self.observation_window_hours = CONFIG_READER.get_config_value(
+        self.observation_window_hours = CONFIG_READER.get_value(
             "preprocess.observation_window_hours"
         )
         self.attacker = aat.AdversarialAttacker(

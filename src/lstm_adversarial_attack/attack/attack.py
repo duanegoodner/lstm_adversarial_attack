@@ -8,7 +8,7 @@ import lstm_adversarial_attack.attack.attack_result_data_structs as ards
 import lstm_adversarial_attack.utils.gpu_helpers as gh
 import lstm_adversarial_attack.utils.path_searches as ps
 import lstm_adversarial_attack.utils.session_id_generator as sig
-from lstm_adversarial_attack.config import PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
 
 
 def main(attack_tuning_id: str) -> ards.TrainerSuccessSummary:

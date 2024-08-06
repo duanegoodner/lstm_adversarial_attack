@@ -21,7 +21,7 @@ import lstm_adversarial_attack.model.standard_model_trainer as smt
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.utils.simple_logger as slg
 import lstm_adversarial_attack.dataset.weighted_dataloader_builder as wdb
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config.read_write import CONFIG_READER
 
 
 class TuningOutputDirs:
@@ -253,7 +253,7 @@ class HyperParameterTuner:
         :param cv_means_log_writer: writes cv_means to generic log file
         :param trial: ongoing optuna trial that generated data
         """
-        attr_display_labels = CONFIG_READER.get_config_value(
+        attr_display_labels = CONFIG_READER.get_value(
             config_key="model.attr_display_labels"
         )
 

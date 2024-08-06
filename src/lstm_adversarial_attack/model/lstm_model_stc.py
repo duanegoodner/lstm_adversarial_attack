@@ -10,7 +10,7 @@ from torch.nn.utils.rnn import (
 )
 sys.path.append(str(Path(__file__).parent.parent))
 # from lstm_adversarial_attack.model.model_data_structs import VariableLengthFeatures
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config.read_write import CONFIG_READER
 
 
 @dataclass
@@ -29,9 +29,9 @@ class BidirectionalX19LSTM(nn.Module):
     ):
         super(BidirectionalX19LSTM, self).__init__()
 
-        bg_data_cols = CONFIG_READER.get_config_value("preprocess.bg_data_cols")
-        lab_data_cols = CONFIG_READER.get_config_value("preprocess.lab_data_cols")
-        vital_data_cols = CONFIG_READER.get_config_value("preprocess.vital_data_cols")
+        bg_data_cols = CONFIG_READER.get_value("preprocess.bg_data_cols")
+        lab_data_cols = CONFIG_READER.get_value("preprocess.lab_data_cols")
+        vital_data_cols = CONFIG_READER.get_value("preprocess.vital_data_cols")
         input_size = len(bg_data_cols) + len(lab_data_cols) + len(vital_data_cols)
 
         self.lstm_hidden_size = lstm_hidden_size

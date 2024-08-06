@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
-from lstm_adversarial_attack.config import PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
 
 if __name__ == "__main__":
 

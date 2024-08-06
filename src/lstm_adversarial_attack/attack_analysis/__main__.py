@@ -8,7 +8,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack_analysis.all_results_plotter as arp
 import lstm_adversarial_attack.utils.path_searches as ps
 import lstm_adversarial_attack.utils.session_id_generator as sig
-from lstm_adversarial_attack.config import PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
 
 
 def main(

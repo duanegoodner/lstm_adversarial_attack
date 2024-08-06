@@ -10,35 +10,35 @@ import torch
 import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.utils.msgspec_io as mio
-from lstm_adversarial_attack.config import CONFIG_READER, PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import CONFIG_READER, PATH_CONFIG_READER
 
 
 @dataclass
 class AttackTuningRanges:
     kappa: tuple[float, float] = field(
         default_factory=lambda: tuple(
-            CONFIG_READER.get_config_value("attack.tuning.ranges.kappa")
+            CONFIG_READER.get_value("attack.tuning.ranges.kappa")
         )
     )
     lambda_1: tuple[float, float] = field(
         default_factory=lambda: tuple(
-            CONFIG_READER.get_config_value("attack.tuning.ranges.lambda_1")
+            CONFIG_READER.get_value("attack.tuning.ranges.lambda_1")
         )
     )
     optimizer_name: tuple[str, ...] = field(
         default_factory=lambda: tuple(
-            CONFIG_READER.get_config_value("attack.tuning.ranges.optimizer_options")
+            CONFIG_READER.get_value("attack.tuning.ranges.optimizer_options")
         )
     )
 
     learning_rate: tuple[float, float] = field(
         default_factory=lambda: tuple(
-            CONFIG_READER.get_config_value("attack.tuning.ranges.learning_rate")
+            CONFIG_READER.get_value("attack.tuning.ranges.learning_rate")
         )
     )
     log_batch_size: tuple[int, int] = field(
         default_factory=lambda: tuple(
-            CONFIG_READER.get_config_value("attack.tuning.ranges.log_batch_size")
+            CONFIG_READER.get_value("attack.tuning.ranges.log_batch_size")
         )
     )
 
@@ -117,7 +117,7 @@ class AttackTunerDriverSettings:
             item.name for item in fields(AttackTunerDriverSettings)
         ]
         constructor_kwargs = {
-            field_name: CONFIG_READER.get_config_value(
+            field_name: CONFIG_READER.get_value(
                 f"attack.tuner_driver_settings.{field_name}"
             )
             for field_name in settings_fields
@@ -202,7 +202,7 @@ class AttackDriverSettings:
             item.name for item in fields(AttackDriverSettings)
         ]
         constructor_kwargs = {
-            field_name: CONFIG_READER.get_config_value(
+            field_name: CONFIG_READER.get_value(
                 f"attack.driver_settings.{field_name}"
             )
             for field_name in settings_fields

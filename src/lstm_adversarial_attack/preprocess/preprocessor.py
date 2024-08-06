@@ -11,7 +11,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
-from lstm_adversarial_attack.config import CONFIG_READER, PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import CONFIG_READER, PATH_CONFIG_READER
 
 
 @dataclass
@@ -25,7 +25,7 @@ class PreprocessModuleResources(ABC):
                 object_field.name != "module_name"
                 and getattr(self, object_field.name) is None
             ):
-                value = PATH_CONFIG_READER.get_config_value(
+                value = PATH_CONFIG_READER.get_value(
                     f"preprocess.{self.module_name}.resources.{object_field.name}"
                 )
 
@@ -59,14 +59,14 @@ class PreprocessModuleSettings(ABC):
                     )
                 )
                 / self.preprocess_id
-                / PATH_CONFIG_READER.get_config_value(
+                / PATH_CONFIG_READER.get_value(
                     f"preprocess.output_dir_names.{self.module_name}"
                 )
             )
 
         for object_field in self.module_specific_fields:
             if getattr(self, object_field.name) is None:
-                attr = CONFIG_READER.get_config_value(
+                attr = CONFIG_READER.get_value(
                     f"preprocess.{object_field.name}"
                 )
                 setattr(self, object_field.name, attr)

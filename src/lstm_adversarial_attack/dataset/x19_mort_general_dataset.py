@@ -12,7 +12,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 from lstm_adversarial_attack.model.lstm_model_stc import VariableLengthFeatures
 from lstm_adversarial_attack.dataset.dataset_with_index import DatasetWithIndex
-from lstm_adversarial_attack.config import CONFIG_READER, PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
 
 
 @dataclass
@@ -65,7 +65,7 @@ class X19MGeneralDataset(Dataset):
         measurements_path = (
             preprocess_data_root
             / preprocess_id
-            / PATH_CONFIG_READER.get_config_value(
+            / PATH_CONFIG_READER.get_value(
                 "dataset.resources.measurement_data_list"
             )["preprocess"]
         )
@@ -73,7 +73,7 @@ class X19MGeneralDataset(Dataset):
         in_hospital_mort_path = (
             preprocess_data_root
             / preprocess_id
-            / PATH_CONFIG_READER.get_config_value(
+            / PATH_CONFIG_READER.get_value(
                 "dataset.resources.in_hospital_mortality_list"
             )["preprocess"]
         )

@@ -11,7 +11,7 @@ import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
 import lstm_adversarial_attack.model.model_retriever as tmr
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
-from lstm_adversarial_attack.config import CONFIG_READER
+from lstm_adversarial_attack.config.read_write import CONFIG_READER
 import lstm_adversarial_attack.dataset.x19_mort_general_dataset as xmd
 from lstm_adversarial_attack.dataset.x19_mort_general_dataset import (
     X19MGeneralDatasetWithIndex,

@@ -1,18 +1,26 @@
 import pprint
 import toml
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
 
 class ConfigReader:
     def __init__(self, config_path: Path = None):
         if config_path is None:
-            config_path = Path(__file__).parent / "config.toml"
+            config_path = (
+                Path(__file__).parent.parent.parent.parent / "config.toml"
+            )
         self._config_path = config_path
-        with self._config_path.open(mode="r") as config_file:
-            self._config = toml.load(config_file)
+        # with self._config_path.open(mode="r") as config_file:
+        #     self._config = toml.load(config_file)
 
-    def get_config_value(self, config_key: str) -> Any:
+    @property
+    def _config(self) -> Dict[str, Any]:
+        with self._config_path.open(mode="r") as config_file:
+           config = toml.load(config_file)
+        return config
+
+    def get_value(self, config_key: str) -> Any:
         result = self._config.copy()
         for sub_key in config_key.split("."):
             if result.get(sub_key) is None:
@@ -21,6 +29,10 @@ class ConfigReader:
                 result = result.get(sub_key)
 
         return result
+
+    @property
+    def full_config(self) -> Dict[str, Any]:
+        return self._config
 
 
 class PathConfigReader(ConfigReader):
@@ -31,7 +43,7 @@ class PathConfigReader(ConfigReader):
 
     @property
     def project_root(self) -> Path:
-        return Path(__file__).parent.parent.parent
+        return Path(__file__).parent.parent.parent.parent
 
     def _to_absolute_path(self, path_rel_project_root: str | Path) -> str:
         relative_path = Path(path_rel_project_root)
@@ -45,7 +57,7 @@ class PathConfigReader(ConfigReader):
     def read_path(
         self, config_key: str, extension: str = ""
     ) -> str | list[str] | dict[str, str]:
-        config_val = self.get_config_value(config_key=f"paths.{config_key}")
+        config_val = self.get_value(config_key=f"paths.{config_key}")
         if type(config_val) is str:
             return self.read_dotted_val_str(
                 path_val=config_val, extension=extension
@@ -80,7 +92,7 @@ class PathConfigReader(ConfigReader):
 class ConfigModifier:
     def __init__(self, config_path: Path = None):
         if config_path is None:
-            config_path = Path(__file__).parent / "config.toml"
+            config_path = Path(__file__).parent.parent.parent.parent / "config.toml"
         self._config_path = config_path
 
     def set(self, dotted_key: str, value: Any):
@@ -99,6 +111,7 @@ class ConfigModifier:
         with self._config_path.open(mode="w") as config_file:
             toml.dump(config, config_file)
 
+
 CONFIG_READER = ConfigReader()
 
 
@@ -108,9 +121,10 @@ PATH_CONFIG_READER = PathConfigReader()
 CONFIG_MODIFIER = ConfigModifier()
 
 
-if __name__ == "__main__":
-    config_reader = ConfigReader()
-    config_value = config_reader.get_config_value(
-        config_key="preprocess.bg_data_cols"
-    )
-    pprint.pprint(config_value)
+# if __name__ == "__main__":
+#     orig_kfold_random_seed = CONFIG_READER.get_value("model.tuner_driver.kfold_random_seed")
+#     print(orig_kfold_random_seed)
+#
+#     CONFIG_MODIFIER.set("model.tuner_driver.kfold_random_seed", 1234)
+#     modified_kfold_random_seed = CONFIG_READER.get_value("model.tuner_driver.kfold_random_seed")
+#     print(modified_kfold_random_seed)

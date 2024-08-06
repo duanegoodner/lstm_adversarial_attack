@@ -13,7 +13,7 @@ import torch
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.utils.msgspec_io as mio
-from lstm_adversarial_attack.config import CONFIG_READER, PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import CONFIG_READER, PATH_CONFIG_READER
 
 
 class MsgSpecStructWithDict(msgspec.Struct):
@@ -314,7 +314,7 @@ class CrossValidatorDriverSettings:
             item.name for item in fields(CrossValidatorDriverSettings)
         ]
         constructor_kwargs = {
-            field_name: CONFIG_READER.get_config_value(
+            field_name: CONFIG_READER.get_value(
                 f"model.cv_driver_settings.{field_name}"
             )
             for field_name in settings_fields
@@ -365,7 +365,7 @@ class ModelTunerDriverSettings:
             item.name for item in fields(ModelTunerDriverSettings)
         ]
         constructor_kwargs = {
-            field_name: CONFIG_READER.get_config_value(
+            field_name: CONFIG_READER.get_value(
                 f"model.tuner_driver.{field_name}"
             )
             for field_name in settings_fields

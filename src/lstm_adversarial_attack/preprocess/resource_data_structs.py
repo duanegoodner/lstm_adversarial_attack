@@ -9,7 +9,7 @@ import pandas as pd
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.utils.resource_io as rio
-from lstm_adversarial_attack.config import CONFIG_READER, PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
 
 _T = TypeVar("_T")
 
@@ -206,7 +206,7 @@ class PreprocessModuleResources(ABC):
 
     @property
     def file_resource_names_dict(self) -> dict[str, dict[str, str]]:
-        return PATH_CONFIG_READER.get_config_value(
+        return PATH_CONFIG_READER.get_value(
             f"preprocess.{self.module_name}.resources"
         )
 

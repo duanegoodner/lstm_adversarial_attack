@@ -10,7 +10,7 @@ import lstm_adversarial_attack.attack.adv_attack_trainer as ata
 # import lstm_adversarial_attack.attack.attack_driver as ad
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
-import lstm_adversarial_attack.config_paths as cfg_paths
+import lstm_adversarial_attack.config.config_paths as cfg_paths
 import lstm_adversarial_attack.utils.resource_io as rio
 # import lstm_adversarial_attack.data_structures as ds
 import lstm_adversarial_attack.model.model_data_structs as mds

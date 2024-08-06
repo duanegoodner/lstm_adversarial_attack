@@ -14,7 +14,7 @@ import lstm_adversarial_attack.preprocess.prefilter as prf
 import lstm_adversarial_attack.preprocess.preprocessor as ppr
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
 import lstm_adversarial_attack.utils.session_id_generator as sig
-from lstm_adversarial_attack.config import PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
 
 
 def main(db_result_id: str = None) -> dict | dict[str, Any]:

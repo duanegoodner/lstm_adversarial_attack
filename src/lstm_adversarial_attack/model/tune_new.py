@@ -10,7 +10,7 @@ import lstm_adversarial_attack.model.model_tuner_driver as td
 import lstm_adversarial_attack.utils.gpu_helpers as gh
 import lstm_adversarial_attack.utils.path_searches as ps
 import lstm_adversarial_attack.utils.session_id_generator as sig
-from lstm_adversarial_attack.config import CONFIG_READER, PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import CONFIG_READER, PATH_CONFIG_READER
 
 
 def main(redirect: bool, preprocess_id: str = None) -> optuna.Study:
@@ -54,7 +54,7 @@ def main(redirect: bool, preprocess_id: str = None) -> optuna.Study:
     )
 
     study = tuner_driver(
-        num_trials=CONFIG_READER.get_config_value(
+        num_trials=CONFIG_READER.get_value(
             "model.tuner_driver.num_trials"
         )
     )

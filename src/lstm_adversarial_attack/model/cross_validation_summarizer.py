@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.model.model_data_structs as mds
-from lstm_adversarial_attack.config import PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
 import lstm_adversarial_attack.utils.path_searches as ps
 
 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from lstm_adversarial_attack.config import PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
 
 if __name__ == "__main__":
     full_icustay_path = Path(

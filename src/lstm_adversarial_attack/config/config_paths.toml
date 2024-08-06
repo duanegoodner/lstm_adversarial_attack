@@ -64,6 +64,10 @@ preprocess = "5_feature_finalizer/measurement_col_names.json"
 [paths.model.tuner_driver]
 output_dir = "output_data::model/tuning"
 
+[paths.tuning_db]
+dotenv = "docker::tuning_dbs.env"
+
+
 [paths.model.cv_driver]
 output_dir = "output_data::model/cross_validation"
 
