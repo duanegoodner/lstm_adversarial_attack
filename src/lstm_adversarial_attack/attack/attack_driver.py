@@ -7,16 +7,16 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.attack.adv_attack_trainer as aat
 import lstm_adversarial_attack.attack.attack_data_structs as ads
 import lstm_adversarial_attack.attack.attack_result_data_structs as ards
+import lstm_adversarial_attack.dataset.x19_mort_general_dataset as xmd
 import lstm_adversarial_attack.model.cross_validation_summarizer as cvs
 import lstm_adversarial_attack.model.model_retriever as tmr
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
-from lstm_adversarial_attack.config.read_write import CONFIG_READER, PATH_CONFIG_READER
-import lstm_adversarial_attack.dataset.x19_mort_general_dataset as xmd
+import lstm_adversarial_attack.utils.redirect_output as rdo
+from lstm_adversarial_attack.config.read_write import (CONFIG_READER,
+                                                       PATH_CONFIG_READER)
 from lstm_adversarial_attack.dataset.x19_mort_general_dataset import (
-    X19MGeneralDatasetWithIndex,
-    x19m_with_index_collate_fn,
-)
+    X19MGeneralDatasetWithIndex, x19m_with_index_collate_fn)
 
 
 class AttackDriver:
@@ -29,6 +29,7 @@ class AttackDriver:
         device: torch.device,
         attack_tuning_id: str,
         attack_id: str,
+        redirect_terminal_output: bool,
         checkpoint_interval: int = None,
     ):
         """
@@ -44,6 +45,7 @@ class AttackDriver:
         self.paths = ads.AttackDriverPaths.from_config()
         self.collate_fn = x19m_with_index_collate_fn
         self.checkpoint_interval = checkpoint_interval
+        self.redirect_terminal_output = redirect_terminal_output
         self.initialize_output_dir()
 
     @property
@@ -144,7 +146,16 @@ class AttackDriver:
             checkpoint_interval=self.checkpoint_interval,
         )
 
+        log_file_fid = None
+        if self.redirect_terminal_output:
+            log_file_path = (
+                Path(PATH_CONFIG_READER.read_path("redirected_output.attack"))
+                / f"{self.attack_id}.log"
+            )
+            log_file_fid = rdo.set_redirection(log_file_path=log_file_path, include_optuna=False)
         attack_trainer_result = attack_trainer.train_attacker()
+        if self.redirect_terminal_output:
+            log_file_fid.close()
 
         attack_trainer_result_dto = ards.AttackTrainerResultDTO(
             dataset_info=xmd.X19MGeneralDatasetInfo(

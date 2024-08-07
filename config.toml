@@ -67,7 +67,7 @@ attack_misclassified_samples = false
 
 [attack.driver_settings]
 epochs_per_batch = 1000
-max_num_samples = 10000
+max_num_samples = 40000
 sample_selection_seed = 2023
 attack_misclassified_samples = false
 

@@ -11,7 +11,7 @@ import lstm_adversarial_attack.utils.session_id_generator as sig
 from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
 
 
-def main(attack_tuning_id: str) -> ards.TrainerSuccessSummary:
+def main(attack_tuning_id: str, redirect: bool) -> ards.TrainerSuccessSummary:
     """
     Runs attack on dataset
     :param attack_tuning_id: ID of attack tuning session to use for attack hyperparameter selection
@@ -32,6 +32,7 @@ def main(attack_tuning_id: str) -> ards.TrainerSuccessSummary:
         attack_tuning_id=attack_tuning_id,
         attack_id=attack_id,
         device=cur_device,
+        redirect_terminal_output=redirect
     )
 
     print(
@@ -60,6 +61,12 @@ if __name__ == "__main__":
         help=(
             "ID of attack tuning session to use for attack hyperparameter selection"
         ),
+    )
+    parser.add_argument(
+        "-r",
+        "--redirect",
+        action="store_true",
+        help="Redirect terminal output to log file",
     )
     args_namespace = parser.parse_args()
     cur_success_summary = main(**args_namespace.__dict__)
