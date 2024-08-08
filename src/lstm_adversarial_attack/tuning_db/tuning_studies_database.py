@@ -9,7 +9,6 @@ import optuna.study
 from dotenv import load_dotenv
 from optuna.storages import RDBStorage
 
-import lstm_adversarial_attack.config.config_paths as cfp
 from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
 
 

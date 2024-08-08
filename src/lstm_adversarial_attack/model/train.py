@@ -20,6 +20,10 @@ def main(
         PATH_CONFIG_READER.read_path("model.tuner_driver.output_dir")
     )
 
+    model_training_output_root = Path(
+        PATH_CONFIG_READER.read_path("model.cv_driver.output_dir")
+    )
+
     if model_tuning_id is None:
         model_tuning_id = ps.get_latest_sequential_child_dirname(
             root_dir=model_tuning_output_root
@@ -29,9 +33,10 @@ def main(
         f"Starting new cross-validation training session {cv_training_id}.\n"
         f"Using model hyperparameters from model tuning session "
         f"{model_tuning_id}.\n\n"
+        
         f"To monitor training in tensorboard, run the following command in "
         f"another terminal:\n"
-        f"tensorboard --logdir {model_tuning_output_root}/{cv_training_id}/"
+        f"tensorboard --logdir {model_training_output_root}/{cv_training_id}/"
         f"tensorboard --host=0.0.0.0\n"
         f"Then go to http://localhost:6006/ in your browser."
     )

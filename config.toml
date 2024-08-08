@@ -39,9 +39,9 @@ cv_mean_tensorboard_metrics = [ "accuracy", "auc", "f1", "precision", "recall", 
 [model.cv_driver_settings]
 collate_fn_name = "x19m_collate_fn"
 epochs_per_fold = 1000
-eval_interval = 25
+eval_interval = 10
 fold_class_name = "StratifiedKFold"
-kfold_random_seed = 86420
+kfold_random_seed = 20240807
 num_folds = 5
 single_fold_eval_fraction = 0.2
 
@@ -61,7 +61,7 @@ max_num_samples = 1028
 sample_selection_seed = 2023
 pruner_name = "MedianPruner"
 sampler_name = "TPESampler"
-objective_name = "sparse_small"
+objective_name = "sparse_small_max"
 max_perts = 0
 attack_misclassified_samples = false
 

@@ -10,7 +10,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from lstm_adversarial_attack import config
+
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.utils.resource_io as rio
@@ -19,6 +19,7 @@ import lstm_adversarial_attack.model.standard_model_trainer as smt
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.dataset.weighted_dataloader_builder as wdl
 import lstm_adversarial_attack.dataset.x19_mort_general_dataset as xmd
+from lstm_adversarial_attack.config.read_write import CONFIG_READER
 
 
 class TrainerDriver:
@@ -104,8 +105,7 @@ class TrainerDriver:
 
         :param summary_writer: SummaryWriter object
         """
-        config_reader = config.ConfigReader()
-        observation_window_hours = config_reader.get_value("preprocess.observation_window_hours")
+        observation_window_hours = CONFIG_READER.get_value("preprocess.observation_window_hours")
 
         tensorboard_model = tuh.X19LSTMBuilder(
             settings=self.hyperparameter_settings
@@ -128,8 +128,7 @@ class TrainerDriver:
         :param eval_interval: Number of epochs between evals
         :param save_checkpoints: Whether to save checkpoints
         """
-        config_reader = config.ConfigReader()
-        seed = config_reader.get_value("model.trainer.random_seed")
+        seed = CONFIG_READER.get_value("model.trainer.random_seed")
 
         torch.manual_seed(seed=seed)
         data_loaders = self.build_data_loaders()

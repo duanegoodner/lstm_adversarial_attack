@@ -16,17 +16,22 @@ class MimiciiiDatabaseAccess:
     Connects to and runs queries on MIMIC-III Postgres database
     """
 
-    def __init__(self, dotenv_path: Path, output_parent: Path):
+    def __init__(
+        self, dotenv_path: Path, output_parent: Path
+    ):
         """
         :param dotenv_path: path .env file w/ values needed for connection
-        :param output_dir: directory where query results get stored
+        :param output_parent: parent of directory that will contain
+        query output files
         """
         load_dotenv(dotenv_path=dotenv_path)
         self._connection = None
         self._dotenv_path = dotenv_path
 
-        timestamp = "".join(char for char in str(datetime.now()) if char.isdigit())
-        self._output_dir = output_parent / timestamp
+        self._query_session_id = "".join(
+            char for char in str(datetime.now()) if char.isdigit()
+        )
+        self._output_dir = output_parent / self._query_session_id
         self._output_dir.mkdir(parents=True)
 
     def connect(self):
@@ -41,8 +46,9 @@ class MimiciiiDatabaseAccess:
             password=os.getenv("MIMICIII_DATABASE_PASSWORD"),
         )
 
-    def _execute_query(self, sql_file_path: Path) -> tuple[
-        list[str], list[tuple]]:
+    def _execute_query(
+        self, sql_file_path: Path
+    ) -> tuple[list[str], list[tuple]]:
         """
         Executes sql query.
         :param sql_file_path:
@@ -63,7 +69,7 @@ class MimiciiiDatabaseAccess:
         return headers, result
 
     def _write_query_to_csv(
-            self, query_result: tuple[list, list], query_gen_name: str
+        self, query_result: tuple[list, list], query_gen_name: str
     ):
         """
         Saves result of query to .csv file.
@@ -100,14 +106,14 @@ class MimiciiiDatabaseAccess:
             query_result=query_result, query_gen_name=query_gen_name
         )
 
-    def run_sql_queries(
-            self, sql_query_paths: list[Path]
-    ) -> list[Path]:
+    def run_sql_queries(self, sql_query_paths: list[Path]) -> list[Path]:
         """
         Runs and saves results of queries in a list of .sql filepaths.
         :param sql_query_paths: list of .sql query filepaths
         :return: list of paths to .csv query output files
         """
+
+        print(f"Starting query session: {self._query_session_id}\n")
 
         result_paths = []
         for query_idx in range(len(sql_query_paths)):

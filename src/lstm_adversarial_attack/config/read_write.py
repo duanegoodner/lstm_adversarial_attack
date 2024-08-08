@@ -95,11 +95,11 @@ class ConfigModifier:
             config_path = Path(__file__).parent.parent.parent.parent / "config.toml"
         self._config_path = config_path
 
-    def set(self, dotted_key: str, value: Any):
+    def set(self, config_key: str, value: Any):
         with self._config_path.open(mode="r") as config_file:
             config = toml.load(config_file)
 
-        keys = dotted_key.split(".")
+        keys = config_key.split(".")
         current_level = config
         for key in keys[:-1]:
             if key not in current_level:
