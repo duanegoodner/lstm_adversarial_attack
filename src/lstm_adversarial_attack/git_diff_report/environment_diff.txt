@@ -1,0 +1,12 @@
+diff --git a/docker/app_dev/environment.yml b/docker/app_dev/environment.yml
+index 01bb5dd..76a1516 100755
+--- a/docker/app_dev/environment.yml
++++ b/docker/app_dev/environment.yml
+@@ -7,6 +7,7 @@ channels:
+ dependencies:
+   - black
+   - dill
++  - gitpython
+   - isort
+   - jupyter
+   - jupyterlab

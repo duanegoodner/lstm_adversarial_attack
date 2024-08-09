@@ -1,49 +1,68 @@
-import os
-from pathlib import Path
 import git
+from pathlib import Path
 
-def create_directory(directory_name="git_diff_report"):
-    # Create a directory to store the results
-    Path(directory_name).mkdir(parents=True, exist_ok=True)
-    return directory_name
 
-def get_latest_commit_hash(repo):
-    # Get the latest commit hash
-    latest_commit = repo.head.commit
-    return latest_commit.hexsha
+class GitReporter:
+    def __init__(self, output_root: Path):
+        self.output_root = output_root
+        assert output_root.is_dir()
+        self.report_dir = self.create_report_dir()
 
-def save_commit_hash_to_file(commit_hash, directory):
-    # Save the commit hash to a text file
-    with open(os.path.join(directory, "latest_commit_hash.txt"), "w") as f:
-        f.write(commit_hash)
+        self.repo_root = Path(__file__).parent.parent.parent.parent
+        self.repo = git.Repo(str(self.repo_root))
 
-def generate_git_diff(repo, directory):
-    # Check for changed files in the working directory compared to the latest commit
-    changed_files = [item.a_path for item in repo.index.diff(None)]
+    def create_report_dir(self) -> Path:
+        report_counter = 1
+        report_dir_name = f"git_diff_report-{report_counter:02d}"
+        report_dir_path = self.output_root / report_dir_name
 
-    # For each changed file, generate a git diff and save it to a file
-    for file in changed_files:
-        diff = repo.git.diff(file)
-        if diff:
-            diff_file_name = os.path.join(directory, f"{Path(file).stem}_diff.txt")
-            with open(diff_file_name, "w") as diff_file:
-                diff_file.write(diff)
+        while report_dir_path.exists():
+            report_counter += 1
+            report_dir_name = f"git_diff_report-{report_counter:02d}"
+            report_dir_path = self.output_root / report_dir_name
 
-def main():
-    # Initialize the repo object from the current working directory
-    repo = git.Repo(str(Path(__file__).parent.parent.parent.parent))
+        report_dir_path.mkdir()
+        return report_dir_path
 
-    # Ensure the repository is marked as safe
-    repo.config_writer().set_value("safe", "directory", os.getcwd()).release()
+    @property
+    def current_branch_name(self) -> str | None:
+        try:
+            current_branch_name = self.repo.active_branch.name
+        except TypeError:
+            current_branch_name = None
+            print(f"Detached HEAD at commit: {self.latest_commit_hash}")
 
-    directory = create_directory()
+        return current_branch_name
 
-    # Step 1: Get the latest commit hash and save it to a file
-    latest_commit_hash = get_latest_commit_hash(repo)
-    save_commit_hash_to_file(latest_commit_hash, directory)
+    @property
+    def latest_commit_hash(self) -> str:
+        return self.repo.head.commit.hexsha
 
-    # Step 2: Generate git diff files for any files that have local changes
-    generate_git_diff(repo, directory)
+    def save_branch_name(self):
+        with (self.report_dir / "branch_name.txt").open(mode="w") as f:
+            if self.current_branch_name:
+                f.write(self.current_branch_name)
+            else:
+                f.write("None")
+
+    def save_commit_hash(self):
+        with (self.report_dir / "commit_hash.txt").open(mode="w") as f:
+            f.write(self.latest_commit_hash)
+
+    def save_git_diffs(self):
+        changed_files = [item.a_path for item in self.repo.index.diff(None)]
+        for file in changed_files:
+            diff = self.repo.git.diff(file)
+            if diff:
+                diff_file = self.report_dir / file.replace("/", "_")
+                with diff_file.open(mode="w") as f:
+                    f.write(diff)
+
+
+
 
 if __name__ == "__main__":
-    main()
+    git_reporter = GitReporter(output_root=Path(__file__).parent)
+    git_reporter.save_branch_name()
+    git_reporter.save_commit_hash()
+    git_reporter.save_git_diffs()
