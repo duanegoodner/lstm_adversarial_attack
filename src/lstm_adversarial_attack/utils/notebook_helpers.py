@@ -2,6 +2,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Callable
+from enum import Enum, auto
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from lstm_adversarial_attack.config.read_write import (
@@ -36,8 +37,19 @@ def get_session_output_dirs(path_config_key: str) -> List[Path]:
     return list(output_root.iterdir())
 
 
+class TuningType(Enum):
+    MODEL = auto()
+    ATTACK = auto()
+
+
 @dataclass
-class SessionIDs:
+class TuningTrialInfo:
+    tuning_type: TuningType
+    session_id: int | str
+    trial_number: int
+
+@dataclass
+class PipeLineInfo:
     """
     Stores session IDs of various components of project pipeline.
     """
