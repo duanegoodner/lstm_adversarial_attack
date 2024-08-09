@@ -32,6 +32,11 @@ def main(db_result_id: str = None) -> dict | dict[str, Any]:
             )
         )
 
+    print(
+        f"Preprocess session will use data from database query session "
+        f"{db_result_id}"
+    )
+
     prefilter_info = ppr.ModuleInfo(
         resource_collection_ids={
             "db": db_result_id,

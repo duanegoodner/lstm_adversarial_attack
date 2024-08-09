@@ -38,6 +38,9 @@ def get_session_output_dirs(path_config_key: str) -> List[Path]:
 
 @dataclass
 class SessionIDs:
+    """
+    Stores session IDs of various components of project pipeline.
+    """
     db_queries: str = None
     preprocess: str = None
     model_tuning: str = None
@@ -125,6 +128,7 @@ class SessionIDs:
         )
 
         setattr(self, attr_name, str(session_id))
+        print(f"{attr_name} set to {session_id}\n")
 
     def get_attack_objective_name(
         self, attack_session_output_dir: Path
@@ -180,6 +184,7 @@ class SessionIDs:
         )
 
         setattr(self, attr_name, str(session_id))
+        print(f"{attr_name} set to {session_id}\n")
 
     def set_standard(self, attr_name: str, session_id: str | int = None):
         output_root_path = Path(
@@ -194,6 +199,7 @@ class SessionIDs:
 
         assert (output_root_path / str(session_id)).exists()
         setattr(self, attr_name, str(session_id))
+        print(f"{attr_name} set to {session_id}\n")
 
     def set(self, attr_name: str, session_id: str | int = None):
         if attr_name in self.special_setters:

@@ -238,6 +238,7 @@ class AttackDriverSummary(msgspec.Struct):
     model_tuning_id: str
     cv_training_id: str
     attack_tuning_id: str
+    attack_tuning_objective: str
     attack_id: str
     settings: AttackDriverSettings
     paths: AttackDriverPaths

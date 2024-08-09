@@ -94,6 +94,7 @@ class AttackDriver:
             model_tuning_id=self.attack_tuner_driver_summary.model_tuning_id,
             cv_training_id=self.attack_tuner_driver_summary.cv_training_id,
             attack_tuning_id=self.attack_tuning_id,
+            attack_tuning_objective=self.attack_tuner_driver_summary.settings.objective_name,
             attack_id=self.attack_id,
             settings=self.settings,
             paths=self.paths,
