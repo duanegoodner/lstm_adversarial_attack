@@ -12,8 +12,14 @@ from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
 
 
 def main(
-    redirect_terminal_output: bool, model_tuning_id: str = None
+    redirect_terminal_output: bool,
+    model_tuning_id: str = None,
+    model_tuning_trial_number: int = None,
 ) -> dict[int, mds.TrainEvalLogPair]:
+
+    if model_tuning_trial_number is not None:
+        assert model_tuning_id is not None
+
     cv_training_id = sig.generate_session_id()
 
     model_tuning_output_root = Path(
@@ -31,9 +37,23 @@ def main(
 
     print(
         f"Starting new cross-validation training session {cv_training_id}.\n"
-        f"Using model hyperparameters from model tuning session "
-        f"{model_tuning_id}.\n\n"
-        
+    )
+
+    if model_tuning_trial_number is None:
+        print(
+            f"Will use best hyperparameters from model tuning session "
+            f"{model_tuning_id}\n"
+        )
+    else:
+        print(
+            f"Will use hyperparameters from model tuning session "
+            f"{model_tuning_id} trial number {model_tuning_trial_number}\n"
+        )
+
+    print(
+        # f"Starting new cross-validation training session {cv_training_id}.\n"
+        # f"Using model hyperparameters from model tuning session "
+        # f"{model_tuning_id}.\n\n"
         f"To monitor training in tensorboard, run the following command in "
         f"another terminal:\n"
         f"tensorboard --logdir {model_training_output_root}/{cv_training_id}/"
@@ -63,7 +83,7 @@ if __name__ == "__main__":
         action="store",
         nargs="?",
         help="ID of model tuning session that hyperparameters are obtained "
-             "from. Defaults to the most recently created session.",
+        "from. Defaults to the most recently created session.",
     )
     parser.add_argument(
         "-r",
@@ -71,10 +91,19 @@ if __name__ == "__main__":
         action="store_true",
         help="Redirect terminal output to log file",
     )
+    parser.add_argument(
+        "--model_tuning_trial_number",
+        "-n",
+        type=int,
+        action="store",
+        help="Optional integer specifying trial number (within study)."
+        "Defaults to best trial from study.",
+    )
 
     args_namespace = parser.parse_args()
 
     all_fold_results = main(
         redirect_terminal_output=args_namespace.redirect,
         model_tuning_id=args_namespace.model_tuning_id,
+        model_tuning_trial_number=args_namespace.model_tuning_trial_number,
     )

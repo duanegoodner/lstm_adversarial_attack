@@ -430,6 +430,7 @@ TUNER_DRIVER_SUMMARY_IO = TunerDriverSummaryIO()
 class CrossValidatorDriverSummary(msgspec.Struct):
     preprocess_id: str
     model_tuning_id: str
+    model_tuning_trial_number: int
     cv_training_id: str
     model_hyperparameters: tuh.X19LSTMHyperParameterSettings
     settings: CrossValidatorDriverSettings

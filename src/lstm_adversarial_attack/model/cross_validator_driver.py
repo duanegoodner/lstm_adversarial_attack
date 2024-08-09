@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 from typing import Callable
 
+import optuna
 import sklearn.model_selection
 import torch
 
@@ -28,12 +29,16 @@ class CrossValidatorDriver:
         cv_training_id: str,
         device: torch.device,
         redirect_terminal_output: bool,
+        model_tuning_trial_number: int = None,
     ):
 
         self.model_tuning_id = model_tuning_id
         self.cv_training_id = cv_training_id
         self.device = device
         self.redirect_terminal_output = redirect_terminal_output
+        if model_tuning_trial_number is None:
+            model_tuning_trial_number = self.tuning_study.best_trial.number
+        self.model_tuning_trial_number = model_tuning_trial_number
         self.dataset = xmd.X19MGeneralDataset.from_feature_finalizer_output(
             preprocess_id=self.preprocess_id
         )
@@ -66,10 +71,14 @@ class CrossValidatorDriver:
         return f"model_tuning_{self.model_tuning_id}"
 
     @property
-    def hyperparameters(self) -> tuh.X19LSTMHyperParameterSettings:
-        hyperparams_dict = tsd.MODEL_TUNING_DB.get_best_params(
+    def tuning_study(self) -> optuna.Study:
+        return tsd.MODEL_TUNING_DB.get_study(
             study_name=self.tuning_study_name
         )
+
+    @property
+    def hyperparameters(self) -> tuh.X19LSTMHyperParameterSettings:
+        hyperparams_dict =  self.tuning_study.trials[self.model_tuning_trial_number].params
         return tuh.X19LSTMHyperParameterSettings(**hyperparams_dict)
 
     @property
@@ -85,6 +94,7 @@ class CrossValidatorDriver:
         return mds.CrossValidatorDriverSummary(
             preprocess_id=self.preprocess_id,
             model_tuning_id=self.model_tuning_id,
+            model_tuning_trial_number=self.model_tuning_trial_number,
             cv_training_id=self.cv_training_id,
             model_hyperparameters=self.hyperparameters,
             settings=self.settings,
@@ -120,7 +130,9 @@ class CrossValidatorDriver:
         if self.redirect_terminal_output:
             log_file_path = (
                 Path(
-                    PATH_CONFIG_READER.read_path("redirected_output.model_training")
+                    PATH_CONFIG_READER.read_path(
+                        "redirected_output.model_training"
+                    )
                 )
                 / f"{self.cv_training_id}.log"
             )
@@ -132,4 +144,3 @@ class CrossValidatorDriver:
 
         if self.redirect_terminal_output:
             log_file_fid.close()
-

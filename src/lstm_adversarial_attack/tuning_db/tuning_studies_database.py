@@ -99,16 +99,23 @@ class OptunaDatabase:
         study_summary = self.get_study_summary(study_name=study_name)
         return study_summary.best_trial.params
 
+    def get_study(self, study_name: str) -> optuna.Study:
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
+        return optuna.create_study(
+            study_name=study_name, storage=self.storage, load_if_exists=True
+        )
+
     def get_all_studies(self) -> list[optuna.Study]:
         # reduce logging verbosity to avoid msg about creating study from db
         optuna.logging.set_verbosity(optuna.logging.WARNING)
         study_names = [item.study_name for item in self.study_summaries]
         return [
-            optuna.create_study(
-                study_name=study_name,
-                storage=self.storage,
-                load_if_exists=True,
-            )
+            self.get_study(study_name=study_name)
+            # optuna.create_study(
+            #     study_name=study_name,
+            #     storage=self.storage,
+            #     load_if_exists=True,
+            # )
             for study_name in study_names
         ]
 
