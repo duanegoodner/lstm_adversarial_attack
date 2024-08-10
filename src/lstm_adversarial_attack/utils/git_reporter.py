@@ -7,18 +7,19 @@ class GitReporter:
         self.output_root = output_root
         assert output_root.is_dir()
         self.report_dir = self.create_report_dir()
-
+        self.git_diff_dir = self.report_dir / 'git_diff'
+        self.git_diff_dir.mkdir()
         self.repo_root = Path(__file__).parent.parent.parent.parent
         self.repo = git.Repo(str(self.repo_root))
 
     def create_report_dir(self) -> Path:
         report_counter = 1
-        report_dir_name = f"git_diff_report-{report_counter:02d}"
+        report_dir_name = f"git_report-{report_counter:02d}"
         report_dir_path = self.output_root / report_dir_name
 
         while report_dir_path.exists():
             report_counter += 1
-            report_dir_name = f"git_diff_report-{report_counter:02d}"
+            report_dir_name = f"git_report-{report_counter:02d}"
             report_dir_path = self.output_root / report_dir_name
 
         report_dir_path.mkdir()
@@ -50,11 +51,13 @@ class GitReporter:
             f.write(self.latest_commit_hash)
 
     def save_git_diffs(self):
+
         changed_files = [item.a_path for item in self.repo.index.diff(None)]
         for file in changed_files:
             diff = self.repo.git.diff(file)
             if diff:
-                diff_file = self.report_dir / file.replace("/", "_")
+                diff_file = self.report_dir / (f"{file.replace('/', '_')}.txt"
+                                               f".")
                 with diff_file.open(mode="w") as f:
                     f.write(diff)
 
