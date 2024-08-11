@@ -42,17 +42,75 @@ class TuningType(Enum):
     ATTACK = auto()
 
 
+class SessionType(Enum):
+    DB_QUERIES = auto()
+    PREPROCESS = auto()
+    MODEL_TUNING = auto()
+    CV_TRAINING = auto()
+    ATTACK_TUNING = auto()
+    ATTACK = auto()
+    ATTACK_ANALYSIS = auto()
+
+
 @dataclass
 class TuningTrialInfo:
     tuning_type: TuningType
+    tuning_session_id: int | str
+    selected_trial_number: int
+
+
+@dataclass
+class RunInfo:
+    run_number: int
+    session_type: SessionType
     session_id: int | str
-    trial_number: int
+    project_config: dict[str, Any]
+    path_config: dict[str, Any]
+    sub_session_number: int = 0
+    upstream_trial_info: TuningTrialInfo = None
+
+    @classmethod
+    def extend_session(
+        cls, run_number: int, existing_session: "RunInfo"
+    ) -> "RunInfo":
+        existing_info = existing_session.__dict__
+        existing_info["run_number"] = run_number
+        existing_info["sub_session_number"] += 1
+        return cls(**existing_info)
+
+
+
+
+@dataclass
+class PipeLineInfoNew:
+    runs: dict[int, RunInfo]
+
+    output_root_path_keys = {
+        SessionType.DB_QUERIES: "db.output_root",
+        SessionType.PREPROCESS: "preprocess.output_root",
+        SessionType.MODEL_TUNING: "model.tuner_driver.output_dir",
+        SessionType.CV_TRAINING: "model.cv_driver.output_dir",
+        SessionType.ATTACK_TUNING: "attack.tuner_driver.output_dir",
+        SessionType.ATTACK: "attack.attack_driver.output_dir",
+    }
+
+    def create_new_session(
+        self, run_number: int, session_type: SessionType
+    ) -> RunInfo:
+        pass
+
+
+
+    def extend_session(self):
+        pass
+
 
 @dataclass
 class PipeLineInfo:
     """
     Stores session IDs of various components of project pipeline.
     """
+
     db_queries: str = None
     preprocess: str = None
     model_tuning: str = None
@@ -224,19 +282,25 @@ class PipeLineInfo:
             )
 
 
-if __name__ == "__main__":
-    session_ids = SessionIDs()
+# if __name__ == "__main__":
+#     session_info = SessionInfo(
+#         run_number=1, session_type=SessionType.PREPROCESS
+#     )
 
-    session_ids.set(attr_name="db_queries", session_id=20240808074353330946)
-    session_ids.set(attr_name="preprocess", session_id=20240806222518919168)
-    session_ids.set(attr_name="model_tuning", session_id=20240807155921818488)
-    session_ids.set(attr_name="cv_training", session_id=20240807161712566160)
-    session_ids.set(
-        attr_name="attack_tuning_sparse_small", session_id=20240807174443459947
-    )
-    session_ids.set(
-        attr_name="attack_tuning_sparse_small_max",
-        session_id=20240807174140493489,
-    )
-    session_ids.set(attr_name="attack_sparse_small")
-    session_ids.set(attr_name="attack_sparse_small_max")
+    # pipeline_info = PipeLineInfo()
+    #
+    # pipeline_info.set(attr_name="db_queries", session_id=20240808074353330946)
+    # pipeline_info.set(attr_name="preprocess", session_id=20240806222518919168)
+    # pipeline_info.set(
+    #     attr_name="model_tuning", session_id=20240807155921818488
+    # )
+    # pipeline_info.set(attr_name="cv_training", session_id=20240807161712566160)
+    # pipeline_info.set(
+    #     attr_name="attack_tuning_sparse_small", session_id=20240807174443459947
+    # )
+    # pipeline_info.set(
+    #     attr_name="attack_tuning_sparse_small_max",
+    #     session_id=20240807174140493489,
+    # )
+    # pipeline_info.set(attr_name="attack_sparse_small")
+    # pipeline_info.set(attr_name="attack_sparse_small_max")
