@@ -66,6 +66,7 @@ def main(
         cv_training_id=cv_training_id,
         device=gh.get_device(),
         redirect_terminal_output=redirect_terminal_output,
+        model_tuning_trial_number=model_tuning_trial_number,
     )
 
     return cv_driver.run()

@@ -9,6 +9,10 @@ import psycopg2
 from dotenv import load_dotenv
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
+from lstm_adversarial_attack.config.read_write import (
+    CONFIG_READER,
+    PATH_CONFIG_READER,
+)
 
 
 class MimiciiiDatabaseAccess:
@@ -16,9 +20,7 @@ class MimiciiiDatabaseAccess:
     Connects to and runs queries on MIMIC-III Postgres database
     """
 
-    def __init__(
-        self, dotenv_path: Path, output_parent: Path
-    ):
+    def __init__(self, dotenv_path: Path, output_parent: Path):
         """
         :param dotenv_path: path .env file w/ values needed for connection
         :param output_parent: parent of directory that will contain
@@ -114,6 +116,9 @@ class MimiciiiDatabaseAccess:
         """
 
         print(f"Starting query session: {self._query_session_id}\n")
+
+        CONFIG_READER.record_full_config(root_dir=self._output_dir)
+        PATH_CONFIG_READER.record_full_config(root_dir=self._output_dir)
 
         result_paths = []
         for query_idx in range(len(sql_query_paths)):

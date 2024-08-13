@@ -7,7 +7,7 @@ import optuna
 import sklearn.model_selection
 import torch
 
-from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import CONFIG_READER, PATH_CONFIG_READER
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.dataset.x19_mort_general_dataset as xmd
@@ -164,6 +164,11 @@ class ModelTunerDriver:
             mds.TUNER_DRIVER_SUMMARY_IO.export(
                 obj=self.summary, path=summary_output_path
             )
+
+            CONFIG_READER.record_full_config(root_dir=self.output_dir)
+            PATH_CONFIG_READER.record_full_config(root_dir=self.output_dir)
+
+
 
         study = optuna.create_study(
             study_name=self.study_name,

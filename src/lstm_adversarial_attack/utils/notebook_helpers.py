@@ -1,3 +1,4 @@
+import pprint
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -55,35 +56,29 @@ class SessionType(Enum):
 @dataclass
 class TuningTrialInfo:
     tuning_type: TuningType
-    tuning_session_id: int | str
+    tuning_session_id: str
     selected_trial_number: int
 
 
 @dataclass
-class RunInfo:
-    run_number: int
+class SessionInfo:
     session_type: SessionType
     session_id: int | str
-    project_config: dict[str, Any]
-    path_config: dict[str, Any]
-    sub_session_number: int = 0
-    upstream_trial_info: TuningTrialInfo = None
-
-    @classmethod
-    def extend_session(
-        cls, run_number: int, existing_session: "RunInfo"
-    ) -> "RunInfo":
-        existing_info = existing_session.__dict__
-        existing_info["run_number"] = run_number
-        existing_info["sub_session_number"] += 1
-        return cls(**existing_info)
+    comment: str
 
 
-
-
-@dataclass
-class PipeLineInfoNew:
-    runs: dict[int, RunInfo]
+class PipelineInfo:
+    def __init__(
+        self,
+        sessions: dict[str, SessionInfo] = None,
+        next_session_index: int = None,
+    ):
+        if sessions is None:
+            sessions = {}
+        self.sessions = sessions
+        if next_session_index is None:
+            next_session_index = 1
+        self.next_next_session_index = next_session_index
 
     output_root_path_keys = {
         SessionType.DB_QUERIES: "db.output_root",
@@ -94,213 +89,89 @@ class PipeLineInfoNew:
         SessionType.ATTACK: "attack.attack_driver.output_dir",
     }
 
-    def create_new_session(
-        self, run_number: int, session_type: SessionType
-    ) -> RunInfo:
-        pass
-
-
-
-    def extend_session(self):
-        pass
-
-
-@dataclass
-class PipeLineInfo:
-    """
-    Stores session IDs of various components of project pipeline.
-    """
-
-    db_queries: str = None
-    preprocess: str = None
-    model_tuning: str = None
-    cv_training: str = None
-    attack_tuning_sparse_small: str = None
-    attack_tuning_sparse_small_max: str = None
-    attack_sparse_small: str = None
-    attack_sparse_small_max: str = None
-
-    output_root_path_keys = {
-        "db_queries": "db.output_root",
-        "preprocess": "preprocess.output_root",
-        "model_tuning": "model.tuner_driver.output_dir",
-        "cv_training": "model.cv_driver.output_dir",
-        "attack_tuning": "attack.tuner_driver.output_dir",
-        "attack": "attack.attack_driver.output_dir",
-    }
-
-    @property
-    def special_setters(self) -> dict[str, Callable]:
-        return {
-            "attack_tuning_sparse_small": self.set_attack_tuning_session_id,
-            "attack_tuning_sparse_small_max": self.set_attack_tuning_session_id,
-            "attack_sparse_small": self.set_attack_session_id,
-            "attack_sparse_small_max": self.set_attack_session_id,
-        }
-
-    @property
-    def attack_tuning_session_output_dirs(self) -> List[Path]:
-        return get_session_output_dirs(
-            path_config_key=self.output_root_path_keys["attack_tuning"]
-        )
-
-    @property
-    def attack_session_output_dirs(self) -> List[Path]:
-        return get_session_output_dirs(
-            path_config_key=self.output_root_path_keys["attack"]
-        )
-
-    @staticmethod
-    def get_attack_tuning_objective_name(session_output_dir: Path) -> str:
-
-        attack_tuning_session_id = session_output_dir.name
-        attack_tuner_driver_summary_path = (
-            session_output_dir
-            / f"attack_tuner_driver_summary_{attack_tuning_session_id}.json"
-        )
-        attack_tuner_driver_summary = (
-            ATTACK_TUNER_DRIVER_SUMMARY_IO.import_to_struct(
-                path=attack_tuner_driver_summary_path
-            )
-        )
-        return attack_tuner_driver_summary.settings.objective_name
-
-    def set_attack_tuning_session_id(
-        self, attr_name: str, session_id: str = None
-    ):
-
-        objective_name = attr_name.strip("attack_tuning_")
-
-        if session_id is None:
-            session_output_dirs = [
-                item
-                for item in self.attack_tuning_session_output_dirs
-                if self.get_attack_tuning_objective_name(
-                    session_output_dir=item
-                )
-                == objective_name
-            ]
-            session_id = max(session_output_dirs).name
-
-        output_root_dir = Path(
+    def _get_output_root(self, session_type: SessionType) -> Path:
+        return Path(
             PATH_CONFIG_READER.read_path(
-                config_key=self.output_root_path_keys["attack_tuning"]
+                self.output_root_path_keys[session_type]
             )
         )
 
-        session_output_dir = output_root_dir / str(session_id)
-        assert session_output_dir.exists()
-        assert (
-            self.get_attack_tuning_objective_name(
-                session_output_dir=session_output_dir
-            )
-            == objective_name
-        )
-
-        setattr(self, attr_name, str(session_id))
-        print(f"{attr_name} set to {session_id}\n")
-
-    def get_attack_objective_name(
-        self, attack_session_output_dir: Path
+    def get_newest_session_id_from_dirs(
+        self, session_type: SessionType
     ) -> str:
-        attack_driver_summary_path = (
-            attack_session_output_dir
-            / f"attack_driver_summary_{attack_session_output_dir.name}.json"
-        )
-        attack_driver_summary = ATTACK_DRIVER_SUMMARY_IO.import_to_struct(
-            path=attack_driver_summary_path
-        )
-        attack_tuning_session_id = attack_driver_summary.attack_tuning_id
+        root_output_dir = self._get_output_root(session_type)
+        return max([item.name for item in root_output_dir.iterdir()])
 
-        attack_tuning_output_dir = (
-            Path(
-                PATH_CONFIG_READER.read_path(
-                    config_key=self.output_root_path_keys["attack_tuning"]
-                )
-            )
-            / attack_tuning_session_id
-        )
-        return self.get_attack_tuning_objective_name(
-            session_output_dir=attack_tuning_output_dir
-        )
-
-    def set_attack_session_id(self, attr_name: str, session_id: str = None):
-        objective_name = attr_name.strip("attack_")
-
+    def store_session(
+        self,
+        session_type: SessionType,
+        session_id: str | int = None,
+        comment: str = None,
+    ):
         if session_id is None:
-            session_output_dirs = [
-                item
-                for item in self.attack_session_output_dirs
-                if self.get_attack_objective_name(
-                    attack_session_output_dir=item
-                )
-                == objective_name
-            ]
-            session_id = max(session_output_dirs).name
-
-        output_root_dir = Path(
-            PATH_CONFIG_READER.read_path(
-                config_key=self.output_root_path_keys["attack"]
+            session_id = self.get_newest_session_id_from_dirs(
+                session_type=session_type
             )
-        )
 
-        session_output_dir = output_root_dir / str(session_id)
+        root_output_dir = self._get_output_root(session_type)
+        session_output_dir = root_output_dir / str(session_id)
         assert session_output_dir.exists()
-        assert (
-            self.get_attack_objective_name(
-                attack_session_output_dir=session_output_dir
-            )
-            == objective_name
-        )
 
-        setattr(self, attr_name, str(session_id))
-        print(f"{attr_name} set to {session_id}\n")
+        if session_id in self.sessions:
+            print(f"{session_id} already stored")
+            return
 
-    def set_standard(self, attr_name: str, session_id: str | int = None):
-        output_root_path = Path(
-            PATH_CONFIG_READER.read_path(
-                config_key=self.output_root_path_keys[attr_name]
-            )
+        self.sessions[str(session_id)] = SessionInfo(
+            session_type=session_type,
+            session_id=session_id,
+            comment=comment,
         )
+        print(f"{session_id} stored")
+
+    def get_stored_session(
+        self,
+        session_type: SessionType,
+        session_id: str | int = None,
+    ) -> SessionInfo:
+
         if session_id is None:
-            session_id = max(
-                [item.name for item in output_root_path.iterdir()]
-            )
+            all_sessions_of_type = {
+                key: val
+                for key, val in list(self.sessions.items())
+                if val.session_type == session_type
+            }
+            if len(all_sessions_of_type) == 1:
+                return all_sessions_of_type[
+                    list(all_sessions_of_type.keys())[0]
+                ]
+            if len(all_sessions_of_type) == 0:
+                print(f"No sessions found for type {session_type}")
+            elif len(all_sessions_of_type) > 1:
+                print(
+                    f"Multiple sessions of type {session_type}. "
+                    f"Must specify session ID"
+                )
 
-        assert (output_root_path / str(session_id)).exists()
-        setattr(self, attr_name, str(session_id))
-        print(f"{attr_name} set to {session_id}\n")
+        if session_id is not None:
+            if (
+                str(session_id) in self.sessions
+                and self.sessions[str(session_id)].session_type == session_type
+            ):
+                return self.sessions[str(session_id)]
 
-    def set(self, attr_name: str, session_id: str | int = None):
-        if attr_name in self.special_setters:
-            setter = self.special_setters[attr_name]
-            setter(attr_name=attr_name, session_id=session_id)
-        else:
-            self.set_standard(
-                attr_name=attr_name,
-                session_id=session_id,
-            )
+            if str(session_id) not in self.sessions:
+                print(f"No session found for type {session_type}")
+            elif self.sessions[str(session_id)].session_type != session_type:
+                print(f"Session {session_id} does not have type {session_type}")
 
 
-# if __name__ == "__main__":
-#     session_info = SessionInfo(
-#         run_number=1, session_type=SessionType.PREPROCESS
-#     )
-
-    # pipeline_info = PipeLineInfo()
-    #
-    # pipeline_info.set(attr_name="db_queries", session_id=20240808074353330946)
-    # pipeline_info.set(attr_name="preprocess", session_id=20240806222518919168)
-    # pipeline_info.set(
-    #     attr_name="model_tuning", session_id=20240807155921818488
-    # )
-    # pipeline_info.set(attr_name="cv_training", session_id=20240807161712566160)
-    # pipeline_info.set(
-    #     attr_name="attack_tuning_sparse_small", session_id=20240807174443459947
-    # )
-    # pipeline_info.set(
-    #     attr_name="attack_tuning_sparse_small_max",
-    #     session_id=20240807174140493489,
-    # )
-    # pipeline_info.set(attr_name="attack_sparse_small")
-    # pipeline_info.set(attr_name="attack_sparse_small_max")
+if __name__ == "__main__":
+    pipeline_info = PipelineInfo()
+    pipeline_info.store_session(session_type=SessionType.DB_QUERIES)
+    pipeline_info.store_session(
+        session_type=SessionType.DB_QUERIES, session_id=20240812154615226070
+    )
+    db_session = pipeline_info.get_stored_session(session_type=SessionType.DB_QUERIES)
+    preprocess_session = pipeline_info.get_stored_session(
+        session_type=SessionType.PREPROCESS
+    )

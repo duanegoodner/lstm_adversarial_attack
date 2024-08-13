@@ -1,3 +1,4 @@
+import json
 import pprint
 import toml
 from pathlib import Path
@@ -5,19 +6,24 @@ from typing import Any, Dict
 
 
 class ConfigReader:
-    def __init__(self, config_path: Path = None):
+    def __init__(
+        self,
+        config_path: Path = None,
+        default_record_filename: str = "config.json",
+    ):
         if config_path is None:
             config_path = (
                 Path(__file__).parent.parent.parent.parent / "config.toml"
             )
         self._config_path = config_path
+        self._default_record_filename = default_record_filename
         # with self._config_path.open(mode="r") as config_file:
         #     self._config = toml.load(config_file)
 
     @property
     def _config(self) -> Dict[str, Any]:
         with self._config_path.open(mode="r") as config_file:
-           config = toml.load(config_file)
+            config = toml.load(config_file)
         return config
 
     def get_value(self, config_key: str) -> Any:
@@ -34,12 +40,32 @@ class ConfigReader:
     def full_config(self) -> Dict[str, Any]:
         return self._config
 
+    def record_full_config(self, root_dir: Path, filename: str = None) -> None:
+        if filename is None:
+            filename = self._default_record_filename
+
+        config_output_dir = root_dir / "configs"
+        config_output_dir.mkdir(exist_ok=True)
+        config_output_path = config_output_dir / f"session_{self._config_path.name}"
+
+        if not config_output_path.exists():
+            # json_data = json.dumps(self._config, indent=4)
+            with config_output_path.open(mode="w") as config_record:
+                toml.dump(self._config, config_record)
+
 
 class PathConfigReader(ConfigReader):
-    def __init__(self, config_path: Path = None):
+    def __init__(
+        self,
+        config_path: Path = None,
+        default_record_filename: str = "path_config.json",
+    ):
         if config_path is None:
             config_path = Path(__file__).parent / "config_paths.toml"
-        super().__init__(config_path=config_path)
+        super().__init__(
+            config_path=config_path,
+            default_record_filename=default_record_filename,
+        )
 
     @property
     def project_root(self) -> Path:
@@ -92,7 +118,9 @@ class PathConfigReader(ConfigReader):
 class ConfigModifier:
     def __init__(self, config_path: Path = None):
         if config_path is None:
-            config_path = Path(__file__).parent.parent.parent.parent / "config.toml"
+            config_path = (
+                Path(__file__).parent.parent.parent.parent / "config.toml"
+            )
         self._config_path = config_path
 
     def set(self, config_key: str, value: Any):

@@ -11,7 +11,10 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.preprocess.encode_decode as edc
 import lstm_adversarial_attack.preprocess.encode_decode_structs as eds
 import lstm_adversarial_attack.preprocess.resource_data_structs as rds
-from lstm_adversarial_attack.config.read_write import CONFIG_READER, PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import (
+    CONFIG_READER,
+    PATH_CONFIG_READER,
+)
 
 
 @dataclass
@@ -170,11 +173,23 @@ class Preprocessor:
     ):
         # TODO Consider making run_output_root a data member
         self.preprocess_id = preprocess_id
-        run_output_root = (
-            Path(PATH_CONFIG_READER.read_path(config_key="preprocess.output_root"))
+        self.output_root = (
+            Path(
+                PATH_CONFIG_READER.read_path(
+                    config_key="preprocess.output_root"
+                )
+            )
             / preprocess_id
         )
-        run_output_root.mkdir(parents=True, exist_ok=True)
+        # run_output_root = (
+        #     Path(
+        #         PATH_CONFIG_READER.read_path(
+        #             config_key="preprocess.output_root"
+        #         )
+        #     )
+        #     / preprocess_id
+        # )
+        self.output_root.mkdir(parents=True, exist_ok=True)
 
         self.modules_info = modules_info
         if available_resources is None:
@@ -221,6 +236,9 @@ class Preprocessor:
     def run_all_modules(self):
         print(f"Starting preprocess session {self.preprocess_id}\n")
 
+        CONFIG_READER.record_full_config(root_dir=self.output_root)
+        PATH_CONFIG_READER.record_full_config(root_dir=self.output_root)
+
         for module_info in self.modules_info:
             print(f"Running {module_info.module_constructor.__name__}")
             init_start = time.time()
@@ -236,6 +254,5 @@ class Preprocessor:
                 module=module,
                 save_output=self.save_checkpoints or module_info.save_output,
             )
-
 
         return self.available_resources
