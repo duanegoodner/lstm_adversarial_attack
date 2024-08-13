@@ -34,7 +34,6 @@ class MimiciiiDatabaseAccess:
             char for char in str(datetime.now()) if char.isdigit()
         )
         self._output_dir = output_parent / self._query_session_id
-        self._output_dir.mkdir(parents=True)
 
     def connect(self):
         """
@@ -116,6 +115,8 @@ class MimiciiiDatabaseAccess:
         """
 
         print(f"Starting query session: {self._query_session_id}\n")
+
+        self._output_dir.mkdir(parents=True)
 
         CONFIG_READER.record_full_config(root_dir=self._output_dir)
         PATH_CONFIG_READER.record_full_config(root_dir=self._output_dir)

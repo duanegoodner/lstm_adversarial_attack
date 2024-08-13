@@ -111,11 +111,6 @@ class OptunaDatabase:
         study_names = [item.study_name for item in self.study_summaries]
         return [
             self.get_study(study_name=study_name)
-            # optuna.create_study(
-            #     study_name=study_name,
-            #     storage=self.storage,
-            #     load_if_exists=True,
-            # )
             for study_name in study_names
         ]
 

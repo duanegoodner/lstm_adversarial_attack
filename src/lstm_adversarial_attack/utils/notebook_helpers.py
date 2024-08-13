@@ -11,36 +11,26 @@ from lstm_adversarial_attack.config.read_write import (
     CONFIG_READER,
     PATH_CONFIG_READER,
 )
-from lstm_adversarial_attack.attack.attack_data_structs import (
-    ATTACK_DRIVER_SUMMARY_IO,
-    ATTACK_TUNER_DRIVER_SUMMARY_IO,
-)
 
 
-def get_config_value(config_key: str):
+def get_config_value(config_key: str) -> str:
     """
     Gets value from config.toml
+    :param config_key: config.toml key as dotted string
+    :return: value corresponding to config.toml key
     """
+
     return CONFIG_READER.get_value(config_key=config_key)
 
 
 def set_config_value(config_key: str, value: Any):
     """
-    Sets value in config.toml
+    Sets value from config.toml
+    :param config_key: config.toml key as dotted string
+    :param value: value to assign to key
+    :return: None
     """
     CONFIG_MODIFIER.set(config_key=config_key, value=value)
-
-
-def get_session_output_dirs(path_config_key: str) -> List[Path]:
-    output_root = Path(
-        PATH_CONFIG_READER.read_path(config_key=path_config_key)
-    )
-    return list(output_root.iterdir())
-
-
-class TuningType(Enum):
-    MODEL = auto()
-    ATTACK = auto()
 
 
 class SessionType(Enum):
@@ -54,13 +44,6 @@ class SessionType(Enum):
 
 
 @dataclass
-class TuningTrialInfo:
-    tuning_type: TuningType
-    tuning_session_id: str
-    selected_trial_number: int
-
-
-@dataclass
 class SessionInfo:
     session_type: SessionType
     session_id: int | str
@@ -68,19 +51,21 @@ class SessionInfo:
 
 
 class PipelineInfo:
+    """
+    Container metadata of data-generating sessions. Intended for use in Jupyter
+     notebooks.
+    """
     def __init__(
         self,
         sessions: dict[str, SessionInfo] = None,
-        next_session_index: int = None,
+        next_session_index: int = 1,
     ):
         if sessions is None:
             sessions = {}
         self.sessions = sessions
-        if next_session_index is None:
-            next_session_index = 1
         self.next_next_session_index = next_session_index
 
-    output_root_path_keys = {
+    _output_root_path_keys = {
         SessionType.DB_QUERIES: "db.output_root",
         SessionType.PREPROCESS: "preprocess.output_root",
         SessionType.MODEL_TUNING: "model.tuner_driver.output_dir",
@@ -92,11 +77,11 @@ class PipelineInfo:
     def _get_output_root(self, session_type: SessionType) -> Path:
         return Path(
             PATH_CONFIG_READER.read_path(
-                self.output_root_path_keys[session_type]
+                self._output_root_path_keys[session_type]
             )
         )
 
-    def get_newest_session_id_from_dirs(
+    def _get_newest_session_id_from_dirs(
         self, session_type: SessionType
     ) -> str:
         root_output_dir = self._get_output_root(session_type)
@@ -108,8 +93,15 @@ class PipelineInfo:
         session_id: str | int = None,
         comment: str = None,
     ):
+        """
+        Stores info for a data generating session
+        :param session_type: type of session
+        :param session_id: ID of session
+        :param comment: optional comment
+        :return: None
+        """
         if session_id is None:
-            session_id = self.get_newest_session_id_from_dirs(
+            session_id = self._get_newest_session_id_from_dirs(
                 session_type=session_type
             )
 
@@ -133,6 +125,13 @@ class PipelineInfo:
         session_type: SessionType,
         session_id: str | int = None,
     ) -> SessionInfo:
+        """
+        Gets info on a stored session. If PipelineInfo object has more than one
+        entry for session of session_type, must specify session ID.
+        :param session_type: Type of session to retrieve
+        :param session_id: ID of session
+        :return: info for session
+        """
 
         if session_id is None:
             all_sessions_of_type = {
