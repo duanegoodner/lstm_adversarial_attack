@@ -13,7 +13,10 @@ import lstm_adversarial_attack.model.model_data_structs as mds
 import lstm_adversarial_attack.model.tuner_helpers as tuh
 import lstm_adversarial_attack.tuning_db.tuning_studies_database as tsd
 import lstm_adversarial_attack.utils.redirect_output as rdo
-from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import (
+    CONFIG_READER,
+    PATH_CONFIG_READER,
+)
 
 
 class CrossValidatorDriver:
@@ -72,13 +75,13 @@ class CrossValidatorDriver:
 
     @property
     def tuning_study(self) -> optuna.Study:
-        return tsd.MODEL_TUNING_DB.get_study(
-            study_name=self.tuning_study_name
-        )
+        return tsd.MODEL_TUNING_DB.get_study(study_name=self.tuning_study_name)
 
     @property
     def hyperparameters(self) -> tuh.X19LSTMHyperParameterSettings:
-        hyperparams_dict =  self.tuning_study.trials[self.model_tuning_trial_number].params
+        hyperparams_dict = self.tuning_study.trials[
+            self.model_tuning_trial_number
+        ].params
         return tuh.X19LSTMHyperParameterSettings(**hyperparams_dict)
 
     @property
@@ -105,6 +108,9 @@ class CrossValidatorDriver:
         """
         Instantiates and runs CrossValidator
         """
+
+        CONFIG_READER.record_full_config(root_dir=self.output_dir)
+        PATH_CONFIG_READER.record_full_config(root_dir=self.output_dir)
 
         mds.CROSS_VALIDATOR_DRIVER_SUMMARY_IO.export(
             obj=self.summary,

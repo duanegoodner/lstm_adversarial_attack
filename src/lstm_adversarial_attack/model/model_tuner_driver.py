@@ -7,7 +7,10 @@ import optuna
 import sklearn.model_selection
 import torch
 
-from lstm_adversarial_attack.config.read_write import CONFIG_READER, PATH_CONFIG_READER
+from lstm_adversarial_attack.config.read_write import (
+    CONFIG_READER,
+    PATH_CONFIG_READER,
+)
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 import lstm_adversarial_attack.dataset.x19_mort_general_dataset as xmd
@@ -168,8 +171,6 @@ class ModelTunerDriver:
             CONFIG_READER.record_full_config(root_dir=self.output_dir)
             PATH_CONFIG_READER.record_full_config(root_dir=self.output_dir)
 
-
-
         study = optuna.create_study(
             study_name=self.study_name,
             storage=self.db.storage,
@@ -206,7 +207,11 @@ class ModelTunerDriver:
         log_file_fid = None
         if self.redirect_terminal_output:
             log_file_path = (
-                Path(PATH_CONFIG_READER.read_path("redirected_output.model_tuning"))
+                Path(
+                    PATH_CONFIG_READER.read_path(
+                        "redirected_output.model_tuning"
+                    )
+                )
                 / f"{self.model_tuning_id}.log"
             )
             log_file_fid = rdo.set_redirection(

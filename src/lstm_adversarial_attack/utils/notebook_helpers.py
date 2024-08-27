@@ -133,6 +133,10 @@ class PipelineInfo:
         :return: info for session
         """
 
+        session_info = None
+
+        # if session_id not specified, we still retrieve a session if there
+        # is exactly on session of type session_type.
         if session_id is None:
             all_sessions_of_type = {
                 key: val
@@ -140,10 +144,10 @@ class PipelineInfo:
                 if val.session_type == session_type
             }
             if len(all_sessions_of_type) == 1:
-                return all_sessions_of_type[
+                session_info = all_sessions_of_type[
                     list(all_sessions_of_type.keys())[0]
                 ]
-            if len(all_sessions_of_type) == 0:
+            elif len(all_sessions_of_type) == 0:
                 print(f"No sessions found for type {session_type}")
             elif len(all_sessions_of_type) > 1:
                 print(
@@ -151,17 +155,23 @@ class PipelineInfo:
                     f"Must specify session ID"
                 )
 
+        # if sesson_id is specified, we confirm it is of session_type, and
+        # then retrieve it
         if session_id is not None:
             if (
                 str(session_id) in self.sessions
                 and self.sessions[str(session_id)].session_type == session_type
             ):
-                return self.sessions[str(session_id)]
+                session_info = self.sessions[str(session_id)]
 
             if str(session_id) not in self.sessions:
                 print(f"No session found for type {session_type}")
             elif self.sessions[str(session_id)].session_type != session_type:
                 print(f"Session {session_id} does not have type {session_type}")
+
+        # Note that return value can be None if session was not retreived above
+        print(f"Retrieved session: {session_info.session_id} ")
+        return session_info
 
 
 if __name__ == "__main__":
