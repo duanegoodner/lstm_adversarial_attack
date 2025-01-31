@@ -75,7 +75,7 @@ ENV CONDA_BIN_DIR=${CONTAINER_DEVSPACE}/env/bin
 
 RUN sudo mkdir ${CONTAINER_PROJECT_ROOT}
 WORKDIR ${CONTAINER_PROJECT_ROOT}
-# RUN sudo rm -rf ${BUILD_DIR}
+RUN sudo rm -rf ${BUILD_DIR}
 
 #RUN sudo groupadd ${WORK_GROUP} \
 #    && sudo usermod -a -G ${WORK_GROUP} ${PRIMARY_USER} \
