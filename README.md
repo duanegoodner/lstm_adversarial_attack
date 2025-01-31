@@ -37,7 +37,7 @@ Follow the instructions in this section if you want to run the project code. (Th
 * Docker
 * CUDA-enabled GPU
 * [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/overview.html#installation-guide)
-  * NOTE: After installing the NVIDIA Container Toolkit, you may need to 
+  * NOTE: After installing the NVIDIA Container Toolkit, you may need to reboot.
 
 
 

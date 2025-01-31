@@ -5,8 +5,8 @@ ARG PRIMARY_UID
 ARG PRIMARY_GID
 ARG PRIMARY_USER
 ARG PRIMARY_USER_HOME=/home/${PRIMARY_USER}
-ARG JETBRAINS_USER
-ARG JETBRAINS_USER_HOME=/home/${JETBRAINS_USER}
+# ARG JETBRAINS_USER
+# ARG JETBRAINS_USER_HOME=/home/${JETBRAINS_USER}
 ARG WORK_GROUP=${WORK_GROUP}
 ARG CONTAINER_DEVSPACE
 ARG CONTAINER_PROJECT_ROOT
@@ -31,14 +31,14 @@ COPY ./app/pkglist ${BUILD_DIR}/pkglist
 RUN ${BUILD_DIR}/install_apt_pkgs/main.sh ${BUILD_DIR}/pkglist \
     && sudo rm -rf ${BUILD_DIR}/*
 
-COPY ${COMPONENTS}/install_snoopy ${BUILD_DIR}/install_snoopy
-RUN ${BUILD_DIR}/install_snoopy/main.sh && sudo rm -rf ${BUILD_DIR}/*
+# COPY ${COMPONENTS}/install_snoopy ${BUILD_DIR}/install_snoopy
+# RUN ${BUILD_DIR}/install_snoopy/main.sh && sudo rm -rf ${BUILD_DIR}/*
 
-COPY ${COMPONENTS}/add_ssh_user ${BUILD_DIR}/add_ssh_user
-RUN --mount=type=secret,id=jetbrains_user_pubkey \
-    ${BUILD_DIR}/add_ssh_user/main.sh ${JETBRAINS_USER} \
-    /run/secrets/jetbrains_user_pubkey \
-    && sudo rm -rf ${BUILD_DIR}/*
+# COPY ${COMPONENTS}/add_ssh_user ${BUILD_DIR}/add_ssh_user
+# RUN --mount=type=secret,id=jetbrains_user_pubkey \
+#     ${BUILD_DIR}/add_ssh_user/main.sh ${JETBRAINS_USER} \
+#     /run/secrets/jetbrains_user_pubkey \
+#     && sudo rm -rf ${BUILD_DIR}/*
 
 COPY ${COMPONENTS}/zsh_setup ${BUILD_DIR}/zsh_setup
 RUN ${BUILD_DIR}/zsh_setup/main.sh ${PRIMARY_USER} \
@@ -65,9 +65,9 @@ RUN ${BUILD_DIR}/create_conda_env/main.sh \
     && sudo rm -rf ${BUILD_DIR}/*
 ENV CONDA_BIN_DIR=${CONTAINER_DEVSPACE}/env/bin
 
-COPY ./app_resources/local_python_packages/accessjd ${BUILD_DIR}/accessjd
-RUN sudo chown -R ${PRIMARY_USER}:${PRIMARY_USER} ${BUILD_DIR}/accessjd \
-    && ${CONTAINER_DEVSPACE}/env/bin/python -m pip install ${BUILD_DIR}/accessjd
+# COPY ./app_resources/local_python_packages/accessjd ${BUILD_DIR}/accessjd
+# RUN sudo chown -R ${PRIMARY_USER}:${PRIMARY_USER} ${BUILD_DIR}/accessjd \
+#     && ${CONTAINER_DEVSPACE}/env/bin/python -m pip install ${BUILD_DIR}/accessjd
 
 # #####################################################
 # Done installing things in container
@@ -75,7 +75,7 @@ RUN sudo chown -R ${PRIMARY_USER}:${PRIMARY_USER} ${BUILD_DIR}/accessjd \
 
 RUN sudo mkdir ${CONTAINER_PROJECT_ROOT}
 WORKDIR ${CONTAINER_PROJECT_ROOT}
-RUN sudo rm -rf ${BUILD_DIR}
+# RUN sudo rm -rf ${BUILD_DIR}
 
 #RUN sudo groupadd ${WORK_GROUP} \
 #    && sudo usermod -a -G ${WORK_GROUP} ${PRIMARY_USER} \

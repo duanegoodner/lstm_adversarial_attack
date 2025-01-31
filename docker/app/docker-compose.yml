@@ -1,6 +1,6 @@
 secrets:
-  jetbrains_user_pubkey:
-    file: ${JETBRAINS_USER_PUBKEY}
+  # jetbrains_user_pubkey:
+  #   file: ${JETBRAINS_USER_PUBKEY}
   postgres_password:
     file: postgres_password.txt
   tuner_password:
@@ -19,7 +19,7 @@ services:
               count: 1
               capabilities: [ gpu ]
     secrets:
-      - jetbrains_user_pubkey
+      # - jetbrains_user_pubkey
       - tuner_password
     build:
       context: ../
@@ -28,12 +28,12 @@ services:
         - PRIMARY_UID=${UID}
         - PRIMARY_GID=${GID}
         - PRIMARY_USER=gen_user
-        - JETBRAINS_USER=${JETBRAINS_USER}
+        # - JETBRAINS_USER=${JETBRAINS_USER}
         - WORK_GROUP=${WORK_GROUP}
         - CONTAINER_DEVSPACE=${CONTAINER_DEVSPACE}
         - CONTAINER_PROJECT_ROOT=${CONTAINER_PROJECT_ROOT}
-      secrets:
-        - jetbrains_user_pubkey
+      # secrets:
+        # - jetbrains_user_pubkey
 
     container_name: lstm_aa_app
     entrypoint:
@@ -46,7 +46,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
 
     ports:
-      - "127.0.0.1:${CONTAINER_SSH_PORT}:22"
+      # - "127.0.0.1:${CONTAINER_SSH_PORT}:22"
       - "127.0.0.1:8888:8888"
       - "127.0.0.1:6006:6006"
 
