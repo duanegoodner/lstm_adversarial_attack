@@ -21,15 +21,14 @@ The current work follows the general approach of the prior studies, with the fol
 
 ## 2. Documentation
 
-See the Jupyter notebook [here](https://github.com/duanegoodner/lstm_adversarial_attack/blob/main/notebooks/lstm_adversarial_attack.ipynb) for additional background information, implementation details, and results.
+Detailed documentation can be viewed in the project Jupyter notebook available on NBViewer: 
 
-> **Note**  Some of the cell outputs included in this notebook are quite long. Instead of just going to the Github link in a browser, it is recommended to use Jupyter Lab, Jupyter Notebook, VS Code with the Jupyter extension, or some other program with features for managing how cell output is displayed.
-
+[![View in nbviewer](https://img.shields.io/badge/Open%20in-nbviewer-orange)](https://nbviewer.org/github/duanegoodner/lstm_adversarial_attack/blob/main/notebooks/lstm_adversarial_attack.ipynb)
 
 
 ## 3. How to run this project
 
-Follow the instructions in this section if you want to run the project code. (These steps are not necessary if you just want to view documentation and results in this Jupyter notebook).
+Follow the instructions in this section if you want to run the project code. These steps are not necessary if you just want to view documentation and results in  the Jupyter notebook linked above.
 
 ### 2.1 Requirements
 
