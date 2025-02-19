@@ -3,7 +3,7 @@
 
 ## Overview
 
-This project implements and optimizes **Long Short-Term Memory (LSTM)** time series models of intensive care unit (ICU) patient lab and vital sign data to predict patient outcomes. Additionally, an **adversarial attack** algorithm is used to identify vulnerabilities in trained models. These studies builds upon similar work published in [[1](#ref_01)] and [[2](#ref_02)].
+This project implements and optimizes **Long Short-Term Memory (LSTM)** time series models of intensive care unit (ICU) patient lab and vital sign data to predict patient outcomes. Additionally, an **adversarial attack** algorithm is used to identify vulnerabilities in trained models. These studies build upon similar work published in [[1](#ref_01)] and [[2](#ref_02)].
 
 The predictive model input consists of data from 13 lab measurements and 6 vital signs collected during the first 48 hours after patient admission to the ICU. The prediction target is a binary variable representing in-hospital mortality. This type of model can supplement standard heuristics used by care providers in identifying high-risk patients.
 
