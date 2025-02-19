@@ -16,7 +16,7 @@ query_files = [
     "db.queries_dir::icustay_detail.sql",
     "db.queries_dir::pivoted_bg.sql",
     "db.queries_dir::pivoted_lab.sql",
-    "db.queries_dir::pivoted_vital.sql"
+    "db.queries_dir::pivoted_vital.sql",
 ]
 output_root = "output_data::query_db"
 
