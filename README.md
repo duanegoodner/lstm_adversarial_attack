@@ -1,9 +1,32 @@
 # lstm_adversarial_attack
 
 
-## 1. Overview
+## Overview
 
-This project builds upon work in [[1](#ref_01)] and [[2](#ref_02)] that used Long Short-Term Memory (LSTM) time series models of lab and vital sign measurements from the  Medical Information Mart for Intensive Care (MIMIC-III) database [[3](#ref_03), [4](ref_04)] to predict Intensive Care Unit (ICU) patient outcomes. The work in [[1](#ref_01)] also included adversarial attacks on a trained LSTM model.
+This project implements and optimizes **Long Short-Term Memory (LSTM)** time series models of intensive care unit (ICU) patient lab and vital sign data to predict patient outcomes. Additionally, an **adversarial attack** algorithm is used to identify vulnerabilities in trained models. These studies builds upon similar work published in [[1](#ref_01)] and [[2](#ref_02)].
+
+The predictive model input consists of data from 13 lab measurements and 6 vital signs collected during the first 48 hours after patient admission to the ICU. The prediction target is a binary variable representing in-hospital mortality. This type of model can supplement standard heuristics used by care providers in identifying high-risk patients.
+
+The results of adversarial attacks on trained LSTM models provide a gauge of model stability and provide 
+
+
+
+
+Additionally, adversarial attacks are performed to identify and understand model vulnerabilities. 
+
+The predictive model input consists of data from 13 lab measurements and 6 vital signs collected during the first 48 hours after patient admission to the ICU. The prediction target is a binary variable representing in-hospital mortality. This type of model can supplement standard heuristics used by care providers in identifying high-risk patients. 
+
+
+## Data Pipeline
+
+
+
+
+## Highlights
+
+
+
+This project builds upon work in [[1](#ref_01)] and [[2](#ref_02)] that used Long Short-Term Memory (LSTM) time series models of ICU patient lab and vital sign measurements to predict patient outcomes and then used an adversarial attack algorithm to identify model vulnerabilities.
 
 
 
@@ -28,7 +51,7 @@ Detailed documentation can be viewed in the project Jupyter notebook available o
 
 ## 3. How to run this project
 
-Follow the instructions in this section if you want to run the project code. These steps are not necessary if you just want to view documentation and results in  the Jupyter notebook linked above.
+Follow the instructions in this section if you want to run the project code. (These steps are not necessary if you just want to view documentation and results in  the Jupyter notebook linked above).
 
 ### 2.1 Requirements
 
