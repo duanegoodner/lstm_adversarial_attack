@@ -14,29 +14,29 @@
 
 ### 1.  Build a PostgreSQL MIMIC-III database inside a Docker container
 
-Go to https://github.com/duanegoodner/docker_postgres_mimiciii, and follow that repository's Getting Started steps 1 through 6 to build the following:
+Go to https://github.com/duanegoodner/docker-postgres-mimiciii, and follow that repository's Getting Started steps 1 through 6 to build the following:
 - A PostgreSQL MIMIC-III database in a named Docker volume
 - A Docker image with a PostgreSQL instance that can access the named volume.
 
 > **Note**  ~60 GB storage is needed to build the database, and the entire process may take ~60 minutes on a typical desktop system.
 
-### 2. Clone the lstm_adversarial_attack repository to your machine:
+### 2. Clone the `icu-deep-learning` repository to your machine:
 
 ```shell
-git clone https://github.com/duanegoodner/lstm_adversarial_attack
+git clone https://github.com/duanegoodner/icu-deep-learning
 ```
 
 
 ### 3 Set the `LOCAL_PROJECT_ROOT` environment variable (to be used by Docker)
 
-In file `lstm_adversarial_attack/docker/app/.env`, set the value of `LOCAL_PROJECT_ROOT` to the **absolute path** of the `lstm_adversarial_attack` root directory. Leave the values of `PROJECT_NAME`, `CONTAINER_DEVSPACE`, and `CONTAINER_PROJECT_ROOT` unchanged.
+In file `icu-deep-learning/docker/app/.env`, set the value of `LOCAL_PROJECT_ROOT` to the **absolute path** of the `icu-deep-learning` root directory. Leave the values of `PROJECT_NAME`, `CONTAINER_DEVSPACE`, and `CONTAINER_PROJECT_ROOT` unchanged.
 
-For example, if in you ran the command in step 2.3 from directory `/home/my_user/projects` causing the cloned repo root to be `/home/my_user/projects/lstm_adversarial_attack`  your `lstm_adversarial_attack/docker/app/.env` file would look like this:
+For example, if in you ran the command in step 2.3 from directory `/home/my_user/projects` causing the cloned repo root to be `/home/my_user/projects/icu-deep-learning`,  your `icu-deep-learning/docker/app/.env` file would look like this:
 
 ```shell
-LOCAL_PROJECT_ROOT=/home/my_user/projects/lstm_adversarial_attack
+LOCAL_PROJECT_ROOT=/home/my_user/projects/icu-deep-learning
 
-PROJECT_NAME=lstm_adversarial_attack
+PROJECT_NAME=icu-deep-learning
 CONTAINER_DEVSPACE=/home/devspace
 CONTAINER_PROJECT_ROOT=${CONTAINER_DEVSPACE}/project
 ```
@@ -46,16 +46,16 @@ CONTAINER_PROJECT_ROOT=${CONTAINER_DEVSPACE}/project
 
 > **Note** The size of the `lstm_aa_app` image will be ~10 GB.
 
-From directory `lstm_adversarial_attack/docker`, run:
+From directory `icu-deep-learning/docker`, run:
 
 ```shell
 UID=${UID} GID=${GID} docker compose build
 ```
-Image `lstm_aa_app` includes an installation of Miniconda3 and has a conda environment created in `/home/devspace/env`. All of the Python dependencies needed for the project will be installed in this environment and are included in `lstm_adversarial_attack/docker/app/environment.yml`. 
+Image `lstm_aa_app` includes an installation of Miniconda3 and has a conda environment created in `/home/devspace/env`. All of the Python dependencies needed for the project will be installed in this environment and are included in `icu-deep-learning/docker/app/environment.yml`. 
 
 ### 5. Run the `lstm_aa_app` and `postgres_mimiciii` containers
 
-From directory `lstm_adversarial_attack/docker` run:
+From directory `icu-deep-learning/docker` run:
 
 ```shell
 $ UID=${UID} GID=${GID} docker compose up -d
@@ -90,9 +90,9 @@ whoami
 # gen_user
 
 pwd
-# /home/devspace/lstm_adversarial_attack
+# /home/devspace/project
 ```
-> **Note** Our `docker-compose.yml` maps container directory `/home/devspace/lstm_adversarial_attack` to the local lstm_adversarial_attack repository root.
+> **Note** Our `docker-compose.yml` maps container directory `/home/devspace/icu-deep-learning` to the local lstm_adversarial_attack repository root.
 
 
 ### 7. Launch Jupyter Lab
@@ -119,4 +119,4 @@ You will have a different value for the token in the last two urls. In your brow
 
 ### 8. Run the Project Jupyter Notebook
 
-In the Jupyter Lab file explorer, navigate to the `/notebooks` directory, and open `icu_deep_learning.ipynb`. Read through this notebook file, and use code cells within it to run the project.
+In the Jupyter Lab file explorer, navigate to the `notebooks/` directory, and open `icu_deep_learning.ipynb`. Read through this notebook file, and use code cells within it to run the project.
