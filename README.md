@@ -48,57 +48,6 @@ Detailed documentation can be viewed in the project Jupyter notebook available o
 [![View in nbviewer](https://img.shields.io/badge/Open%20in-nbviewer-orange)](https://nbviewer.org/github/duanegoodner/lstm_adversarial_attack/blob/main/notebooksproject/notebooks/icu_deep_learning.ipynb)
 
 
-
-
-
-### 2.7 Exec into the `lstm_aa_app` container
-
-The `lstm_aa_app` image has a sudo-privileged non-root user,  named `gen_user`.  The conda environment in `/home/devspace/env` gets activated whenever a `bash` or `zsh` shell is launched under `gen_user`. It will be convenient to use `docker exec` to launch a shell in the container for a couple steps later on.
-
-To launch a `zsh` shell in the container run:
-
-```bash 
-$ docker exec -it lstm_aa_app /bin/zsh
-```
-
-You will then be at a `zsh` prompt in the container.
-
-```shell
-$ whoami
-gen_user
-
-$ pwd
-/home/devspace/lstm_adversarial_attack
-# docker-compose maps directory /home/devspace/lstm_adversarial_attack to the local lstm_adversarial_attack repository root
-```
-
-### 2.8 Launch Jupyter Lab
-
-From a `zsh` prompt in the container, run the following command to start a Jupyter Lab server:
-
-```
-> jupyter lab --no-browser --ip=0.0.0.0
-```
-
-Among the various text output to the terminal, you should see some lines that look like this:
-
-```
-To access the server, open this file in a browser:
-        file:///home/gen_user/.local/share/jupyter/runtime/jpserver-504-open.html
-Or copy and paste one of these URLs:
-        http://f0e281ad30a4:8888/lab?token=0447a83987dfdc124e4f13df65caf307dccb0198fd92460f
-        http://127.0.0.1:8888/lab?token=0447a83987dfdc124e4f13df65caf307dccb0198fd92460f
-```
-
-You will have a different value for the token in the last two urls. In your browser, go to the bottom url (`http://127.0.0.1:8888/lab?token=...`) to open Jupyter Lab.
-
-
-
-### 2.9 Run the Project Jupyter Notebook
-
-In the Jupyter Lab file explorer, navigate to the `/notebooks` directory, and open `lstm_adversarial_attack.ipynb`. Read through this notebook file, and use code cells within it to run the project.
-
-
 ## Tools Used 
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python)   ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C?logo=pytorch&logoColor=white)   ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)   ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white) ![Pandas](https://img.shields.io/badge/Pandas-150458?logo=pandas&logoColor=white)   ![NumPy](https://img.shields.io/badge/NumPy-013243?logo=numpy&logoColor=white) ![Apache Arrow](https://img.shields.io/badge/Apache%20Arrow-0E77B3?logo=apache) ![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-F7931E?logo=scikit-learn&logoColor=white)   ![TensorBoard](https://img.shields.io/badge/TensorBoard-FF6F00?logo=tensorflow&logoColor=white)   ![Matplotlib](https://img.shields.io/badge/Matplotlib-11557C?logo=plotly&logoColor=white)   ![Optuna](https://img.shields.io/badge/Optuna-7C3AED?logo=python&logoColor=white) ![msgspec](https://img.shields.io/badge/msgspec-blue) ![Jupyter](https://img.shields.io/badge/Jupyter-F37626.svg?&logo=Jupyter&logoColor=white)

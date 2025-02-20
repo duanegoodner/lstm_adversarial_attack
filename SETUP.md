@@ -53,7 +53,7 @@ UID=${UID} GID=${GID} docker compose build
 ```
 Image `lstm_aa_app` includes an installation of Miniconda3 and has a conda environment created in `/home/devspace/env`. All of the Python dependencies needed for the project will be installed in this environment and are included in `lstm_adversarial_attack/docker/app/environment.yml`. 
 
-### 2.6 Run the `lstm_aa_app` and `postgres_mimiciii` containers
+### 5. Run the `lstm_aa_app` and `postgres_mimiciii` containers
 
 From directory `lstm_adversarial_attack/docker` run:
 
@@ -73,9 +73,9 @@ The output should look like this:
 Container `lstm_aa_app` will run Python modules, container `postres_mimiciii` runs the PostgreSQL instance with the MIMIC-III database, and container `postgres_optuna` container runs another PostgreSQL instance that will store data generated during hyperparameter tuning.
 
 
-### 2.7 Exec into the `lstm_aa_app` container
+### 6. Exec into the `lstm_aa_app` container
 
-The `lstm_aa_app` image has a sudo-privileged non-root user,  named `gen_user`.  The conda environment in `/home/devspace/env` gets activated whenever a `bash` or `zsh` shell is launched under `gen_user`. It will be convenient to use `docker exec` to launch a shell in the container for a couple steps later on.
+The `lstm_aa_app` image has a sudo-privileged non-root user,  named `gen_user`.  The conda environment in `/home/devspace/env` gets activated whenever a `bash` or `zsh` shell is launched under `gen_user`.
 
 Run the following command to launch a `zsh` shell in the container:
 
@@ -83,7 +83,7 @@ Run the following command to launch a `zsh` shell in the container:
 docker exec -it lstm_aa_app /bin/zsh
 ```
 
-You will then be at a `zsh` prompt in the container.
+You will then be at a `zsh` prompt in the container. Run the following commands to double-check our user name and working directory.
 
 ```shell
 whoami
@@ -95,7 +95,7 @@ pwd
 > **Note** Our `docker-compose.yml` maps container directory `/home/devspace/lstm_adversarial_attack` to the local lstm_adversarial_attack repository root.
 
 
-### 2.8 Launch Jupyter Lab
+### 7. Launch Jupyter Lab
 
 From a `zsh` prompt in the container, run the following command to start a Jupyter Lab server:
 
@@ -117,6 +117,6 @@ You will have a different value for the token in the last two urls. In your brow
 
 
 
-### 2.9 Run the Project Jupyter Notebook
+### 8 Run the Project Jupyter Notebook
 
-In the Jupyter Lab file explorer, navigate to the `/notebooks` directory, and open `lstm_adversarial_attack.ipynb`. Read through this notebook file, and use code cells within it to run the project.
+In the Jupyter Lab file explorer, navigate to the `/notebooks` directory, and open `icu_deep_learning.ipynb`. Read through this notebook file, and use code cells within it to run the project.
