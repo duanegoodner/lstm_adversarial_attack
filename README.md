@@ -32,7 +32,7 @@ While the initial goal of this project was to **reproduce and validate** portion
 
 ## Documentation
 
-Detailed documentation can be viewed in [this static Jupyter notebook on NBViewer](https://nbviewer.org/github/duanegoodner/lstm_adversarial_attack/blob/main/notebooks/lstm_adversarial_attack.ipynb).
+Detailed documentation can be viewed in [this static Jupyter notebook on NBViewer](https://nbviewer.org/github/duanegoodner/lstm_adversaria_attack/blob/update_docs/notebooks/icu_deep_learning.ipynb).
 
 ## How to Run this Project
 
@@ -41,11 +41,11 @@ Detailed documentation can be viewed in [this static Jupyter notebook on NBViewe
 **2.** See instructions in the [static Jupyter notebook](https://nbviewer.org/github/duanegoodner/lstm_adversarial_attack/blob/main/notebooks/project/notebooks/icu_deep_learning.ipynb) on how to run project code from the command line and/or a dynamic Jupyter notebook.
 
 
-<!-- ## Documentation
+## Documentation
 
 Detailed documentation can be viewed in the project Jupyter notebook available on NBViewer: 
 
-[![View in nbviewer](https://img.shields.io/badge/Open%20in-nbviewer-orange)](https://nbviewer.org/github/duanegoodner/lstm_adversarial_attack/blob/main/notebooksproject/notebooks/icu_deep_learning.ipynb) -->
+[![View in nbviewer](https://img.shields.io/badge/Open%20in-nbviewer-orange)](https://nbviewer.org/github/duanegoodner/lstm_adversarial_attack/blob/main/notebooksproject/notebooks/icu_deep_learning.ipynb)
 
 
 
