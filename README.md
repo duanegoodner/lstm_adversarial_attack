@@ -11,10 +11,11 @@ The results of adversarial attacks on trained LSTM models provide a gauge of mod
 ## **Getting Started**  
 
 ### **📌 Viewing Documentation**  
-The full documentation, including detailed descriptions of the methodology and implementation, is contained in the project Jupyter notebook. If using the notebook purely for informational purposes (and not for running project code), you can:
--  View it directly Google Colab:  
+The full documentation, including detailed descriptions of the methodology and implementation, is contained in the project Jupyter notebook. If using the notebook purely for informational purposes (without running the code), you can:
+- View the [notebook file directly on GitHUb](https://github.com/duanegoodner/icu-deep-learning/blob/main/notebooks/icu_deep_learning.ipynb) directly on GitHUb
+-  Open it in Google Colab for a more interactive reading experience with easier navigation:  
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/duanegoodner/lstm_adversarial_attack/blob/main/notebooks/icu_deep_learning.ipynb)  
-- Alternatively, open the file [`./notebooks/icu_deep_learning.ipynb`](notebooks/icu_deep_learning.ipynb) in your preferred notebook viewer.  
+
 
 ### **🚀 Running the Project**  
 - To run the project code, follow the instructions in [SETUP.md](SETUP.md) for setting up and running in a containerized environment.  
@@ -32,7 +33,8 @@ This project builds on previous studies [[5](#ref_05), [6](#ref_06)] that were t
 - **Auto-generated data provenance** ensures reproducibility and prevents losing track of "what worked" during experiments.  
 - **Modular data pipeline** eliminates the need for redundant upstream runs when testing multiple downstream settings.  
 - **Flexible execution** — each pipeline component can run from the command line or inside the project's Jupyter notebook.  
-- **Efficient adversarial attacks** — developed a custom PyTorch `AdversarialAttacker` module capable of attacking batches of samples.  
+- **Efficient adversarial attacks** — developed a custom PyTorch `AdversarialAttacker` module capable of attacking batches of samples.
+- **Avoids security risks of .pkl files** — uses .json and .feather file formats for serialization.
 - **60% Higher predictive performance (F1 score) and 10× faster data preprocessing** compared to prior studies.  
 
 ## **Tools Used**  
