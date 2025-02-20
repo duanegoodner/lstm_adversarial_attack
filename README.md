@@ -7,11 +7,14 @@ This project implements and optimizes **Long Short-Term Memory (LSTM)** time ser
 
 Raw data were obtained from Medical Information Mart for Intensive Care (MIMIC-III) database [[1](#ref_01), [2](#ref_02)]. The predictive model input consists of data from 13 lab measurements and 6 vital signs collected during the first 48 hours after patient admission to the ICU. The prediction target is a binary variable representing in-hospital mortality. This type of model can supplement standard heuristics used by care providers in identifying high-risk patients.
 
-The results of adversarial attacks on trained LSTM models provide a gauge of model stability. Additionally, these results offer an opportunity to compare adversarial vulnerabilities in LSTMs with the well-documented adversarial behaviors observed in Convolutional Neural Networks (CNNs) used for computer vision. Unlike the adversarial examples found in CNNs — where perturbations imperceptible to the human eye can drastically alter model predictions — the adversarial examples discovered for our LSTM models exhibit a higher degree of plausibility, aligning more closely with human intuition.
+The results of adversarial attacks on trained LSTM models provide a gauge of model stability. Additionally, these results offer an opportunity to compare adversarial vulnerabilities in LSTMs with the well-documented [[3](#ref_03), [4](#ref_04)] adversarial behaviors observed in Convolutional Neural Networks (CNNs) used for computer vision. Unlike the adversarial examples found in CNNs — where perturbations imperceptible to the human eye can drastically alter model predictions — the adversarial examples discovered for our LSTM models exhibit a higher degree of plausibility, aligning more closely with human intuition.
+
+Detailed documentation, including instructions for running project code, is contained in the project Jupyter notebook. If using this notebook purely for inormational purposes, it can be viewed [here using Google Colab](https://colab.research.google.com/github/duanegoodner/lstm_adversarial_attack/blob/main/notebooks/icu_deep_learning.ipynb) or by opening the file [`./notebooks/icu_deep_learning.ipynb`](notebooks/icu_deep_learning.ipynb) in your preferred notebook viewer.
+
 
 ## Acknowledgement of Prior Studies
 
-This project builds on previous studies [[3](#ref_03), [4](#ref_04)] that were the first to apply LSTM-based predictive modeling and adversarial attacks to ICU patient data from the MIMIC-III database. While the initial was to reproduce and validate portions of the earlier studies, the project has since evolved into significant extensions and new contributions. However, none of this progress would have been possible without the invaluable foundation provided by the original research.
+This project builds on previous studies [[5](#ref_05), [6](#ref_06)] that were the first to apply LSTM-based predictive modeling and adversarial attacks to ICU patient data from the MIMIC-III database. While the initial was to reproduce and validate portions of the earlier studies, the project has since evolved into significant extensions and new contributions. However, none of this progress would have been possible without the invaluable foundation provided by the original research.
 
 
 ## Highlights
@@ -60,7 +63,11 @@ Detailed documentation can be viewed in the project Jupyter notebook available o
 
 <a id="ref_02">2.</a> [Johnson, A. E. W., Pollard, T. J., Shen, L., Lehman, L. H., Feng, M., Ghassemi, M., Moody, B., Szolovits, P., Celi, L. A., & Mark, R. G. (2016). MIMIC-III, a freely accessible critical care database. Scientific Data, 3, 160035.](https://www.nature.com/articles/sdata201635)
 
-<a id="ref_03">3.</a> [Sun, M., Tang, F., Yi, J., Wang, F. and Zhou, J., 2018, July. Identify susceptible locations in medical records via adversarial attacks on deep predictive models. In *Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining* (pp. 793-801).](https://dl.acm.org/doi/10.1145/3219819.3219909)
+<a id="ref_03">3.</a> [Goodfellow, I.J., Shlens, J. and Szegedy, C., 2014. Explaining and harnessing adversarial examples. arXiv preprint arXiv:1412.6572.](https://arxiv.org/abs/1412.6572)
 
-<a id="ref_04">4.</a> [Tang, F., Xiao, C., Wang, F. and Zhou, J., 2018. Predictive modeling in urgent care: a comparative study of machine learning approaches. *Jamia Open*, *1*(1), pp.87-98.](https://academic.oup.com/jamiaopen/article/1/1/87/5032901)
+<a id="ref_04">4.</a> [Akhtar, N., Mian, A., Kardan, N. and Shah, M., 2021. Advances in adversarial attacks and defenses in computer vision: A survey. IEEE Access, 9, pp.155161-155196.](https://arxiv.org/abs/2108.00401)
+
+<a id="ref_05">5.</a> [Sun, M., Tang, F., Yi, J., Wang, F. and Zhou, J., 2018, July. Identify susceptible locations in medical records via adversarial attacks on deep predictive models. In *Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining* (pp. 793-801).](https://dl.acm.org/doi/10.1145/3219819.3219909)
+
+<a id="ref_06">6.</a> [Tang, F., Xiao, C., Wang, F. and Zhou, J., 2018. Predictive modeling in urgent care: a comparative study of machine learning approaches. *Jamia Open*, *1*(1), pp.87-98.](https://academic.oup.com/jamiaopen/article/1/1/87/5032901)
 
