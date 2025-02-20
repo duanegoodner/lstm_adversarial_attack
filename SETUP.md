@@ -117,6 +117,6 @@ You will have a different value for the token in the last two urls. In your brow
 
 
 
-### 8 Run the Project Jupyter Notebook
+### 8. Run the Project Jupyter Notebook
 
 In the Jupyter Lab file explorer, navigate to the `/notebooks` directory, and open `icu_deep_learning.ipynb`. Read through this notebook file, and use code cells within it to run the project.
