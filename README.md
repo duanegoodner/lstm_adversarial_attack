@@ -17,46 +17,21 @@ The results of adversarial attacks on trained LSTM models provide a gauge of mod
 
 ## Project Highlights
 
-- Extensive hyperparameter tuning for both the predictive and attack models.
+- Extensive hyperparameter tuning for predictive and attack models.
 - Flexibile attack objectives allow targeting different types of adversarial perturbations.
 - Fully containerized for easy, reproducible environment setup.
-- Single `config.toml` file centralized for easy modification and experimenation.
-- Auto-generated data provenance ensures reproducibility and prevents losing track of "what worked" when iterating / tinkering.
-- Modular data pipeline avoids redundant upstream runs when testing multiple downstream settings.
-- Command-line & Jupyter compatibility — each pipeline component can run runs independently in both environments.
-- Efficient PyTorch Adversarial Attacker: Contains a custom PyTorch module that applies adversarial attacks to entire batches of samples (unlike standard implementations that attack one sample at a time).
+- Single `config.toml` file centralizes all parameters for streamlined modification and experimenation.
+- Auto-generated data provenance ensures reproducibility and prevents losing track of "what worked" during experiments.
+- Modular data pipeline eliminates need for redundant upstream runs when testing multiple downstream settings.
+- Flexible execution. Each pipeline component can run from the command line or inside the project's Jupyter notebook.
+- Efficient adversarial attacks. Implemented a custom PyTorch AdversarialAttacker module capable of attacking batches of samples.
 - Compared to previous studies of the same dataset:
-  
   - Higher predictive performance
   - 10x faster data preprocessing
 
 
 
-## Data Pipeline
 
-- SQL queries to extract raw data from PostgreSQL instance containig the Medical Information Mart for Intensive Care (MIMIC-III) database
-- Preprocessing 
-
-
-
-
-## Highlights
-
-
-
-This project builds upon work in [[1](#ref_01)] and [[2](#ref_02)] that used Long Short-Term Memory (LSTM) time series models of ICU patient lab and vital sign measurements to predict patient outcomes and then used an adversarial attack algorithm to identify model vulnerabilities.
-
-
-
-The current work follows the general approach of the prior studies, with the following modifications / enhancements
-
-
-  -  Predictive performance of the LSTM is improved (Prior work F1 scores: 0.53 - 0.63. Current study: > 0.96). This improvement is primarily due to hyperparameter tuning of the predictive model..
-  - A preprocess package that reduces the time needed to convert database query output to model input features by 90%
-  - A GPU-compatible implementation of the adversarial attack algorithm
-  - The attack algorithm was allowed to continue running after the first adversarial example was found for a given input. In most cases, these additional search iterations led to the discovery of adversarial examples that exhibited greater sparsity and smaller perturbations than the initially discovered examples.
-- Exploration of multiple parameters and objective functions during hyperparameter tuning of the attack algorithm
-- Implementation in PyTorch (instead of Keras).
 
 
 
