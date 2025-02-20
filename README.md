@@ -40,6 +40,8 @@ Detailed documentation can be viewed in [this static Jupyter notebook on NBViewe
 
 **2.** See instructions in the [static Jupyter notebook](https://nbviewer.org/github/duanegoodner/lstm_adversarial_attack/blob/main/notebooks/project/notebooks/lstm_adversarial_attack.ipynb) on how to run project code from the command line and/or a dynamic Jupyter notebook.
 
+**2.** See instructions in the [static Jupyter notebook](https://nbviewer.org/github/duanegoodner/lstm_adversarial_attack/blob/main/notebooks/project/notebooks/icu_deep_learning.ipynb) on how to run project code from the command line and/or a dynamic Jupyter notebook.
+
 
 ## Documentation
 
