@@ -9,11 +9,9 @@ Raw data were obtained from Medical Information Mart for Intensive Care (MIMIC-I
 
 The results of adversarial attacks on trained LSTM models provide a gauge of model stability. Additionally, these results offer an opportunity to compare adversarial vulnerabilities in LSTMs with the well-documented adversarial behaviors observed in Convolutional Neural Networks (CNNs) used for computer vision. Unlike the adversarial examples found in CNNs — where perturbations imperceptible to the human eye can drastically alter model predictions — the adversarial examples discovered for our LSTM models exhibit a higher degree of plausibility, aligning more closely with human intuition.
 
-## Acknowledgement of Prior Studies  
+## Acknowledgement of Prior Studies
 
-This project builds upon LSTM-based predictive modeling and adversarial attack research on the same dataset, as published in [[2](#ref_03)] and [[4](#ref_04)]. The authors of these studies provided an invaluable foundation, and their work served as a key starting point for this investigation.  
-
-While the initial goal of this project was to **reproduce and validate** portions of prior research, it has since evolved into **significant extensions** and **new contributions**. The following section highlights areas where the current project advances beyond previous studies.
+This project builds on previous studies [[3](#ref_03), [4](#ref_04)] that were the first to apply LSTM-based predictive modeling and adversarial attacks to ICU patient data from the MIMIC-III database. While the initial was to reproduce and validate portions of the earlier studies, the project has since evolved into significant extensions and new contributions. However, none of this progress would have been possible without the invaluable foundation provided by the original research.
 
 
 ## Highlights
@@ -25,14 +23,13 @@ While the initial goal of this project was to **reproduce and validate** portion
 - Auto-generated data provenance ensures reproducibility and prevents losing track of "what worked" during experiments.
 - Modular data pipeline eliminates need for redundant upstream runs when testing multiple downstream settings.
 - Flexible execution. Each pipeline component can run from the command line or inside the project's Jupyter notebook.
-- Efficient adversarial attacks. Implemented a custom PyTorch AdversarialAttacker module capable of attacking batches of samples.
-- Compared to previous studies of the same dataset:
-  - Higher predictive performance
-  - 10x faster data preprocessing
+- Efficient adversarial attacks. Developed a custom PyTorch AdversarialAttacker module capable of attacking batches of samples.
+- Higher predictive performance and 10x faster data preprocessing compared to prior studies.
 
 ## Documentation
 
-Detailed documentation can be viewed in [this static Jupyter notebook on NBViewer](https://nbviewer.org/github/duanegoodner/lstm_adversaria_attack/blob/update_docs/notebooks/icu_deep_learning.ipynb).
+Detailed documentation is contained in the prjoject Jupyter notebook that can be viewed [here using Google Colab](https://colab.research.google.com/github/duanegoodner/lstm_adversarial_attack/blob/main/notebooks/icu_deep_learning.ipynb) or by opening the file [`./notebooks/icu_deep_learning.ipynb`](notebooks/icu_deep_learning.ipynb) in your preferred notebook viewer.
+
 
 ## How to Run this Project
 
