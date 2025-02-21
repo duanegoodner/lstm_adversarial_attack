@@ -28,9 +28,11 @@ data/query_db/*
 data/model_training/*
 !data/model_training/.gitkeep
 
-docker/tuning_dbs.env
+# docker/tuning_dbs.env
+docker/app_dev/.env
 docker/app_dev/postgres_password.txt
 docker/app_dev/tuner_password.txt
+docker/app/.env
 docker/app/postgres_password.txt
 docker/app/tuner_password.txt
 
