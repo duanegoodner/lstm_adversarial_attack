@@ -49,7 +49,7 @@ For this file, we can use the existing `.env.example` file as a starting point:
 cp docker/app/.env.example docker/app.env
 ```
 
-Then, open `docker/app/.env`, and on this line:
+Open `docker/app/.env`, and on this line:
 ```shell
 LOCAL_PROJECT_ROOT=/absolute/path/to/icu-deep-learning
 ```
