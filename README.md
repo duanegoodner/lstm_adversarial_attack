@@ -12,7 +12,7 @@ The results of adversarial attacks on trained LSTM models provide a gauge of mod
 
 ### **📌 Viewing Documentation**  
 The full documentation, including detailed descriptions of the methodology and implementation, is contained in the project Jupyter notebook. If using the notebook purely for informational purposes (without running the code), you can:
-- View the notebook file [`./notebooks/icu_deep_learning.ipynb`](notebooks/icu_deep_learning.ipynb) directly on GitHUb
+- View the [notebook file directly on GitHUb](https://github.com/duanegoodner/icu-deep-learning/blob/main/notebooks/icu_deep_learning.ipynb) directly on GitHUb
 -  Open it in Google Colab for a more interactive reading experience with easier navigation:  
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/duanegoodner/lstm_adversarial_attack/blob/main/notebooks/icu_deep_learning.ipynb)  
 
