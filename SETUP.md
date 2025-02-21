@@ -107,9 +107,17 @@ ls
 
 ## Run project code inside the `lstm_aa_app` container
 
-
+Now that we are at a command prompt inside the `lstm_aa_app` we have two options for running project code: directly from the command line, or in a Jupyter notebook. 
 
 ### 7.1 Runnng from command line
+
+Instructions for running from a container command line are included as markdown content in theproject's Jupyter notebook. This content can be viewed by either:
+- Navigating to the [notebook file on](https://github.com/duanegoodner/icu-deep-learning/blob/main/notebooks/icu_deep_learning.ipynb), 
+- Opening local file [`./notebooks/icu_deep_learning.ipynb`](notebooks/icu_deep_learning.ipynb) in your preferred program for viewing Jupyter notebooks,
+-  Or opening it in Google Colab:  
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/duanegoodner/lstm_adversarial_attack/blob/main/notebooks/icu_deep_learning.ipynb)
+
+ Then, follow the instruction in the **Running from the command line** section of the notebook
 
 
 ### 7.2 Running Jupyter Lab
