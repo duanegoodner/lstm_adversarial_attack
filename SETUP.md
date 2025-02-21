@@ -84,6 +84,18 @@ TThe following **three containers** should now be running (`icu-deep-learning/do
 - `postres_mimiciii`– Runs PostgreSQL with the MIMIC-III database
 - `postgres_optuna` – Runs another PostgreSQL instance for hyperparameter tuning results
 
+We can confirm which containers are running with:
+```
+docker ps --format "table {{.ID}}\t{{.Ports}}\t{{.Names}}"
+```
+Expected output:
+```
+CONTAINER ID   PORTS                                                NAMES
+8b3b66e7181c   127.0.0.1:6006->6006/tcp, 127.0.0.1:8888->8888/tcp   lstm_aa_app
+e481271381bf   0.0.0.0:5555->5432/tcp, [::]:5555->5432/tcp          postgres_mimiciii_dev
+2e962c184265   0.0.0.0:5556->5432/tcp, [::]:5556->5432/tcp          postgres_optuna
+```
+
 
 ---
 

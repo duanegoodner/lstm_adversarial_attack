@@ -33,7 +33,8 @@ This project builds on previous studies [[5](#ref_05), [6](#ref_06)] that were t
 - **Auto-generated data provenance** ensures reproducibility and prevents losing track of "what worked" during experiments.  
 - **Modular data pipeline** eliminates the need for redundant upstream runs when testing multiple downstream settings.  
 - **Flexible execution** — each pipeline component can run from the command line or inside the project's Jupyter notebook.  
-- **Efficient adversarial attacks** — developed a custom PyTorch `AdversarialAttacker` module capable of attacking batches of samples.  
+- **Efficient adversarial attacks** — developed a custom PyTorch `AdversarialAttacker` module capable of attacking batches of samples.
+- **Avoids security risks of .pkl files** — uses .json and .feather file formats for serialization.
 - **60% Higher predictive performance (F1 score) and 10× faster data preprocessing** compared to prior studies.  
 
 ## **Tools Used**  
