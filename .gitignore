@@ -1,7 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-#*.pickle
+*.pickle
 *.egg-info/
 *.ipynb_checkpoints/
 
@@ -12,10 +12,15 @@ data/attack/*
 !data/attack/tuning/.gitkeep
 !data/attack/frozen_hyperparameter_attack/tuning/.gitkeep
 
-data/model/*
-data/model/cross_validation/*
-!data/model/cross_validation/.gitkeep
+data/attack_analysis/*
+!data/attack_analysis/.gitkeep
 
+data/model/*
+!data/model/cross_validation/.gitkeep
+!data/model/tuning/.gitkeep
+
+data/preprocess/*
+!data/preprocess/.gitkeep
 
 data/query_db/*
 !data/query_db/.gitkeep
@@ -29,28 +34,6 @@ docker/app_dev/tuner_password.txt
 docker/app/postgres_password.txt
 docker/app/tuner_password.txt
 
-data/preprocess/final_output/*
-!data/preprocess/final_output/.gitkeep
-
-data/preprocess/*
-!data/preprocess/.gitkeep
-
-data/preprocess/checkpoints/1_prefilter/*
-!data/preprocess/checkpoints/1_prefilter/.gitkeep
-data/preprocess/checkpoints/2_merged_stay_measurements/*
-!data/preprocess/checkpoints/2_merged_stay_measurements/.gitkeep
-data/preprocess/checkpoints/3_full_admission_list/*
-!data/preprocess/checkpoints/3_full_admission_list/.gitkeep
-data/preprocess/checkpoints/4_feature_builder/*
-!data/preprocess/checkpoints/4_feature_builder/.gitkeep
-data/preprocess/checkpoints/5_feature_finalizer/*
-!data/preprocess/checkpoints/5_feature_finalizer/.gitkeep
-
 logs/*
 !logs/.gitkeep
-
-
-
-
-
 
