@@ -103,10 +103,18 @@ echo $0
 ls
 # README.md  SETUP.md  config.toml  data  docker  docs  logs  notebooks  src
 ```
-> **Note** The `docker-compose.yml` maps container directory `/home/devspace/icu-deep-learning` to the local `icu-deep-learning` root. 
+> **Note** The `docker-compose.yml` maps container directory `/home/devspace/icu-deep-learning` to the local `icu-deep-learning` root.
+
+## Run project code inside the `lstm_aa_app` container
 
 
-### 7. Launch Jupyter Lab
+
+### 7.1 Runnng from command line
+
+
+### 7.2 Running Jupyter Lab
+
+#### 7.2.1 Start Jupyter server
 
 From a `zsh` prompt in the container, run the following command to start a Jupyter Lab server:
 
@@ -114,20 +122,17 @@ From a `zsh` prompt in the container, run the following command to start a Jupyt
 > jupyter lab --no-browser --ip=0.0.0.0
 ```
 
-Among the various text output to the terminal, you should some lines that look like this:
+#### 7.2.2 Run Jupyter Lab in browser
 
+Among the various text output to the terminal, you should a line that starts with `http://127.0.0.1:8888/lab?token=..`
+
+Here is an example with a full token included:
 ```
-To access the server, open this file in a browser:
-        file:///home/gen_user/.local/share/jupyter/runtime/jpserver-504-open.html
-Or copy and paste one of these URLs:
-        http://f0e281ad30a4:8888/lab?token=0447a83987dfdc124e4f13df65caf307dccb0198fd92460f
-        http://127.0.0.1:8888/lab?token=0447a83987dfdc124e4f13df65caf307dccb0198fd92460f
+ http://127.0.0.1:8888/lab?token=1c4722891835e04ffec392da92ec9b49a8962a370b261e36
 ```
 
-You will have a different value for the token in the last two urls. In your browser, go to the bottom url (`http://127.0.0.1:8888/lab?token=...`) to open Jupyter Lab.
+To start Jupyter Lab, navigate to the specific `http://127.0.0.1:8888/lab?token=...` url displayed in your terminal output.
 
-
-
-### 8. Run the Project Jupyter Notebook
+### 7.2.3 Open the project notbook in Jupyter Lab
 
 In the Jupyter Lab file explorer, navigate to the `notebooks/` directory, and open `icu_deep_learning.ipynb`. Read through this notebook file, and use code cells within it to run the project.
