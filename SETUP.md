@@ -27,72 +27,83 @@ git clone https://github.com/duanegoodner/icu-deep-learning
 ```
 
 
-### 3 Set the `LOCAL_PROJECT_ROOT` environment variable (to be used by Docker)
+### 3. Set the `LOCAL_PROJECT_ROOT` in `.env` file for Docker
 
-In file `icu-deep-learning/docker/app/.env`, set the value of `LOCAL_PROJECT_ROOT` to the **absolute path** of the `icu-deep-learning` root directory. Leave the values of `PROJECT_NAME`, `CONTAINER_DEVSPACE`, and `CONTAINER_PROJECT_ROOT` unchanged.
 
-For example, if in you ran the command in step 2.3 from directory `/home/my_user/projects` causing the cloned repo root to be `/home/my_user/projects/icu-deep-learning`,  your `icu-deep-learning/docker/app/.env` file would look like this:
+
+Open file `icu-deep-learning/docker/app/.env`, and set `LOCAL_PROJECT_ROOT` to the **absolute path** of the local `icu-deep-learning` root directory.
 
 ```shell
-LOCAL_PROJECT_ROOT=/home/my_user/projects/icu-deep-learning
+LOCAL_PROJECT_ROOT=/path/to/icu-deep-learning
+# replace '/path/to/icu-deep-learning' with absolute path to local repo root
 
-PROJECT_NAME=icu-deep-learning
-CONTAINER_DEVSPACE=/home/devspace
-CONTAINER_PROJECT_ROOT=${CONTAINER_DEVSPACE}/project
+# OTHER VARIABLES (do not change)
+# ...
+# ...
 ```
+
+Leave the values of other variables in this `.env` file unchanged
 
 
 ### 4. Build the `lstm_aa_app` Docker image
 
-> **Note** The size of the `lstm_aa_app` image will be ~10 GB.
-
-From directory `icu-deep-learning/docker`, run:
+From directory `icu-deep-learning/docker/app/`, run:
 
 ```shell
 UID=${UID} GID=${GID} docker compose build
 ```
-Image `lstm_aa_app` includes an installation of Miniconda3 and has a conda environment created in `/home/devspace/env`. All of the Python dependencies needed for the project will be installed in this environment and are included in `icu-deep-learning/docker/app/environment.yml`. 
+This will build Docker image `lstm_aa_app` that is based on `ubuntu:22.04`. It will have Miniconda3 environment at `/home/devspace/env`containing all of the Python dependencies needed to run the project. See local file  `icu-deep-learning/docker/app/environment.yml` for a list these dependencies.
 
-### 5. Run the `lstm_aa_app` and `postgres_mimiciii` containers
+> **Note** The size of the `lstm_aa_app` image will be ~10 GB.
 
-From directory `icu-deep-learning/docker` run:
+### 5. Use `docker compose` to start all project containers
+From directory `icu-deep-learning/docker/app/` run:
 
 ```shell
-$ UID=${UID} GID=${GID} docker compose up -d
+UID=${UID} GID=${GID} docker compose up -d
 ```
 The output should look like this:
 
 ```bash
-[+] Running 4/4
- ✔ Network app_default              Created                                                                                                  0.2s 
- ✔ Container postgres_mimiciii_dev  Started                                                                                                  0.7s 
- ✔ Container postgres_optuna        Started                                                                                                  0.7s 
- ✔ Container lstm_aa_app            Started 
+[+] Running 5/5
+ ✔ Network app_default              Created                                          0.2s 
+ ✔ Volume "app_optuna_db"           Created                                          0.0s 
+ ✔ Container postgres_optuna        Started                                          0.6s 
+ ✔ Container postgres_mimiciii_dev  Started                                          0.6s 
+✔ Container lstm_aa_app             Started                                          0.8s
 ```
+There should be three running containers, as specified by `icu-deepl-learning/docker/app/docker-compose.yml`:
 
-Container `lstm_aa_app` will run Python modules, container `postres_mimiciii` runs the PostgreSQL instance with the MIMIC-III database, and container `postgres_optuna` container runs another PostgreSQL instance that will store data generated during hyperparameter tuning.
+- `lstm_aa_app` will run Python modules
+- `postres_mimiciii` runs the PostgreSQL instance with the MIMIC-III database
+- `postgres_optuna` container runs another PostgreSQL instance that will store data generated during hyperparameter tuning.
 
 
 ### 6. Exec into the `lstm_aa_app` container
 
-The `lstm_aa_app` image has a sudo-privileged non-root user,  named `gen_user`.  The conda environment in `/home/devspace/env` gets activated whenever a `bash` or `zsh` shell is launched under `gen_user`.
+The `lstm_aa_app` image has a sudo-privileged non-root user,  named `gen_user`.  The conda environment in `/home/devspace/env` gets activated whenever a **bash** or **zsh** shell is launched under `gen_user`.
 
-Run the following command to launch a `zsh` shell in the container:
+Run the following to launch a **zsh** shell in the container:
 
 ```bash 
 docker exec -it lstm_aa_app /bin/zsh
 ```
 
-You will then be at a `zsh` prompt in the container. Run the following commands to double-check our user name and working directory.
+You should then be at a **zsh** prompt in the container. Run the following commands to confirm the setup.
 
 ```shell
 whoami
 # gen_user
-
 pwd
 # /home/devspace/project
+which python
+# /home/devspace/env/bin/python
+echo $0
+# /bin/zsh
+ls
+# README.md  SETUP.md  config.toml  data  docker  docs  logs  notebooks  src
 ```
-> **Note** Our `docker-compose.yml` maps container directory `/home/devspace/icu-deep-learning` to the local lstm_adversarial_attack repository root.
+> **Note** The `docker-compose.yml` maps container directory `/home/devspace/icu-deep-learning` to the local `icu-deep-learning` root. 
 
 
 ### 7. Launch Jupyter Lab
