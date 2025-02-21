@@ -10,12 +10,7 @@ __pycache__/
 
 data/attack/*
 !data/attack/tuning/.gitkeep
-!data/attack/tuning/2023-06-28_12_11_46.874267
-!data/attack/tuning/2023-06-30_10_52_24.059982
-!data/attack/tuning/2023-07-01_11_03_13.591090
-
-data/backups
-
+!data/attack/frozen_hyperparameter_attack/tuning/.gitkeep
 
 data/model/*
 data/model/cross_validation/*
