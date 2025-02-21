@@ -2,67 +2,73 @@
 
 ## Requirements
 
-* git
-* Docker
-* CUDA-enabled GPU
-* [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/overview.html#installation-guide)
-  * NOTE: After installing the NVIDIA Container Toolkit, you may need to reboot.
+- `git`
+- `Docker`
+- **CUDA-enabled GPU**
+- **[NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/overview.html#installation-guide)**  
+  *Note: After installing the NVIDIA Container Toolkit, you may need to reboot.*
 
-
+---
 
 ## Procedure
 
-### 1.  Build a PostgreSQL MIMIC-III database inside a Docker container
+### **1. Build a PostgreSQL MIMIC-III Database Inside a Docker Container**
 
-Go to https://github.com/duanegoodner/docker-postgres-mimiciii, and follow that repository's Getting Started steps 1 through 6 to build the following:
-- A PostgreSQL MIMIC-III database in a named Docker volume
-- A Docker image with a PostgreSQL instance that can access the named volume.
+Follow the instructions in the repository **[docker-postgres-mimiciii](https://github.com/duanegoodner/docker-postgres-mimiciii)**, completing **Steps 1–6** to build:
 
-> **Note**  ~60 GB storage is needed to build the database, and the entire process may take ~60 minutes on a typical desktop system.
+- A **PostgreSQL MIMIC-III database** in a named Docker volume.
+- A **Docker image** containing a PostgreSQL instance with access to the database.
 
-### 2. Clone the `icu-deep-learning` repository to your machine:
+> **Note:** ~60GB of storage is required, and the process may take ~60 minutes on a typical desktop system.
+
+---
+
+### **2. Clone the `icu-deep-learning` repository**
+Run:
 
 ```shell
 git clone https://github.com/duanegoodner/icu-deep-learning
-```
+ ```
 
+---
 
-### 3. Set the `LOCAL_PROJECT_ROOT` in `.env` file for Docker
+### 3. Set `LOCAL_PROJECT_ROOT` in `.env` for Docker
 
-
-
-Open file `icu-deep-learning/docker/app/.env`, and set `LOCAL_PROJECT_ROOT` to the **absolute path** of the local `icu-deep-learning` root directory.
+Edit `icu-deep-learning/docker/app/.env` and set `LOCAL_PROJECT_ROOT` to the **absolute path** of your local `icu-deep-learning` root directory:
 
 ```shell
 LOCAL_PROJECT_ROOT=/path/to/icu-deep-learning
-# replace '/path/to/icu-deep-learning' with absolute path to local repo root
+# replace '/path/to/icu-deep-learning' with the actual absolute path
 
 # OTHER VARIABLES (do not change)
 # ...
 # ...
 ```
+> **Note:** Leave the values of other variables in this `.env` file unchanged
 
-Leave the values of other variables in this `.env` file unchanged
-
+---
 
 ### 4. Build the `lstm_aa_app` Docker image
 
-From directory `icu-deep-learning/docker/app/`, run:
+Navigate to `icu-deep-learning/docker/app/` and run:
 
 ```shell
 UID=${UID} GID=${GID} docker compose build
 ```
-This will build Docker image `lstm_aa_app` that is based on `ubuntu:22.04`. It will have Miniconda3 environment at `/home/devspace/env`containing all of the Python dependencies needed to run the project. See local file  `icu-deep-learning/docker/app/environment.yml` for a list these dependencies.
+This command builds the `lstm_aa_app` Docker image, based on ubuntu:22.04, with a **Miniconda3 environment** at `/home/devspace/env` containing all required Python dependencies.
+A full list of dependencies is in `icu-deep-learning/docker/app/environment.yml`.
 
 > **Note** The size of the `lstm_aa_app` image will be ~10 GB.
 
-### 5. Use `docker compose` to start all project containers
-From directory `icu-deep-learning/docker/app/` run:
+---
+
+### 5. Start All Project Containers Using `docker compose`
+From `icu-deep-learning/docker/app/` run:
 
 ```shell
 UID=${UID} GID=${GID} docker compose up -d
 ```
-The output should look like this:
+Expected output:
 
 ```bash
 [+] Running 5/5
@@ -72,24 +78,26 @@ The output should look like this:
  ✔ Container postgres_mimiciii_dev  Started                                          0.6s 
 ✔ Container lstm_aa_app             Started                                          0.8s
 ```
-There should be three running containers, as specified by `icu-deepl-learning/docker/app/docker-compose.yml`:
+TThe following **three containers** should now be running (`icu-deep-learning/docker/app/docker-compose.yml` defines these services):
 
-- `lstm_aa_app` will run Python modules
-- `postres_mimiciii` runs the PostgreSQL instance with the MIMIC-III database
-- `postgres_optuna` container runs another PostgreSQL instance that will store data generated during hyperparameter tuning.
+- `lstm_aa_app` – Runs Python modules
+- `postres_mimiciii`– Runs PostgreSQL with the MIMIC-III database
+- `postgres_optuna` – Runs another PostgreSQL instance for hyperparameter tuning results
 
 
-### 6. Exec into the `lstm_aa_app` container
+---
 
-The `lstm_aa_app` image has a sudo-privileged non-root user,  named `gen_user`.  The conda environment in `/home/devspace/env` gets activated whenever a **bash** or **zsh** shell is launched under `gen_user`.
 
-Run the following to launch a **zsh** shell in the container:
+### 6. Enter the `lstm_aa_app` container
+
+The `lstm_aa_app` image contains a **sudo-privileged non-root user**, `gen_user`.  The conda environment (`/home/devspace/env`) activates automatically when a `bash` or `zsh` shell is launched.
+
+Run:
 
 ```bash 
 docker exec -it lstm_aa_app /bin/zsh
 ```
-
-You should then be at a **zsh** prompt in the container. Run the following commands to confirm the setup.
+Verify the setup with:
 
 ```shell
 whoami
@@ -103,44 +111,64 @@ echo $0
 ls
 # README.md  SETUP.md  config.toml  data  docker  docs  logs  notebooks  src
 ```
-> **Note** The `docker-compose.yml` maps container directory `/home/devspace/icu-deep-learning` to the local `icu-deep-learning` root.
+> **Note** The `docker-compose.yml` maps container directory `/home/devspace/icu-deep-learning` to your local `icu-deep-learning` root.
 
-## Run project code inside the `lstm_aa_app` container
+---
+
+### 7. Run Project Code Inside the `lstm_aa_app` Container
 
 Now that we are at a command prompt inside the `lstm_aa_app` we have two options for running project code: directly from the command line, or in a Jupyter notebook. 
 
-### 7.1 Runnng from command line
+---
 
-Instructions for running from a container command line are included as markdown content in theproject's Jupyter notebook. This content can be viewed by either:
-- Navigating to the [notebook file on](https://github.com/duanegoodner/icu-deep-learning/blob/main/notebooks/icu_deep_learning.ipynb), 
-- Opening local file [`./notebooks/icu_deep_learning.ipynb`](notebooks/icu_deep_learning.ipynb) in your preferred program for viewing Jupyter notebooks,
--  Or opening it in Google Colab:  
+#### 7.1 Runnng from command line
+
+Instructions for running from the command line are provided inside the Jupyter notebook. View these instructions with any one of the following methods:
+
+- Navigating to the [notebook file on GitHub](https://github.com/duanegoodner/icu-deep-learning/blob/main/notebooks/icu_deep_learning.ipynb).
+- Opening local file [`./notebooks/icu_deep_learning.ipynb`](notebooks/icu_deep_learning.ipynb) in a Jupyter viewer.
+-  Viewing in Google Colab:  
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/duanegoodner/lstm_adversarial_attack/blob/main/notebooks/icu_deep_learning.ipynb)
 
- Then, follow the instruction in the **Running from the command line** section of the notebook
+ Then, follow the the **"Running from the command line"** section of the notebook
 
+---
 
-### 7.2 Running Jupyter Lab
+#### 7.2 Running Jupyter Lab
 
-#### 7.2.1 Start Jupyter server
+##### 7.2.1 Start Jupyter server
 
-From a `zsh` prompt in the container, run the following command to start a Jupyter Lab server:
+From a `zsh` prompt in the container, run:
 
 ```
-> jupyter lab --no-browser --ip=0.0.0.0
+jupyter lab --no-browser --ip=0.0.0.0
 ```
+---
 
-#### 7.2.2 Run Jupyter Lab in browser
+#### 7.2.2 Open Jupyter Lab in Your Browser
 
-Among the various text output to the terminal, you should a line that starts with `http://127.0.0.1:8888/lab?token=..`
 
-Here is an example with a full token included:
+Look for a line in the terminal output that starts with:
+```
+http://127.0.0.1:8888/lab?token=...
+```
+Example:
 ```
  http://127.0.0.1:8888/lab?token=1c4722891835e04ffec392da92ec9b49a8962a370b261e36
 ```
+Copy this **full URL** into your browser to launch Jupyter Lab.
 
-To start Jupyter Lab, navigate to the specific `http://127.0.0.1:8888/lab?token=...` url displayed in your terminal output.
+---
 
 ### 7.2.3 Open the project notbook in Jupyter Lab
 
-In the Jupyter Lab file explorer, navigate to the `notebooks/` directory, and open `icu_deep_learning.ipynb`. Read through this notebook file, and use code cells within it to run the project.
+In Jupyter Lab's file explorer, open:
+
+```
+notebooks/icu_deep_learning.ipynb
+
+```
+
+Read through the notebook and execute its code cells to run the project.
+
+---
