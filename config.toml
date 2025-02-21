@@ -2,9 +2,18 @@
 min_age = 18
 min_los_hospital = 1
 min_los_icu = 1
-bg_data_cols = [ "potassium", "calcium", "ph", "pco2", "lactate",]
-lab_data_cols = [ "albumin", "bun", "creatinine", "sodium", "bicarbonate", "platelet", "glucose", "magnesium",]
-vital_data_cols = [ "heartrate", "sysbp", "diasbp", "tempc", "resprate", "spo2",]
+bg_data_cols = ["potassium", "calcium", "ph", "pco2", "lactate"]
+lab_data_cols = [
+    "albumin",
+    "bun",
+    "creatinine",
+    "sodium",
+    "bicarbonate",
+    "platelet",
+    "glucose",
+    "magnesium",
+]
+vital_data_cols = ["heartrate", "sysbp", "diasbp", "tempc", "resprate", "spo2"]
 winsorize_low = "5%"
 winsorize_high = "95%"
 resample_interpolation_method = "linear"
@@ -14,8 +23,21 @@ observation_window_hours = 48
 observation_window_start = "intime"
 
 [model]
-trainer_eval_general_logging_metrics = [ "accuracy", "auc", "f1", "precision", "recall", "validation_loss",]
-trainer_eval_tensorboard_metrics = [ "auc", "f1", "precision", "recall", "validation_loss",]
+trainer_eval_general_logging_metrics = [
+    "accuracy",
+    "auc",
+    "f1",
+    "precision",
+    "recall",
+    "validation_loss",
+]
+trainer_eval_tensorboard_metrics = [
+    "auc",
+    "f1",
+    "precision",
+    "recall",
+    "validation_loss",
+]
 
 [model.trainer]
 random_seed = 12345678
@@ -34,7 +56,14 @@ sampler_name = "TPESampler"
 db_env_var_name = "MODEL_TUNING_DB_NAME"
 fold_class_name = "StratifiedKFold"
 collate_fn_name = "x19m_collate_fn"
-cv_mean_tensorboard_metrics = [ "accuracy", "auc", "f1", "precision", "recall", "validation_loss",]
+cv_mean_tensorboard_metrics = [
+    "accuracy",
+    "auc",
+    "f1",
+    "precision",
+    "recall",
+    "validation_loss",
+]
 
 [model.cv_driver_settings]
 collate_fn_name = "x19m_collate_fn"
@@ -75,14 +104,14 @@ attack_misclassified_samples = false
 default_seq_length = 48
 
 [model.tuner_driver.tuning_ranges]
-log_lstm_hidden_size = [ 5, 7,]
-lstm_act_options = [ "ReLU", "Tanh",]
-dropout = [ 0.0, 0.5,]
-log_fc_hidden_size = [ 4, 8,]
-fc_act_options = [ "ReLU", "Tanh",]
-optimizer_options = [ "Adam", "RMSprop", "SGD",]
-learning_rate = [ 1e-5, 0.1,]
-log_batch_size = [ 5, 8,]
+log_lstm_hidden_size = [5, 7]
+lstm_act_options = ["ReLU", "Tanh"]
+dropout = [0.0, 0.5]
+log_fc_hidden_size = [4, 8]
+fc_act_options = ["ReLU", "Tanh"]
+optimizer_options = ["Adam", "RMSprop", "SGD"]
+learning_rate = [1e-5, 0.1]
+log_batch_size = [5, 8]
 
 [model.tuner_driver.pruner_kwargs]
 n_startup_trials = 5
@@ -97,8 +126,8 @@ n_warmup_steps = 3
 [attack.tuner_driver_settings.sampler_kwargs]
 
 [attack.tuning.ranges]
-kappa = [ 0.0, 2.0,]
-lambda_1 = [ 1e-7, 1.0,]
-learning_rate = [ 1e-5, 1.0,]
-log_batch_size = [ 5, 7,]
-optimizer_options = [ "Adam", "RMSprop", "SGD",]
+kappa = [0.0, 2.0]
+lambda_1 = [1e-7, 1.0]
+learning_rate = [1e-5, 1.0]
+log_batch_size = [5, 7]
+optimizer_options = ["Adam", "RMSprop", "SGD"]
