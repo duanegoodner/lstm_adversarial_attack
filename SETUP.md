@@ -30,21 +30,41 @@ Run:
 git clone https://github.com/duanegoodner/icu-deep-learning
  ```
 
+ Then, `cd` into the local repo root:
+ ```
+ cd icu-deep-learning
+ ```
+
 ---
 
-### 3. Set `LOCAL_PROJECT_ROOT` in `.env` for Docker
+### 3. Create and Populate `.env` and Password Files
 
-Edit `icu-deep-learning/docker/app/.env` and set `LOCAL_PROJECT_ROOT` to the **absolute path** of your local `icu-deep-learning` root directory:
+### 3.1 `docker/app/.env`
 
-```shell
-LOCAL_PROJECT_ROOT=/path/to/icu-deep-learning
-# replace '/path/to/icu-deep-learning' with the actual absolute path
-
-# OTHER VARIABLES (do not change)
-# ...
-# ...
 ```
+cp docker/app/.env.example docker/app.env
+```
+
+Then, open `docker/app/.env`, and on this line:
+```shell
+LOCAL_PROJECT_ROOT=/absolute/path/to/icu-deep-learning
+```
+replace `/absolute/path/to/icu-deep-learning` with the actual **absolute path** of your local `icu-deep-learning` root directory.
+
 > **Note:** Leave the values of other variables in this `.env` file unchanged
+
+
+### 3.2 `docker/app/postgres_password.txt`
+
+- Create file `./docker/app/postgres_password.txt`
+- Copy the value of `POSTGRES_PASSWORD` in file `./postgres/.env` that you created in your local `docker-postgres-mimiciii` repo in **Step 1** above, and paste into your newly created `./docker/app/postgres_password.txt` file.
+
+
+### 3.3 `docker/app/tuner_password.txt`
+
+- Create and open file `./docker/app/tuner_password.txt`
+- Enter whatever value you want to use for the **Optuna** database on the first line of this file, save, and close.
+
 
 ---
 
