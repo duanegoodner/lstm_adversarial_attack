@@ -28,9 +28,12 @@ services:
         - PRIMARY_UID=${UID}
         - PRIMARY_GID=${GID}
         - PRIMARY_USER=gen_user
-        - WORK_GROUP=gen_user
+        # - JETBRAINS_USER=${JETBRAINS_USER}
+        - WORK_GROUP=${WORK_GROUP}
         - CONTAINER_DEVSPACE=${CONTAINER_DEVSPACE}
         - CONTAINER_PROJECT_ROOT=${CONTAINER_PROJECT_ROOT}
+      # secrets:
+        # - jetbrains_user_pubkey
 
     container_name: lstm_aa_app
     entrypoint:
