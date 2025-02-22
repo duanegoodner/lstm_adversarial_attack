@@ -2,11 +2,11 @@ secrets:
   jetbrains_user_pubkey:
     file: ${JETBRAINS_USER_PUBKEY}
   mimiciii_postgres_password:
-    file: mimiciii_postgres_password.txt
+    file: ../secrets/mimiciii_postgres_password.txt
   tuningdb_postgres_password:
-    file: tuningdb_postgres_password.txt
+    file: ../secrets/tuningdb_postgres_password.txt
   tuningdb_tuner_password:
-    file: tuningdb_tuner_password.txt
+    file: ../secrets/tuningdb_tuner_password.txt
 
 
 services:
