@@ -8,6 +8,8 @@ __pycache__/
 .idea/
 .vscode/
 
+docker/secrets/
+
 data/attack/*
 !data/attack/tuning/.gitkeep
 !data/attack/frozen_hyperparameter_attack/tuning/.gitkeep

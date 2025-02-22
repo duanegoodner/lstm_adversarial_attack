@@ -40,11 +40,15 @@ class MimiciiiDatabaseAccess:
         Connects to database. connection object stored in self._connection.
         """
         load_dotenv(dotenv_path=self._dotenv_path)
+        password_file = os.getenv("MIMICIII_POSTGRES_PASSWORD_FILE")
+        with Path(password_file).open("r") as password_file:
+            password = password_file.read()
+
         self._connection = psycopg2.connect(
             host=os.getenv("MIMICIII_DATABASE_HOST"),
             database=os.getenv("MIMICIII_DATABASE_NAME"),
             user=os.getenv("MIMICIII_DATABASE_USER"),
-            password=os.getenv("MIMICIII_DATABASE_PASSWORD"),
+            password=password,
         )
 
     def _execute_query(

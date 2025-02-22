@@ -1,10 +1,13 @@
 secrets:
   jetbrains_user_pubkey:
     file: ${JETBRAINS_USER_PUBKEY}
-  postgres_password:
-    file: postgres_password.txt
-  tuner_password:
-    file: tuner_password.txt
+  mimiciii_postgres_password:
+    file: ../secrets/mimiciii_postgres_password.txt
+  tuningdb_postgres_password:
+    file: ../secrets/tuningdb_postgres_password.txt
+  tuningdb_tuner_password:
+    file: ../secrets/tuningdb_tuner_password.txt
+
 
 services:
   lstm_aa_app_dev:
@@ -20,7 +23,8 @@ services:
               capabilities: [ gpu ]
     secrets:
       - jetbrains_user_pubkey
-      - tuner_password
+      - mimiciii_postgres_password
+      - tuningdb_tuner_password
     build:
       context: ../
       dockerfile: ./app_dev/Dockerfile
@@ -69,7 +73,7 @@ services:
 
   postgres_optuna:
     env_file:
-      - ../tuning_dbs.env
+      - ../databases/tuning_dbs.env
     image: postgres
     container_name: postgres_optuna
     volumes:
@@ -78,8 +82,8 @@ services:
     ports:
       - 5556:5432
     secrets:
-      - postgres_password
-      - tuner_password
+      - tuningdb_postgres_password
+      - tuningdb_tuner_password
 
 volumes:
   postgres_mimiciii_db:

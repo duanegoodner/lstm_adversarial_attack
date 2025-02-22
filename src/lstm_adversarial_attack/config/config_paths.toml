@@ -10,7 +10,7 @@ db = "root_pkg::query_db"
 preprocess = "root_pkg::preprocess"
 
 [paths.db]
-mimiciii_dotenv = "sub_packages.db::mimiciii_database.env"
+mimiciii_dotenv = "docker::databases/mimiciii_database.env"
 queries_dir = "sub_packages.db::mimiciii_queries"
 query_files = [
     "db.queries_dir::icustay_detail.sql",
@@ -65,7 +65,7 @@ preprocess = "5_feature_finalizer/measurement_col_names.json"
 output_dir = "output_data::model/tuning"
 
 [paths.tuning_db]
-dotenv = "docker::tuning_dbs.env"
+dotenv = "docker::databases/tuning_dbs.env"
 
 
 [paths.model.cv_driver]
