@@ -14,7 +14,6 @@ from lstm_adversarial_attack.config.read_write import PATH_CONFIG_READER
 
 def get_db_dotenv_info(
     db_name_var: str,
-    # dotenv_path: Path = cfp.TUNING_DBS_DOTENV_PATH,
     dotenv_path: Path = PATH_CONFIG_READER.read_path("tuning_db.dotenv"),
     username_var: str = "TUNING_DBS_USER",
     password_file_var: str = "TUNING_DBS_PASSWORD_FILE",
