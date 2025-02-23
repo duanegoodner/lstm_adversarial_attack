@@ -61,7 +61,7 @@ services:
 
   postgres_mimiciii:
     image: postgres_mimiciii
-    container_name: postgres_mimiciii_dev
+    container_name: postgres_mimiciii
     volumes:
       - postgres_mimiciii_db:/var/lib/postgresql/data
     ports:
