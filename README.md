@@ -40,21 +40,21 @@ This project builds on previous studies [[5](#ref_05), [6](#ref_06)] that were t
 
 ## Example Data: Input Elements' Perturbation Probability 
 
-Each model input consists of a **19 × 48** array representing **hourly** values of **13 lab measurements** and **6 vital signs** collected over a **48-hour** period. To analyze the adversarial behavior of a trained model under a specific attack objective function, we perform multiple attack iterations on each sample in a population. The attack objective function can favor small perturbation magnitude, sparse perturbations, or both.
+Each model input consists of a [19 × 48] array representing hourly values of 13 lab measurements and 6 vital signs collected over a 48-hour period. To analyze the adversarial behavior of a trained model under a specific attack objective function, we perform multiple attack iterations on each sample in a population. The attack objective function can favor small perturbation magnitude, sparse perturbations, or both.
 
-For each sample, an adversarial example may be found after some number of attack iterations — or in some cases, not at all. Once the **first** adversarial example is discovered for a sample, we continue attacking the sample (up to a predefined iteration limit) to identify perturbations that further minimize the attack objective function and record the example with the lowest value of the attack objective function as that sample's **best** adversarial example.  The perturbation associated with a **best example** has lower magnitude and/or greater sparsity than its corresponding **first example**.
+For each sample, an adversarial example may be found after some number of attack iterations — or in some cases, not at all. Once the *first* adversarial example is discovered for a sample, we continue attacking the sample (up to a predefined iteration limit) to identify perturbations that further minimize the attack objective function and record the example with the lowest value of the attack objective function as that sample's *best* adversarial example.  The perturbation associated with a *best* example has lower magnitude and/or greater sparsity than its corresponding *first example*.
 
-A **"zero-to-one" attack** refers to an adversarial perturbation that **flips a model's predicted output from `0` (non-mortality) to `1` (mortality)**. Similarly, a **"one-to-zero" attack** flips the predicted output from `1` to `0`.
+A "*zero-to-one*" attack refers to an adversarial perturbation that flips a model's predicted output from `0` (non-mortality) to `1` (mortality)**. Similarly, a *"one-to-zero"* attack flips the predicted output from `1` to `0`.
 
-The "Perturbation Probability" figure below shows the fraction of adversarial examples in which each input array element is non-zero for the **first** and **best** discovered examples, with separate plots for **zero-to-one** and **one-to-zero** attacks.
+The "Perturbation Probability" figure below shows the fraction of adversarial examples in which each input array element is non-zero for the *first* and *best* discovered examples, with separate plots for *zero-to-one* and *one-to-zero* attacks.
 
 ![Perturbation Probability](docs/perturbation_probability_data.png)
 
 Some key takeaways from the above data:
-- For the **first examples**, most measurements' perturbation probability is fairly evenly distributed across the 48-hour observation period, though does increase for later times.
+- For the *first* examples, most measurements' perturbation probability is fairly evenly distributed across the 48-hour observation period, though does increase for later times.
 - SpO<sub>2</sub> perturbations are less common in first examples compared to other measurements. However, this difference disappears in best examples.
 - The best examples strongly favor perturbations at the end of the observation period. These adversarial examples are not what we would call "anomalous." A human interpreter would also be more likely to misinterpret a late-time perturbation.
-- Fine details in the probability distributions are well-matched between **zero-to-one** and **one-to-zero** **best examples**, suggesting that the model’s vulnerabilities are generally independent of the attack direction.
+- Fine details in the probability distributions are well-matched between *zero-to-one* and *one-to-zero* best examples, suggesting that the model’s vulnerabilities are generally independent of the attack direction.
 
 For additional exploration and analysis, refer to the [Getting Started](#getting-started) section.
 
