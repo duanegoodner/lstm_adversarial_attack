@@ -66,7 +66,7 @@
 </head>
 <body>
 
-<div class="outer-container">
+<div class="outer-container" id="capture-container">
     <!-- Table on the left -->
     <table>
         <tr>
@@ -97,6 +97,30 @@
     <!-- Image on the right -->
     <img src="2023-08-04_23_25_25.825414_gpp_ij.png" alt="Seaborn Heatmap">
 </div>
+
+
+ <button id="save">Save as Image</button>
+
+  <!-- Load html2canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script>
+    // Ensure all fonts are loaded before enabling the button
+    document.fonts.ready.then(function() {
+      document.getElementById("save").onclick = function() {
+        // Target the entire container, which includes both the title and the image
+        html2canvas(document.querySelector("#capture-container")).then(canvas => {
+          const link = document.createElement("a");
+          link.download = "perturbation_probability_data.png";
+          link.href = canvas.toDataURL("image/png");
+          link.click();
+        }).catch(function(error) {
+          console.error('Error capturing the image:', error);
+        });
+      };
+    });
+  </script>
+
 
 </body>
 </html>

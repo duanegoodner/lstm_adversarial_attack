@@ -40,7 +40,7 @@ This project builds on previous studies [[5](#ref_05), [6](#ref_06)] that were t
 
 ## Example Data
 
-![Perturbation Probability](docs/perturbation_prob_fig.png)
+![Perturbation Probability](docs/perturbation_probability_data.png)
 
 
 
