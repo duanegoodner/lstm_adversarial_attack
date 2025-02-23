@@ -38,7 +38,13 @@ This project builds on previous studies [[5](#ref_05), [6](#ref_06)] that were t
 - **60% Higher predictive performance (F1 score) and 10× faster data preprocessing** compared to prior studies.  
 
 
-## Example Data
+## Example Data: Input Elements' Perturbation Probability 
+
+When 
+
+By running adversarial attacks with a large number of samples for a single trained model, we can generate a variety of data illustrating model's adversarial behavior.
+
+The model input features for a single patient consist of a 19 x 48 array representing hourly values of the 19 lab and vital sign measurements collected over a 48 hour timespan.
 
 ![Perturbation Probability](docs/perturbation_probability_data.png)
 
