@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Measurement Decoder Table</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        table {
+            border-collapse: collapse;
+            margin: 20px;
+            background: white;
+            table-layout: auto; /* Allow columns to adjust automatically */
+            width: auto; /* Prevent unnecessary stretching */
+        }
+        th {
+            background-color: #e34a33; /* Warm Red (Matches top of RdYlBu_r) */
+            color: white; /* White text for contrast */
+            font-weight: bold;
+            padding: 8px;
+            text-align: center;
+        }
+        td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid black;
+            white-space: nowrap; /* Prevent text from wrapping */
+        }
+        tr:nth-child(odd) {
+            background-color: #deebf7; /* Light Blue (Cool side of RdYlBu_r) */
+        }
+        tr:nth-child(even) {
+            background-color: #9ecae1; /* Medium Blue */
+        }
+    </style>
+</head>
+<body>
+
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Measurement</th>
+    </tr>
+    <tr><td>0</td><td>potassium</td></tr>
+    <tr><td>1</td><td>calcium</td></tr>
+    <tr><td>2</td><td>ph</td></tr>
+    <tr><td>3</td><td>pco2</td></tr>
+    <tr><td>4</td><td>lactate</td></tr>
+    <tr><td>5</td><td>albumin</td></tr>
+    <tr><td>6</td><td>bun</td></tr>
+    <tr><td>7</td><td>creatinine</td></tr>
+    <tr><td>8</td><td>sodium</td></tr>
+    <tr><td>9</td><td>bicarbonate</td></tr>
+    <tr><td>10</td><td>platelet</td></tr>
+    <tr><td>11</td><td>glucose</td></tr>
+    <tr><td>12</td><td>magnesium</td></tr>
+    <tr><td>13</td><td>heartrate</td></tr>
+    <tr><td>14</td><td>sysbp</td></tr>
+    <tr><td>15</td><td>diasbp</td></tr>
+    <tr><td>16</td><td>tempc</td></tr>
+    <tr><td>17</td><td>resprate</td></tr>
+    <tr><td>18</td><td>spo2</td></tr>
+</table>
+
+</body>
+</html>
